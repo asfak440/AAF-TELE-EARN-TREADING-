@@ -37,3 +37,25 @@ def verify_task(message):
 
 print("AAF Bot is running...")
 bot.polling()
+import os
+from flask import Flask
+import threading
+
+# Render-এর জন্য ছোট একটি ওয়েব সার্ভার
+server = Flask(__name__)
+
+@server.route("/")
+def home():
+    return "AAF Bot is Running!"
+
+def run_web_server():
+    # Render সাধারণত ৫০০০ বা ১০০০ নং পোর্ট দেয়
+    port = int(os.environ.get("PORT", 5000))
+    server.run(host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    # বট চালানোর জন্য আলাদা একটি থ্রেড তৈরি করা
+    threading.Thread(target=lambda: bot.infinity_polling()).start()
+    
+    # ওয়েব সার্ভার চালু করা
+    run_web_server()
