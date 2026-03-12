@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # --- ডাটাবেস কানেকশন (আপনার স্ক্রিনশট অনুযায়ী) ---
 # <db_password> এর জায়গায় আপনার তৈরি করা পাসওয়ার্ডটি বসান
-MONGO_URI = "mongodb+srv://Asfak1:<db_password>@cluster0.ykmq2wh.mongodb.net/?retryWrites=true&w=majority"
+MONGO_URI = "mongodb+srv://Asfak1:<Abdullah6790>@cluster0.ykmq2wh.mongodb.net/?retryWrites=true&w=majority"
 client = MongoClient(MONGO_URI)
 db = client['AAF_TeleEarn']
 
