@@ -45,3 +45,32 @@ def update_price():
 
 if __name__ == '__main__':
     app.run(debug=True)
+# --- ট্রেডিং অ্যালগরিদম ও ক্যান্ডেলস্টিক ডাটা ---
+import random
+
+@app.route('/trading/live_chart', methods=['GET'])
+def live_chart():
+    # অ্যাডমিন ডাটা থেকে বর্তমান স্ট্যাটাস চেক করা
+    config = db.admin_stats.find_one({"id": "global"})
+    total_withdraw = config.get('total_withdraw', 0)
+    total_earn = config.get('total_earn', 1) # ০ দিয়ে ভাগ হওয়া এড়াতে
+    
+    current_price = config.get('aaf_coin_price', 1.0)
+
+    # রুল: উইথড্র ৯০% এর বেশি হলে দাম কমে লাল ক্যান্ডেল হবে
+    if (total_withdraw / total_earn) >= 0.9:
+        price_change = random.uniform(-0.1, -0.05) # দাম কমবে
+    else:
+        price_change = random.uniform(-0.02, 0.05) # স্বাভাবিক উঠানামা
+
+    new_price = round(current_price + price_change, 2)
+    if new_price < 0.1: new_price = 0.1 # সর্বনিম্ন দাম ০.১ রাখা
+
+    # ডাটাবেসে নতুন দাম আপডেট
+    db.admin_stats.update_one({"id": "global"}, {"$set": {"aaf_coin_price": new_price}})
+
+    return jsonify({
+        "price": new_price,
+        "time": datetime.datetime.now().strftime("%H:%M:%S"),
+        "trend": "down" if price_change < 0 else "up"
+    })
