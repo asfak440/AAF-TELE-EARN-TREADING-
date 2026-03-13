@@ -3,68 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Admin - Earnings & Control</title>
+    <title>AAF Admin - Withdrawal Management</title>
     <style>
-        body { background: #0a0b10; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .stat-card { background: #161b22; padding: 20px; border-radius: 12px; border-left: 5px solid #00ffcc; }
+        :root { --nagad: #f7941d; --bg: #0a0b10; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .stat-card { background: #161b22; padding: 20px; border-radius: 12px; border-top: 4px solid var(--nagad); }
         .stat-card h3 { margin: 0; font-size: 14px; opacity: 0.7; }
-        .stat-card p { font-size: 24px; margin: 10px 0 0; font-weight: bold; color: #00ffcc; }
+        .stat-card p { font-size: 24px; margin: 10px 0 0; font-weight: bold; color: var(--nagad); }
+
+        .request-table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 10px; overflow: hidden; margin-top: 20px; }
+        .request-table th, .request-table td { padding: 15px; text-align: left; border-bottom: 1px solid #2d333b; }
+        .request-table th { background: #21262d; color: var(--nagad); }
+
+        .approve-btn { background: #00c853; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .reject-btn { background: #ff5252; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
         
-        .trade-table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #161b22; border-radius: 10px; overflow: hidden; }
-        .trade-table th, .trade-table td { padding: 12px; text-align: left; border-bottom: 1px solid #2d333b; }
-        .trade-table th { background: #21262d; color: #00ffcc; }
-        
-        .refresh-btn { background: #00ffcc; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 20px; }
+        .refresh-btn { background: var(--nagad); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>Admin Dashboard (AAF STRONG)</h2>
-    <button class="refresh-btn" onclick="loadStats()">Refresh Stats</button>
+    <div class="header">
+        <h2>Admin Panel (Withdrawal Logs)</h2>
+        <button class="refresh-btn" onclick="loadWithdrawRequests()">Refresh List</button>
+    </div>
 
-    <div class="card-grid">
+    <div class="stats-grid">
         <div class="stat-card">
-            <h3>Total Admin Profit (Fees)</h3>
-            <p id="total-profit">৳ 0.00</p>
+            <h3>Pending Requests</h3>
+            <p id="pending-count">0</p>
         </div>
-        <div class="stat-card" style="border-left-color: #ff5252;">
-            <h3>Active Users Trading</h3>
-            <p id="active-trades">0</p>
+        <div class="stat-card">
+            <h3>Total Paid Out</h3>
+            <p id="total-paid">৳ 0.00</p>
         </div>
     </div>
 
-    <h3>Recent Trade Logs</h3>
-    <table class="trade-table">
+    <h3>Nagad Withdrawal Requests</h3>
+    <table class="request-table">
         <thead>
             <tr>
                 <th>User ID</th>
-                <th>Invested</th>
-                <th>Fee (10%)</th>
-                <th>Status</th>
+                <th>Nagad Number</th>
+                <th>Amount</th>
+                <th>Action</th>
             </tr>
         </thead>
-        <tbody id="trade-logs">
-            </tbody>
+        <tbody id="withdraw-list">
+            <tr>
+                <td colspan="4" style="text-align:center; padding:20px; opacity:0.5;">No pending requests...</td>
+            </tr>
+        </tbody>
     </table>
 
     <script>
-        async function loadStats() {
+        const API_URL = "https://aaf-api-free.onrender.com";
+
+        async function loadWithdrawRequests() {
             try {
-                // আপনার রেন্ডার সার্ভার লিঙ্ক এখানে হবে
-                const res = await fetch('https://aaf-api-free.onrender.com/api/admin/total_earnings');
+                const res = await fetch(`${API_URL}/api/admin/withdraw_list`);
                 const data = await res.json();
                 
-                document.getElementById('total-profit').innerText = "৳ " + data.total_admin_profit.toFixed(2);
+                const list = document.getElementById('withdraw-list');
+                list.innerHTML = "";
                 
-                // এখানে আরও ডাটা ফেচ করার লজিক যোগ করা যাবে
+                if(data.requests.length === 0) {
+                    list.innerHTML = '<tr><td colspan="4" style="text-align:center;">No pending requests</td></tr>';
+                }
+
+                data.requests.forEach(req => {
+                    list.innerHTML += `
+                        <tr>
+                            <td>${req.user_id}</td>
+                            <td style="color:#00ffcc; font-weight:bold;">${req.number}</td>
+                            <td>৳ ${req.amount}</td>
+                            <td>
+                                <button class="approve-btn" onclick="updateStatus(${req.id}, 'Approved')">Approve</button>
+                                <button class="reject-btn" onclick="updateStatus(${req.id}, 'Rejected')">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('pending-count').innerText = data.requests.length;
             } catch (e) {
-                console.log("Error loading stats");
+                console.log("Error loading requests");
             }
         }
 
-        // পেজ লোড হলে ডাটা দেখাবে
-        window.onload = loadStats;
+        async function updateStatus(requestId, status) {
+            if(!confirm(`Are you sure you want to ${status} this request?`)) return;
+
+            try {
+                await fetch(`${API_URL}/api/admin/update_withdraw`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: requestId, status: status })
+                });
+                alert("Request " + status);
+                loadWithdrawRequests(); // লিস্ট রিফ্রেশ করা
+            } catch (e) {
+                alert("Error updating request");
+            }
+        }
+
+        window.onload = loadWithdrawRequests;
     </script>
 </body>
 </html>
