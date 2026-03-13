@@ -7,69 +7,117 @@
     <style>
         :root { --neon: #00ffcc; --glass: rgba(255, 255, 255, 0.07); }
         body { background: #050505; color: white; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 80px; }
-        .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         
+        /* Top Header */
+        .top-bar { padding: 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .user-info h3 { margin: 0; font-size: 18px; color: var(--neon); }
+        .user-info span { font-size: 10px; opacity: 0.5; }
+
+        /* Balance Grid (আপনার মডেল অনুযায়ী) */
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
-        .card { background: var(--glass); padding: 15px; border-radius: 18px; border: 1px solid #222; text-align: center; }
+        .card { background: var(--glass); padding: 15px; border-radius: 18px; border: 1px solid #222; text-align: center; backdrop-filter: blur(10px); }
         .card.main { grid-column: span 2; border-color: var(--neon); background: linear-gradient(145deg, #0a0a0a, #151515); }
-        .card h4 { margin: 0; font-size: 12px; opacity: 0.6; }
-        .card p { margin: 8px 0 0; font-size: 18px; font-weight: bold; color: var(--neon); }
+        .card h4 { margin: 0; font-size: 11px; opacity: 0.6; text-transform: uppercase; }
+        .card p { margin: 8px 0 0; font-size: 20px; font-weight: bold; color: var(--neon); }
 
-        .stats { margin: 15px; background: #111; padding: 15px; border-radius: 15px; font-size: 13px; }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        /* Status & Control Section */
+        .status-box { margin: 15px; background: #111; padding: 20px; border-radius: 15px; border-left: 4px solid var(--neon); }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
+        /* Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
         .nav-item { color: #888; text-decoration: none; font-size: 10px; text-align: center; }
         .active { color: var(--neon); }
+        .nav-item i { display: block; font-size: 22px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div>
-            <h3 id="display-name" style="margin:0;">User Name</h3>
-            <span style="font-size: 10px; opacity: 0.5;">ID: #AAF1080</span>
+        <div class="user-info">
+            <h3 id="u-name">Loading...</h3>
+            <span id="u-id">UID: #AAF----</span>
         </div>
         <div style="text-align:right;">
-            <div style="color: var(--neon); font-size: 12px;">● Online</div>
+            <div id="status-dot" style="color: var(--neon); font-size: 12px;">● Online</div>
         </div>
     </div>
 
     <div class="balance-grid">
         <div class="card main">
             <h4>Main Balance</h4>
-            <p>৳ <span id="m-bal">550.00</span></p>
+            <p>৳ <span id="m-bal">0.00</span></p>
         </div>
         <div class="card">
             <h4>Task Balance</h4>
-            <p>৳ 0.00</p>
+            <p>৳ <span id="t-bal">0.00</span></p>
         </div>
         <div class="card">
             <h4>Trading Balance</h4>
-            <p>৳ 0.00</p>
+            <p>৳ <span id="tr-bal">0.00</span></p>
         </div>
         <div class="card">
             <h4>Account Balance</h4>
-            <p>৳ 0.00</p>
+            <p>৳ <span id="a-bal">0.00</span></p>
+        </div>
+        <div class="card" style="grid-column: span 2;">
+            <h4>Total Withdraw (Live)</h4>
+            <p>৳ <span id="w-total">0.00</span></p>
         </div>
     </div>
 
-    <div class="stats">
-        <div class="stat-row"><span>Telegram Status:</span> <span style="color:var(--neon)">Active</span></div>
-        <div class="stat-row"><span>Added Accounts:</span> <span>5</span></div>
-        <div class="stat-row"><span>Total Withdraw:</span> <span>৳ 12,450.00</span></div>
+    <div class="status-box">
+        <div class="stat-row">
+            <span>Telegram Status:</span> 
+            <b id="acc-status" style="color: var(--neon);">Checking...</b>
+        </div>
+        <div class="stat-row">
+            <span>Added Accounts:</span> 
+            <span id="acc-count">0</span>
+        </div>
+        <p style="font-size: 10px; opacity: 0.5; margin-top: 10px;">* চ্যনেল লিভ করলে ইনকাম অটো বন্ধ হয়ে যাবে।</p>
     </div>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
-        <a href="task.html" class="nav-item">📋 Task</a>
-        <a href="trading.html" class="nav-item">📊 Trading</a>
-        <a href="accounts.html" class="nav-item">👥 All-Account</a>
-        <a href="withdraw.html" class="nav-item">💰 Withdraw</a>
+        <a href="#" class="nav-item active"><i>🏠</i>Dashboard</a>
+        <a href="task.html" class="nav-item"><i>📋</i>Task</a>
+        <a href="trading.html" class="nav-item"><i>📊</i>Trading</a>
+        <a href="accounts.html" class="nav-item"><i>👥</i>Accounts</a>
+        <a href="withdraw.html" class="nav-item"><i>💰</i>Withdraw</a>
     </nav>
 
     <script>
-        document.getElementById('display-name').innerText = localStorage.getItem('user_name') || "User";
+        // আপনার Render সার্ভার লিঙ্কটি এখানে বসান
+        const API_URL = "https://aaf-api-service.onrender.com"; 
+        const USER_ID = localStorage.getItem('user_id'); // লগইন করার সময় এটি সেভ হবে
+
+        async function updateDashboard() {
+            if(!USER_ID) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/user_data/${USER_ID}`);
+                const data = await response.json();
+
+                if(data.status === "success") {
+                    document.getElementById('u-name').innerText = data.name;
+                    document.getElementById('u-id').innerText = "UID: #AAF" + USER_ID.slice(-4);
+                    document.getElementById('m-bal').innerText = data.main_balance.toFixed(2);
+                    document.getElementById('t-bal').innerText = data.task_balance.toFixed(2);
+                    document.getElementById('tr-bal').innerText = data.trade_balance.toFixed(2);
+                    document.getElementById('a-bal').innerText = data.acc_balance.toFixed(2);
+                    
+                    const status = document.getElementById('acc-status');
+                    status.innerText = data.acc_status;
+                    status.style.color = data.acc_status === "Active" ? "#00ffcc" : "#ff5252";
+                }
+            } catch (err) {
+                console.log("Server not responding...");
+            }
+        }
+
+        // পেজ লোড হলে এবং প্রতি ১০ সেকেন্ড পর পর আপডেট হবে
+        updateDashboard();
+        setInterval(updateDashboard, 10000);
     </script>
 </body>
 </html>
