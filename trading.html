@@ -6,91 +6,78 @@
     <title>AAF Trading View</title>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        body { background-color: #0F0F1E; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
+        body { background-color: #0F0F1E; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
         .trading-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #1e1e2f; }
-        .coin-info { display: flex; flex-direction: column; }
-        .price-up { color: #00ffcc; font-size: 24px; font-weight: bold; }
-        #chart-container { width: 100%; height: 60vh; margin-top: 5px; }
-        .trade-controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #1e1e2f; border-radius: 25px 25px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        #live-price { color: #00ffcc; font-size: 24px; font-weight: bold; }
+        
+        /* চার্টের বক্সটি নিশ্চিত করা */
+        #chart-container { width: 100%; height: 350px; background-color: #131722; margin-top: 5px; }
+        
+        .trade-controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #1e1e2f; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
         .btn { padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
         .btn-buy { background: #00c853; }
         .btn-sell { background: #d50000; }
-        .balance-label { grid-column: span 2; text-align: center; font-size: 14px; opacity: 0.7; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div class="trading-header">
-        <div class="coin-info">
-            <span style="font-size: 14px; opacity: 0.6;">AAF / BDT</span>
-            <span id="live-price" class="price-up">৳ 0.00</span>
+        <div>
+            <span style="font-size: 14px; opacity: 0.6;">AAF / BDT</span><br>
+            <span id="live-price">৳ 0.00</span>
         </div>
-        <div style="text-align: right;">
-            <span style="font-size: 12px; opacity: 0.6;">24h Change</span><br>
-            <span style="color: #00ffcc;">LIVE</span>
-        </div>
+        <div style="text-align: right; color: #00ffcc;">LIVE</div>
     </div>
 
     <div id="chart-container"></div>
 
     <div class="trade-controls">
-        <div class="balance-label">Main Balance: <b id="main-bal">৳ 0.00</b></div>
-        <button class="btn btn-buy" onclick="trade('buy')">BUY</button>
-        <button class="btn btn-sell" onclick="trade('sell')">SELL</button>
+        <div style="grid-column: span 2; text-align: center; margin-bottom: 5px; font-size: 14px;">Main Balance: ৳ 0.00</div>
+        <button class="btn btn-buy">BUY</button>
+        <button class="btn btn-sell">SELL</button>
     </div>
 
     <script>
-        const API_BASE = "https://aaf-api-free.onrender.com";
+        // ১. চার্ট তৈরি করা
         const chartContainer = document.getElementById('chart-container');
-        
-        // ১. চার্ট সেটআপ
         const chart = LightweightCharts.createChart(chartContainer, {
-            layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
-            grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
-            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            timeScale: { timeVisible: true, secondsVisible: false }
+            width: chartContainer.clientWidth,
+            height: 350,
+            layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#2b2b43' }, horzLines: { color: '#2b2b43' } },
         });
 
         const candleSeries = chart.addCandlestickSeries({
-            upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
-            borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
+            upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+            wickUpColor: '#26a69a', wickDownColor: '#ef5350'
         });
 
-        // ২. ডাটা লোড করার ফাংশন
-        async function loadTradingData() {
+        // ২. ডামি ডাটা (যাতে চার্ট সাদা না থাকে)
+        const dummyData = [
+            { time: '2026-03-10', open: 1.0, high: 1.2, low: 0.9, close: 1.1 },
+            { time: '2026-03-11', open: 1.1, high: 1.3, low: 1.0, close: 1.2 },
+            { time: '2026-03-12', open: 1.2, high: 1.5, low: 1.1, close: 1.4 },
+            { time: '2026-03-13', open: 1.4, high: 1.6, low: 1.3, close: 1.5 }
+        ];
+        candleSeries.setData(dummyData);
+
+        // ৩. লাইভ প্রাইস আপডেট
+        async function fetchPrice() {
             try {
-                // আপনার সার্ভার থেকে ডাটা কল করা হচ্ছে
-                const response = await fetch(`${API_BASE}/get_aaf_price`); 
-                const data = await response.json();
+                const res = await fetch('https://aaf-api-free.onrender.com/api/aaf_market');
+                const data = await res.json();
+                document.getElementById('live-price').innerText = "৳ " + data.aaf_price_bdt;
                 
-                // চার্টে ক্যান্ডেলস্টিক ডাটা সেট করা
-                if(data.chart_data) {
-                    candleSeries.setData(data.chart_data);
-                }
-                
-                // স্ক্রিনের লাইভ প্রাইস আপডেট করা
-                if(data.current_price) {
-                    document.getElementById('live-price').innerText = `৳ ${data.current_price}`;
-                }
-
-                // মেইন ব্যালেন্স আপডেট করা
-                if(data.main_balance) {
-                    document.getElementById('main-bal').innerText = `৳ ${data.main_balance}`;
-                }
-
-            } catch (error) {
-                console.log("সার্ভার থেকে ডাটা আসছে না। ব্যাকএন্ড চেক করুন।");
-            }
+                // চার্টে নতুন ক্যান্ডেল আপডেট
+                candleSeries.update({
+                    time: new Date().toISOString().split('T')[0],
+                    close: data.aaf_price_bdt
+                });
+            } catch (e) { console.log("Price fetch failed"); }
         }
 
-        // ৩. বাই/সেল ফাংশন
-        function trade(type) {
-            alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে।");
-        }
-
-        // পেজ খোলার সাথে সাথে ডাটা লোড হবে এবং প্রতি ৫ সেকেন্ড পর পর আপডেট হবে
-        loadTradingData();
-        setInterval(loadTradingData, 5000);
+        setInterval(fetchPrice, 5000);
+        fetchPrice();
     </script>
 </body>
 </html>
