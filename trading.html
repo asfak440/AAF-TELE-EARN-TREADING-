@@ -10,10 +10,7 @@
         .trading-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #1e1e2f; }
         .coin-info { display: flex; flex-direction: column; }
         .price-up { color: #00ffcc; font-size: 24px; font-weight: bold; }
-        .price-down { color: #ff4d4d; font-size: 24px; font-weight: bold; }
-        
         #chart-container { width: 100%; height: 60vh; margin-top: 5px; }
-        
         .trade-controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #1e1e2f; border-radius: 25px 25px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
         .btn { padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
         .btn-buy { background: #00c853; }
@@ -26,11 +23,11 @@
     <div class="trading-header">
         <div class="coin-info">
             <span style="font-size: 14px; opacity: 0.6;">AAF / BDT</span>
-            <span id="live-price" class="price-up">৳ 1.00</span>
+            <span id="live-price" class="price-up">৳ 0.00</span>
         </div>
         <div style="text-align: right;">
             <span style="font-size: 12px; opacity: 0.6;">24h Change</span><br>
-            <span style="color: #00ffcc;">+5.2%</span>
+            <span style="color: #00ffcc;">LIVE</span>
         </div>
     </div>
 
@@ -43,59 +40,57 @@
     </div>
 
     <script>
-    const API_BASE = "https://aaf-api-free.onrender.com";
-    const chartContainer = document.getElementById('chart-container');
-    
-    // ১. চার্ট সেটআপ
-    const chart = LightweightCharts.createChart(chartContainer, {
-        layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
-        grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
-        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-        timeScale: { timeVisible: true, secondsVisible: false }
-    });
+        const API_BASE = "https://aaf-api-free.onrender.com";
+        const chartContainer = document.getElementById('chart-container');
+        
+        // ১. চার্ট সেটআপ
+        const chart = LightweightCharts.createChart(chartContainer, {
+            layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
+            grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            timeScale: { timeVisible: true, secondsVisible: false }
+        });
 
-    const candleSeries = chart.addCandlestickSeries({
-        upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
-        borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
-    });
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
+            borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
+        });
 
-    // ২. লাইভ ডাটা লোড করার মেইন ফাংশন
-    async function loadTradingData() {
-        try {
-            // আপনার API থেকে ডাটা আনা হচ্ছে
-            const response = await fetch(`${API_BASE}/get_aaf_price`); 
-            const result = await response.json();
-            
-            // চার্টে ক্যান্ডেলস্টিক ডাটা সেট করা
-            if(result.chart_data) {
-                candleSeries.setData(result.chart_data);
+        // ২. ডাটা লোড করার ফাংশন
+        async function loadTradingData() {
+            try {
+                // আপনার সার্ভার থেকে ডাটা কল করা হচ্ছে
+                const response = await fetch(`${API_BASE}/get_aaf_price`); 
+                const data = await response.json();
+                
+                // চার্টে ক্যান্ডেলস্টিক ডাটা সেট করা
+                if(data.chart_data) {
+                    candleSeries.setData(data.chart_data);
+                }
+                
+                // স্ক্রিনের লাইভ প্রাইস আপডেট করা
+                if(data.current_price) {
+                    document.getElementById('live-price').innerText = `৳ ${data.current_price}`;
+                }
+
+                // মেইন ব্যালেন্স আপডেট করা
+                if(data.main_balance) {
+                    document.getElementById('main-bal').innerText = `৳ ${data.main_balance}`;
+                }
+
+            } catch (error) {
+                console.log("সার্ভার থেকে ডাটা আসছে না। ব্যাকএন্ড চেক করুন।");
             }
-            
-            // স্ক্রিনের লাইভ প্রাইস আপডেট করা
-            if(result.current_price) {
-                document.getElementById('live-price').innerText = `৳ ${result.current_price}`;
-            }
-
-            // মেইন ব্যালেন্স আপডেট (যদি API তে থাকে)
-            if(result.main_balance) {
-                document.getElementById('main-bal').innerText = `৳ ${result.main_balance}`;
-            }
-
-        } catch (error) {
-            console.error("সার্ভারের সাথে কানেক্ট করা যাচ্ছে না:", error);
         }
-    }
 
-    // ৩. ট্রেড (Buy/Sell) ফাংশন
-    function trade(type) {
-        alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে।");
-        // এখানে আপনার ব্যাকএন্ডের ট্রেড এপিআই কল হবে
-    }
+        // ৩. বাই/সেল ফাংশন
+        function trade(type) {
+            alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে।");
+        }
 
-    // পেজ লোড হলে এবং প্রতি ৫ সেকেন্ড পর পর আপডেট হবে
-    loadTradingData();
-    setInterval(loadTradingData, 5000);
-
-     </script>
+        // পেজ খোলার সাথে সাথে ডাটা লোড হবে এবং প্রতি ৫ সেকেন্ড পর পর আপডেট হবে
+        loadTradingData();
+        setInterval(loadTradingData, 5000);
+    </script>
 </body>
 </html>
