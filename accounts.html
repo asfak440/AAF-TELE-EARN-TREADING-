@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Accounts - AAF Strong</title>
+    <style>
+        :root { --neon: #00ffcc; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; padding: 20px; }
+        .acc-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .acc-card { 
+            background: var(--glass); border: 1px solid #222; padding: 20px; 
+            border-radius: 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .active-dot { background-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
+        .inactive-dot { background-color: #ff5252; }
+        
+        .control-btns button { 
+            padding: 10px 15px; border-radius: 10px; border: none; 
+            font-weight: bold; cursor: pointer; margin-left: 5px; 
+        }
+        .btn-logout { background: #ff5252; color: white; }
+        .btn-verify { background: var(--neon); color: black; }
+    </style>
+</head>
+<body>
+
+    <h2>Your Accounts Control</h2>
+    <p style="font-size: 12px; opacity: 0.6;">আপনার যুক্ত করা সব টেলিগ্রাম প্রোফাইল এখান থেকে ম্যানেজ করুন।</p>
+
+    <div class="acc-container" id="accounts-list">
+        <div class="loading">অ্যাকাউন্টগুলো লোড হচ্ছে...</div>
+    </div>
+
+    <script>
+        const API_URL = "https://your-render-app.onrender.com"; // আপনার সার্ভার লিঙ্ক
+        const TELEGRAM_ID = localStorage.getItem('user_id'); // লগইন করা ইউজারের আইডি
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch(`${API_URL}/api/user_data/${TELEGRAM_ID}`);
+                const data = await response.json();
+                
+                const list = document.getElementById('accounts-list');
+                list.innerHTML = ""; // ক্লিয়ার করা
+
+                // আপনার মডেল অনুযায়ী প্রতিটি অ্যাকাউন্টের জন্য কার্ড তৈরি
+                const card = `
+                    <div class="acc-card">
+                        <div>
+                            <h4 style="margin:0;">Account 1</h4>
+                            <span style="font-size:12px; opacity:0.7;">Status: ${data.acc_status}</span>
+                        </div>
+                        <div class="control-btns">
+                            <button class="btn-verify" onclick="window.open('https://t.me/aaf_tele_earn_bot')">Verify</button>
+                            <button class="btn-logout" onclick="logoutAccount()">Logout</button>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML = card;
+            } catch (e) {
+                console.error("Error loading accounts:", e);
+            }
+        }
+
+        function logoutAccount() {
+            if(confirm("আপনি কি এই অ্যাকাউন্টটি রিমুভ করতে চান?")) {
+                // এখানে সেশন ডিলিট করার এপিআই কল হবে
+                alert("Account Logged Out!");
+            }
+        }
+
+        loadAccounts();
+    </script>
+</body>
+</html>
