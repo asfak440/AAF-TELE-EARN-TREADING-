@@ -12,11 +12,11 @@ from Crypto.Util.Padding import pad, unpad
 app = Flask(__name__)
 CORS(app)
 
-# --- কনফিগারেশন (আপনার সঠিক ডাটাগুলো বসানো হয়েছে) ---
-API_ID = 36466824      # আপনার নতুন API ID
-API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  # আপনার নতুন API HASH
+# --- কনফিগারেশন ---
+API_ID = 36466824      
+API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
-SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # সেশন সুরক্ষিত রাখার কি (এটি পরিবর্তন করবেন না)
+SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' 
 
 # ডাটাবেস কানেকশন
 try:
@@ -43,7 +43,7 @@ def decrypt_session(encrypted_str):
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv)
     return unpad(cipher.decrypt(ct), AES.block_size).decode('utf-8')
 
-# --- ১. সেশন সেভ করা (ইউজার যখন অ্যাকাউন্ট অ্যাড করবে) ---
+# --- ১. সেশন সেভ করা ---
 @app.route('/api/add_account', methods=['POST'])
 def add_account():
     data = request.json
@@ -85,14 +85,13 @@ async def force_join():
 
     return jsonify({"status": "success", "joined_accounts": count})
 
-# --- ৩. ড্যাশবোর্ড ডাটা (লগইন এবং ব্যালেন্স সিঙ্ক) ---
+# --- ৩. ড্যাশবোর্ড ডাটা (টাস্ক চার্ট সহ আপডেট করা হয়েছে) ---
 @app.route('/api/user_data_login', methods=['POST'])
 def user_login():
     data = request.json
     uid = data.get('telegram_id')
     name = data.get('name')
     
-    # নতুন ইউজার হলে ডাটাবেসে তৈরি করবে, পুরনো হলে আপডেট করবে
     users_col.update_one(
         {"telegram_id": int(uid)},
         {"$set": {"name": name, "status": "Active"}},
@@ -105,6 +104,13 @@ def get_user_data(telegram_id):
     try:
         user = users_col.find_one({"telegram_id": int(telegram_id)})
         if user:
+            # এখানে আপনার টাস্ক চার্ট ডাটা
+            task_list = [
+                {"id": 1, "task_name": "Daily Login", "reward": 0.5, "status": "Done"},
+                {"id": 2, "task_name": "Telegram Join", "reward": 1.0, "status": "Pending"},
+                {"id": 3, "task_name": "Watch Ad", "reward": 0.2, "status": "Open"}
+            ]
+            
             return jsonify({
                 "status": "success",
                 "name": user.get("name", "User"),
@@ -113,10 +119,12 @@ def get_user_data(telegram_id):
                 "trade_balance": user.get("trade_balance", 0.0),
                 "acc_balance": user.get("acc_balance", 0.0),
                 "acc_status": user.get("status", "Inactive"),
-                "added_accounts": user.get("added_accounts", 0)
+                "added_accounts": user.get("added_accounts", 0),
+                "tasks": task_list  # এই ডাটা আপনার ওয়েবসাইটে চার্ট হিসেবে দেখাবে
             })
-    except:
-        pass
+    except Exception as e:
+        print(f"❌ API Error: {e}")
+        
     return jsonify({"status": "error", "message": "User not found"})
 
 if __name__ == "__main__":
