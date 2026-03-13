@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF Dashboard</title>
+    <style>
+        body { background-color: #0F0F1E; color: white; font-family: sans-serif; padding: 20px; text-align: center; }
+        .main-card { background: linear-gradient(45deg, #6200ea, #03dac6); padding: 30px; border-radius: 20px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: #1e1e2f; padding: 15px; border-radius: 15px; border: 1px solid #333; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="main-card">
+        <p>Main Balance</p>
+        <h1 id="main">৳ 0.00</h1>
+    </div>
+    <div class="grid">
+        <div class="card" onclick="transfer('task')">Task<br><b id="task">৳ 0.00</b></div>
+        <div class="card" onclick="transfer('trading')">Trading<br><b id="trading">৳ 0.00</b></div>
+        <div class="card" onclick="transfer('account')">Account<br><b id="account">৳ 0.00</b></div>
+        <div class="card">Status<br><b style="color: #00ffcc;">Active</b></div>
+    </div>
+
+    <script>
+        // এখানে আপনার Render লিঙ্কটি দিন
+        const API = "https://aaf-api-free.onrender.com/api/transfer_to_main";
+        
+        async function transfer(source) {
+            alert(source + " থেকে মেইন ব্যালেন্সে ট্রান্সফার হচ্ছে...");
+            // এখানে আপনার সার্ভারে ডাটা পাঠানোর লজিক থাকবে
+        }
+    </script>
+</body>
+</html>
