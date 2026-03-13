@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF STRONG - Dashboard</title>
+    <style>
+        body { background: #0c0d15; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .logo { font-size: 32px; font-weight: bold; color: #00ffcc; margin-bottom: 5px; }
+        .sub-text { opacity: 0.6; font-size: 14px; margin-bottom: 30px; }
+        
+        .menu-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 400px; margin: 0 auto; }
+        
+        .menu-item { 
+            background: #161b22; border: 1px solid #2d333b; padding: 25px 10px; 
+            border-radius: 15px; text-decoration: none; color: white; 
+            transition: 0.3s; display: flex; flex-direction: column; align-items: center;
+        }
+        .menu-item:hover { border-color: #00ffcc; background: #1c2128; transform: translateY(-5px); }
+        .icon { font-size: 30px; margin-bottom: 10px; }
+        .title { font-weight: bold; font-size: 16px; }
+
+        .admin-box { margin-top: 30px; padding-top: 20px; border-top: 1px solid #222; }
+        .admin-link { color: #ff5252; text-decoration: none; font-size: 14px; font-weight: bold; border: 1px solid #ff5252; padding: 10px 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="logo">AAF STRONG</div>
+    <div class="sub-text">Build Your Future with Trading & Tasks</div>
+
+    <div class="menu-container">
+        <a href="trading.html" class="menu-item">
+            <span class="icon">📈</span>
+            <span class="title">Trading</span>
+        </a>
+
+        <a href="task.html" class="menu-item">
+            <span class="icon">💰</span>
+            <span class="title">Daily Task</span>
+        </a>
+
+        <a href="withdraw.html" class="menu-item">
+            <span class="icon">📱</span>
+            <span class="title">Withdraw</span>
+        </a>
+
+        <a href="#" class="menu-item" style="opacity: 0.5;">
+            <span class="icon">📜</span>
+            <span class="title">History</span>
+        </a>
+    </div>
+
+    <div class="admin-box">
+        <a href="admin.html" class="admin-link">🛡️ Admin Control Panel</a>
+    </div>
+
+</body>
+</html>
