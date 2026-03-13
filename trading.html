@@ -1,4 +1,4 @@
-<div id="trading-page" style="background: #0d1117; color: white; min-height: 100vh; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<div class="dashboard-container" style="background: #0d1117; color: white; padding: 15px; font-family: sans-serif;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; color: #58a6ff;">📈 Live Trading Market</h2>
@@ -8,56 +8,65 @@
         </div>
     </div>
 
-    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; margin-bottom: 25px;">
-        <div class="tradingview-widget-container" style="height: 450px; width: 100%;">
-            <div id="tradingview_sol_chart"></div>
+    <div class="section-card" style="margin-bottom: 30px; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; background: #161b22;">
+        <h3 style="padding: 10px; background: #161b22; margin: 0; color: #58a6ff;">Solana - SOL/USDT Chart</h3>
+        <div class="tradingview-widget-container" style="height: 400px; width: 100%;">
+            <div id="tradingview_chart"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
             <script type="text/javascript">
                 new TradingView.widget({
                     "autosize": true,
                     "symbol": "BINANCE:SOLUSDT",
-                    "interval": "60",
+                    "interval": "D",
                     "timezone": "Etc/UTC",
                     "theme": "dark",
                     "style": "1",
                     "locale": "en",
                     "enable_publishing": false,
-                    "hide_side_toolbar": false,
                     "allow_symbol_change": true,
-                    "container_id": "tradingview_sol_chart"
+                    "container_id": "tradingview_chart"
                 });
             </script>
         </div>
     </div>
 
-    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden;">
-        <h4 style="padding: 15px; margin: 0; border-bottom: 1px solid #30363d; color: #8b949e;">Recent Trading History</h4>
+    <div class="section-card" style="margin-bottom: 30px; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; background: #161b22;">
+        <h3 style="padding: 10px; background: #161b22; margin: 0; color: #238636;">📊 Your Trading History</h3>
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
                 <thead>
-                    <tr style="background: #21262d; color: #8b949e; font-size: 13px;">
-                        <th style="padding: 12px;">Asset</th>
-                        <th style="padding: 12px;">Type</th>
-                        <th style="padding: 12px;">Entry Price</th>
-                        <th style="padding: 12px;">Profit</th>
+                    <tr style="background: #21262d; color: #8b949e;">
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Date/Time</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Pair</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Type</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Entry Price</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Exit Price</th>
+                        <th style="padding: 12px; border-bottom: 1px solid #30363d;">Profit/Loss</th>
                     </tr>
                 </thead>
-                <tbody id="trade-history-body" style="font-size: 14px;">
-                    <tr style="border-bottom: 1px solid #21262d;">
-                        <td style="padding: 12px;">Solana (SOL)</td>
+                <tbody id="trade-history-body">
+                    <tr style="border-bottom: 1px solid #30363d;">
+                        <td style="padding: 12px;">2026-03-14 04:23</td>
+                        <td style="padding: 12px;">SOL/USDT</td>
                         <td style="padding: 12px; color: #39d353;">BUY</td>
                         <td style="padding: 12px;">$145.20</td>
-                        <td style="padding: 12px; color: #39d353;">+$2.40</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #21262d;">
-                        <td style="padding: 12px;">Solana (SOL)</td>
-                        <td style="padding: 12px; color: #ff7b72;">SELL</td>
-                        <td style="padding: 12px;">$147.80</td>
-                        <td style="padding: 12px; color: #39d353;">+$0.95</td>
+                        <td style="padding: 12px;">-</td>
+                        <td style="padding: 12px;">-</td>
                     </tr>
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="action-panel" style="margin-top: 25px; display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 10px; background: #161b22; border-radius: 12px; border: 1px solid #30363d;">
+        <div class="bal-info" style="display: flex; gap: 15px; align-items: center;">
+            <span style="font-size: 14px; color: #8b949e;">Entry: ---</span>
+            <span style="font-size: 14px; color: #8b949e;">P/L: ৳ 0.00</span>
+            <span style="font-size: 14px; color: #8b949e;">Bal: <strong style="color: white; font-size: 16px;">৳ 505.33</strong></span>
+        </div>
+        <button onclick="handleTrade('BUY')" style="background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
+            🚀 BUY / LONG
+        </button>
     </div>
 
 </div>
