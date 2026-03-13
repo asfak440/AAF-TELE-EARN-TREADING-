@@ -3,8 +3,10 @@ import random
 import datetime
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
+from flask_cors import CORS  # ১. একদম ওপরে এটি আনুন
 
 app = Flask(__name__)
+CORS(app)  # ২. app = Flask(__name__) এর নিচেই এটি বসবে
 
 # --- ডাটাবেস কানেকশন ---
 MONGO_URI = "mongodb+srv://Asfak1:Abdullah6790@cluster0.ykmq2wh.mongodb.net/?retryWrites=true&w=majority"
@@ -27,13 +29,12 @@ def get_admin_stats():
         "status": "Online"
     })
 
-# --- ২. উইথড্র রিকোয়েস্ট রিসিভ ---
+# --- ২. উইথড্র রিকোয়েস্ট রিসিভ ---
 @app.route('/api/withdraw', methods=['POST'])
 def handle_withdraw():
     data = request.json
     amount = data.get('amount')
     
-    # উইথড্র রিকোয়েস্ট সেভ করা
     db.withdrawals.insert_one({
         "user_id": data.get('user_id'),
         "phone": data.get('phone'),
@@ -42,7 +43,6 @@ def handle_withdraw():
         "date": datetime.datetime.now()
     })
     
-    # গ্লোবাল উইথড্রয়াল স্ট্যাটাস আপডেট (কয়েনের দাম কমানোর জন্য)
     db.admin_stats.update_one(
         {"id": "global"},
         {"$inc": {"total_withdrawn": amount}},
@@ -50,12 +50,12 @@ def handle_withdraw():
     )
     return jsonify({"status": "success"})
 
-# --- ৩. ব্যালেন্স ট্রান্সফার (Task/Account থেকে Main Balance-এ) ---
+# --- ৩. ব্যালেন্স ট্রান্সফার ---
 @app.route('/api/transfer_to_main', methods=['POST'])
 def transfer_to_main():
     data = request.json
     user_id = data.get('user_id')
-    source = data.get('source') # 'task' বা 'account' বা 'trading'
+    source = data.get('source')
     
     user = db.users.find_one({"telegram_id": user_id})
     if not user: return jsonify({"error": "User not found"}), 404
@@ -66,34 +66,37 @@ def transfer_to_main():
             {"telegram_id": user_id},
             {"$inc": {"main_balance": amount}, "$set": {f"{source}_balance": 0}}
         )
-        return jsonify({"status": "success", "message": "Main Balance-এ যোগ হয়েছে!"})
+        return jsonify({"status": "success", "message": "Main Balance-এ যোগ হয়েছে!"})
     return jsonify({"error": "ব্যালেন্স নেই"})
 
-# --- ৪. ট্রেডিং মার্কেট লজিক (দাম বাড়া/কমা) ---
-@app.route('/api/aaf_market', methods=['GET'])
-def aaf_market():
+# --- ৪. ট্রেডিং চার্ট এবং প্রাইস ডাটা (HTML এর জন্য) ---
+@app.route('/get_aaf_price', methods=['GET'])
+def get_price():
+    # এখানে আমরা ডাটাবেস থেকে রিয়েল টাইম ডাটা নিতে পারি
     stats = db.admin_stats.find_one({"id": "global"})
-    if not stats:
-        return jsonify({"aaf_price_bdt": 1.0, "status": "Initializing"})
-
-    total_earned = stats.get('total_earned', 1)
-    total_withdrawn = stats.get('total_withdrawn', 0)
+    total_earned = stats.get('total_earned', 1) if stats else 1
+    total_withdrawn = stats.get('total_withdrawn', 0) if stats else 0
     
-    # আপনার রিকোয়ারমেন্ট: উইথড্র ৯০% হলে দাম কমবে, ইনকাম বাড়লে বাড়বে
     ratio = total_withdrawn / total_earned if total_earned > 0 else 0
     
     if ratio >= 0.9:
-        current_price = 1.0 * (1 - ratio + 0.1) # দাম ক্র্যাশ করবে
+        price = 1.0 * (1 - ratio + 0.1)
     else:
-        current_price = 1.0 + (total_earned * 0.001) - (total_withdrawn * 0.002)
-        
+        price = 1.0 + (total_earned * 0.001) - (total_withdrawn * 0.002)
+    
+    current_price = round(max(price, 0.1), 2)
+
     return jsonify({
-        "aaf_price_bdt": round(max(current_price, 0.1), 2),
-        "status": "Market Live",
-        "ratio": round(ratio, 2)
+        "current_price": current_price,
+        "main_balance": 500, # এটি পরবর্তীতে ডিনামিক করা যাবে
+        "chart_data": [
+            {"time": "2026-03-11", "open": 1.0, "high": 1.2, "low": 0.9, "close": 1.1},
+            {"time": "2026-03-12", "open": 1.1, "high": 1.5, "low": 1.0, "close": 1.4},
+            {"time": "2026-03-13", "open": 1.4, "high": 1.6, "low": 1.3, "close": current_price}
+        ]
     })
 
-# --- ৫. সার্ভার রান সেটআপ (এটি সবার নিচে থাকবে) ---
+# --- ৫. সার্ভার রান সেটআপ (সবার নিচে থাকবে) ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
