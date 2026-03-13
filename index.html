@@ -8,7 +8,7 @@
         :root { --neon: #00ffcc; --bg: #050505; }
         body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .login-card { background: rgba(255,255,255,0.05); padding: 40px; border-radius: 25px; border: 1px solid var(--neon); text-align: center; width: 90%; max-width: 350px; backdrop-filter: blur(10px); }
-        .logo { width: 80px; margin-bottom: 20px; box-shadow: 0 0 15px var(--neon); border-radius: 50%; }
+        .logo { width: 80px; height: 80px; margin-bottom: 20px; box-shadow: 0 0 15px var(--neon); border-radius: 50%; object-fit: cover; }
         h1 { font-size: 18px; margin-bottom: 30px; letter-spacing: 1px; }
         input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; }
         .btn-auth { width: 100%; padding: 15px; background: var(--neon); color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
@@ -17,7 +17,7 @@
 <body>
 
     <div class="login-card" id="auth-container">
-        <img src="https://i.ibb.co/vzN5Y9Y/logo.png" class="logo" alt="AAF Logo">
+        <img src="logo.png" class="logo" alt="AAF Logo">
         <h1>AAF TELE-EARN-TRADING</h1>
         
         <div id="login-fields">
@@ -28,10 +28,8 @@
     </div>
 
     <script>
-        // আপনার Render থেকে পাওয়া aaf-api-free লিঙ্কটি এখানে বসান
         const API_URL = "https://aaf-api-free.onrender.com"; 
 
-        // একবার লগইন থাকলে সরাসরি ড্যাশবোর্ডে নিয়ে যাবে
         if(localStorage.getItem('user_id')) {
             window.location.href = "dashboard.html";
         }
@@ -47,21 +45,19 @@
             btn.disabled = true;
 
             try {
-                // সার্ভারে ডাটা পাঠানো
                 const response = await fetch(`${API_URL}/api/user_data_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone: phone, 
                         name: name,
-                        telegram_id: phone.slice(-8) // আইডি হিসেবে ফোনের শেষ অংশ (প্রাথমিক ভাবে)
+                        telegram_id: phone.slice(-8)
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.status === "success" || data.message === "Account linked to server!") {
-                    // সেশন সেভ করা
                     localStorage.setItem('user_id', phone.slice(-8)); 
                     localStorage.setItem('user_name', name);
                     
