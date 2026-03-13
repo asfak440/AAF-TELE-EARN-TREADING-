@@ -1,99 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Tasks - Earn Real Money</title>
-    <style>
-        :root { --primary: #00ffcc; --bg: #0c0d15; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #2a2e39; padding-bottom: 10px; }
-        .balance-box { background: #1e222d; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid var(--primary); }
-        .balance-box h2 { margin: 5px 0; color: var(--primary); }
-
-        .task-card { background: #131722; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; }
-        .task-info h3 { margin: 0; font-size: 16px; }
-        .task-info p { margin: 5px 0 0; font-size: 12px; color: var(--primary); font-weight: bold; }
-        
-        .claim-btn { background: var(--primary); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .claim-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
-        
-        .loading-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 10px; display: none; overflow: hidden; }
-        .progress { width: 0%; height: 100%; background: var(--primary); transition: 5s linear; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <h1>Available Tasks</h1>
-    </div>
-
-    <div class="balance-box">
-        <span>Your Earnings</span>
-        <h2 id="task-bal">৳ 0.00</h2>
-    </div>
-
-    <div class="task-card">
-        <div class="task-info">
-            <h3>Daily Video Ad</h3>
-            <p>Reward: ৳ 2.00</p>
-            <div class="loading-bar" id="l-bar-1"><div class="progress" id="p-1"></div></div>
+<div id="trading-page" style="background: #0d1117; color: white; min-height: 100vh; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #58a6ff;">📈 Live Trading Market</h2>
+        <div style="background: #161b22; padding: 5px 15px; border-radius: 20px; border: 1px solid #30363d;">
+            <span style="color: #8b949e; font-size: 14px;">Pair: </span>
+            <span style="color: #39d353; font-weight: bold;">SOL/USDT</span>
         </div>
-        <button class="claim-btn" id="btn-1" onclick="startTask(1, 2.00)">Watch</button>
     </div>
 
-    <div class="task-card">
-        <div class="task-info">
-            <h3>Click & Visit Website</h3>
-            <p>Reward: ৳ 1.50</p>
-            <div class="loading-bar" id="l-bar-2"><div class="progress" id="p-2"></div></div>
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; margin-bottom: 25px;">
+        <div class="tradingview-widget-container" style="height: 450px; width: 100%;">
+            <div id="tradingview_sol_chart"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+            <script type="text/javascript">
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": "BINANCE:SOLUSDT",
+                    "interval": "60",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "en",
+                    "enable_publishing": false,
+                    "hide_side_toolbar": false,
+                    "allow_symbol_change": true,
+                    "container_id": "tradingview_sol_chart"
+                });
+            </script>
         </div>
-        <button class="claim-btn" id="btn-2" onclick="startTask(2, 1.50)">Visit</button>
     </div>
 
-    <script>
-        const API_URL = "https://aaf-api-free.onrender.com"; // আপনার রেন্ডার সার্ভার লিঙ্ক
-        let currentBalance = 0.00;
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden;">
+        <h4 style="padding: 15px; margin: 0; border-bottom: 1px solid #30363d; color: #8b949e;">Recent Trading History</h4>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: #21262d; color: #8b949e; font-size: 13px;">
+                        <th style="padding: 12px;">Asset</th>
+                        <th style="padding: 12px;">Type</th>
+                        <th style="padding: 12px;">Entry Price</th>
+                        <th style="padding: 12px;">Profit</th>
+                    </tr>
+                </thead>
+                <tbody id="trade-history-body" style="font-size: 14px;">
+                    <tr style="border-bottom: 1px solid #21262d;">
+                        <td style="padding: 12px;">Solana (SOL)</td>
+                        <td style="padding: 12px; color: #39d353;">BUY</td>
+                        <td style="padding: 12px;">$145.20</td>
+                        <td style="padding: 12px; color: #39d353;">+$2.40</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #21262d;">
+                        <td style="padding: 12px;">Solana (SOL)</td>
+                        <td style="padding: 12px; color: #ff7b72;">SELL</td>
+                        <td style="padding: 12px;">$147.80</td>
+                        <td style="padding: 12px; color: #39d353;">+$0.95</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-        async function startTask(taskId, reward) {
-            const btn = document.getElementById(`btn-${taskId}`);
-            const bar = document.getElementById(`l-bar-${taskId}`);
-            const progress = document.getElementById(`p-${taskId}`);
-
-            btn.disabled = true;
-            btn.innerText = "Watching...";
-            bar.style.display = "block";
-            
-            setTimeout(() => { progress.style.width = "100%"; }, 100);
-
-            // ৫ সেকেন্ড বিজ্ঞাপন দেখার সিমুলেশন
-            setTimeout(async () => {
-                try {
-                    // সার্ভারে ডাটা পাঠানো
-                    const response = await fetch(`${API_URL}/api/complete_task`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: "User123", // এটি পরে ডাইনামিক হবে
-                            reward: reward
-                        })
-                    });
-
-                    if (response.ok) {
-                        currentBalance += reward;
-                        document.getElementById('task-bal').innerText = "৳ " + currentBalance.toFixed(2);
-                        btn.innerText = "Claimed ✅";
-                        btn.style.background = "#222";
-                        alert(`অভিনন্দন! ৳${reward} আপনার ওয়ালেটে জমা হয়েছে।`);
-                    }
-                } catch (e) {
-                    alert("সার্ভার কানেকশন এরর! আবার চেষ্টা করুন।");
-                    btn.disabled = false;
-                    btn.innerText = "Try Again";
-                    progress.style.width = "0%";
-                }
-            }, 5000); 
-        }
-    </script>
-</body>
-</html>
+</div>
