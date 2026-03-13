@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Trading Pro</title>
+    <title>AAF Trading - Professional Asset</title>
     <style>
         body { background-color: #0c0d15; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
-        /* চার্টকে ৮৫% বড় করা হয়েছে */
-        #chart-container { width: 100%; height: 80vh; position: relative; }
+        #chart-container { width: 100%; height: 72vh; position: relative; }
         
-        .footer-controls { height: 20vh; background: #131722; padding: 15px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; border-top: 1px solid #2a2e39; }
+        .footer-controls { height: 28vh; background: #131722; padding: 12px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; border-top: 1px solid #2a2e39; }
         
-        .status-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
-        #pl-display { font-weight: bold; color: #aaa; }
-
+        .status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+        .data-box { background: #1e222d; padding: 6px; border-radius: 5px; text-align: center; border: 1px solid #333; }
+        
+        /* ইনপুট বক্স স্টাইল */
+        .invest-input-group { margin-bottom: 10px; text-align: center; }
+        #invest-amount { width: 80%; padding: 10px; background: #2a2e39; border: 1px solid #444; color: #00ffcc; border-radius: 8px; text-align: center; font-size: 16px; font-weight: bold; }
+        
         .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
-        .buy { background: #00c853; }
-        .close-btn { background: #ff5252; display: none; } /* শুরুতে হাইড থাকবে */
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: 0.3s; }
+        .buy-btn { background: #00c853; }
+        .sell-btn { background: #ff5252; }
         
-        .profit { color: #00ffcc !important; }
-        .loss { color: #ff5252 !important; }
+        #pl-display { font-size: 16px; font-weight: bold; margin: 5px 0; text-align: center; color: #aaa; }
+        .profit { color: #00ffcc; }
+        .loss { color: #ff5252; }
     </style>
 </head>
 <body>
@@ -29,7 +33,7 @@
         <div id="tradingview_chart" style="height:100%;"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
         <script>
-            let widget = new TradingView.widget({
+            new TradingView.widget({
                 "autosize": true, "symbol": "BINANCE:SOLUSDT", "interval": "1",
                 "theme": "dark", "style": "1", "container_id": "tradingview_chart",
                 "hide_top_toolbar": true, "save_image": false
@@ -39,73 +43,90 @@
 
     <div class="footer-controls">
         <div class="status-bar">
-            <span>Entry: <b id="entry-price">---</b></span>
-            <span>P/L: <b id="pl-display">৳ 0.00</b></span>
-            <span>Bal: <b id="user-bal">৳ 500.00</b></span>
+            <div class="data-box">Balance: <b id="user-bal">৳ 500.00</b></div>
+            <div class="data-box">Invested: <b id="holding-amt">৳ 0.00</b></div>
         </div>
         
+        <div id="pl-display">P/L: ৳ 0.00 (Fee: 10%)</div>
+
+        <div class="invest-input-group" id="input-area">
+            <input type="number" id="invest-amount" placeholder="পরিমাণ লিখুন (৳)" min="1">
+        </div>
+
         <div class="btn-group">
-            <button id="buy-btn" class="btn buy" onclick="startTrade()">BUY / LONG</button>
-            <button id="close-btn" class="btn close-btn" onclick="closeTrade()">CLOSE POSITION</button>
+            <button id="main-btn" class="btn buy-btn" onclick="toggleTrade()">BUY COIN (START)</button>
         </div>
     </div>
 
     <script>
-        let entryPrice = 0;
-        let userBalance = 500.00;
-        let currentTradePrice = 0;
         let isTrading = false;
+        let entryPrice = 0;
+        let currentPrice = 89.70; 
+        let userBalance = 500.00;
+        let activeInvest = 0; // ১০% ফি বাদে আসল ইনভেস্ট
+        
+        const ratio = 0.01; 
 
-        // এটি আপনার সার্ভার থেকে লাইভ প্রাইস নিবে
-        async function fetchLivePrice() {
-            // সিমুলেশনের জন্য আমরা TradingView থেকে বা আপনার API থেকে ডাটা নিব
-            // এখানে ডামি হিসেবে আমরা ১.২৫ ধরছি, আপনি আপনার API লিঙ্ক বসাবেন
-            currentTradePrice = 1.25 + (Math.random() * 0.1); 
-            
-            if (isTrading) {
-                calculatePL();
-            }
-        }
-
-        function startTrade() {
-            entryPrice = currentTradePrice;
-            isTrading = true;
-            document.getElementById('entry-price').innerText = "৳ " + entryPrice.toFixed(2);
-            document.getElementById('buy-btn').style.display = "none";
-            document.getElementById('close-btn').style.display = "block";
-        }
-
-        function calculatePL() {
-            let diff = currentTradePrice - entryPrice;
-            let profitLoss = diff * 100; // ইনভেস্টমেন্ট অনুযায়ী গুণ হবে
-
-            const plDisplay = document.getElementById('pl-display');
-            plDisplay.innerText = (profitLoss >= 0 ? "+" : "") + "৳ " + profitLoss.toFixed(2);
-            plDisplay.className = profitLoss >= 0 ? "profit" : "loss";
-
-            // ব্যালেন্স খালি হওয়ার লজিক (Liquidation)
-            if (userBalance + profitLoss <= 0) {
-                alert("আপনার ব্যালেন্স শেষ! ট্রেডটি অটো ক্লোজ হয়ে গেছে।");
-                userBalance = 0;
-                closeTrade();
-            }
-        }
-
-        function closeTrade() {
-            let diff = currentTradePrice - entryPrice;
-            let finalPL = diff * 100;
-            userBalance += finalPL;
-            
-            isTrading = false;
+        function updateUI() {
             document.getElementById('user-bal').innerText = "৳ " + userBalance.toFixed(2);
-            document.getElementById('buy-btn').style.display = "block";
-            document.getElementById('close-btn').style.display = "none";
-            document.getElementById('entry-price').innerText = "---";
-            document.getElementById('pl-display').innerText = "৳ 0.00";
-            document.getElementById('pl-display').className = "";
+            if(isTrading) {
+                let priceDiff = currentPrice - entryPrice;
+                let profitLoss = (activeInvest / 100) * priceDiff * ratio; 
+
+                const plDisplay = document.getElementById('pl-display');
+                plDisplay.innerText = "Net P/L: ৳ " + profitLoss.toFixed(2);
+                plDisplay.className = profitLoss >= 0 ? "profit" : "loss";
+                document.getElementById('holding-amt').innerText = "৳ " + (activeInvest + profitLoss).toFixed(2);
+            }
         }
 
-        setInterval(fetchLivePrice, 2000);
+        function toggleTrade() {
+            const btn = document.getElementById('main-btn');
+            const inputField = document.getElementById('invest-amount');
+            
+            if (!isTrading) {
+                let rawAmount = parseFloat(inputField.value);
+                
+                if(!rawAmount || rawAmount <= 0) return alert("সঠিক পরিমাণ লিখুন!");
+                if(userBalance < rawAmount) return alert("ব্যালেন্স নেই!");
+                
+                // ১০% ফি কাটার লজিক
+                let fee = rawAmount * 0.10;
+                activeInvest = rawAmount - fee;
+                
+                isTrading = true;
+                entryPrice = currentPrice;
+                userBalance -= rawAmount;
+                
+                btn.innerText = "SELL COIN (CLOSE)";
+                btn.className = "btn sell-btn";
+                document.getElementById('input-area').style.opacity = "0.5";
+                inputField.disabled = true;
+                
+                alert("ট্রেড শুরু হয়েছে! ফি কাটা হয়েছে: ৳" + fee.toFixed(2));
+            } else {
+                // ট্রেড বন্ধ
+                let priceDiff = currentPrice - entryPrice;
+                let finalPL = (activeInvest / 100) * priceDiff * ratio;
+                
+                userBalance += (activeInvest + finalPL);
+                isTrading = false;
+                
+                btn.innerText = "BUY COIN (START)";
+                btn.className = "btn buy-btn";
+                document.getElementById('input-area').style.opacity = "1";
+                inputField.disabled = false;
+                document.getElementById('pl-display').innerText = "P/L: ৳ 0.00 (Fee: 10%)";
+                document.getElementById('pl-display').className = "";
+                document.getElementById('holding-amt').innerText = "৳ 0.00";
+            }
+            updateUI();
+        }
+
+        setInterval(() => {
+            currentPrice += (Math.random() - 0.5) * 0.2; 
+            updateUI();
+        }, 2000);
     </script>
 </body>
 </html>
