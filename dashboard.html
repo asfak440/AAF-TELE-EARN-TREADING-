@@ -3,34 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Dashboard</title>
+    <title>Dashboard - AAF Strong</title>
     <style>
-        body { background-color: #0F0F1E; color: white; font-family: sans-serif; padding: 20px; text-align: center; }
-        .main-card { background: linear-gradient(45deg, #6200ea, #03dac6); padding: 30px; border-radius: 20px; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: #1e1e2f; padding: 15px; border-radius: 15px; border: 1px solid #333; cursor: pointer; }
+        :root { --neon: #00ffcc; --glass: rgba(255, 255, 255, 0.07); }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 80px; }
+        .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
+        .card { background: var(--glass); padding: 15px; border-radius: 18px; border: 1px solid #222; text-align: center; }
+        .card.main { grid-column: span 2; border-color: var(--neon); background: linear-gradient(145deg, #0a0a0a, #151515); }
+        .card h4 { margin: 0; font-size: 12px; opacity: 0.6; }
+        .card p { margin: 8px 0 0; font-size: 18px; font-weight: bold; color: var(--neon); }
+
+        .stats { margin: 15px; background: #111; padding: 15px; border-radius: 15px; font-size: 13px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
+        .nav-item { color: #888; text-decoration: none; font-size: 10px; text-align: center; }
+        .active { color: var(--neon); }
     </style>
 </head>
 <body>
-    <div class="main-card">
-        <p>Main Balance</p>
-        <h1 id="main">৳ 0.00</h1>
-    </div>
-    <div class="grid">
-        <div class="card" onclick="transfer('task')">Task<br><b id="task">৳ 0.00</b></div>
-        <div class="card" onclick="transfer('trading')">Trading<br><b id="trading">৳ 0.00</b></div>
-        <div class="card" onclick="transfer('account')">Account<br><b id="account">৳ 0.00</b></div>
-        <div class="card">Status<br><b style="color: #00ffcc;">Active</b></div>
+
+    <div class="top-bar">
+        <div>
+            <h3 id="display-name" style="margin:0;">User Name</h3>
+            <span style="font-size: 10px; opacity: 0.5;">ID: #AAF1080</span>
+        </div>
+        <div style="text-align:right;">
+            <div style="color: var(--neon); font-size: 12px;">● Online</div>
+        </div>
     </div>
 
+    <div class="balance-grid">
+        <div class="card main">
+            <h4>Main Balance</h4>
+            <p>৳ <span id="m-bal">550.00</span></p>
+        </div>
+        <div class="card">
+            <h4>Task Balance</h4>
+            <p>৳ 0.00</p>
+        </div>
+        <div class="card">
+            <h4>Trading Balance</h4>
+            <p>৳ 0.00</p>
+        </div>
+        <div class="card">
+            <h4>Account Balance</h4>
+            <p>৳ 0.00</p>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-row"><span>Telegram Status:</span> <span style="color:var(--neon)">Active</span></div>
+        <div class="stat-row"><span>Added Accounts:</span> <span>5</span></div>
+        <div class="stat-row"><span>Total Withdraw:</span> <span>৳ 12,450.00</span></div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
+        <a href="task.html" class="nav-item">📋 Task</a>
+        <a href="trading.html" class="nav-item">📊 Trading</a>
+        <a href="accounts.html" class="nav-item">👥 All-Account</a>
+        <a href="withdraw.html" class="nav-item">💰 Withdraw</a>
+    </nav>
+
     <script>
-        // এখানে আপনার Render লিঙ্কটি দিন
-        const API = "https://aaf-api-free.onrender.com/api/transfer_to_main";
-        
-        async function transfer(source) {
-            alert(source + " থেকে মেইন ব্যালেন্সে ট্রান্সফার হচ্ছে...");
-            // এখানে আপনার সার্ভারে ডাটা পাঠানোর লজিক থাকবে
-        }
+        document.getElementById('display-name').innerText = localStorage.getItem('user_name') || "User";
     </script>
 </body>
 </html>
