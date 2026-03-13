@@ -43,59 +43,59 @@
     </div>
 
     <script>
-        const API_BASE = "https://aaf-api-free.onrender.com";
-        const chartContainer = document.getElementById('chart-container');
-        
-        // ১. প্রফেশনাল চার্ট সেটআপ
-        const chart = LightweightCharts.createChart(chartContainer, {
-            layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
-            grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
-            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            timeScale: { timeVisible: true, secondsVisible: false }
-        });
+    const API_BASE = "https://aaf-api-free.onrender.com";
+    const chartContainer = document.getElementById('chart-container');
+    
+    // ১. চার্ট সেটআপ
+    const chart = LightweightCharts.createChart(chartContainer, {
+        layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
+        grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        timeScale: { timeVisible: true, secondsVisible: false }
+    });
 
-        const candleSeries = chart.addCandlestickSeries({
-            upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
-            borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
-        });
+    const candleSeries = chart.addCandlestickSeries({
+        upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
+        borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
+    });
 
-        // ডামি ডাটা (শুরু করার জন্য)
-        let data = [
-            { time: '2026-03-10', open: 0.90, high: 1.10, low: 0.85, close: 1.00 },
-            { time: '2026-03-11', open: 1.00, high: 1.20, low: 0.95, close: 1.15 },
-            { time: '2026-03-12', open: 1.15, high: 1.30, low: 1.10, close: 1.25 }
-        ];
-        candleSeries.setData(data);
+    // ২. লাইভ ডাটা লোড করার মেইন ফাংশন
+    async function loadTradingData() {
+        try {
+            // আপনার API থেকে ডাটা আনা হচ্ছে
+            const response = await fetch(`${API_BASE}/get_aaf_price`); 
+            const result = await response.json();
+            
+            // চার্টে ক্যান্ডেলস্টিক ডাটা সেট করা
+            if(result.chart_data) {
+                candleSeries.setData(result.chart_data);
+            }
+            
+            // স্ক্রিনের লাইভ প্রাইস আপডেট করা
+            if(result.current_price) {
+                document.getElementById('live-price').innerText = `৳ ${result.current_price}`;
+            }
 
-        // ২. লাইভ প্রাইস আপডেট (সার্ভার থেকে)
-        async function fetchMarket() {
-            try {
-                const res = await fetch(`${API_BASE}/api/aaf_market`);
-                const result = await res.json();
-                const price = result.aaf_price_bdt;
-                
-                document.getElementById('live-price').innerText = "৳ " + price;
-                
-                // চার্টে নতুন পয়েন্ট যোগ করা (অ্যানিমেশন)
-                const lastData = data[data.length - 1];
-                candleSeries.update({
-                    time: new Date().toISOString().split('T')[0],
-                    open: lastData.close,
-                    high: Math.max(lastData.close, price),
-                    low: Math.min(lastData.close, price),
-                    close: price
-                });
-            } catch (e) { console.log("Market Error", e); }
+            // মেইন ব্যালেন্স আপডেট (যদি API তে থাকে)
+            if(result.main_balance) {
+                document.getElementById('main-bal').innerText = `৳ ${result.main_balance}`;
+            }
+
+        } catch (error) {
+            console.error("সার্ভারের সাথে কানেক্ট করা যাচ্ছে না:", error);
         }
+    }
 
-        // ৩. বাই/সেল ফাংশন
-        function trade(type) {
-            alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে। মেইন ব্যালেন্স থেকে টাকা কাটা হবে।");
-            // এখানে আপনার ট্রেডিং এপিআই কল হবে
-        }
+    // ৩. ট্রেড (Buy/Sell) ফাংশন
+    function trade(type) {
+        alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে।");
+        // এখানে আপনার ব্যাকএন্ডের ট্রেড এপিআই কল হবে
+    }
 
-        setInterval(fetchMarket, 5000); // প্রতি ৫ সেকেন্ড পর পর আপডেট
-        fetchMarket();
-    </script>
+    // পেজ লোড হলে এবং প্রতি ৫ সেকেন্ড পর পর আপডেট হবে
+    loadTradingData();
+    setInterval(loadTradingData, 5000);
+
+     </script>
 </body>
 </html>
