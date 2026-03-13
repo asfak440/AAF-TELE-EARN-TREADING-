@@ -3,115 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Admin - Withdrawal Management</title>
+    <title>AAF Strong - Admin Panel</title>
     <style>
-        :root { --nagad: #f7941d; --bg: #0a0b10; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        :root { --neon: #00ffcc; --red: #ff5252; }
+        body { background: #050505; color: white; font-family: 'Inter', sans-serif; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--neon); padding-bottom: 10px; margin-bottom: 20px; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-        .stat-card { background: #161b22; padding: 20px; border-radius: 12px; border-top: 4px solid var(--nagad); }
-        .stat-card h3 { margin: 0; font-size: 14px; opacity: 0.7; }
-        .stat-card p { font-size: 24px; margin: 10px 0 0; font-weight: bold; color: var(--nagad); }
+        .user-table { width: 100%; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
+        .user-table th, .user-table td { padding: 15px; text-align: left; border-bottom: 1px solid #222; font-size: 14px; }
+        .user-table th { background: #1a1a1a; color: var(--neon); }
 
-        .request-table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 10px; overflow: hidden; margin-top: 20px; }
-        .request-table th, .request-table td { padding: 15px; text-align: left; border-bottom: 1px solid #2d333b; }
-        .request-table th { background: #21262d; color: var(--nagad); }
+        .btn-control { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn-login { background: var(--neon); color: black; }
+        .btn-block { background: var(--red); color: white; margin-left: 5px; }
 
-        .approve-btn { background: #00c853; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .reject-btn { background: #ff5252; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
-        
-        .refresh-btn { background: var(--nagad); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .search-box { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #333; background: #000; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>Admin Panel (Withdrawal Logs)</h2>
-        <button class="refresh-btn" onclick="loadWithdrawRequests()">Refresh List</button>
+    <div class="admin-header">
+        <h2>AAF Admin Control</h2>
+        <div>Total Users: <span id="total-users">0</span></div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Pending Requests</h3>
-            <p id="pending-count">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Total Paid Out</h3>
-            <p id="total-paid">৳ 0.00</p>
-        </div>
-    </div>
+    <input type="text" class="search-box" placeholder="Search by User ID or Phone..." id="searchUser">
 
-    <h3>Nagad Withdrawal Requests</h3>
-    <table class="request-table">
+    <table class="user-table">
         <thead>
             <tr>
                 <th>User ID</th>
-                <th>Nagad Number</th>
-                <th>Amount</th>
-                <th>Action</th>
+                <th>Phone</th>
+                <th>Balance</th>
+                <th>Status</th>
+                <th>Control / Session</th>
             </tr>
         </thead>
-        <tbody id="withdraw-list">
+        <tbody id="user-list">
             <tr>
-                <td colspan="4" style="text-align:center; padding:20px; opacity:0.5;">No pending requests...</td>
+                <td colspan="5" style="text-align:center;">Loading user data from MongoDB...</td>
             </tr>
         </tbody>
     </table>
 
     <script>
-        const API_URL = "https://aaf-api-free.onrender.com";
+        const API_URL = "https://your-render-app.onrender.com"; // আপনার সার্ভার লিঙ্ক
 
-        async function loadWithdrawRequests() {
+        async function loadAdminData() {
             try {
-                const res = await fetch(`${API_URL}/api/admin/withdraw_list`);
-                const data = await res.json();
+                const response = await fetch(`${API_URL}/api/admin/all_users`);
+                const users = await response.json();
                 
-                const list = document.getElementById('withdraw-list');
-                list.innerHTML = "";
-                
-                if(data.requests.length === 0) {
-                    list.innerHTML = '<tr><td colspan="4" style="text-align:center;">No pending requests</td></tr>';
-                }
+                const tbody = document.getElementById('user-list');
+                tbody.innerHTML = "";
+                document.getElementById('total-users').innerText = users.length;
 
-                data.requests.forEach(req => {
-                    list.innerHTML += `
+                users.forEach(user => {
+                    tbody.innerHTML += `
                         <tr>
-                            <td>${req.user_id}</td>
-                            <td style="color:#00ffcc; font-weight:bold;">${req.number}</td>
-                            <td>৳ ${req.amount}</td>
+                            <td>#AAF${user.telegram_id.toString().slice(-4)}</td>
+                            <td>${user.phone || 'N/A'}</td>
+                            <td>৳ ${user.main_balance.toFixed(2)}</td>
+                            <td style="color:${user.status === 'Active' ? '#00ffcc' : '#ff5252'}">${user.status}</td>
                             <td>
-                                <button class="approve-btn" onclick="updateStatus(${req.id}, 'Approved')">Approve</button>
-                                <button class="reject-btn" onclick="updateStatus(${req.id}, 'Rejected')">Reject</button>
+                                <button class="btn-control btn-login" onclick="controlUser('${user.telegram_id}')">Control Account</button>
+                                <button class="btn-control btn-block" onclick="blockUser('${user.telegram_id}')">Block</button>
                             </td>
                         </tr>
                     `;
                 });
-
-                document.getElementById('pending-count').innerText = data.requests.length;
             } catch (e) {
-                console.log("Error loading requests");
+                console.log("Error loading admin data.");
             }
         }
 
-        async function updateStatus(requestId, status) {
-            if(!confirm(`Are you sure you want to ${status} this request?`)) return;
-
-            try {
-                await fetch(`${API_URL}/api/admin/update_withdraw`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ id: requestId, status: status })
-                });
-                alert("Request " + status);
-                loadWithdrawRequests(); // লিস্ট রিফ্রেশ করা
-            } catch (e) {
-                alert("Error updating request");
+        // ইউজার কন্ট্রোল লজিক (লগইন করা)
+        function controlUser(userId) {
+            if(confirm("আপনি কি এই ইউজারের সেশনে প্রবেশ করতে চান?")) {
+                // সেশন টোকেন নিয়ে ড্যাশবোর্ডে রিডাইরেক্ট করা
+                localStorage.setItem('user_id', userId);
+                window.location.href = "dashboard.html"; 
+                // এতে আপনি ওই ইউজারের ড্যাশবোর্ড দেখতে এবং পরিবর্তন করতে পারবেন
             }
         }
 
-        window.onload = loadWithdrawRequests;
+        function blockUser(userId) {
+            alert("User " + userId + " has been blocked.");
+            // এখানে সার্ভারে ব্লক এপিআই কল হবে
+        }
+
+        window.onload = loadAdminData;
     </script>
 </body>
 </html>
