@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw - Nagad Only</title>
+    <style>
+        :root { --nagad: #f7941d; --bg: #0c0d15; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        
+        .balance-card { 
+            background: linear-gradient(135deg, #1e222d, #2a2e39); 
+            padding: 20px; border-radius: 15px; text-align: center; 
+            border: 1px solid #333; margin-bottom: 25px;
+        }
+        .balance-card p { font-size: 28px; font-weight: bold; margin: 5px 0; color: #00ffcc; }
+
+        .withdraw-box { background: #131722; padding: 20px; border-radius: 15px; border: 1px solid #2a2e39; }
+        
+        .method-tag {
+            background: var(--nagad); color: white; display: inline-block;
+            padding: 5px 15px; border-radius: 20px; font-size: 14px; 
+            font-weight: bold; margin-bottom: 15px;
+        }
+
+        label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.8; }
+        input { 
+            width: 100%; padding: 14px; margin-bottom: 20px; border-radius: 10px; 
+            border: 1px solid #333; background: #0c0d15; color: white; 
+            box-sizing: border-box; font-size: 16px; outline: none;
+        }
+        input:focus { border-color: var(--nagad); }
+
+        .withdraw-btn { 
+            width: 100%; padding: 16px; border: none; border-radius: 12px; 
+            background: var(--nagad); color: white; font-size: 18px; 
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .withdraw-btn:active { transform: scale(0.96); }
+
+        .footer-note { font-size: 12px; color: #aaa; text-align: center; margin-top: 15px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Withdraw Funds</h2>
+    </div>
+
+    <div class="balance-card">
+        <span style="opacity: 0.7; font-size: 14px;">Current Balance</span>
+        <p id="current-bal">৳ 550.00</p>
+    </div>
+
+    <div class="withdraw-box">
+        <div class="method-tag">NAGAD PERSONAL</div>
+        
+        <label>Nagad Account Number</label>
+        <input type="number" id="account-num" placeholder="01XXXXXXXXX">
+
+        <label>Amount (Minimum ৳ 100)</label>
+        <input type="number" id="amount" placeholder="Enter Amount">
+
+        <button class="withdraw-btn" onclick="requestWithdraw()">WITHDRAW NOW</button>
+    </div>
+
+    <div class="footer-note">
+        * শুধুমাত্র নগদ পার্সোনাল নাম্বারে পেমেন্ট করা হয়।<br>
+        * পেমেন্ট প্রসেস হতে ১-১২ ঘণ্টা সময় লাগতে পারে।
+    </div>
+
+    <script>
+        async function requestWithdraw() {
+            const number = document.getElementById('account-num').value;
+            const amount = document.getElementById('amount').value;
+            const balance = 550.00; // এটি ডাটাবেস থেকে আসবে
+
+            if(number.length < 11) {
+                return alert("সঠিক নগদ নাম্বার দিন (১১ ডিজিট)!");
+            }
+            if(amount < 100) {
+                return alert("সর্বনিম্ন ১০০ টাকা উইথড্র করতে হবে।");
+            }
+            if(amount > balance) {
+                return alert("আপনার একাউন্টে পর্যাপ্ত ব্যালেন্স নেই!");
+            }
+
+            // সার্ভারে ডাটা পাঠানো
+            try {
+                const response = await fetch('https://aaf-api-free.onrender.com/api/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: "User123",
+                        method: "Nagad",
+                        number: number,
+                        amount: amount
+                    })
+                });
+                
+                alert("আপনার নগদ উইথড্র রিকোয়েস্টটি সফল হয়েছে। অ্যাডমিন চেক করে পেমেন্ট করে দিবে।");
+            } catch (e) {
+                alert("সার্ভারে সমস্যা হচ্ছে, তবে রিকোয়েস্ট রেকর্ড করা হয়েছে।");
+            }
+        }
+    </script>
+</body>
+</html>
