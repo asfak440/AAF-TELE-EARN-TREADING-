@@ -3,130 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Trading - Professional Asset</title>
+    <title>AAF Trading Pro</title>
     <style>
-        body { background-color: #0c0d15; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
-        #chart-container { width: 100%; height: 72vh; position: relative; }
+        :root { --accent: #00ffcc; --loss: #ff5252; --dark: #090a0f; }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
         
-        .footer-controls { height: 28vh; background: #131722; padding: 12px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; border-top: 1px solid #2a2e39; }
+        /* চার্ট - ৮৫% হাইট */
+        #chart-container { width: 100%; height: 75vh; border-bottom: 2px solid #1e222d; }
+
+        /* ফুটার এরিয়া */
+        .footer { height: 25vh; background: #131722; padding: 15px; box-sizing: border-box; }
         
-        .status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 12px; }
-        .data-box { background: #1e222d; padding: 6px; border-radius: 5px; text-align: center; border: 1px solid #333; }
+        .stats { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; opacity: 0.9; }
         
-        /* ইনপুট বক্স স্টাইল */
-        .invest-input-group { margin-bottom: 10px; text-align: center; }
-        #invest-amount { width: 80%; padding: 10px; background: #2a2e39; border: 1px solid #444; color: #00ffcc; border-radius: 8px; text-align: center; font-size: 16px; font-weight: bold; }
+        /* প্রফিট লস ডিসপ্লে বক্স */
+        #pl-box { 
+            text-align: center; font-size: 22px; font-weight: bold; 
+            padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05);
+            margin-bottom: 10px; border: 1px solid #2a2e39;
+        }
+
+        .action-row { display: flex; gap: 10px; align-items: center; }
         
-        .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: 0.3s; }
-        .buy-btn { background: #00c853; }
-        .sell-btn { background: #ff5252; }
+        input { 
+            width: 100px; padding: 12px; border-radius: 8px; border: 1px solid #444; 
+            background: #1e222d; color: var(--accent); font-weight: bold; text-align: center;
+        }
+
+        .btn { 
+            flex: 1; padding: 15px; border: none; border-radius: 12px; 
+            font-size: 18px; font-weight: bold; color: white; cursor: pointer;
+        }
+        .buy { background: linear-gradient(135deg, #00c853, #00e676); }
+        .sell { background: linear-gradient(135deg, #d50000, #ff1744); }
         
-        #pl-display { font-size: 16px; font-weight: bold; margin: 5px 0; text-align: center; color: #aaa; }
-        .profit { color: #00ffcc; }
-        .loss { color: #ff5252; }
+        .gain { color: var(--accent); }
+        .drop { color: var(--loss); }
     </style>
 </head>
 <body>
 
     <div id="chart-container">
-        <div id="tradingview_chart" style="height:100%;"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+        <div id="tv-widget" style="height:100%;"></div>
+        <script src="https://s3.tradingview.com/tv.js"></script>
         <script>
             new TradingView.widget({
                 "autosize": true, "symbol": "BINANCE:SOLUSDT", "interval": "1",
-                "theme": "dark", "style": "1", "container_id": "tradingview_chart",
+                "theme": "dark", "style": "1", "container_id": "tv-widget",
                 "hide_top_toolbar": true, "save_image": false
             });
         </script>
     </div>
 
-    <div class="footer-controls">
-        <div class="status-bar">
-            <div class="data-box">Balance: <b id="user-bal">৳ 500.00</b></div>
-            <div class="data-box">Invested: <b id="holding-amt">৳ 0.00</b></div>
-        </div>
-        
-        <div id="pl-display">P/L: ৳ 0.00 (Fee: 10%)</div>
-
-        <div class="invest-input-group" id="input-area">
-            <input type="number" id="invest-amount" placeholder="পরিমাণ লিখুন (৳)" min="1">
+    <div class="footer">
+        <div class="stats">
+            <span>Balance: <b id="bal-text">৳ 500.00</b></span>
+            <span>Invested: <b id="inv-text">৳ 0.00</b></span>
         </div>
 
-        <div class="btn-group">
-            <button id="main-btn" class="btn buy-btn" onclick="toggleTrade()">BUY COIN (START)</button>
+        <div id="pl-box">--- MARKET READY ---</div>
+
+        <div class="action-row">
+            <input type="number" id="amt-in" value="100" placeholder="৳">
+            <button id="trade-btn" class="btn buy" onclick="handleTrade()">BUY (10% FEE)</button>
         </div>
     </div>
 
     <script>
         let isTrading = false;
         let entryPrice = 0;
-        let currentPrice = 89.70; 
-        let userBalance = 500.00;
-        let activeInvest = 0; // ১০% ফি বাদে আসল ইনভেস্ট
+        let currentPrice = 1.25;
+        let wallet = 500.00;
+        let tradeCapital = 0; // ১০% ফি বাদে আসল টাকা
         
-        const ratio = 0.01; 
+        // ১০০ টাকায় ১ পয়সা প্রফিট লজিক (দাম ১ টাকা বাড়লে/কমলে)
+        const businessRatio = 0.0001; 
 
-        function updateUI() {
-            document.getElementById('user-bal').innerText = "৳ " + userBalance.toFixed(2);
+        function updateLive() {
+            document.getElementById('bal-text').innerText = "৳ " + wallet.toFixed(2);
+            
             if(isTrading) {
-                let priceDiff = currentPrice - entryPrice;
-                let profitLoss = (activeInvest / 100) * priceDiff * ratio; 
+                let diff = currentPrice - entryPrice;
+                // আপনার রিকোয়ারমেন্ট অনুযায়ী প্রফিট ক্যালকুলেশন
+                let livePL = tradeCapital * diff * (businessRatio * 100);
 
-                const plDisplay = document.getElementById('pl-display');
-                plDisplay.innerText = "Net P/L: ৳ " + profitLoss.toFixed(2);
-                plDisplay.className = profitLoss >= 0 ? "profit" : "loss";
-                document.getElementById('holding-amt').innerText = "৳ " + (activeInvest + profitLoss).toFixed(2);
+                const plBox = document.getElementById('pl-box');
+                if(livePL >= 0) {
+                    plBox.innerHTML = `P/L: <span class="gain">+৳ ${livePL.toFixed(4)}</span>`;
+                } else {
+                    plBox.innerHTML = `P/L: <span class="drop">৳ ${livePL.toFixed(4)}</span>`;
+                }
+                document.getElementById('inv-text').innerText = "৳ " + (tradeCapital + livePL).toFixed(2);
             }
         }
 
-        function toggleTrade() {
-            const btn = document.getElementById('main-btn');
-            const inputField = document.getElementById('invest-amount');
-            
-            if (!isTrading) {
-                let rawAmount = parseFloat(inputField.value);
-                
-                if(!rawAmount || rawAmount <= 0) return alert("সঠিক পরিমাণ লিখুন!");
-                if(userBalance < rawAmount) return alert("ব্যালেন্স নেই!");
-                
-                // ১০% ফি কাটার লজিক
-                let fee = rawAmount * 0.10;
-                activeInvest = rawAmount - fee;
-                
+        async function handleTrade() {
+            const btn = document.getElementById('trade-btn');
+            const inp = document.getElementById('amt-in');
+
+            if(!isTrading) {
+                let amount = parseFloat(inp.value);
+                if(wallet < amount) return alert("Insufficient Balance!");
+
+                // ১০% ফি সিস্টেম
+                let fee = amount * 0.10;
+                tradeCapital = amount - fee;
+                wallet -= amount;
+
                 isTrading = true;
                 entryPrice = currentPrice;
-                userBalance -= rawAmount;
-                
-                btn.innerText = "SELL COIN (CLOSE)";
-                btn.className = "btn sell-btn";
-                document.getElementById('input-area').style.opacity = "0.5";
-                inputField.disabled = true;
-                
-                alert("ট্রেড শুরু হয়েছে! ফি কাটা হয়েছে: ৳" + fee.toFixed(2));
+                btn.innerText = "CLOSE TRADE";
+                btn.className = "btn sell";
+                inp.disabled = true;
             } else {
-                // ট্রেড বন্ধ
-                let priceDiff = currentPrice - entryPrice;
-                let finalPL = (activeInvest / 100) * priceDiff * ratio;
+                let diff = currentPrice - entryPrice;
+                let finalPL = tradeCapital * diff * (businessRatio * 100);
                 
-                userBalance += (activeInvest + finalPL);
+                wallet += (tradeCapital + finalPL);
                 isTrading = false;
                 
-                btn.innerText = "BUY COIN (START)";
-                btn.className = "btn buy-btn";
-                document.getElementById('input-area').style.opacity = "1";
-                inputField.disabled = false;
-                document.getElementById('pl-display').innerText = "P/L: ৳ 0.00 (Fee: 10%)";
-                document.getElementById('pl-display').className = "";
-                document.getElementById('holding-amt').innerText = "৳ 0.00";
+                btn.innerText = "BUY (10% FEE)";
+                btn.className = "btn buy";
+                inp.disabled = false;
+                document.getElementById('pl-box').innerText = "TRADE CLOSED";
+                document.getElementById('inv-text').innerText = "৳ 0.00";
             }
-            updateUI();
         }
 
+        // লাইভ ডাটা সিমুলেশন (আপনার API থেকে আসবে)
         setInterval(() => {
-            currentPrice += (Math.random() - 0.5) * 0.2; 
-            updateUI();
-        }, 2000);
+            currentPrice += (Math.random() - 0.5) * 0.01;
+            updateLive();
+        }, 1000);
     </script>
 </body>
 </html>
