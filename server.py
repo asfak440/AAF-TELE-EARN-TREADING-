@@ -1,109 +1,39 @@
 import sqlite3
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from Crypto.Cipher import AES
+import base64
 
 app = Flask(__name__)
 CORS(app)
 
-DB_PATH = 'aaf_trading.db'
+# Encryption Key (আপনার এটি ৩২ ক্যারেক্টার হতে হবে)
+KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY'
 
-# ১. ডাটাবেস ইনিশিয়ালাইজেশন (সব টেবিল এখানে তৈরি হবে)
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # ট্রেড হিস্টোরি টেবিল
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            invest_amount REAL,
-            fee_amount REAL,
-            active_invest REAL,
-            entry_price REAL,
-            status TEXT DEFAULT 'OPEN',
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # উইথড্র রিকোয়েস্ট টেবিল (নতুন)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS withdrawals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            method TEXT,
-            number TEXT,
-            amount REAL,
-            status TEXT DEFAULT 'Pending',
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+def encrypt(data):
+    cipher = AES.new(KEY, AES.MODE_EAX)
+    nonce = cipher.nonce
+    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
+    return base64.b64encode(nonce + ciphertext).decode()
 
-init_db()
-
-# ২. ট্রেড প্লেস করার রুট (১০% ফি সহ)
-@app.route('/api/place_trade', methods=['POST'])
-def place_trade():
+# টাস্ক ভেরিফিকেশন এপিআই (বট এটি ব্যবহার করবে)
+@app.route('/api/verify_task', methods=['POST'])
+def verify_task():
     data = request.json
-    user_id = data.get('user_id', 'Guest')
-    amount = float(data.get('amount'))
-    entry_price = float(data.get('entry_price'))
+    user_id = data.get('user_id')
+    # এখানে টেলিগ্রাম বটের মাধ্যমে চেক করা হবে ইউজার চ্যানেলে জয়েন করেছে কি না
+    is_joined = True # সিমুলেশন
+    
+    if is_joined:
+        return jsonify({"status": "success", "reward": 0.08})
+    else:
+        return jsonify({"status": "fail", "message": "Join Channel First"})
 
-    fee = amount * 0.10
-    active_invest = amount - fee
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO trades (user_id, invest_amount, fee_amount, active_invest, entry_price)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (user_id, amount, fee, active_invest, entry_price))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success", "fee": fee})
-
-# ৩. উইথড্র রিকোয়েস্ট গ্রহণ করার রুট (নতুন)
-@app.route('/api/withdraw', methods=['POST'])
-def withdraw():
-    data = request.json
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO withdrawals (user_id, method, number, amount)
-        VALUES (?, ?, ?, ?)
-    ''', (data['user_id'], data['method'], data['number'], data['amount']))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"})
-
-# ৪. অ্যাডমিন প্যানেলের জন্য উইথড্র লিস্ট (নতুন)
-@app.route('/api/admin/withdraw_list', methods=['GET'])
-def get_withdraws():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, number, amount FROM withdrawals WHERE status='Pending'")
-    rows = cursor.fetchall()
-    requests = [{"id": r[0], "user_id": r[1], "number": r[2], "amount": r[3]} for r in rows]
-    conn.close()
-    return jsonify({"requests": requests})
-
-# ৫. মোট অ্যাডমিন ইনকাম দেখা
-@app.route('/api/admin/total_earnings', methods=['GET'])
-def get_earnings():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT SUM(fee_amount) FROM trades')
-    total_fee = cursor.fetchone()[0]
-    conn.close()
-    return jsonify({"total_admin_profit": total_fee or 0})
-
-# ৬. মার্কেট প্রাইস (সিমুলেশন)
-@app.route('/api/aaf_market', methods=['GET'])
-def get_market():
-    return jsonify({"aaf_price_bdt": 1.25})
+@app.route('/api/get_aaf_price', methods=['GET'])
+def get_price():
+    # লজিক: ইউজার একটিভিটি বেশি হলে দাম বাড়বে, উইথড্র বেশি হলে কমবে
+    current_price = 1.25 # ডাইনামিক লজিক এখানে বসবে
+    return jsonify({"price": current_price})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
