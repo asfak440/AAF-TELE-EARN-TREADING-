@@ -3,138 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Trading Pro</title>
+    <title>AAF Tasks - Earn Real Money</title>
     <style>
-        :root { --accent: #00ffcc; --loss: #ff5252; --dark: #090a0f; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
-        
-        /* চার্ট - ৮৫% হাইট */
-        #chart-container { width: 100%; height: 75vh; border-bottom: 2px solid #1e222d; }
+        :root { --primary: #00ffcc; --bg: #0c0d15; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #2a2e39; padding-bottom: 10px; }
+        .balance-box { background: #1e222d; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid var(--primary); }
+        .balance-box h2 { margin: 5px 0; color: var(--primary); }
 
-        /* ফুটার এরিয়া */
-        .footer { height: 25vh; background: #131722; padding: 15px; box-sizing: border-box; }
+        .task-card { background: #131722; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; }
+        .task-info h3 { margin: 0; font-size: 16px; }
+        .task-info p { margin: 5px 0 0; font-size: 12px; color: var(--primary); font-weight: bold; }
         
-        .stats { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; opacity: 0.9; }
+        .claim-btn { background: var(--primary); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .claim-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
         
-        /* প্রফিট লস ডিসপ্লে বক্স */
-        #pl-box { 
-            text-align: center; font-size: 22px; font-weight: bold; 
-            padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.05);
-            margin-bottom: 10px; border: 1px solid #2a2e39;
-        }
-
-        .action-row { display: flex; gap: 10px; align-items: center; }
-        
-        input { 
-            width: 100px; padding: 12px; border-radius: 8px; border: 1px solid #444; 
-            background: #1e222d; color: var(--accent); font-weight: bold; text-align: center;
-        }
-
-        .btn { 
-            flex: 1; padding: 15px; border: none; border-radius: 12px; 
-            font-size: 18px; font-weight: bold; color: white; cursor: pointer;
-        }
-        .buy { background: linear-gradient(135deg, #00c853, #00e676); }
-        .sell { background: linear-gradient(135deg, #d50000, #ff1744); }
-        
-        .gain { color: var(--accent); }
-        .drop { color: var(--loss); }
+        .loading-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 10px; display: none; overflow: hidden; }
+        .progress { width: 0%; height: 100%; background: var(--primary); transition: 5s linear; }
     </style>
 </head>
 <body>
 
-    <div id="chart-container">
-        <div id="tv-widget" style="height:100%;"></div>
-        <script src="https://s3.tradingview.com/tv.js"></script>
-        <script>
-            new TradingView.widget({
-                "autosize": true, "symbol": "BINANCE:SOLUSDT", "interval": "1",
-                "theme": "dark", "style": "1", "container_id": "tv-widget",
-                "hide_top_toolbar": true, "save_image": false
-            });
-        </script>
+    <div class="header">
+        <h1>Available Tasks</h1>
     </div>
 
-    <div class="footer">
-        <div class="stats">
-            <span>Balance: <b id="bal-text">৳ 500.00</b></span>
-            <span>Invested: <b id="inv-text">৳ 0.00</b></span>
-        </div>
+    <div class="balance-box">
+        <span>Your Earnings</span>
+        <h2 id="task-bal">৳ 0.00</h2>
+    </div>
 
-        <div id="pl-box">--- MARKET READY ---</div>
-
-        <div class="action-row">
-            <input type="number" id="amt-in" value="100" placeholder="৳">
-            <button id="trade-btn" class="btn buy" onclick="handleTrade()">BUY (10% FEE)</button>
+    <div class="task-card">
+        <div class="task-info">
+            <h3>Daily Video Ad</h3>
+            <p>Reward: ৳ 2.00</p>
+            <div class="loading-bar" id="l-bar-1"><div class="progress" id="p-1"></div></div>
         </div>
+        <button class="claim-btn" id="btn-1" onclick="startTask(1, 2.00)">Watch</button>
+    </div>
+
+    <div class="task-card">
+        <div class="task-info">
+            <h3>Click & Visit Website</h3>
+            <p>Reward: ৳ 1.50</p>
+            <div class="loading-bar" id="l-bar-2"><div class="progress" id="p-2"></div></div>
+        </div>
+        <button class="claim-btn" id="btn-2" onclick="startTask(2, 1.50)">Visit</button>
     </div>
 
     <script>
-        let isTrading = false;
-        let entryPrice = 0;
-        let currentPrice = 1.25;
-        let wallet = 500.00;
-        let tradeCapital = 0; // ১০% ফি বাদে আসল টাকা
-        
-        // ১০০ টাকায় ১ পয়সা প্রফিট লজিক (দাম ১ টাকা বাড়লে/কমলে)
-        const businessRatio = 0.0001; 
+        const API_URL = "https://aaf-api-free.onrender.com"; // আপনার রেন্ডার সার্ভার লিঙ্ক
+        let currentBalance = 0.00;
 
-        function updateLive() {
-            document.getElementById('bal-text').innerText = "৳ " + wallet.toFixed(2);
+        async function startTask(taskId, reward) {
+            const btn = document.getElementById(`btn-${taskId}`);
+            const bar = document.getElementById(`l-bar-${taskId}`);
+            const progress = document.getElementById(`p-${taskId}`);
+
+            btn.disabled = true;
+            btn.innerText = "Watching...";
+            bar.style.display = "block";
             
-            if(isTrading) {
-                let diff = currentPrice - entryPrice;
-                // আপনার রিকোয়ারমেন্ট অনুযায়ী প্রফিট ক্যালকুলেশন
-                let livePL = tradeCapital * diff * (businessRatio * 100);
+            setTimeout(() => { progress.style.width = "100%"; }, 100);
 
-                const plBox = document.getElementById('pl-box');
-                if(livePL >= 0) {
-                    plBox.innerHTML = `P/L: <span class="gain">+৳ ${livePL.toFixed(4)}</span>`;
-                } else {
-                    plBox.innerHTML = `P/L: <span class="drop">৳ ${livePL.toFixed(4)}</span>`;
+            // ৫ সেকেন্ড বিজ্ঞাপন দেখার সিমুলেশন
+            setTimeout(async () => {
+                try {
+                    // সার্ভারে ডাটা পাঠানো
+                    const response = await fetch(`${API_URL}/api/complete_task`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: "User123", // এটি পরে ডাইনামিক হবে
+                            reward: reward
+                        })
+                    });
+
+                    if (response.ok) {
+                        currentBalance += reward;
+                        document.getElementById('task-bal').innerText = "৳ " + currentBalance.toFixed(2);
+                        btn.innerText = "Claimed ✅";
+                        btn.style.background = "#222";
+                        alert(`অভিনন্দন! ৳${reward} আপনার ওয়ালেটে জমা হয়েছে।`);
+                    }
+                } catch (e) {
+                    alert("সার্ভার কানেকশন এরর! আবার চেষ্টা করুন।");
+                    btn.disabled = false;
+                    btn.innerText = "Try Again";
+                    progress.style.width = "0%";
                 }
-                document.getElementById('inv-text').innerText = "৳ " + (tradeCapital + livePL).toFixed(2);
-            }
+            }, 5000); 
         }
-
-        async function handleTrade() {
-            const btn = document.getElementById('trade-btn');
-            const inp = document.getElementById('amt-in');
-
-            if(!isTrading) {
-                let amount = parseFloat(inp.value);
-                if(wallet < amount) return alert("Insufficient Balance!");
-
-                // ১০% ফি সিস্টেম
-                let fee = amount * 0.10;
-                tradeCapital = amount - fee;
-                wallet -= amount;
-
-                isTrading = true;
-                entryPrice = currentPrice;
-                btn.innerText = "CLOSE TRADE";
-                btn.className = "btn sell";
-                inp.disabled = true;
-            } else {
-                let diff = currentPrice - entryPrice;
-                let finalPL = tradeCapital * diff * (businessRatio * 100);
-                
-                wallet += (tradeCapital + finalPL);
-                isTrading = false;
-                
-                btn.innerText = "BUY (10% FEE)";
-                btn.className = "btn buy";
-                inp.disabled = false;
-                document.getElementById('pl-box').innerText = "TRADE CLOSED";
-                document.getElementById('inv-text').innerText = "৳ 0.00";
-            }
-        }
-
-        // লাইভ ডাটা সিমুলেশন (আপনার API থেকে আসবে)
-        setInterval(() => {
-            currentPrice += (Math.random() - 0.5) * 0.01;
-            updateLive();
-        }, 1000);
     </script>
 </body>
 </html>
