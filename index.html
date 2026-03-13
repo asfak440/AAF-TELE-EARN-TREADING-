@@ -7,27 +7,32 @@
     <style>
         :root { --neon: #00ffcc; --bg: #050505; }
         body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: rgba(255,255,255,0.05); padding: 40px; border-radius: 25px; border: 1px solid var(--neon); text-align: center; width: 90%; max-width: 350px; backdrop-filter: blur(10px); }
-        .logo { width: 80px; height: 80px; margin-bottom: 20px; box-shadow: 0 0 15px var(--neon); border-radius: 50%; object-fit: cover; }
-        h1 { font-size: 18px; margin-bottom: 30px; letter-spacing: 1px; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; }
-        .btn-auth { width: 100%; padding: 15px; background: var(--neon); color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .login-card { background: rgba(255,255,255,0.05); padding: 40px; border-radius: 25px; border: 1px solid var(--neon); text-align: center; width: 90%; max-width: 350px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0, 255, 204, 0.1); }
+        .logo { width: 80px; height: 80px; margin-bottom: 20px; box-shadow: 0 0 15px var(--neon); border-radius: 50%; object-fit: cover; border: 2px solid var(--neon); }
+        h1 { font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; color: var(--neon); }
+        .sub-text { font-size: 10px; opacity: 0.6; margin-bottom: 30px; display: block; }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--neon); }
+        .btn-auth { width: 100%; padding: 15px; background: var(--neon); color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-auth:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <div class="login-card" id="auth-container">
-        <img src="logo.png" class="logo" alt="AAF Logo">
+        <img src="https://t.me/i/userpic/320/aaf_tele_earn.jpg" class="logo" alt="AAF Logo">
         <h1>AAF TELE-EARN-TRADING</h1>
+        <span class="sub-text">Powered by @aaf_tele_earn_bot</span>
         
         <div id="login-fields">
             <input type="text" id="user-name" placeholder="Full Name">
             <input type="number" id="tg-number" placeholder="Telegram Number (+8801...)">
-            <button class="btn-auth" id="login-btn" onclick="startAuth()">LOGIN WITH TELEGRAM</button>
+            <button class="btn-auth" id="login-btn" onclick="startAuth()">LOGIN TO DASHBOARD</button>
         </div>
     </div>
 
     <script>
+        // আপনার সঠিক Render URL নিশ্চিত করুন
         const API_URL = "https://aaf-api-free.onrender.com"; 
 
         if(localStorage.getItem('user_id')) {
@@ -41,7 +46,7 @@
 
             if(!phone || !name) return alert("Please enter both Name and Phone Number");
 
-            btn.innerText = "Connecting...";
+            btn.innerText = "Connecting Server...";
             btn.disabled = true;
 
             try {
@@ -51,27 +56,28 @@
                     body: JSON.stringify({ 
                         phone: phone, 
                         name: name,
-                        telegram_id: phone.slice(-8)
+                        telegram_id: phone.slice(-8) // এটি ইউজার আইডি হিসেবে ব্যবহৃত হবে
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.status === "success" || data.message === "Account linked to server!") {
+                    // সেশন সেভ করা
                     localStorage.setItem('user_id', phone.slice(-8)); 
                     localStorage.setItem('user_name', name);
                     
                     alert("Authentication Successful!");
                     window.location.href = "dashboard.html";
                 } else {
-                    alert("Login failed! " + (data.message || ""));
-                    btn.innerText = "LOGIN WITH TELEGRAM";
+                    alert("Login failed! " + (data.message || "Invalid Details"));
+                    btn.innerText = "LOGIN TO DASHBOARD";
                     btn.disabled = false;
                 }
             } catch (error) {
                 console.error("Error:", error);
-                alert("Server not responding. Make sure your Render URL is correct.");
-                btn.innerText = "LOGIN WITH TELEGRAM";
+                alert("Server error! Please check if your Render API is running.");
+                btn.innerText = "LOGIN TO DASHBOARD";
                 btn.disabled = false;
             }
         }
