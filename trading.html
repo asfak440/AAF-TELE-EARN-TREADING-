@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF Trading View</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body { background-color: #0F0F1E; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
+        .trading-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #1e1e2f; }
+        .coin-info { display: flex; flex-direction: column; }
+        .price-up { color: #00ffcc; font-size: 24px; font-weight: bold; }
+        .price-down { color: #ff4d4d; font-size: 24px; font-weight: bold; }
+        
+        #chart-container { width: 100%; height: 60vh; margin-top: 5px; }
+        
+        .trade-controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #1e1e2f; border-radius: 25px 25px 0 0; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .btn { padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
+        .btn-buy { background: #00c853; }
+        .btn-sell { background: #d50000; }
+        .balance-label { grid-column: span 2; text-align: center; font-size: 14px; opacity: 0.7; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="trading-header">
+        <div class="coin-info">
+            <span style="font-size: 14px; opacity: 0.6;">AAF / BDT</span>
+            <span id="live-price" class="price-up">৳ 1.00</span>
+        </div>
+        <div style="text-align: right;">
+            <span style="font-size: 12px; opacity: 0.6;">24h Change</span><br>
+            <span style="color: #00ffcc;">+5.2%</span>
+        </div>
+    </div>
+
+    <div id="chart-container"></div>
+
+    <div class="trade-controls">
+        <div class="balance-label">Main Balance: <b id="main-bal">৳ 0.00</b></div>
+        <button class="btn btn-buy" onclick="trade('buy')">BUY</button>
+        <button class="btn btn-sell" onclick="trade('sell')">SELL</button>
+    </div>
+
+    <script>
+        const API_BASE = "https://aaf-api-free.onrender.com";
+        const chartContainer = document.getElementById('chart-container');
+        
+        // ১. প্রফেশনাল চার্ট সেটআপ
+        const chart = LightweightCharts.createChart(chartContainer, {
+            layout: { backgroundColor: '#0F0F1E', textColor: '#DDD' },
+            grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            timeScale: { timeVisible: true, secondsVisible: false }
+        });
+
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#00c853', downColor: '#ff4d4d', borderDownColor: '#ff4d4d',
+            borderUpColor: '#00c853', wickDownColor: '#ff4d4d', wickUpColor: '#00c853'
+        });
+
+        // ডামি ডাটা (শুরু করার জন্য)
+        let data = [
+            { time: '2026-03-10', open: 0.90, high: 1.10, low: 0.85, close: 1.00 },
+            { time: '2026-03-11', open: 1.00, high: 1.20, low: 0.95, close: 1.15 },
+            { time: '2026-03-12', open: 1.15, high: 1.30, low: 1.10, close: 1.25 }
+        ];
+        candleSeries.setData(data);
+
+        // ২. লাইভ প্রাইস আপডেট (সার্ভার থেকে)
+        async function fetchMarket() {
+            try {
+                const res = await fetch(`${API_BASE}/api/aaf_market`);
+                const result = await res.json();
+                const price = result.aaf_price_bdt;
+                
+                document.getElementById('live-price').innerText = "৳ " + price;
+                
+                // চার্টে নতুন পয়েন্ট যোগ করা (অ্যানিমেশন)
+                const lastData = data[data.length - 1];
+                candleSeries.update({
+                    time: new Date().toISOString().split('T')[0],
+                    open: lastData.close,
+                    high: Math.max(lastData.close, price),
+                    low: Math.min(lastData.close, price),
+                    close: price
+                });
+            } catch (e) { console.log("Market Error", e); }
+        }
+
+        // ৩. বাই/সেল ফাংশন
+        function trade(type) {
+            alert(type.toUpperCase() + " অর্ডার রিকোয়েস্ট পাঠানো হয়েছে। মেইন ব্যালেন্স থেকে টাকা কাটা হবে।");
+            // এখানে আপনার ট্রেডিং এপিআই কল হবে
+        }
+
+        setInterval(fetchMarket, 5000); // প্রতি ৫ সেকেন্ড পর পর আপডেট
+        fetchMarket();
+    </script>
+</body>
+</html>
