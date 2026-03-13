@@ -17,35 +17,67 @@
 <body>
 
     <div class="login-card" id="auth-container">
-        <img src="https://i.ibb.co/vzN5Y9Y/logo.png" class="logo">
+        <img src="https://i.ibb.co/vzN5Y9Y/logo.png" class="logo" alt="AAF Logo">
         <h1>AAF TELE-EARN-TRADING</h1>
         
         <div id="login-fields">
-            <input type="text" id="user-name" placeholder="Full Name (Sign up only)">
-            <input type="number" id="tg-number" placeholder="Telegram Number">
-            <button class="btn-auth" onclick="startAuth()">LOGIN WITH TELEGRAM</button>
+            <input type="text" id="user-name" placeholder="Full Name">
+            <input type="number" id="tg-number" placeholder="Telegram Number (e.g. 88017...)">
+            <button class="btn-auth" id="login-btn" onclick="startAuth()">LOGIN WITH TELEGRAM</button>
         </div>
     </div>
 
     <script>
-        // একবার লগইন থাকলে সরাসরি ড্যাশবোর্ডে নিয়ে যাবে
-        if(localStorage.getItem('aaf_session')) {
+        // আপনার Render থেকে পাওয়া aaf-api-free লিঙ্কটি এখানে বসান
+        const API_URL = "https://aaf-api-free.onrender.com"; 
+
+        // একবার লগইন থাকলে সরাসরি ড্যাশবোর্ডে নিয়ে যাবে
+        if(localStorage.getItem('user_id')) {
             window.location.href = "dashboard.html";
         }
 
         async function startAuth() {
             const name = document.getElementById('user-name').value;
             const phone = document.getElementById('tg-number').value;
+            const btn = document.getElementById('login-btn');
 
-            if(!phone) return alert("Enter Telegram Number");
+            if(!phone || !name) return alert("Please enter both Name and Phone Number");
 
-            // এখানে আপনার Bot এবং API এর মাধ্যমে Telegram OTP পাঠানো হবে
-            alert("Sending OTP via Telegram...");
-            
-            // সেশন এনক্রিপশন ও সেভ (সিমুলেশন)
-            localStorage.setItem('aaf_session', 'encrypted_token_here');
-            localStorage.setItem('user_name', name || "User");
-            window.location.href = "dashboard.html";
+            btn.innerText = "Connecting...";
+            btn.disabled = true;
+
+            try {
+                // সার্ভারে ডাটা পাঠানো
+                const response = await fetch(`${API_URL}/api/user_data_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phone, 
+                        name: name,
+                        telegram_id: phone.slice(-8) // আইডি হিসেবে ফোনের শেষ অংশ (প্রাথমিক ভাবে)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success" || data.message === "Account linked to server!") {
+                    // সেশন সেভ করা
+                    localStorage.setItem('user_id', phone.slice(-8)); 
+                    localStorage.setItem('user_name', name);
+                    
+                    alert("Authentication Successful!");
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Login failed! " + (data.message || ""));
+                    btn.innerText = "LOGIN WITH TELEGRAM";
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Server not responding. Make sure your Render URL is correct.");
+                btn.innerText = "LOGIN WITH TELEGRAM";
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
