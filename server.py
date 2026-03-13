@@ -1,102 +1,99 @@
-import os
-import random
-import datetime
+import sqlite3
 from flask import Flask, request, jsonify
-from pymongo import MongoClient
-from flask_cors import CORS  # ১. একদম ওপরে এটি আনুন
+from flask_cors import CORS # গিটহাব পেজ থেকে এক্সেস করার জন্য জরুরি
 
 app = Flask(__name__)
-CORS(app)  # ২. app = Flask(__name__) এর নিচেই এটি বসবে
+CORS(app) # এটি আপনার এপিআইকে সব জায়গা থেকে কাজ করার অনুমতি দেবে
 
-# --- ডাটাবেস কানেকশন ---
-MONGO_URI = "mongodb+srv://Asfak1:Abdullah6790@cluster0.ykmq2wh.mongodb.net/?retryWrites=true&w=majority"
-client = MongoClient(MONGO_URI)
-db = client['AAF_TeleEarn']
+# ডাটাবেস ফাইল পাথ
+DB_PATH = 'aaf_trading.db'
 
-@app.route('/')
-def index(): 
-    return "AAF Server is Online!"
-
-# --- ১. অ্যাডমিন স্ট্যাটাস ---
-@app.route('/admin/stats', methods=['GET'])
-def get_admin_stats():
-    total_users = db.users.count_documents({})
-    stats = db.admin_stats.find_one({"id": "global"})
-    total_withdrawn = stats.get('total_withdrawn', 0) if stats else 0
-    return jsonify({
-        "total_users": total_users, 
-        "total_withdrawn_amount": total_withdrawn,
-        "status": "Online"
-    })
-
-# --- ২. উইথড্র রিকোয়েস্ট রিসিভ ---
-@app.route('/api/withdraw', methods=['POST'])
-def handle_withdraw():
-    data = request.json
-    amount = data.get('amount')
-    
-    db.withdrawals.insert_one({
-        "user_id": data.get('user_id'),
-        "phone": data.get('phone'),
-        "amount": amount,
-        "status": "Pending",
-        "date": datetime.datetime.now()
-    })
-    
-    db.admin_stats.update_one(
-        {"id": "global"},
-        {"$inc": {"total_withdrawn": amount}},
-        upsert=True
-    )
-    return jsonify({"status": "success"})
-
-# --- ৩. ব্যালেন্স ট্রান্সফার ---
-@app.route('/api/transfer_to_main', methods=['POST'])
-def transfer_to_main():
-    data = request.json
-    user_id = data.get('user_id')
-    source = data.get('source')
-    
-    user = db.users.find_one({"telegram_id": user_id})
-    if not user: return jsonify({"error": "User not found"}), 404
-    
-    amount = user.get(f'{source}_balance', 0)
-    if amount > 0:
-        db.users.update_one(
-            {"telegram_id": user_id},
-            {"$inc": {"main_balance": amount}, "$set": {f"{source}_balance": 0}}
+# ডাটাবেস টেবিল তৈরি করা
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    # ট্রেড টেবিল: যেখানে ইনভেস্টমেন্ট এবং ফি জমা থাকবে
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            invest_amount REAL,
+            fee_amount REAL,
+            active_invest REAL,
+            entry_price REAL,
+            close_price REAL,
+            status TEXT DEFAULT 'OPEN',
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        return jsonify({"status": "success", "message": "Main Balance-এ যোগ হয়েছে!"})
-    return jsonify({"error": "ব্যালেন্স নেই"})
+    ''')
+    conn.commit()
+    conn.close()
 
-# --- ৪. ট্রেডিং চার্ট এবং প্রাইস ডাটা (HTML এর জন্য) ---
-@app.route('/get_aaf_price', methods=['GET'])
-def get_price():
-    # এখানে আমরা ডাটাবেস থেকে রিয়েল টাইম ডাটা নিতে পারি
-    stats = db.admin_stats.find_one({"id": "global"})
-    total_earned = stats.get('total_earned', 1) if stats else 1
-    total_withdrawn = stats.get('total_withdrawn', 0) if stats else 0
-    
-    ratio = total_withdrawn / total_earned if total_earned > 0 else 0
-    
-    if ratio >= 0.9:
-        price = 1.0 * (1 - ratio + 0.1)
-    else:
-        price = 1.0 + (total_earned * 0.001) - (total_withdrawn * 0.002)
-    
-    current_price = round(max(price, 0.1), 2)
+init_db()
 
+# ১. নতুন ট্রেড প্লেস করা (১০% ফি কাটার লজিক সহ)
+@app.route('/api/place_trade', methods=['POST'])
+def place_trade():
+    try:
+        data = request.json
+        user_id = data.get('user_id', 'Guest')
+        raw_amount = float(data.get('amount'))
+        entry_price = float(data.get('entry_price'))
+
+        # আপনার লজিক: ১০% ফি অ্যাডমিন পাবে
+        fee = raw_amount * 0.10
+        active_invest = raw_amount - fee
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO trades (user_id, invest_amount, fee_amount, active_invest, entry_price)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, raw_amount, fee, active_invest, entry_price))
+        
+        trade_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "status": "success",
+            "trade_id": trade_id,
+            "fee_charged": fee,
+            "active_invest": active_invest
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+# ২. অ্যাডমিন প্যানেলের জন্য আয় দেখা
+@app.route('/api/admin/total_earnings', methods=['GET'])
+def get_earnings():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    # মোট ফি (Admin Profit) যোগফল
+    cursor.execute('SELECT SUM(fee_amount) FROM trades')
+    total_fee = cursor.fetchone()[0]
+    
+    # মোট কয়টি ট্রেড হয়েছে
+    cursor.execute('SELECT COUNT(id) FROM trades')
+    total_trades = cursor.fetchone()[0]
+    
+    conn.close()
     return jsonify({
-        "current_price": current_price,
-        "main_balance": 500, # এটি পরবর্তীতে ডিনামিক করা যাবে
-        "chart_data": [
-            {"time": "2026-03-11", "open": 1.0, "high": 1.2, "low": 0.9, "close": 1.1},
-            {"time": "2026-03-12", "open": 1.1, "high": 1.5, "low": 1.0, "close": 1.4},
-            {"time": "2026-03-13", "open": 1.4, "high": 1.6, "low": 1.3, "close": current_price}
-        ]
+        "total_admin_profit": total_fee or 0,
+        "total_trades_count": total_trades or 0
     })
 
-# --- ৫. সার্ভার রান সেটআপ (সবার নিচে থাকবে) ---
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+# ৩. লাইভ প্রাইস ডাটা (আপনার ট্রেডিং পেজের জন্য)
+@app.route('/api/aaf_market', methods=['GET'])
+def get_market():
+    # এখানে আপনি সোলানা বা আপনার কাস্টম প্রাইস রিটার্ন করতে পারেন
+    # ডামি হিসেবে ১.২৫ রিটার্ন করছি
+    return jsonify({
+        "aaf_price_bdt": 1.25, 
+        "currency": "BDT"
+    })
+
+# সার্ভার রান করার শেষ পোর্টিং কোড
+if __name__ == '__main__':
+    # Render বা অন্য প্ল্যাটফর্মে হোস্টিংয়ের জন্য পোর্ট 5000 বা 8080 ব্যবহার করা হয়
+    app.run(host='0.0.0.0', port=5000, debug=False)
