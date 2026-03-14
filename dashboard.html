@@ -191,6 +191,11 @@
                     document.getElementById('tr-bal').innerText = data.trade_balance.toFixed(2);
                     document.getElementById('acc-count').innerText = data.added_accounts || 0;
                     
+                    // Withdraw ডাটা যদি সার্ভার থেকে আসে তবে আপডেট হবে
+                    if(data.total_withdraw) {
+                        document.getElementById('w-total').innerText = data.total_withdraw.toFixed(2);
+                    }
+
                     const status = document.getElementById('acc-status');
                     status.innerText = data.acc_status;
                     status.style.color = data.acc_status === "Active" ? "#39d353" : "#ff7b72";
@@ -200,8 +205,8 @@
             }
         }
 
+        // পেজ লোড হওয়ার সাথে সাথে ডাটা আপডেট করার জন্য কল করা হলো
         updateDashboard();
-        setInterval(updateDashboard, 5000); 
     </script>
 </body>
 </html>
