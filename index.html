@@ -3,38 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN-TRADING - Login</title>
+    <title>AAF TELE-EARN-TRADING - Secure Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --neon: #00ffcc; --bg: #050505; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: rgba(255,255,255,0.05); padding: 40px; border-radius: 25px; border: 1px solid var(--neon); text-align: center; width: 90%; max-width: 350px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0, 255, 204, 0.1); }
-        .logo { width: 80px; height: 80px; margin-bottom: 20px; box-shadow: 0 0 15px var(--neon); border-radius: 50%; object-fit: cover; border: 2px solid var(--neon); }
-        h1 { font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; color: var(--neon); }
-        .sub-text { font-size: 10px; opacity: 0.6; margin-bottom: 30px; display: block; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--neon); }
-        .btn-auth { width: 100%; padding: 15px; background: var(--neon); color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-auth:active { transform: scale(0.98); }
+        :root { 
+            --neon: #39d353; 
+            --bg: #0d1117; 
+            --input-bg: #161b22;
+            --border: #30363d;
+        }
+        body { 
+            background: var(--bg); 
+            color: #c9d1d9; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        
+        .login-card { 
+            background: var(--input-bg); 
+            padding: 40px 30px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border); 
+            text-align: center; 
+            width: 90%; 
+            max-width: 380px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .logo { 
+            width: 70px; 
+            height: 70px; 
+            margin-bottom: 20px; 
+            border-radius: 50%; 
+            border: 2px solid var(--neon); 
+            padding: 3px;
+        }
+        
+        h1 { 
+            font-size: 20px; 
+            margin-bottom: 5px; 
+            color: white; 
+            font-weight: 600; 
+        }
+        
+        .sub-text { 
+            font-size: 11px; 
+            color: #8b949e; 
+            margin-bottom: 30px; 
+            display: block; 
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        input { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: #0d1117; 
+            color: white; 
+            box-sizing: border-box; 
+            outline: none; 
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        
+        input:focus { 
+            border-color: var(--neon); 
+            box-shadow: 0 0 8px rgba(57, 211, 83, 0.2);
+        }
+        
+        .btn-auth { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--neon); 
+            color: #0d1117; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px; 
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        
+        .btn-auth:active { transform: scale(0.97); }
+        .btn-auth:disabled { background: #30363d; color: #8b949e; }
     </style>
 </head>
 <body>
 
     <div class="login-card" id="auth-container">
         <img src="https://t.me/i/userpic/320/aaf_tele_earn.jpg" class="logo" alt="AAF Logo">
-        <h1>AAF TELE-EARN-TRADING</h1>
-        <span class="sub-text">Powered by @aaf_tele_earn_bot</span>
+        <h1>Welcome Back</h1>
+        <span class="sub-text">Connect your account to start earning</span>
         
         <div id="login-fields">
-            <input type="text" id="user-name" placeholder="Full Name">
-            <input type="number" id="tg-number" placeholder="Telegram Number (+8801...)">
-            <button class="btn-auth" id="login-btn" onclick="startAuth()">LOGIN TO DASHBOARD</button>
+            <div class="input-group">
+                <input type="text" id="user-name" placeholder="Full Name">
+            </div>
+            <div class="input-group">
+                <input type="number" id="tg-number" placeholder="Telegram Number (+8801...)">
+            </div>
+            <button class="btn-auth" id="login-btn" onclick="startAuth()">ACCESS DASHBOARD</button>
         </div>
     </div>
 
     <script>
-        // আপনার সঠিক Render URL নিশ্চিত করুন
         const API_URL = "https://aaf-api-free.onrender.com"; 
 
+        // সেশন চেক
         if(localStorage.getItem('user_id')) {
             window.location.href = "dashboard.html";
         }
@@ -44,9 +129,9 @@
             const phone = document.getElementById('tg-number').value;
             const btn = document.getElementById('login-btn');
 
-            if(!phone || !name) return alert("Please enter both Name and Phone Number");
+            if(!phone || !name) return alert("Please fill in all details");
 
-            btn.innerText = "Connecting Server...";
+            btn.innerText = "Authenticating...";
             btn.disabled = true;
 
             try {
@@ -56,85 +141,27 @@
                     body: JSON.stringify({ 
                         phone: phone, 
                         name: name,
-                        telegram_id: phone.slice(-8) // এটি ইউজার আইডি হিসেবে ব্যবহৃত হবে
+                        telegram_id: phone.slice(-8)
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.status === "success" || data.message === "Account linked to server!") {
-                    // সেশন সেভ করা
                     localStorage.setItem('user_id', phone.slice(-8)); 
                     localStorage.setItem('user_name', name);
-                    
-                    alert("Authentication Successful!");
                     window.location.href = "dashboard.html";
                 } else {
-                    alert("Login failed! " + (data.message || "Invalid Details"));
-                    btn.innerText = "LOGIN TO DASHBOARD";
+                    alert("Authentication Failed: " + (data.message || "Invalid input"));
+                    btn.innerText = "ACCESS DASHBOARD";
                     btn.disabled = false;
                 }
             } catch (error) {
-                console.error("Error:", error);
-                alert("Server error! Please check if your Render API is running.");
-                btn.innerText = "LOGIN TO DASHBOARD";
+                alert("Server connection error. Please try again later.");
+                btn.innerText = "ACCESS DASHBOARD";
                 btn.disabled = false;
             }
         }
     </script>
-    <div class="nav-spacer" style="height: 70px;"></div> <nav class="slim-nav">
-    <a href="index.html" class="nav-item">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-    </a>
-    <a href="task.html" class="nav-item">
-        <i class="fas fa-tasks"></i>
-        <span>Task</span>
-    </a>
-    <a href="trading.html" class="nav-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Trade</span>
-    </a>
-    <a href="withdraw.html" class="nav-item">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-    </a>
-</nav>
-
-<style>
-    /* প্রিমিয়াম স্লিম ডিজাইন */
-    .slim-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 60px;
-        background: #0d1117; /* ডার্ক থিম */
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        border-top: 1px solid #30363d;
-        z-index: 9999;
-    }
-    .nav-item {
-        text-decoration: none;
-        color: #8b949e;
-        text-align: center;
-        flex: 1;
-        font-family: 'Inter', sans-serif;
-    }
-    .nav-item i {
-        font-size: 18px;
-        display: block;
-        margin-bottom: 3px;
-    }
-    .nav-item span {
-        font-size: 10px;
-        font-weight: 500;
-    }
-    .nav-item:active, .nav-item.active {
-        color: #39d353; /* ক্লিক করলে বা একটিভ থাকলে সবুজ হবে */
-    }
-</style>
 </body>
 </html>
