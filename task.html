@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Tasks - Center</title>
+    <title>AAF Tasks - Premium Center</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -14,37 +14,38 @@
             --text-secondary: #8b949e;
         }
         body { 
-            background: var(--bg); 
-            color: #c9d1d9; 
+            background: var(--bg); color: #c9d1d9; 
             font-family: 'Inter', sans-serif; 
-            padding: 15px; 
-            margin: 0; 
-            padding-bottom: 80px; 
+            padding: 15px; margin: 0; padding-bottom: 90px; 
         }
         
-        .header { text-align: center; margin-bottom: 25px; }
-        .header h1 { font-size: 22px; color: white; margin: 0; font-weight: 600; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 22px; color: white; margin: 0; }
 
         .balance-box { 
             background: linear-gradient(145deg, #1c2128, #161b22);
             padding: 20px; border-radius: 16px; text-align: center; 
-            margin-bottom: 25px; border: 1px solid var(--border);
+            margin-bottom: 20px; border: 1px solid var(--border);
         }
         .balance-box h2 { margin: 10px 0 0; color: var(--primary); font-size: 28px; }
 
+        .ad-container { text-align: center; margin: 15px 0; }
+
         .task-card { 
             background: var(--card-bg); border-radius: 12px; padding: 16px; 
-            margin-bottom: 15px; border: 1px solid var(--border); 
+            margin-bottom: 12px; border: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center;
         }
         .task-info h3 { margin: 0; font-size: 15px; color: #f0f6fc; }
+        .task-info p { margin: 4px 0 0; font-size: 12px; color: var(--primary); font-weight: bold; }
         
         .claim-btn { 
             background: var(--primary); color: #0d1117; border: none; 
             padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;
         }
+        .claim-btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
 
-        /* Slim Navigation */
+        /* Navigation */
         .slim-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
             background: #0d1117; display: flex; justify-content: space-around;
@@ -53,6 +54,8 @@
         .nav-item { text-decoration: none; color: var(--text-secondary); text-align: center; flex: 1; font-size: 10px; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
+
+        .error-msg { text-align: center; padding: 20px; color: #ff7b72; background: #21262d; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -62,24 +65,16 @@
     </div>
 
     <div class="balance-box">
-        <span>Current Earnings</span>
+        <span>Current Task Balance</span>
         <h2 id="task-bal">৳ 0.00</h2>
     </div>
 
-    <div class="task-card">
-        <div class="task-info">
-            <h3 id="t1-title">Task Name 1</h3>
-            <p id="t1-reward" style="color: var(--primary); font-size: 12px;">Reward: 0.00</p>
-        </div>
-        <button class="claim-btn" onclick="handleTask(1)">Start</button>
+    <div class="ad-container">
+        <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
     </div>
 
-    <div class="task-card">
-        <div class="task-info">
-            <h3 id="t2-title">Task Name 2</h3>
-            <p id="t2-reward" style="color: var(--primary); font-size: 12px;">Reward: 0.00</p>
-        </div>
-        <button class="claim-btn" onclick="handleTask(2)">Start</button>
+    <div id="task-list">
+        <p style="text-align: center; color: var(--text-secondary);">Loading Tasks...</p>
     </div>
 
     <nav class="slim-nav">
@@ -92,26 +87,119 @@
     <script>
         const API_URL = "https://aaf-api-free.onrender.com";
         const USER_ID = localStorage.getItem('user_id');
+        let totalTasks = 0;
+        let completedTasks = 0;
 
-        // ব্যালেন্স লোড করা
-        async function loadData() {
-            if(!USER_ID) return;
+        async function initPage() {
+            if (!USER_ID) {
+                document.getElementById('task-list').innerHTML = "<p class='error-msg'>দয়া করে আগে লগইন করুন।</p>";
+                return;
+            }
+
             try {
-                const res = await fetch(`${API_URL}/api/user_data/${USER_ID}`);
-                const data = await res.json();
-                if(data.status === "success") {
-                    document.getElementById('task-bal').innerText = "৳ " + data.task_balance.toFixed(2);
+                // ১. ইউজার ডাটা এবং চ্যানেল স্ট্যাটাস চেক
+                const userRes = await fetch(`${API_URL}/api/user_data/${USER_ID}`);
+                const userData = await userRes.json();
+                
+                if (userData.status === "success") {
+                    document.getElementById('task-bal').innerText = "৳ " + userData.task_balance.toFixed(2);
+                    
+                    // চ্যানেল চেক লজিক
+                    if (userData.acc_status !== "Active") {
+                        document.getElementById('task-list').innerHTML = `
+                            <div class="error-msg">
+                                <i class="fas fa-lock" style="font-size:30px; margin-bottom:10px;"></i>
+                                <p>টাস্ক আনলক করতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন।</p>
+                                <a href="https://t.me/your_channel" target="_blank" class="claim-btn" style="text-decoration:none; display:inline-block; margin-top:10px;">Join Channel</a>
+                            </div>
+                        `;
+                        return;
+                    }
                 }
-            } catch (e) { console.log("Load error"); }
-        }
-        loadData();
 
-        // এই ফাংশনটি আপনি আপনার লিঙ্ক বা লজিক দিয়ে কাস্টমাইজ করবেন
-        function handleTask(id) {
-            console.log("Task clicked: " + id);
-            alert("আপনি এই টাস্কটি কাস্টমাইজ করতে পারবেন।");
-            // এখানে আপনার window.open বা অন্য লজিক বসান
+                // ২. এডমিন প্যানেলের টাস্ক লোড করা
+                const taskRes = await fetch(`${API_URL}/api/get_admin_tasks`);
+                const tasks = await taskRes.json();
+                
+                const container = document.getElementById('task-list');
+                container.innerHTML = "";
+                totalTasks = tasks.length;
+
+                if (totalTasks === 0) {
+                    container.innerHTML = "<p style='text-align:center;'>আপাতত কোনো টাস্ক নেই।</p>";
+                    return;
+                }
+
+                tasks.forEach((task, index) => {
+                    const cardHTML = `
+                        <div class="task-card">
+                            <div class="task-info">
+                                <h3>${task.name}</h3>
+                                <p>+ ৳ 0.08</p>
+                            </div>
+                            <button class="claim-btn" id="btn-${index}" onclick="handleTask('${task.link}', ${index})">Visit</button>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
+                });
+
+            } catch (err) {
+                document.getElementById('task-list').innerHTML = "<p class='error-msg'>সার্ভার ত্রুটি! আবার চেষ্টা করুন।</p>";
+            }
         }
+
+        async function handleTask(link, index) {
+            const btn = document.getElementById(`btn-${index}`);
+            btn.disabled = true;
+            btn.innerText = "Visiting...";
+
+            window.open(link, "_blank");
+
+            // রিওয়ার্ড (৮ পয়সা) যোগ করার রিকোয়েস্ট
+            try {
+                const res = await fetch(`${API_URL}/api/add_reward`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID, amount: 0.08, type: 'task_click' })
+                });
+                
+                const data = await res.json();
+                if (data.status === "success") {
+                    completedTasks++;
+                    btn.innerText = "Done";
+                    btn.style.background = "#21262d";
+                    
+                    // সব টাস্ক শেষ হলে ২৪ ঘণ্টার বোনাস চেক
+                    if (completedTasks === totalTasks) {
+                        claimDailyBonus();
+                    }
+                } else {
+                    alert(data.message);
+                    btn.disabled = false;
+                    btn.innerText = "Visit";
+                }
+            } catch (e) {
+                alert("নেটওয়ার্ক সমস্যা!");
+                btn.disabled = false;
+            }
+        }
+
+        async function claimDailyBonus() {
+            try {
+                const res = await fetch(`${API_URL}/api/claim_daily_bonus`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID })
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    alert("অভিনন্দন! সব টাস্ক শেষ করার জন্য ১ টাকা বোনাস যোগ হয়েছে। (২৪ ঘণ্টা পর আবার পাবেন)");
+                    location.reload();
+                }
+            } catch (e) { console.log("Bonus error"); }
+        }
+
+        window.onload = initPage;
     </script>
 </body>
 </html>
