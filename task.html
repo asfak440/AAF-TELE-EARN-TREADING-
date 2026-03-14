@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Tasks - Premium Earning</title>
+    <title>AAF Tasks - Center</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -16,10 +16,10 @@
         body { 
             background: var(--bg); 
             color: #c9d1d9; 
-            font-family: 'Inter', -apple-system, sans-serif; 
+            font-family: 'Inter', sans-serif; 
             padding: 15px; 
             margin: 0; 
-            padding-bottom: 80px; /* নেভিগেশন বারের জন্য জায়গা */
+            padding-bottom: 80px; 
         }
         
         .header { text-align: center; margin-bottom: 25px; }
@@ -27,72 +27,32 @@
 
         .balance-box { 
             background: linear-gradient(145deg, #1c2128, #161b22);
-            padding: 20px; 
-            border-radius: 16px; 
-            text-align: center; 
-            margin-bottom: 25px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            padding: 20px; border-radius: 16px; text-align: center; 
+            margin-bottom: 25px; border: 1px solid var(--border);
         }
-        .balance-box span { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
         .balance-box h2 { margin: 10px 0 0; color: var(--primary); font-size: 28px; }
 
         .task-card { 
-            background: var(--card-bg); 
-            border-radius: 12px; 
-            padding: 16px; 
-            margin-bottom: 15px; 
-            border: 1px solid var(--border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
+            background: var(--card-bg); border-radius: 12px; padding: 16px; 
+            margin-bottom: 15px; border: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .task-info h3 { margin: 0; font-size: 15px; color: #f0f6fc; font-weight: 500; }
-        .task-info p { margin: 4px 0 0; font-size: 13px; color: var(--primary); font-weight: 600; }
+        .task-info h3 { margin: 0; font-size: 15px; color: #f0f6fc; }
         
         .claim-btn { 
-            background: var(--primary); 
-            color: #0d1117; 
-            border: none; 
-            padding: 8px 16px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 13px;
-            transition: 0.2s;
+            background: var(--primary); color: #0d1117; border: none; 
+            padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;
         }
-        .claim-btn:active { transform: scale(0.95); }
-        .claim-btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
-        
-        /* প্রগ্রেস বার */
-        .loading-bar { width: 100%; height: 4px; background: #21262d; border-radius: 10px; margin-top: 10px; display: none; overflow: hidden; }
-        .progress { width: 0%; height: 100%; background: var(--primary); transition: 5s linear; }
 
-        /* স্লিম নেভিগেশন ডিজাইন */
+        /* Slim Navigation */
         .slim-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 65px;
-            background: #0d1117;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            z-index: 9999;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
+            background: #0d1117; display: flex; justify-content: space-around;
+            align-items: center; border-top: 1px solid var(--border); z-index: 9999;
         }
-        .nav-item {
-            text-decoration: none;
-            color: var(--text-secondary);
-            text-align: center;
-            flex: 1;
-            font-size: 10px;
-            transition: 0.3s;
-        }
+        .nav-item { text-decoration: none; color: var(--text-secondary); text-align: center; flex: 1; font-size: 10px; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
-        .nav-item span { display: block; }
     </style>
 </head>
 <body>
@@ -102,68 +62,55 @@
     </div>
 
     <div class="balance-box">
-        <span>Available Earnings</span>
+        <span>Current Earnings</span>
         <h2 id="task-bal">৳ 0.00</h2>
     </div>
 
     <div class="task-card">
         <div class="task-info">
-            <h3>Daily Video Ad</h3>
-            <p>+ ৳ 2.00</p>
-            <div class="loading-bar" id="l-bar-1"><div class="progress" id="p-1"></div></div>
+            <h3 id="t1-title">Task Name 1</h3>
+            <p id="t1-reward" style="color: var(--primary); font-size: 12px;">Reward: 0.00</p>
         </div>
-        <button class="claim-btn" id="btn-1" onclick="startTask(1, 2.00)">Watch</button>
+        <button class="claim-btn" onclick="handleTask(1)">Start</button>
     </div>
 
     <div class="task-card">
         <div class="task-info">
-            <h3>Website Visit</h3>
-            <p>+ ৳ 1.50</p>
-            <div class="loading-bar" id="l-bar-2"><div class="progress" id="p-2"></div></div>
+            <h3 id="t2-title">Task Name 2</h3>
+            <p id="t2-reward" style="color: var(--primary); font-size: 12px;">Reward: 0.00</p>
         </div>
-        <button class="claim-btn" id="btn-2" onclick="startTask(2, 1.50)">Visit</button>
+        <button class="claim-btn" onclick="handleTask(2)">Start</button>
     </div>
 
     <nav class="slim-nav">
-        <a href="index.html" class="nav-item">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
-        </a>
-        <a href="task.html" class="nav-item active"> <i class="fas fa-tasks"></i>
-            <span>Task</span>
-        </a>
-        <a href="trading.html" class="nav-item">
-            <i class="fas fa-chart-line"></i>
-            <span>Trade</span>
-        </a>
-        <a href="withdraw.html" class="nav-item">
-            <i class="fas fa-wallet"></i>
-            <span>Wallet</span>
-        </a>
+        <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="task.html" class="nav-item active"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="trading.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+        <a href="withdraw.html" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
     <script>
-        let currentBalance = 0.00;
+        const API_URL = "https://aaf-api-free.onrender.com";
+        const USER_ID = localStorage.getItem('user_id');
 
-        function startTask(taskId, reward) {
-            const btn = document.getElementById(`btn-${taskId}`);
-            const bar = document.getElementById(`l-bar-${taskId}`);
-            const progress = document.getElementById(`p-${taskId}`);
+        // ব্যালেন্স লোড করা
+        async function loadData() {
+            if(!USER_ID) return;
+            try {
+                const res = await fetch(`${API_URL}/api/user_data/${USER_ID}`);
+                const data = await res.json();
+                if(data.status === "success") {
+                    document.getElementById('task-bal').innerText = "৳ " + data.task_balance.toFixed(2);
+                }
+            } catch (e) { console.log("Load error"); }
+        }
+        loadData();
 
-            btn.disabled = true;
-            btn.innerText = "Wait...";
-            bar.style.display = "block";
-            
-            setTimeout(() => { progress.style.width = "100%"; }, 100);
-
-            setTimeout(() => {
-                currentBalance += reward;
-                document.getElementById('task-bal').innerText = "৳ " + currentBalance.toFixed(2);
-                btn.innerText = "Done";
-                btn.style.background = "#21262d";
-                btn.style.color = "#39d353";
-                alert(`অভিনন্দন! আপনি ৳${reward} পেয়েছেন।`);
-            }, 5000); 
+        // এই ফাংশনটি আপনি আপনার লিঙ্ক বা লজিক দিয়ে কাস্টমাইজ করবেন
+        function handleTask(id) {
+            console.log("Task clicked: " + id);
+            alert("আপনি এই টাস্কটি কাস্টমাইজ করতে পারবেন।");
+            // এখানে আপনার window.open বা অন্য লজিক বসান
         }
     </script>
 </body>
