@@ -12,10 +12,10 @@ from Crypto.Util.Padding import pad, unpad
 app = Flask(__name__)
 CORS(app)
 
-# --- কনফিগারেশন ---
+# --- কনফিগারেশন (MONGO_URI এবং API ঠিক করা হয়েছে) ---
 API_ID = 36466824      
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0")
 SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' 
 
 # ডাটাবেস কানেকশন
@@ -28,7 +28,7 @@ try:
 except Exception as e:
     print(f"❌ MongoDB Error: {e}")
 
-# --- এনক্রিপশন লজিক ---
+# --- সেশন এনক্রিপশন লজিক ---
 def encrypt_session(session_str):
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
     ct_bytes = cipher.encrypt(pad(session_str.encode(), AES.block_size))
@@ -50,82 +50,52 @@ def add_account():
     uid = data.get('telegram_id')
     raw_session = data.get('session_string') 
     phone = data.get('phone')
-
     if not raw_session or not uid:
         return jsonify({"status": "error", "message": "Invalid data"}), 400
-
     encrypted = encrypt_session(raw_session)
-    
-    sessions_col.update_one(
-        {"phone": phone},
-        {"$set": {"telegram_id": int(uid), "session": encrypted, "status": "Active"}},
-        upsert=True
-    )
+    sessions_col.update_one({"phone": phone}, {"$set": {"telegram_id": int(uid), "session": encrypted, "status": "Active"}}, upsert=True)
     users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"added_accounts": 1}})
-    
     return jsonify({"status": "success", "message": "Account linked to server!"})
 
-# --- ২. অ্যাডমিন কন্ট্রোল লজিক ---
-@app.route('/api/admin/force_join', methods=['POST'])
-async def force_join():
-    data = request.json
-    channel_to_join = data.get('channel', '@aaf_tele_earn') 
-
+# --- ২. অ্যাডমিন কন্ট্রোল (Force Join লজিক ঠিক করা হয়েছে) ---
+async def join_logic(channel):
     all_sessions = sessions_col.find({"status": "Active"})
     count = 0
-
     for sess in all_sessions:
         try:
             string_session = decrypt_session(sess['session'])
             async with TelegramClient(StringSession(string_session), API_ID, API_HASH) as client:
-                await client(functions.channels.JoinChannelRequest(channel=channel_to_join))
+                await client(functions.channels.JoinChannelRequest(channel=channel))
                 count += 1
-        except Exception as e:
-            print(f"Error controlling account {sess['phone']}: {e}")
+        except: pass
+    return count
 
-    return jsonify({"status": "success", "joined_accounts": count})
-
-# --- ৩. ড্যাশবোর্ড ডাটা (টাস্ক চার্ট সহ আপডেট করা হয়েছে) ---
-@app.route('/api/user_data_login', methods=['POST'])
-def user_login():
+@app.route('/api/admin/force_join', methods=['POST'])
+def force_join_trigger():
     data = request.json
-    uid = data.get('telegram_id')
-    name = data.get('name')
-    
-    users_col.update_one(
-        {"telegram_id": int(uid)},
-        {"$set": {"name": name, "status": "Active"}},
-        upsert=True
-    )
-    return jsonify({"status": "success", "message": "Account linked to server!"})
+    channel = data.get('channel', '@aaf_tele_earn')
+    # Flask এ async চালানোর সঠিক উপায়
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    joined_count = loop.run_until_complete(join_logic(channel))
+    return jsonify({"status": "success", "joined_accounts": joined_count})
 
+# --- ৩. ইউজার ডাটা এবং টাস্ক লিস্ট ---
 @app.route('/api/user_data/<telegram_id>', methods=['GET'])
 def get_user_data(telegram_id):
-    try:
-        user = users_col.find_one({"telegram_id": int(telegram_id)})
-        if user:
-            # এখানে আপনার টাস্ক চার্ট ডাটা
-            task_list = [
-                {"id": 1, "task_name": "Daily Login", "reward": 0.5, "status": "Done"},
-                {"id": 2, "task_name": "Telegram Join", "reward": 1.0, "status": "Pending"},
-                {"id": 3, "task_name": "Watch Ad", "reward": 0.2, "status": "Open"}
-            ]
-            
-            return jsonify({
-                "status": "success",
-                "name": user.get("name", "User"),
-                "main_balance": user.get("main_balance", 0.0),
-                "task_balance": user.get("task_balance", 0.0),
-                "trade_balance": user.get("trade_balance", 0.0),
-                "acc_balance": user.get("acc_balance", 0.0),
-                "acc_status": user.get("status", "Inactive"),
-                "added_accounts": user.get("added_accounts", 0),
-                "tasks": task_list  # এই ডাটা আপনার ওয়েবসাইটে চার্ট হিসেবে দেখাবে
-            })
-    except Exception as e:
-        print(f"❌ API Error: {e}")
-        
-    return jsonify({"status": "error", "message": "User not found"})
+    user = users_col.find_one({"telegram_id": int(telegram_id)})
+    if user:
+        task_list = [
+            {"id": 1, "task_name": "Daily Video Ad", "reward": 0.5, "status": "Open"},
+            {"id": 2, "task_name": "Join Main Channel", "reward": 1.0, "status": "Pending"}
+        ]
+        return jsonify({
+            "status": "success",
+            "name": user.get("name", "User"),
+            "main_balance": user.get("main_balance", 0.0),
+            "tasks": task_list
+        })
+    return jsonify({"status": "error", "message": "User not found"}), 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
