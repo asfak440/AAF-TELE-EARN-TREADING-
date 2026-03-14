@@ -87,6 +87,9 @@
         .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 10px; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
+
+        /* Ad Styling */
+        .ad-container { text-align: center; margin: 10px 0; padding: 0 15px; }
     </style>
 </head>
 <body>
@@ -100,6 +103,10 @@
             <div id="status-dot" style="color: var(--primary); font-size: 12px; font-weight: bold;">● Online</div>
             <div style="font-size: 9px; color: var(--text-gray);">v2.0 Standard</div>
         </div>
+    </div>
+
+    <div class="ad-container">
+        <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
     </div>
 
     <div class="balance-grid">
@@ -125,6 +132,10 @@
         <i class="fab fa-telegram"></i> Join Official Channel
     </a>
 
+    <div class="ad-container">
+        <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
+    </div>
+
     <div class="status-box">
         <div class="stat-row">
             <span class="stat-label">Telegram Status:</span> 
@@ -135,7 +146,7 @@
             <span id="acc-count" style="font-weight: bold;">0</span>
         </div>
         <p style="font-size: 11px; color: #ff7b72; margin-top: 10px;">
-            <i class="fas fa-exclamation-triangle"></i> চ্যানেল লিভ করলে ইনকাম অটো বন্ধ হয়ে যাবে।
+            <i class="fas fa-exclamation-triangle"></i> চ্যানেল লিভ করলে ইনকাম অটো বন্ধ হয়ে যাবে।
         </p>
     </div>
 
@@ -178,6 +189,7 @@
                     document.getElementById('m-bal').innerText = data.main_balance.toFixed(2);
                     document.getElementById('t-bal').innerText = data.task_balance.toFixed(2);
                     document.getElementById('tr-bal').innerText = data.trade_balance.toFixed(2);
+                    document.getElementById('acc-count').innerText = data.added_accounts || 0;
                     
                     const status = document.getElementById('acc-status');
                     status.innerText = data.acc_status;
@@ -189,7 +201,7 @@
         }
 
         updateDashboard();
-        setInterval(updateDashboard, 5000); // ৫ সেকেন্ড পরপর আপডেট হবে
+        setInterval(updateDashboard, 5000); 
     </script>
 </body>
 </html>
