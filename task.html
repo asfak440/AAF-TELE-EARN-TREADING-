@@ -78,5 +78,59 @@
             }, 5000); // ৫ সেকেন্ড অপেক্ষা (বিজ্ঞাপন দেখার সময়)
         }
     </script>
+    <div class="nav-spacer" style="height: 70px;"></div> <nav class="slim-nav">
+    <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="task.html" class="nav-item">
+        <i class="fas fa-tasks"></i>
+        <span>Task</span>
+    </a>
+    <a href="trading.html" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Trade</span>
+    </a>
+    <a href="withdraw.html" class="nav-item">
+        <i class="fas fa-wallet"></i>
+        <span>Wallet</span>
+    </a>
+</nav>
+
+<style>
+    /* প্রিমিয়াম স্লিম ডিজাইন */
+    .slim-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        background: #0d1117; /* ডার্ক থিম */
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        border-top: 1px solid #30363d;
+        z-index: 9999;
+    }
+    .nav-item {
+        text-decoration: none;
+        color: #8b949e;
+        text-align: center;
+        flex: 1;
+        font-family: 'Inter', sans-serif;
+    }
+    .nav-item i {
+        font-size: 18px;
+        display: block;
+        margin-bottom: 3px;
+    }
+    .nav-item span {
+        font-size: 10px;
+        font-weight: 500;
+    }
+    .nav-item:active, .nav-item.active {
+        color: #39d353; /* ক্লিক করলে বা একটিভ থাকলে সবুজ হবে */
+    }
+</style>
 </body>
 </html>
