@@ -17,9 +17,10 @@
             color: #c9d1d9; 
             font-family: 'Inter', -apple-system, sans-serif; 
             display: flex; 
+            flex-direction: column; /* অ্যাডগুলো উপরে নিচে সাজানোর জন্য */
             justify-content: center; 
             align-items: center; 
-            height: 100vh; 
+            min-height: 100vh; 
             margin: 0; 
         }
         
@@ -32,6 +33,7 @@
             width: 90%; 
             max-width: 380px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: 20px 0; /* অ্যাডের সাথে গ্যাপ রাখার জন্য */
         }
         
         .logo { 
@@ -96,9 +98,22 @@
         
         .btn-auth:active { transform: scale(0.97); }
         .btn-auth:disabled { background: #30363d; color: #8b949e; }
+
+        /* বিজ্ঞাপন দেখানোর জন্য স্টাইল */
+        .ad-unit-wrapper {
+            width: 320px;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
+
+    <div class="ad-unit-wrapper">
+        <div id="frame" style="width: 320px;margin: auto;z-index: 99998;height: auto">
+            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50'
+                    style='border:0; padding:0; width:320px; height:50px; overflow:hidden;display: block;margin: auto'></iframe>
+        </div>
+    </div>
 
     <div class="login-card" id="auth-container">
         <img src="https://t.me/i/userpic/320/aaf_tele_earn.jpg" class="logo" alt="AAF Logo">
@@ -116,10 +131,18 @@
         </div>
     </div>
 
+    <div class="ad-unit-wrapper">
+        <div style="width: 320px;margin: auto;">
+            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50'
+                    style='border:0; padding:0; width:320px; height:50px; overflow:hidden;display: block;margin: auto'></iframe>
+        </div>
+    </div>
+
     <script>
+        // আপনার সার্ভারের লিঙ্কটি এখানে দিন
         const API_URL = "https://aaf-api-free.onrender.com"; 
 
-        // সেশন চেক
+        // সেশন চেক (আগে লগইন করা থাকলে সরাসরি ড্যাশবোর্ডে যাবে)
         if(localStorage.getItem('user_id')) {
             window.location.href = "dashboard.html";
         }
