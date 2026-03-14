@@ -3,42 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Tasks - Earn Money</title>
+    <title>AAF Tasks - Premium Earning</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #00ffcc; --bg: #0c0d15; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #2a2e39; padding-bottom: 10px; }
-        .balance-box { background: #1e222d; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid var(--primary); }
-        .balance-box span { font-size: 14px; opacity: 0.8; }
-        .balance-box h2 { margin: 5px 0; color: var(--primary); }
+        :root { 
+            --primary: #39d353; 
+            --bg: #0d1117; 
+            --card-bg: #161b22;
+            --border: #30363d;
+            --text-secondary: #8b949e;
+        }
+        body { 
+            background: var(--bg); 
+            color: #c9d1d9; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            padding: 15px; 
+            margin: 0; 
+            padding-bottom: 80px; /* নেভিগেশন বারের জন্য জায়গা */
+        }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { font-size: 22px; color: white; margin: 0; font-weight: 600; }
 
-        .task-card { background: #131722; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #2a2e39; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .task-info h3 { margin: 0; font-size: 16px; color: #fff; }
-        .task-info p { margin: 5px 0 0; font-size: 12px; color: var(--primary); font-weight: bold; }
+        .balance-box { 
+            background: linear-gradient(145deg, #1c2128, #161b22);
+            padding: 20px; 
+            border-radius: 16px; 
+            text-align: center; 
+            margin-bottom: 25px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .balance-box span { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+        .balance-box h2 { margin: 10px 0 0; color: var(--primary); font-size: 28px; }
+
+        .task-card { 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            padding: 16px; 
+            margin-bottom: 15px; 
+            border: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .task-info h3 { margin: 0; font-size: 15px; color: #f0f6fc; font-weight: 500; }
+        .task-info p { margin: 4px 0 0; font-size: 13px; color: var(--primary); font-weight: 600; }
         
-        .claim-btn { background: var(--primary); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .claim-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .claim-btn { 
+            background: var(--primary); 
+            color: #0d1117; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .claim-btn:active { transform: scale(0.95); }
+        .claim-btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
         
-        /* লোডিং এনিমেশন */
-        .loading-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 10px; display: none; overflow: hidden; }
+        /* প্রগ্রেস বার */
+        .loading-bar { width: 100%; height: 4px; background: #21262d; border-radius: 10px; margin-top: 10px; display: none; overflow: hidden; }
         .progress { width: 0%; height: 100%; background: var(--primary); transition: 5s linear; }
+
+        /* স্লিম নেভিগেশন ডিজাইন */
+        .slim-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            background: #0d1117;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            z-index: 9999;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: var(--text-secondary);
+            text-align: center;
+            flex: 1;
+            font-size: 10px;
+            transition: 0.3s;
+        }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-item span { display: block; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Available Tasks</h1>
+        <h1>Tasks Center</h1>
     </div>
 
     <div class="balance-box">
-        <span>Your Earnings</span>
+        <span>Available Earnings</span>
         <h2 id="task-bal">৳ 0.00</h2>
     </div>
 
     <div class="task-card">
         <div class="task-info">
             <h3>Daily Video Ad</h3>
-            <p>Reward: ৳ 2.00</p>
+            <p>+ ৳ 2.00</p>
             <div class="loading-bar" id="l-bar-1"><div class="progress" id="p-1"></div></div>
         </div>
         <button class="claim-btn" id="btn-1" onclick="startTask(1, 2.00)">Watch</button>
@@ -46,12 +117,30 @@
 
     <div class="task-card">
         <div class="task-info">
-            <h3>Click & Visit Website</h3>
-            <p>Reward: ৳ 1.50</p>
+            <h3>Website Visit</h3>
+            <p>+ ৳ 1.50</p>
             <div class="loading-bar" id="l-bar-2"><div class="progress" id="p-2"></div></div>
         </div>
         <button class="claim-btn" id="btn-2" onclick="startTask(2, 1.50)">Visit</button>
     </div>
+
+    <nav class="slim-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="task.html" class="nav-item active"> <i class="fas fa-tasks"></i>
+            <span>Task</span>
+        </a>
+        <a href="trading.html" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Trade</span>
+        </a>
+        <a href="withdraw.html" class="nav-item">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+    </nav>
 
     <script>
         let currentBalance = 0.00;
@@ -62,7 +151,7 @@
             const progress = document.getElementById(`p-${taskId}`);
 
             btn.disabled = true;
-            btn.innerText = "Processing...";
+            btn.innerText = "Wait...";
             bar.style.display = "block";
             
             setTimeout(() => { progress.style.width = "100%"; }, 100);
@@ -70,67 +159,12 @@
             setTimeout(() => {
                 currentBalance += reward;
                 document.getElementById('task-bal').innerText = "৳ " + currentBalance.toFixed(2);
-                btn.innerText = "Completed";
-                btn.style.background = "#222";
-                alert(`অভিনন্দন! আপনি ৳${reward} ইনকাম করেছেন।`);
-                
-                // এখানে সার্ভারে ডাটা পাঠানোর কোড যোগ করা যাবে
-            }, 5000); // ৫ সেকেন্ড অপেক্ষা (বিজ্ঞাপন দেখার সময়)
+                btn.innerText = "Done";
+                btn.style.background = "#21262d";
+                btn.style.color = "#39d353";
+                alert(`অভিনন্দন! আপনি ৳${reward} পেয়েছেন।`);
+            }, 5000); 
         }
     </script>
-    <div class="nav-spacer" style="height: 70px;"></div> <nav class="slim-nav">
-    <a href="index.html" class="nav-item">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
-    </a>
-    <a href="task.html" class="nav-item">
-        <i class="fas fa-tasks"></i>
-        <span>Task</span>
-    </a>
-    <a href="trading.html" class="nav-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Trade</span>
-    </a>
-    <a href="withdraw.html" class="nav-item">
-        <i class="fas fa-wallet"></i>
-        <span>Wallet</span>
-    </a>
-</nav>
-
-<style>
-    /* প্রিমিয়াম স্লিম ডিজাইন */
-    .slim-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 60px;
-        background: #0d1117; /* ডার্ক থিম */
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        border-top: 1px solid #30363d;
-        z-index: 9999;
-    }
-    .nav-item {
-        text-decoration: none;
-        color: #8b949e;
-        text-align: center;
-        flex: 1;
-        font-family: 'Inter', sans-serif;
-    }
-    .nav-item i {
-        font-size: 18px;
-        display: block;
-        margin-bottom: 3px;
-    }
-    .nav-item span {
-        font-size: 10px;
-        font-weight: 500;
-    }
-    .nav-item:active, .nav-item.active {
-        color: #39d353; /* ক্লিক করলে বা একটিভ থাকলে সবুজ হবে */
-    }
-</style>
 </body>
 </html>
