@@ -16,7 +16,8 @@
         body { 
             background: var(--bg); color: #c9d1d9; 
             font-family: 'Inter', sans-serif; 
-            padding: 15px; margin: 0; padding-bottom: 90px; 
+            padding: 15px; margin: 0; 
+            padding-bottom: 150px; /* অ্যাড এবং নেভিগেশনের জন্য বাড়তি জায়গা */
         }
         
         .header { text-align: center; margin-bottom: 20px; }
@@ -29,7 +30,18 @@
         }
         .balance-box h2 { margin: 10px 0 0; color: var(--primary); font-size: 28px; }
 
-        .ad-container { text-align: center; margin: 15px 0; }
+        /* স্ক্রল করলেও অ্যাডটি যাতে ভেসে থাকে তার জন্য নতুন স্টাইল */
+        .sticky-ad {
+            position: fixed;
+            bottom: 65px; /* নেভিগেশন বারের ঠিক উপরে */
+            left: 0;
+            width: 100%;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            padding: 5px 0;
+            z-index: 9998;
+            text-align: center;
+        }
 
         .task-card { 
             background: var(--card-bg); border-radius: 12px; padding: 16px; 
@@ -69,12 +81,12 @@
         <h2 id="task-bal">৳ 0.00</h2>
     </div>
 
-    <div class="ad-container">
-        <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
-    </div>
-
     <div id="task-list">
         <p style="text-align: center; color: var(--text-secondary);">Loading Tasks...</p>
+    </div>
+
+    <div class="sticky-ad">
+        <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display: block; margin: auto;'></iframe>
     </div>
 
     <nav class="slim-nav">
@@ -92,24 +104,22 @@
 
         async function initPage() {
             if (!USER_ID) {
-                document.getElementById('task-list').innerHTML = "<p class='error-msg'>দয়া করে আগে লগইন করুন।</p>";
+                document.getElementById('task-list').innerHTML = "<p class='error-msg'>দয়া করে আগে লগইন করুন।</p>";
                 return;
             }
 
             try {
-                // ১. ইউজার ডাটা এবং চ্যানেল স্ট্যাটাস চেক
                 const userRes = await fetch(`${API_URL}/api/user_data/${USER_ID}`);
                 const userData = await userRes.json();
                 
                 if (userData.status === "success") {
                     document.getElementById('task-bal').innerText = "৳ " + userData.task_balance.toFixed(2);
                     
-                    // চ্যানেল চেক লজিক
                     if (userData.acc_status !== "Active") {
                         document.getElementById('task-list').innerHTML = `
                             <div class="error-msg">
                                 <i class="fas fa-lock" style="font-size:30px; margin-bottom:10px;"></i>
-                                <p>টাস্ক আনলক করতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন।</p>
+                                <p>টাস্ক আনলক করতে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন।</p>
                                 <a href="https://t.me/your_channel" target="_blank" class="claim-btn" style="text-decoration:none; display:inline-block; margin-top:10px;">Join Channel</a>
                             </div>
                         `;
@@ -117,7 +127,6 @@
                     }
                 }
 
-                // ২. এডমিন প্যানেলের টাস্ক লোড করা
                 const taskRes = await fetch(`${API_URL}/api/get_admin_tasks`);
                 const tasks = await taskRes.json();
                 
@@ -152,10 +161,8 @@
             const btn = document.getElementById(`btn-${index}`);
             btn.disabled = true;
             btn.innerText = "Visiting...";
-
             window.open(link, "_blank");
 
-            // রিওয়ার্ড (৮ পয়সা) যোগ করার রিকোয়েস্ট
             try {
                 const res = await fetch(`${API_URL}/api/add_reward`, {
                     method: 'POST',
@@ -169,7 +176,6 @@
                     btn.innerText = "Done";
                     btn.style.background = "#21262d";
                     
-                    // সব টাস্ক শেষ হলে ২৪ ঘণ্টার বোনাস চেক
                     if (completedTasks === totalTasks) {
                         claimDailyBonus();
                     }
@@ -179,7 +185,7 @@
                     btn.innerText = "Visit";
                 }
             } catch (e) {
-                alert("নেটওয়ার্ক সমস্যা!");
+                alert("নেটওয়ার্ক সমস্যা!");
                 btn.disabled = false;
             }
         }
@@ -193,7 +199,7 @@
                 });
                 const data = await res.json();
                 if (data.status === "success") {
-                    alert("অভিনন্দন! সব টাস্ক শেষ করার জন্য ১ টাকা বোনাস যোগ হয়েছে। (২৪ ঘণ্টা পর আবার পাবেন)");
+                    alert("অভিনন্দন! সব টাস্ক শেষ করার জন্য ১ টাকা বোনাস যোগ হয়েছে। (২৪ ঘণ্টা পর আবার পাবেন)");
                     location.reload();
                 }
             } catch (e) { console.log("Bonus error"); }
