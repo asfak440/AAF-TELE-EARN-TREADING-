@@ -12,6 +12,7 @@
             --card-bg: #161b22;
             --border: #30363d;
             --text-gray: #8b949e;
+            --accent-cyan: #00ffcc;
         }
         body { 
             background: var(--bg); 
@@ -21,7 +22,6 @@
             padding-bottom: 90px; 
         }
         
-        /* Top Header */
         .top-bar { 
             padding: 20px; 
             display: flex; 
@@ -33,23 +33,36 @@
         .user-info h3 { margin: 0; font-size: 18px; color: var(--primary); }
         .user-info span { font-size: 11px; color: var(--text-gray); }
 
-        /* Balance Grid */
+        /* Balance Grid - Updated for Side-by-Side Balance & Account */
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
+        
         .card { 
             background: var(--card-bg); 
             padding: 18px; 
             border-radius: 12px; 
             border: 1px solid var(--border); 
             text-align: left; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .card.main { 
-            grid-column: span 2; 
+
+        /* মেইন ব্যালেন্স এবং অ্যাক্টিভ অ্যাকাউন্ট কার্ড */
+        .card.main-row {
+            border-color: var(--primary);
             background: linear-gradient(135deg, #1c2128 0%, #0d1117 100%);
-            border-color: var(--primary); 
         }
-        .card h4 { margin: 0; font-size: 11px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
-        .card p { margin: 8px 0 0; font-size: 22px; font-weight: bold; color: white; }
-        .card p span.currency { font-size: 16px; color: var(--primary); margin-right: 4px; }
+        .card.account-row {
+            border-color: var(--accent-cyan);
+        }
+
+        .card h4 { margin: 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card p { margin: 8px 0 0; font-size: 20px; font-weight: bold; color: white; }
+        .card p span.currency { font-size: 14px; color: var(--primary); margin-right: 2px; }
+        .card p span#active-acc { color: var(--accent-cyan); }
+
+        /* নিচের কার্ডগুলো */
+        .card.full-width { grid-column: span 2; }
 
         /* Status Section */
         .status-box { 
@@ -62,23 +75,13 @@
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
         .stat-label { color: var(--text-gray); }
 
-        /* Join Button */
         .btn-join { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            gap: 10px;
-            background: #2ea043; 
-            color: white; 
-            padding: 14px; 
-            margin: 15px; 
-            border-radius: 8px; 
-            text-decoration: none; 
-            font-weight: bold; 
-            font-size: 14px; 
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; background: #2ea043; color: white; padding: 14px; 
+            margin: 15px; border-radius: 8px; text-decoration: none; 
+            font-weight: bold; font-size: 14px; 
         }
 
-        /* Slim Navigation Bar */
         .slim-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
             background: #0d1117; display: flex; justify-content: space-around;
@@ -88,7 +91,6 @@
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        /* Ad Styling */
         .ad-container { text-align: center; margin: 10px 0; padding: 0 15px; }
     </style>
 </head>
@@ -110,10 +112,16 @@
     </div>
 
     <div class="balance-grid">
-        <div class="card main">
+        <div class="card main-row">
             <h4><i class="fas fa-wallet"></i> Main Balance</h4>
             <p><span class="currency">৳</span><span id="m-bal">0.00</span></p>
         </div>
+
+        <div class="card account-row">
+            <h4><i class="fas fa-users"></i> Active Account</h4>
+            <p><span id="active-acc">60</span></p>
+        </div>
+
         <div class="card">
             <h4>Task</h4>
             <p><span id="t-bal">0.00</span></p>
@@ -122,7 +130,8 @@
             <h4>Trade</h4>
             <p><span id="tr-bal">0.00</span></p>
         </div>
-        <div class="card" style="grid-column: span 2;">
+
+        <div class="card full-width">
             <h4>Total Withdraw (Live)</h4>
             <p style="color: #58a6ff;"><span class="currency">৳</span><span id="w-total">0.00</span></p>
         </div>
@@ -191,7 +200,9 @@
                     document.getElementById('tr-bal').innerText = data.trade_balance.toFixed(2);
                     document.getElementById('acc-count').innerText = data.added_accounts || 0;
                     
-                    // Withdraw ডাটা যদি সার্ভার থেকে আসে তবে আপডেট হবে
+                    // সার্ভার থেকে একটিভ একাউন্ট ডাটা আসলে নিচের লাইনটি আনকমেন্ট করুন
+                    // document.getElementById('active-acc').innerText = data.active_all_accounts || 60;
+
                     if(data.total_withdraw) {
                         document.getElementById('w-total').innerText = data.total_withdraw.toFixed(2);
                     }
@@ -204,8 +215,6 @@
                 console.log("Connection Error");
             }
         }
-
-        // পেজ লোড হওয়ার সাথে সাথে ডাটা আপডেট করার জন্য কল করা হলো
         updateDashboard();
     </script>
 </body>
