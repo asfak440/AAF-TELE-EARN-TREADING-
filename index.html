@@ -3,132 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN - Dashboard</title>
+    <title>AAF TELE-EARN-TRADING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --neon: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; }
-        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 70px; }
-        
-        .header { padding: 20px; text-align: center; border-bottom: 1px solid var(--border); }
-        .container { padding: 15px; }
-
-        /* ব্যানার অ্যাড স্লট */
-        .ad-slot {
-            width: 100%;
-            max-width: 350px;
-            height: 60px;
-            background: #000;
-            margin: 10px auto;
-            border: 1px dashed var(--border);
-            border-radius: 8px;
-            overflow: hidden;
+        :root { 
+            --neon: #39d353; 
+            --bg: #0d1117; 
+            --card-bg: #161b22;
+            --border: #30363d;
+        }
+        body { 
+            background: var(--bg); 
+            color: #c9d1d9; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 15px;
+            padding-bottom: 90px;
         }
 
-        .card { 
-            background: var(--card); 
-            padding: 20px; 
-            border-radius: 15px; 
-            border: 1px solid var(--border); 
+        /* প্রোফাইল সেকশন */
+        .profile-header { margin-bottom: 20px; }
+        .user-name { color: var(--neon); font-size: 20px; font-weight: bold; margin: 0; }
+        .uid { font-size: 12px; color: #8b949e; }
+
+        /* কার্ড স্টাইল - আপনার আগের ডিজাইনের মতো */
+        .card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .main-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .main-card.neon-border { border-color: var(--neon); }
+        
+        .card-label { font-size: 10px; color: #8b949e; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+        .card-value { font-size: 18px; font-weight: bold; color: white; margin-top: 8px; display: block; }
+
+        /* লাইভ উইথড্র কার্ড - এখন মাঝখানে */
+        .wide-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
             margin-bottom: 15px;
         }
 
-        .card h2 { font-size: 16px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; color: var(--neon); }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
-        .stat-box { background: #0d1117; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
-        .stat-box small { font-size: 10px; color: #8b949e; display: block; }
-        .stat-box span { font-size: 14px; font-weight: bold; color: white; }
+        /* একাউন্ট লিস্ট কার্ড */
+        .acc-list-item {
+            background: #1c2128;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--neon);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
 
-        .withdraw-list { font-size: 12px; }
-        .withdraw-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; }
-        .status-paid { color: var(--neon); font-weight: bold; }
-
+        /* অ্যাড স্লট */
+        .ad-box {
+            width: 100%;
+            height: 60px;
+            background: #000;
+            margin: 10px 0 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
         iframe { width: 100%; height: 100%; border: none; }
+
+        /* বটম নেভিগেশন */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #0d1117; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around; padding: 10px 0;
+        }
+        .nav-item { text-align: center; color: #8b949e; font-size: 10px; text-decoration: none; }
+        .nav-item.active { color: var(--neon); }
+        .nav-item i { display: block; font-size: 18px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
-    <div class="ad-slot"><iframe id="top-ad" src=""></iframe></div>
-
-    <div class="header">
-        <h1>Dashboard</h1>
+    <div class="profile-header">
+        <p class="user-name" id="display-name">Abdullah</p>
+        <p class="uid">UID: #AAF10701214 <span style="float: right; color: var(--neon);">● Online</span></p>
     </div>
 
-    <div class="container">
-        
-        <div class="card">
-            <h2><i class="fas fa-history"></i> Live Withdrawal</h2>
-            <div class="withdraw-list">
-                <div class="withdraw-item"><span>User 8801***45</span> <span>$5.00</span> <span class="status-paid">PAID</span></div>
-                <div class="withdraw-item"><span>User 8801***92</span> <span>$10.50</span> <span class="status-paid">PAID</span></div>
-                <div class="withdraw-item"><span>User 8801***11</span> <span>$2.30</span> <span class="status-paid">PAID</span></div>
-            </div>
-        </div>
-
-        <div class="ad-slot"><iframe id="mid-ad" src=""></iframe></div>
-
-        <div class="card">
-            <h2><i class="fas fa-users-cog"></i> Server Accounts Status</h2>
-            <div class="stat-grid">
-                <div class="stat-box">
-                    <small>Total Added</small>
-                    <span id="total-acc">0</span>
-                </div>
-                <div class="stat-box">
-                    <small>Active</small>
-                    <span id="active-acc" style="color: var(--neon);">0</span>
-                </div>
-                <div class="stat-box">
-                    <small>Inactive</small>
-                    <span id="inactive-acc" style="color: #ff4d4d;">0</span>
-                </div>
-            </div>
-        </div>
-
+    <div class="wide-card">
+        <div class="card-label"><i class="fas fa-broadcast-tower"></i> TOTAL WITHDRAW (LIVE)</div>
+        <div class="card-value" style="color: #58a6ff;">৳ 0.00</div>
     </div>
 
-    <div style="position: fixed; bottom: 0; width: 100%; background: #000; height: 60px; border-top: 1px solid var(--border);">
-        <iframe id="bottom-ad" src=""></iframe>
+    <div class="card-container">
+        <div class="main-card neon-border">
+            <div class="card-label"><i class="fas fa-wallet"></i> MAIN BALANCE</div>
+            <div class="card-value">৳ 0.00</div>
+        </div>
+        <div class="main-card neon-border">
+            <div class="card-label"><i class="fas fa-users"></i> ACTIVE ACCOUNT</div>
+            <div class="card-value" id="active-count">60</div>
+        </div>
+    </div>
+
+    <div class="card-container">
+        <div class="main-card">
+            <div class="card-label">TASK</div>
+            <div class="card-value">0.00</div>
+        </div>
+        <div class="main-card">
+            <div class="card-label">TRADE</div>
+            <div class="card-value">0.00</div>
+        </div>
+    </div>
+
+    <div id="dynamic-accounts">
+        </div>
+
+    <div class="bottom-nav">
+        <a href="#" class="nav-item active"><i class="fas fa-home"></i>Home</a>
+        <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
+        <a href="#" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
     </div>
 
     <script>
-        const API_URL = "https://aaf-api-free.onrender.com"; 
+        // অ্যাডমিন প্যানেল থেকে আসা অ্যাড লিঙ্ক
+        const adLinks = ["//ad.a-ads.com/2430456/?size=320x50"];
 
-        // ১. অ্যাডমিন প্যানেল থেকে অ্যাড রোটেশন লজিক
-        let adLinks = [];
-        async function loadAds() {
-            try {
-                const res = await fetch(`${API_URL}/api/get_admin_tasks`);
-                const tasks = await res.json();
-                adLinks = tasks.map(t => t.link);
-                
-                if(adLinks.length > 0) {
-                    rotateAds();
-                    setInterval(rotateAds, 10000); // ১০ সেকেন্ড পর পর পাল্টাবে
-                }
-            } catch(e) { console.log("Ads Load Error"); }
+        function loadAccounts() {
+            const container = document.getElementById('dynamic-accounts');
+            const total = 60; // আপনার একাউন্ট সংখ্যা
+
+            for(let i = 1; i <= total; i++) {
+                // একাউন্ট কার্ড
+                let acc = document.createElement('div');
+                acc.className = "acc-list-item";
+                acc.innerHTML = `<strong>Account User #${i}</strong> <br> <small style="color:#8b949e">Server Status: Running</small>`;
+                container.appendChild(acc);
+
+                // অ্যাড স্লট (প্রতি একাউন্টের পর ১টি)
+                let ad = document.createElement('div');
+                ad.className = "ad-box";
+                ad.innerHTML = `<iframe src="${adLinks[0]}"></iframe>`;
+                container.appendChild(ad);
+            }
         }
 
-        function rotateAds() {
-            const frames = ['top-ad', 'mid-ad', 'bottom-ad'];
-            frames.forEach(id => {
-                let randomLink = adLinks[Math.floor(Math.random() * adLinks.length)];
-                document.getElementById(id).src = randomLink;
-            });
-        }
-
-        // ২. একাউন্ট স্ট্যাটাস ডাটা লোড করা
-        async function loadStats() {
-            // আপনার সার্ভার থেকে এই ডাটাগুলো নিয়ে আসবে
-            // আপাতত স্যাম্পল ডাটা দেওয়া হলো
-            document.getElementById('total-acc').innerText = "1,080";
-            document.getElementById('active-acc').innerText = "950";
-            document.getElementById('inactive-acc').innerText = "130";
-        }
-
-        window.onload = () => {
-            loadAds();
-            loadStats();
-        };
+        window.onload = loadAccounts;
     </script>
 </body>
 </html>
