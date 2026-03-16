@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN - Dashboard</title>
+    <title>AAF TELE-EARN-TRADING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -14,107 +14,120 @@
         }
         body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 90px; }
 
-        /* আব্দুল্লাহ প্রোফাইল সেকশন */
-        .header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
-        .user-info h2 { color: var(--neon); margin: 0; font-size: 20px; }
-        .user-info p { font-size: 11px; color: #8b949e; margin: 2px 0; }
-        .status-online { color: var(--neon); font-size: 11px; font-weight: bold; }
+        /* ইউজার ইনফো */
+        .header { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .user-info h2 { color: var(--neon); margin: 0; font-size: 18px; }
 
-        /* কার্ড ডিজাইন */
-        .main-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .card-label { font-size: 10px; color: #8b949e; font-weight: bold; margin-bottom: 8px; display: block; }
-        .card-value { font-size: 20px; font-weight: bold; color: white; display: block; }
+        /* মেইন স্ট্যাটাস কার্ড (যেখানে লাইভ উইথড্র ছিল) */
+        .status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .status-header { font-size: 10px; color: #8b949e; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+        .stat-item { background: #0d1117; border: 1px solid var(--border); padding: 8px; border-radius: 8px; }
+        .stat-item small { font-size: 9px; color: #8b949e; display: block; }
+        .stat-item strong { font-size: 14px; color: white; }
 
-        /* ছোট ছোট গ্রিড কার্ড */
-        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .mini-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+        /* ব্যালেন্স গ্রিড */
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .b-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
         .neon-border { border-color: var(--neon); }
+        .label { font-size: 9px; color: #8b949e; font-weight: bold; }
+        .value { font-size: 18px; font-weight: bold; color: white; display: block; margin-top: 5px; }
 
-        /* একাউন্ট কার্ড ডিজাইন */
-        .account-box { background: #1c2128; border: 1px solid var(--border); border-left: 4px solid var(--neon); padding: 12px; border-radius: 8px; margin-bottom: 5px; }
-
-        /* অ্যাড স্লট */
-        .ad-unit { width: 100%; height: 60px; background: #000; margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
+        /* অ্যাকাউন্ট লিস্ট এবং অ্যাড */
+        .acc-row { background: #1c2128; border: 1px solid var(--border); border-left: 4px solid var(--neon); padding: 12px; border-radius: 8px; margin-top: 10px; }
+        .ad-container { width: 100%; height: 60px; background: #000; margin: 10px 0; border-radius: 8px; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* বটম মেনু */
-        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0d1117; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; }
-        .nav-item { text-align: center; color: #8b949e; font-size: 10px; text-decoration: none; }
-        .nav-item.active { color: var(--neon); }
-        .nav-item i { display: block; font-size: 18px; margin-bottom: 3px; }
+        /* নেভিগেশন */
+        .footer-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0d1117; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; }
+        .nav-link { text-align: center; color: #8b949e; font-size: 10px; text-decoration: none; }
+        .nav-link.active { color: var(--neon); }
+        .nav-link i { display: block; font-size: 18px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="user-info">
-            <h2 id="user-name">Abdullah</h2>
-            <p>UID: #AAF10701214</p>
+            <h2>Abdullah</h2>
+            <p style="font-size:10px; color:#8b949e">UID: #AAF10701214</p>
         </div>
-        <div class="status-online">● Online <br><small style="color:#8b949e; float:right">v2.0 Standard</small></div>
+        <div style="color: var(--neon); font-size: 10px; font-weight: bold; text-align: right;">● Online</div>
     </div>
 
-    <div class="main-card">
-        <span class="card-label">TOTAL WITHDRAW (LIVE)</span>
-        <span class="card-value" style="color: #58a6ff;">৳ 0.00</span>
-    </div>
-
-    <div class="card-grid">
-        <div class="mini-card neon-border">
-            <span class="card-label"><i class="fas fa-wallet"></i> MAIN BALANCE</span>
-            <span class="card-value">৳ 0.00</span>
-        </div>
-        <div class="mini-card neon-border">
-            <span class="card-label"><i class="fas fa-users"></i> ACTIVE ACCOUNT</span>
-            <span class="card-value" style="color: var(--neon);">60</span>
-        </div>
-    </div>
-
-    <div class="card-grid">
-        <div class="mini-card">
-            <span class="card-label">TASK</span>
-            <span class="card-value">0.00</span>
-        </div>
-        <div class="mini-card">
-            <span class="card-label">TRADE</span>
-            <span class="card-value">0.00</span>
+    <div class="status-card">
+        <div class="status-header"><i class="fas fa-server"></i> Server Account Analytics</div>
+        <div class="status-grid">
+            <div class="stat-item">
+                <small>TOTAL ADDED</small>
+                <strong id="total-acc">1080</strong>
+            </div>
+            <div class="stat-item">
+                <small>ACTIVE</small>
+                <strong id="active-acc" style="color: var(--neon);">950</strong>
+            </div>
+            <div class="stat-item">
+                <small>INACTIVE</small>
+                <strong id="inactive-acc" style="color: #ff4d4d;">130</strong>
+            </div>
         </div>
     </div>
 
-    <div id="account-list">
+    <div class="balance-grid">
+        <div class="b-card neon-border">
+            <span class="label">MAIN BALANCE</span>
+            <span class="value">৳ 0.00</span>
+        </div>
+        <div class="b-card neon-border">
+            <span class="label">TASK BALANCE</span>
+            <span class="value" style="color: var(--neon);">৳ 0.00</span>
+        </div>
+    </div>
+
+    <div id="dynamic-content">
         </div>
 
-    <div class="nav">
-        <a href="#" class="nav-item active"><i class="fas fa-home"></i>Home</a>
-        <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
-        <a href="#" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+    <div class="footer-nav">
+        <a href="#" class="nav-link active"><i class="fas fa-home"></i>Home</a>
+        <a href="task.html" class="nav-link"><i class="fas fa-tasks"></i>Task</a>
+        <a href="#" class="nav-link"><i class="fas fa-chart-line"></i>Trade</a>
+        <a href="#" class="nav-link"><i class="fas fa-wallet"></i>Wallet</a>
     </div>
 
     <script>
-        // আপনার অ্যাডমিন প্যানেল থেকে আসা অ্যাড লিঙ্ক
-        const AD_LINK = "//ad.a-ads.com/2430456/?size=320x50";
+        const API_URL = "https://aaf-api-free.onrender.com"; 
 
-        async function loadAccounts() {
-            const list = document.getElementById('account-list');
-            const totalAccounts = 60; // আপনার ডাটাবেস অনুযায়ী সংখ্যা
+        async function loadContent() {
+            try {
+                // অ্যাডমিন প্যানেল থেকে অ্যাড লিঙ্ক নিয়ে আসা
+                const adRes = await fetch(`${API_URL}/api/get_admin_tasks`);
+                const tasks = await adRes.json();
+                const adLinks = tasks.map(t => t.link);
 
-            for(let i = 1; i <= totalAccounts; i++) {
-                // ১টি একাউন্ট কার্ড
-                const acc = document.createElement('div');
-                acc.className = "account-box";
-                acc.innerHTML = `<strong>Telegram ID #${i}</strong> <br> <small style="color:#8b949e">Server: Active</small>`;
-                list.appendChild(acc);
+                const container = document.getElementById('dynamic-content');
+                const accountsCount = 60; // আপনার বর্তমান সক্রিয় একাউন্ট
 
-                // ঠিক তার পরেই ১টি অ্যাড স্লট
-                const ad = document.createElement('div');
-                ad.className = "ad-unit";
-                ad.innerHTML = `<iframe src="${AD_LINK}"></iframe>`;
-                list.appendChild(ad);
-            }
+                for(let i = 1; i <= accountsCount; i++) {
+                    // অ্যাকাউন্ট কার্ড
+                    const accBox = document.createElement('div');
+                    accBox.className = "acc-row";
+                    accBox.innerHTML = `<strong>Telegram Account #${i}</strong> <br> <small style="color:#8b949e">Status: Server Connected</small>`;
+                    container.appendChild(accBox);
+
+                    // অ্যাডমিন থেকে আসা বিজ্ঞাপনের রোটেশন
+                    if(adLinks.length > 0) {
+                        const adBox = document.createElement('div');
+                        adBox.className = "ad-container";
+                        let currentAd = adLinks[i % adLinks.length];
+                        adBox.innerHTML = `<iframe src="${currentAd}"></iframe>`;
+                        container.appendChild(adBox);
+                    }
+                }
+            } catch (err) { console.log("Error loading data"); }
         }
 
-        window.onload = loadAccounts;
+        window.onload = loadContent;
     </script>
 </body>
 </html>
