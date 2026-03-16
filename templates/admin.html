@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF - Master Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        
+        .container { max-width: 1100px; margin: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        h2 { color: var(--primary); font-size: 18px; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+        input, select { 
+            width: 100%; padding: 10px; margin: 10px 0; 
+            background: #0d1117; border: 1px solid var(--border); 
+            color: white; border-radius: 6px; box-sizing: border-box;
+        }
+
+        .btn { 
+            background: var(--primary); color: #0d1117; border: none; 
+            padding: 10px 20px; border-radius: 6px; font-weight: bold; 
+            cursor: pointer; width: 100%; transition: 0.3s;
+        }
+        .btn:hover { opacity: 0.8; }
+
+        /* Table Style */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+        th { background: #21262d; color: var(--primary); }
+        
+        .status-active { color: var(--primary); font-weight: bold; }
+        .status-inactive { color: #ff7b72; font-weight: bold; }
+        
+        .action-btn { padding: 5px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; border: none; }
+        .edit-btn { background: #1f6feb; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1><i class="fas fa-user-shield"></i> AAF Strong Admin</h1>
+
+    <div class="grid">
+        <div class="card">
+            <h2><i class="fas fa-plus-circle"></i> Add New Task</h2>
+            <input type="text" id="t-name" placeholder="Task Title (e.g. Visit Web 1)">
+            <input type="text" id="t-link" placeholder="Ad Network Link (Direct Link)">
+            <input type="number" id="t-reward" placeholder="Income Amount (e.g. 0.08)" step="0.01">
+            <button class="btn" onclick="saveTask()">Publish Task</button>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-chart-pie"></i> System Overview</h2>
+            <p>Total Users: <span id="u-count">Loading...</span></p>
+            <p>Active Tasks: <span id="t-count">Loading...</span></p>
+            <button class="btn" style="background: #21262d; color: white;" onclick="refreshData()">Refresh All Data</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fas fa-users"></i> User Management (Direct Control)</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Balance (৳)</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://aaf-api-free.onrender.com";
+
+    // ১. টাস্ক সেভ করা
+    async function saveTask() {
+        const data = {
+            name: document.getElementById('t-name').value,
+            link: document.getElementById('t-link').value,
+            reward: parseFloat(document.getElementById('t-reward').value)
+        };
+        const res = await fetch(`${API_URL}/admin/add_task`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if(res.ok) { alert("টাস্ক পাবলিশ হয়েছে!"); location.reload(); }
+    }
+
+    // ২. সব ডাটা লোড করা (স্বচক্ষে দেখার জন্য)
+    async function refreshData() {
+        try {
+            // ইউজার লিস্ট আনা
+            const uRes = await fetch(`${API_URL}/admin/get_all_users`);
+            const users = await uRes.json();
+            
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = "";
+            document.getElementById('u-count').innerText = users.length;
+
+            users.forEach(user => {
+                const row = `
+                    <tr>
+                        <td>${user.user_id}</td>
+                        <td><input type="number" value="${user.task_balance}" id="bal-${user.user_id}" style="width:80px; margin:0; padding:5px;"></td>
+                        <td>
+                            <select id="status-${user.user_id}" style="margin:0; padding:5px; width:100px;">
+                                <option value="Active" ${user.acc_status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Inactive" ${user.acc_status !== 'Active' ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td><button class="action-btn edit-btn" onclick="updateUser('${user.user_id}')">Update</button></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (e) { console.log("Error loading users"); }
+    }
+
+    // ৩. ইউজারের ব্যালেন্স বা স্ট্যাটাস আপডেট
+    async function updateUser(uid) {
+        const newBal = document.getElementById(`bal-${uid}`).value;
+        const newStatus = document.getElementById(`status-${uid}`).value;
+        
+        const res = await fetch(`${API_URL}/admin/update_user`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: uid, balance: newBal, status: newStatus })
+        });
+        if(res.ok) alert("ইউজার ডাটা আপডেট হয়েছে!");
+    }
+
+    window.onload = refreshData;
+</script>
+</body>
+  </html>
