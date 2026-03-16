@@ -3,89 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF - Master Admin Panel</title>
+    <title>AAF Master - Control Panel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; }
-        body { background: var(--bg); color: #c9d1d9; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        
-        .container { max-width: 1100px; margin: auto; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        .card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        h2 { color: var(--primary); font-size: 18px; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-
-        input, select { 
-            width: 100%; padding: 10px; margin: 10px 0; 
-            background: #0d1117; border: 1px solid var(--border); 
-            color: white; border-radius: 6px; box-sizing: border-box;
-        }
-
-        .btn { 
-            background: var(--primary); color: #0d1117; border: none; 
-            padding: 10px 20px; border-radius: 6px; font-weight: bold; 
-            cursor: pointer; width: 100%; transition: 0.3s;
-        }
-        .btn:hover { opacity: 0.8; }
-
-        /* Table Style */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 12px; border: 1px solid var(--border); text-align: left; }
-        th { background: #21262d; color: var(--primary); }
-        
-        .status-active { color: var(--primary); font-weight: bold; }
-        .status-inactive { color: #ff7b72; font-weight: bold; }
-        
-        .action-btn { padding: 5px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; border: none; }
-        .edit-btn { background: #1f6feb; color: white; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        h2 { color: var(--primary); font-size: 18px; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; }
+        .btn { background: var(--primary); color: #0d1117; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-blue { background: #1f6feb; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { padding: 10px; border: 1px solid var(--border); text-align: left; }
+        th { background: #21262d; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1><i class="fas fa-user-shield"></i> AAF Strong Admin</h1>
+    <h2><i class="fas fa-tools"></i> AAF Master Control</h2>
 
-    <div class="grid">
-        <div class="card">
-            <h2><i class="fas fa-plus-circle"></i> Add New Task</h2>
-            <input type="text" id="t-name" placeholder="Task Title (e.g. Visit Web 1)">
-            <input type="text" id="t-link" placeholder="Ad Network Link (Direct Link)">
-            <input type="number" id="t-reward" placeholder="Income Amount (e.g. 0.08)" step="0.01">
-            <button class="btn" onclick="saveTask()">Publish Task</button>
-        </div>
+    <div class="card">
+        <h2><i class="fas fa-plus"></i> Add Task Card</h2>
+        <input type="text" id="t-name" placeholder="Task Name">
+        <input type="text" id="t-link" placeholder="Ad Link (A-Ads/Direct)">
+        <input type="number" id="t-reward" placeholder="Income (e.g. 0.08)" step="0.01">
+        <button class="btn" onclick="saveTask()">Publish Task</button>
+    </div>
 
-        <div class="card">
-            <h2><i class="fas fa-chart-pie"></i> System Overview</h2>
-            <p>Total Users: <span id="u-count">Loading...</span></p>
-            <p>Active Tasks: <span id="t-count">Loading...</span></p>
-            <button class="btn" style="background: #21262d; color: white;" onclick="refreshData()">Refresh All Data</button>
-        </div>
+    <div class="card" style="border-color: #1f6feb;">
+        <h2><i class="fab fa-telegram"></i> Telegram Force Join</h2>
+        <p style="font-size: 11px; color: #8b949e;">সব আইডি দিয়ে চ্যানেলে জয়েন করান:</p>
+        <input type="text" id="f-channel" placeholder="@channel_username">
+        <button class="btn btn-blue" id="join-btn" onclick="triggerJoin()">Start Force Join</button>
+        <div id="join-status" style="margin-top:10px; font-size:12px; color: var(--primary);"></div>
     </div>
 
     <div class="card">
-        <h2><i class="fas fa-users"></i> User Management (Direct Control)</h2>
-        <div class="table-container">
+        <h2><i class="fas fa-users"></i> User Database</h2>
+        <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
-                        <th>User ID</th>
-                        <th>Balance (৳)</th>
+                        <th>UID</th>
+                        <th>Balance</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="user-table-body">
-                    </tbody>
+                <tbody id="user-table-body"></tbody>
             </table>
         </div>
     </div>
-</div>
 
 <script>
-    const API_URL = "https://aaf-api-free.onrender.com";
+    const API_URL = window.location.origin;
 
-    // ১. টাস্ক সেভ করা
+    // টাস্ক সেভ
     async function saveTask() {
         const data = {
             name: document.getElementById('t-name').value,
@@ -97,53 +70,66 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         });
-        if(res.ok) { alert("টাস্ক পাবলিশ হয়েছে!"); location.reload(); }
+        if(res.ok) alert("টাস্ক অ্যাড হয়েছে!");
     }
 
-    // ২. সব ডাটা লোড করা (স্বচক্ষে দেখার জন্য)
-    async function refreshData() {
-        try {
-            // ইউজার লিস্ট আনা
-            const uRes = await fetch(`${API_URL}/admin/get_all_users`);
-            const users = await uRes.json();
-            
-            const tbody = document.getElementById('user-table-body');
-            tbody.innerHTML = "";
-            document.getElementById('u-count').innerText = users.length;
-
-            users.forEach(user => {
-                const row = `
-                    <tr>
-                        <td>${user.user_id}</td>
-                        <td><input type="number" value="${user.task_balance}" id="bal-${user.user_id}" style="width:80px; margin:0; padding:5px;"></td>
-                        <td>
-                            <select id="status-${user.user_id}" style="margin:0; padding:5px; width:100px;">
-                                <option value="Active" ${user.acc_status === 'Active' ? 'selected' : ''}>Active</option>
-                                <option value="Inactive" ${user.acc_status !== 'Active' ? 'selected' : ''}>Inactive</option>
-                            </select>
-                        </td>
-                        <td><button class="action-btn edit-btn" onclick="updateUser('${user.user_id}')">Update</button></td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        } catch (e) { console.log("Error loading users"); }
-    }
-
-    // ৩. ইউজারের ব্যালেন্স বা স্ট্যাটাস আপডেট
-    async function updateUser(uid) {
-        const newBal = document.getElementById(`bal-${uid}`).value;
-        const newStatus = document.getElementById(`status-${uid}`).value;
+    // ফোর্স জয়েন ট্রিগার
+    async function triggerJoin() {
+        const btn = document.getElementById('join-btn');
+        const status = document.getElementById('join-status');
+        const channel = document.getElementById('f-channel').value;
         
-        const res = await fetch(`${API_URL}/admin/update_user`, {
+        btn.disabled = true;
+        btn.innerText = "Joining... (Please Wait)";
+        status.innerText = "সার্ভার কাজ করছে, অপেক্ষা করুন...";
+
+        const res = await fetch(`${API_URL}/api/admin/force_join`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: uid, balance: newBal, status: newStatus })
+            body: JSON.stringify({ channel: channel })
         });
-        if(res.ok) alert("ইউজার ডাটা আপডেট হয়েছে!");
+        const result = await res.json();
+        alert(`${result.joined} টি আইডি সফলভাবে জয়েন করেছে!`);
+        btn.disabled = false;
+        btn.innerText = "Start Force Join";
+        status.innerText = "";
     }
 
-    window.onload = refreshData;
+    // ইউজার লিস্ট রিফ্রেশ
+    async function refreshUsers() {
+        const res = await fetch(`${API_URL}/admin/get_all_users`);
+        const users = await res.json();
+        const tbody = document.getElementById('user-table-body');
+        tbody.innerHTML = "";
+        users.forEach(u => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${u.telegram_id}</td>
+                    <td><input type="number" value="${u.task_balance}" id="bal-${u.telegram_id}" style="width:60px; padding:2px;"></td>
+                    <td>
+                        <select id="st-${u.telegram_id}" style="padding:2px; width:70px;">
+                            <option value="Active" ${u.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${u.status !== 'Active' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </td>
+                    <td><button onclick="updateUser('${u.telegram_id}')" style="background:var(--primary); border:none; padding:4px; border-radius:4px;">Save</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    async function updateUser(uid) {
+        const bal = document.getElementById(`bal-${uid}`).value;
+        const st = document.getElementById(`st-${uid}`).value;
+        await fetch(`${API_URL}/admin/update_user`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: uid, balance: bal, status: st })
+        });
+        alert("Updated!");
+    }
+
+    window.onload = refreshUsers;
 </script>
 </body>
-  </html>
+</html>
