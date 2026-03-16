@@ -3,188 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN-TRADING - Secure Login</title>
+    <title>AAF TELE-EARN - Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --neon: #39d353; 
-            --bg: #0d1117; 
-            --input-bg: #161b22;
-            --border: #30363d;
-        }
-        body { 
-            background: var(--bg); 
-            color: #c9d1d9; 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            display: flex; 
-            flex-direction: column; /* অ্যাডগুলো উপরে নিচে সাজানোর জন্য */
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-        }
+        :root { --neon: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 70px; }
         
-        .login-card { 
-            background: var(--input-bg); 
-            padding: 40px 30px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border); 
-            text-align: center; 
-            width: 90%; 
-            max-width: 380px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin: 20px 0; /* অ্যাডের সাথে গ্যাপ রাখার জন্য */
-        }
-        
-        .logo { 
-            width: 70px; 
-            height: 70px; 
-            margin-bottom: 20px; 
-            border-radius: 50%; 
-            border: 2px solid var(--neon); 
-            padding: 3px;
-        }
-        
-        h1 { 
-            font-size: 20px; 
-            margin-bottom: 5px; 
-            color: white; 
-            font-weight: 600; 
-        }
-        
-        .sub-text { 
-            font-size: 11px; 
-            color: #8b949e; 
-            margin-bottom: 30px; 
-            display: block; 
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        
-        input { 
-            width: 100%; 
-            padding: 14px 16px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            background: #0d1117; 
-            color: white; 
-            box-sizing: border-box; 
-            outline: none; 
-            font-size: 14px;
-            transition: 0.3s;
-        }
-        
-        input:focus { 
-            border-color: var(--neon); 
-            box-shadow: 0 0 8px rgba(57, 211, 83, 0.2);
-        }
-        
-        .btn-auth { 
-            width: 100%; 
-            padding: 15px; 
-            background: var(--neon); 
-            color: #0d1117; 
-            border: none; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 15px; 
-            margin-top: 10px;
-            transition: 0.2s;
-        }
-        
-        .btn-auth:active { transform: scale(0.97); }
-        .btn-auth:disabled { background: #30363d; color: #8b949e; }
+        .header { padding: 20px; text-align: center; border-bottom: 1px solid var(--border); }
+        .container { padding: 15px; }
 
-        /* বিজ্ঞাপন দেখানোর জন্য স্টাইল */
-        .ad-unit-wrapper {
-            width: 320px;
-            margin: auto;
+        /* ব্যানার অ্যাড স্লট */
+        .ad-slot {
+            width: 100%;
+            max-width: 350px;
+            height: 60px;
+            background: #000;
+            margin: 10px auto;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            overflow: hidden;
         }
+
+        .card { 
+            background: var(--card); 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 15px;
+        }
+
+        .card h2 { font-size: 16px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; color: var(--neon); }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
+        .stat-box { background: #0d1117; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-box small { font-size: 10px; color: #8b949e; display: block; }
+        .stat-box span { font-size: 14px; font-weight: bold; color: white; }
+
+        .withdraw-list { font-size: 12px; }
+        .withdraw-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; }
+        .status-paid { color: var(--neon); font-weight: bold; }
+
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
-    <div class="ad-unit-wrapper">
-        <div id="frame" style="width: 320px;margin: auto;z-index: 99998;height: auto">
-            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50'
-                    style='border:0; padding:0; width:320px; height:50px; overflow:hidden;display: block;margin: auto'></iframe>
-        </div>
+    <div class="ad-slot"><iframe id="top-ad" src=""></iframe></div>
+
+    <div class="header">
+        <h1>Dashboard</h1>
     </div>
 
-    <div class="login-card" id="auth-container">
-        <img src="https://t.me/i/userpic/320/aaf_tele_earn.jpg" class="logo" alt="AAF Logo">
-        <h1>Welcome Back</h1>
-        <span class="sub-text">Connect your account to start earning</span>
+    <div class="container">
         
-        <div id="login-fields">
-            <div class="input-group">
-                <input type="text" id="user-name" placeholder="Full Name">
+        <div class="card">
+            <h2><i class="fas fa-history"></i> Live Withdrawal</h2>
+            <div class="withdraw-list">
+                <div class="withdraw-item"><span>User 8801***45</span> <span>$5.00</span> <span class="status-paid">PAID</span></div>
+                <div class="withdraw-item"><span>User 8801***92</span> <span>$10.50</span> <span class="status-paid">PAID</span></div>
+                <div class="withdraw-item"><span>User 8801***11</span> <span>$2.30</span> <span class="status-paid">PAID</span></div>
             </div>
-            <div class="input-group">
-                <input type="number" id="tg-number" placeholder="Telegram Number (+8801...)">
-            </div>
-            <button class="btn-auth" id="login-btn" onclick="startAuth()">ACCESS DASHBOARD</button>
         </div>
+
+        <div class="ad-slot"><iframe id="mid-ad" src=""></iframe></div>
+
+        <div class="card">
+            <h2><i class="fas fa-users-cog"></i> Server Accounts Status</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <small>Total Added</small>
+                    <span id="total-acc">0</span>
+                </div>
+                <div class="stat-box">
+                    <small>Active</small>
+                    <span id="active-acc" style="color: var(--neon);">0</span>
+                </div>
+                <div class="stat-box">
+                    <small>Inactive</small>
+                    <span id="inactive-acc" style="color: #ff4d4d;">0</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="ad-unit-wrapper">
-        <div style="width: 320px;margin: auto;">
-            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50'
-                    style='border:0; padding:0; width:320px; height:50px; overflow:hidden;display: block;margin: auto'></iframe>
-        </div>
+    <div style="position: fixed; bottom: 0; width: 100%; background: #000; height: 60px; border-top: 1px solid var(--border);">
+        <iframe id="bottom-ad" src=""></iframe>
     </div>
 
     <script>
-        // আপনার সার্ভারের লিঙ্কটি এখানে দিন
         const API_URL = "https://aaf-api-free.onrender.com"; 
 
-        // সেশন চেক (আগে লগইন করা থাকলে সরাসরি ড্যাশবোর্ডে যাবে)
-        if(localStorage.getItem('user_id')) {
-            window.location.href = "dashboard.html";
-        }
-
-        async function startAuth() {
-            const name = document.getElementById('user-name').value;
-            const phone = document.getElementById('tg-number').value;
-            const btn = document.getElementById('login-btn');
-
-            if(!phone || !name) return alert("Please fill in all details");
-
-            btn.innerText = "Authenticating...";
-            btn.disabled = true;
-
+        // ১. অ্যাডমিন প্যানেল থেকে অ্যাড রোটেশন লজিক
+        let adLinks = [];
+        async function loadAds() {
             try {
-                const response = await fetch(`${API_URL}/api/user_data_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: phone, 
-                        name: name,
-                        telegram_id: phone.slice(-8)
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === "success" || data.message === "Account linked to server!") {
-                    localStorage.setItem('user_id', phone.slice(-8)); 
-                    localStorage.setItem('user_name', name);
-                    window.location.href = "dashboard.html";
-                } else {
-                    alert("Authentication Failed: " + (data.message || "Invalid input"));
-                    btn.innerText = "ACCESS DASHBOARD";
-                    btn.disabled = false;
+                const res = await fetch(`${API_URL}/api/get_admin_tasks`);
+                const tasks = await res.json();
+                adLinks = tasks.map(t => t.link);
+                
+                if(adLinks.length > 0) {
+                    rotateAds();
+                    setInterval(rotateAds, 10000); // ১০ সেকেন্ড পর পর পাল্টাবে
                 }
-            } catch (error) {
-                alert("Server connection error. Please try again later.");
-                btn.innerText = "ACCESS DASHBOARD";
-                btn.disabled = false;
-            }
+            } catch(e) { console.log("Ads Load Error"); }
         }
+
+        function rotateAds() {
+            const frames = ['top-ad', 'mid-ad', 'bottom-ad'];
+            frames.forEach(id => {
+                let randomLink = adLinks[Math.floor(Math.random() * adLinks.length)];
+                document.getElementById(id).src = randomLink;
+            });
+        }
+
+        // ২. একাউন্ট স্ট্যাটাস ডাটা লোড করা
+        async function loadStats() {
+            // আপনার সার্ভার থেকে এই ডাটাগুলো নিয়ে আসবে
+            // আপাতত স্যাম্পল ডাটা দেওয়া হলো
+            document.getElementById('total-acc').innerText = "1,080";
+            document.getElementById('active-acc').innerText = "950";
+            document.getElementById('inactive-acc').innerText = "130";
+        }
+
+        window.onload = () => {
+            loadAds();
+            loadStats();
+        };
     </script>
 </body>
 </html>
