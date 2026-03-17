@@ -1,1 +1,145 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF PREMIUM DASHBOARD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --neon: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
+
+        /* ১. প্রিমিয়াম প্রোফাইল হেডার (নাম ও মেইন ব্যালেন্স একসাথে) */
+        .profile-container { 
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+            border: 1px solid var(--neon);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(57, 211, 83, 0.1);
+        }
+        .user-info h2 { color: var(--neon); margin: 0; font-size: 22px; }
+        .user-info p { font-size: 11px; color: #8b949e; margin: 5px 0 0 0; }
+        .balance-top { text-align: right; }
+        .balance-top small { font-size: 10px; color: #8b949e; display: block; font-weight: bold; }
+        .balance-top strong { font-size: 20px; color: white; display: block; }
+
+        /* ২. সার্ভার এনালিটিক্স কার্ড */
+        .status-card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; margin-top: 10px; }
+        .stat-item { background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
+        .stat-item small { font-size: 9px; color: #8b949e; display: block; }
+        .stat-item strong { font-size: 14px; color: white; }
+
+        /* ৩. ব্যালেন্স কার্ড গ্রিড (আপনার নতুন সিকোয়েন্স অনুযায়ী) */
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .b-card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; }
+        .b-card span { font-size: 9px; color: #8b949e; font-weight: 800; display: block; margin-bottom: 8px; }
+        .b-card strong { font-size: 16px; color: white; display: block; }
+
+        /* একাউন্ট কার্ড ও অ্যাড */
+        .account-card { background: #1c2128; border-left: 4px solid var(--neon); padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px solid var(--border); border-left-width: 4px; }
+        .ad-box { width: 100%; height: 60px; background: #000; margin: 12px 0; border-radius: 10px; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* ৪. নিচের ৫টি বাটন (Account সহ) */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0d1117; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 15px 0; z-index: 1000; }
+        .nav-link { text-align: center; color: #8b949e; font-size: 10px; text-decoration: none; flex: 1; }
+        .nav-link.active { color: var(--neon); }
+        .nav-link i { display: block; font-size: 20px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-container">
+        <div class="user-info">
+            <h2 id="u-name">Abdullah</h2>
+            <p>UID: #AAF10701214 <span style="color: var(--neon);">● Online</span></p>
+        </div>
+        <div class="balance-top">
+            <small>MAIN BALANCE</small>
+            <strong id="main-bal">৳ 0.00</strong>
+        </div>
+    </div>
+
+    <div class="status-card">
+        <span style="font-size: 10px; font-weight: bold;"><i class="fas fa-server"></i> SERVER ANALYTICS</span>
+        <div class="status-grid">
+            <div class="stat-item"><small>TOTAL</small><strong id="total-val">0</strong></div>
+            <div class="stat-item"><small>ACTIVE</small><strong id="active-val" style="color:var(--neon)">0</strong></div>
+            <div class="stat-item"><small>INACTIVE</small><strong id="inactive-val" style="color:#ff4d4d">0</strong></div>
+        </div>
+    </div>
+
+    <div class="grid-layout">
+        <div class="b-card"><span>TASK BALANCE</span><strong id="task-bal">৳ 0.00</strong></div>
+        <div class="b-card"><span>TRADING BALANCE</span><strong id="trade-bal">৳ 0.00</strong></div>
+        <div class="b-card"><span>24H TASK INCOME (৳1/Acc)</span><strong id="income-24h" style="color: var(--neon);">৳ 0.00</strong></div>
+        <div class="b-card"><span>TOTAL WITHDRAW</span><strong id="withdraw-bal" style="color: #58a6ff;">৳ 0.00</strong></div>
+    </div>
+
+    <div id="dynamic-content"></div>
+
+    <div class="nav-bar">
+        <a href="#" class="nav-link active"><i class="fas fa-home"></i>Home</a>
+        <a href="task.html" class="nav-link"><i class="fas fa-tasks"></i>Task</a>
+        <a href="trade.html" class="nav-link"><i class="fas fa-chart-line"></i>Trade</a>
+        <a href="accounts.html" class="nav-link"><i class="fas fa-user-circle"></i>Account</a>
+        <a href="wallet.html" class="nav-link"><i class="fas fa-wallet"></i>Wallet</a>
+    </div>
+
+    <script>
+        const API_URL = "https://aaf-api-free.onrender.com"; 
+        const userId = localStorage.getItem('user_id');
+
+        async function updateDashboard() {
+            try {
+                // ১. ডাটাবেজ থেকে সকল ব্যালেন্স ও স্ট্যাটাস নিয়ে আসা
+                const response = await fetch(`${API_URL}/api/get_user_dashboard?id=${userId}`);
+                const data = await response.json();
+
+                // প্রিমিয়াম হেডারে মেইন ব্যালেন্স ও অন্যান্য ব্যালেন্স সেট
+                document.getElementById('main-bal').innerText = `৳ ${data.main_balance || '0.00'}`;
+                document.getElementById('task-bal').innerText = `৳ ${data.task_balance || '0.00'}`;
+                document.getElementById('trade-bal').innerText = `৳ ${data.trade_balance || '0.00'}`;
+                document.getElementById('withdraw-bal').innerText = `৳ ${data.total_withdraw || '0.00'}`;
+                
+                // ২৪ ঘণ্টার ইনকাম (প্রতি একাউন্টে ১ টাকা হিসেবে)
+                document.getElementById('income-24h').innerText = `৳ ${data.server_active * 1 || '0.00'}`;
+
+                // সার্ভার এনালিটিক্স সেট
+                document.getElementById('total-val').innerText = data.server_total || 0;
+                document.getElementById('active-val').innerText = data.server_active || 0;
+                document.getElementById('inactive-val').innerText = data.server_inactive || 0;
+
+                // ২. একাউন্ট এবং অ্যাডমিন থেকে আসা বিজ্ঞাপন লোড
+                const container = document.getElementById('dynamic-content');
+                container.innerHTML = "";
+                
+                data.accounts.forEach((acc, index) => {
+                    // একাউন্ট কার্ড
+                    const accDiv = document.createElement('div');
+                    accDiv.className = "account-card";
+                    accDiv.innerHTML = `<strong>${acc.phone}</strong> <br> <small>Server ID: ${acc.id} | Status: Running</small>`;
+                    container.appendChild(accDiv);
+
+                    // অ্যাডমিন প্যানেল থেকে অ্যাডমিন সেট করা বিজ্ঞাপনের রোটেশন
+                    if(data.ad_links && data.ad_links.length > 0) {
+                        const adDiv = document.createElement('div');
+                        adDiv.className = "ad-box";
+                        adDiv.innerHTML = `<iframe src="${data.ad_links[index % data.ad_links.length]}"></iframe>`;
+                        container.appendChild(adDiv);
+                    }
+                });
+
+            } catch (e) { console.log("Database Sync Error"); }
+        }
+
+        window.onload = updateDashboard;
+    </script>
+</body>
+</html>
