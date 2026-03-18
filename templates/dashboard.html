@@ -3,66 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Strong - Ultimate Dashboard</title>
+    <title>AAF Strong - Master Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #39d353; 
-            --bg: #0d1117; 
-            --card-bg: #161b22;
-            --border: #30363d;
-            --text-gray: #8b949e;
-            --accent-cyan: #00ffcc;
-            --gold: #f1c40f;
+            --primary: #39d353; --bg: #0d1117; --card-bg: #161b22;
+            --border: #30363d; --text-gray: #8b949e; --accent-cyan: #00ffcc; --gold: #f1c40f;
         }
-        body { 
-            background: var(--bg); 
-            color: #f0f6fc; 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            padding-bottom: 90px; 
-        }
+        body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
         
-        .top-bar { 
-            padding: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border);
-            background: var(--card-bg);
-        }
+        .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); }
         .user-info h3 { margin: 0; font-size: 18px; color: var(--primary); }
         .user-info span { font-size: 11px; color: var(--text-gray); }
 
         .container { padding: 15px; }
 
-        /* ব্যালেন্স গ্রিড - TK এবং AAF আলাদা হাইলাইট */
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        
-        .card { 
-            background: var(--card-bg); 
-            padding: 18px; 
-            border-radius: 12px; 
-            border: 1px solid var(--border); 
-            position: relative;
-        }
+        .card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
 
-        /* TK ব্যালেন্স কার্ড */
-        .card.main-tk {
-            grid-column: span 2;
-            background: linear-gradient(135deg, #1c2128 0%, #0d1117 100%);
-            border-color: var(--primary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* AAF কয়েন কার্ড */
-        .card.aaf-coin {
-            grid-column: span 2;
-            border-color: var(--gold);
-            background: rgba(241, 196, 15, 0.05);
-        }
+        .card.main-tk { grid-column: span 2; background: linear-gradient(135deg, #1c2128 0%, #0d1117 100%); border-color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .card.aaf-coin { grid-column: span 2; border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
 
         .card h4 { margin: 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
         .card p { margin: 8px 0 0; font-size: 24px; font-weight: bold; }
@@ -70,37 +30,21 @@
         .coin-label { font-size: 14px; color: var(--gold); margin-left: 5px; }
 
         .action-btns { display: flex; gap: 8px; }
-        .btn-sm { 
-            background: var(--primary); color: black; padding: 8px 12px; 
-            border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; 
-        }
+        .btn-sm { background: var(--primary); color: black; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; }
         .btn-gold { background: var(--gold); }
 
-        /* ইনকাম ডিটেইলস */
-        .income-details {
-            background: var(--card-bg); border-radius: 15px; padding: 15px; 
-            border: 1px solid var(--border); margin: 0 15px 15px;
-        }
+        .income-details { background: var(--card-bg); border-radius: 15px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
         .income-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; font-size: 13px; }
         .income-row:last-child { border-bottom: none; }
 
-        /* অ্যাকাউন্ট কন্ট্রোল কার্ড */
-        .acc-control {
-            background: var(--card-bg); padding: 15px; border-radius: 15px; 
-            border: 1px solid var(--border); margin: 15px;
-        }
+        .acc-control { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
         .acc-row { display: flex; justify-content: space-between; align-items: center; }
         .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; text-decoration: none; }
         .active-bg { background: var(--primary); color: black; }
         .inactive-bg { background: #ea2027; color: white; }
         .btn-logout { background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
 
-        /* নেভিগেশন */
-        .slim-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
-            background: #0d1117; display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid var(--border); z-index: 9999;
-        }
+        .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #0d1117; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
         .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 10px; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
@@ -112,12 +56,12 @@
 
     <div class="top-bar">
         <div class="user-info">
-            <h3 id="u-name">Abdullah Asfak</h3>
-            <span id="u-id">UID: #AAF36466824</span>
+            <h3 id="u-name">Loading...</h3>
+            <span id="u-id">UID: #AAF-------</span>
         </div>
         <div style="text-align:right;">
             <div id="status-dot" style="color: var(--primary); font-size: 12px; font-weight: bold;">● Online</div>
-            <div style="font-size: 9px; color: var(--text-gray);">v2.0 Pro System</div>
+            <div style="font-size: 9px; color: var(--text-gray);">v2.0 Real-Time</div>
         </div>
     </div>
 
@@ -125,11 +69,11 @@
         <div class="card main-tk">
             <div>
                 <h4><i class="fas fa-wallet"></i> Main Balance (Cash)</h4>
-                <p><span class="currency-label">৳</span><span id="m-bal">540.00</span></p>
+                <p><span class="currency-label">৳</span><span id="m-bal">0.00</span></p>
             </div>
             <div class="action-btns">
-                <a href="withdraw.html" class="btn-sm">Withdraw</a>
-                <a href="transfer.html" class="btn-sm">Transfer</a>
+                <a href="/withdraw" class="btn-sm">Withdraw</a>
+                <a href="/transfer" class="btn-sm">Transfer</a>
             </div>
         </div>
 
@@ -142,33 +86,33 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h4><i class="fas fa-coins"></i> AAF Coin (Income)</h4>
-                        <p><span id="aaf-bal" style="color: var(--gold);">1250.50</span><span class="coin-label">AAF</span></p>
+                        <p><span id="aaf-bal" style="color: var(--gold);">0.00</span><span class="coin-label">AAF</span></p>
                     </div>
-                    <a href="trading.html" class="btn-sm btn-gold">Trade/Convert</a>
+                    <a href="/trading" class="btn-sm btn-gold">Convert</a>
                 </div>
             </div>
 
             <div class="card">
                 <h4>Active Accounts</h4>
-                <p style="color: var(--accent-cyan);"><span id="active-acc">60</span></p>
+                <p style="color: var(--accent-cyan);"><span id="active-acc">0</span></p>
             </div>
             <div class="card">
                 <h4>Total Accounts</h4>
-                <p><span id="acc-count">65</span></p>
+                <p><span id="acc-count">0</span></p>
             </div>
         </div>
 
         <div class="income-details">
-            <div class="income-row"><span>Task Income</span><span id="task-inc">45.00 AAF</span></div>
-            <div class="income-row"><span>24h Bonus</span><span id="bonus-inc">12.50 AAF</span></div>
-            <div class="income-row"><span>Trading Profit</span><span id="trade-profit">৳ 120.00</span></div>
-            <div class="income-row"><span>Total Transaction</span><span id="total-txn">৳ 2,500.00</span></div>
+            <div class="income-row"><span>Task Income</span><span id="task-inc">0.00 AAF</span></div>
+            <div class="income-row"><span>24h Bonus</span><span id="bonus-inc">0.00 AAF</span></div>
+            <div class="income-row"><span>Trading Profit</span><span id="trade-profit">৳ 0.00</span></div>
+            <div class="income-row"><span>Total Transactions</span><span id="total-txn">৳ 0.00</span></div>
         </div>
 
         <div class="acc-control">
             <div class="acc-row">
                 <div>
-                    <p style="margin: 0; font-size: 14px;" id="display-phone">+88017XXXXXXXX</p>
+                    <p style="margin: 0; font-size: 14px;" id="u-phone">Checking...</p>
                     <small id="bonus-status" style="color: #ff4d4d;">❌ জয়েন করুন (বোনাস বন্ধ)</small>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -177,68 +121,78 @@
                 </div>
             </div>
         </div>
-
-        <div class="ad-container">
-            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
-        </div>
     </div>
 
     <nav class="slim-nav">
-        <a href="dashboard.html" class="nav-item active">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
-        </a>
-        <a href="task.html" class="nav-item">
-            <i class="fas fa-tasks"></i>
-            <span>Task</span>
-        </a>
-        <a href="trading.html" class="nav-item">
-            <i class="fas fa-chart-line"></i>
-            <span>Trade</span>
-        </a>
-        <a href="accounts.html" class="nav-item">
-            <i class="fas fa-user-circle"></i>
-            <span>Account</span>
-        </a>
-        <a href="withdraw.html" class="nav-item">
-            <i class="fas fa-wallet"></i>
-            <span>Wallet</span>
-        </a>
+        <a href="/dashboard" class="nav-item active"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+        <a href="/accounts" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="/withdraw" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
     <script>
-        // ইউজার জয়েন স্ট্যাটাস চেক ফাংশন
+        // ইউজার আইডি লোকাল স্টোরেজ থেকে নেওয়া (লগইন করার সময় যা সেট করা হয়েছিল)
+        const USER_ID = localStorage.getItem('user_id');
+
+        if (!USER_ID) {
+            window.location.href = "/login";
+        }
+
+        async function loadRealData() {
+            try {
+                // আপনার সার্ভার থেকে ডাটা আনা (Route: /api/user_data/<id>)
+                const response = await fetch(`/api/user_data/${USER_ID}`);
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // মঙ্গোবিডি থেকে আসা রিয়েল ডাটা সেটিং
+                    document.getElementById('u-name').innerText = data.name;
+                    document.getElementById('u-id').innerText = "UID: #AAF" + data.telegram_id;
+                    document.getElementById('u-phone').innerText = data.phone;
+                    document.getElementById('m-bal').innerText = data.main_balance.toFixed(2);
+                    document.getElementById('aaf-bal').innerText = data.aaf_balance.toFixed(2);
+                    document.getElementById('active-acc').innerText = data.active_accounts || 0;
+                    document.getElementById('acc-count').innerText = data.total_accounts || 0;
+                    
+                    // ইনকাম সামারি
+                    document.getElementById('task-inc').innerText = data.task_income.toFixed(2) + " AAF";
+                    document.getElementById('bonus-inc').innerText = data.daily_bonus_total.toFixed(2) + " AAF";
+                    document.getElementById('trade-profit').innerText = "৳ " + data.trade_profit.toFixed(2);
+
+                    // চ্যানেল স্ট্যাটাস চেক (০.৫০ AAF বোনাস লজিক)
+                    updateBonusUI(data.is_joined_channel);
+                }
+            } catch (err) {
+                console.error("Database connection error:", err);
+            }
+        }
+
         function updateBonusUI(isJoined) {
             const btn = document.getElementById('status-btn');
             const text = document.getElementById('bonus-status');
-            if(isJoined) {
+            if (isJoined) {
                 btn.innerText = "ACTIVE";
-                btn.classList.replace('inactive-bg', 'active-bg');
+                btn.className = "status-badge active-bg";
                 text.style.color = "#39d353";
-                text.innerHTML = "✅ একটিভ (Daily 0.50 AAF Bonus Active)";
+                text.innerHTML = "✅ একটিভ (Daily 0.50 AAF Active)";
             } else {
                 btn.innerText = "INACTIVE";
-                btn.classList.replace('active-bg', 'inactive-bg');
+                btn.className = "status-badge inactive-bg";
                 text.style.color = "#ff4d4d";
-                text.innerHTML = "❌ জয়েন করুন (Daily 0.50 AAF Bonus Stopped)";
+                text.innerHTML = "❌ জয়েন করুন (Daily 0.50 AAF Stopped)";
             }
         }
 
         function confirmLogout() {
-            if (confirm("আপনি কি এই অ্যাকাউন্টটি লগআউট করতে নিশ্চিত?")) {
+            if (confirm("আপনি কি লগআউট করতে চান?")) {
                 localStorage.clear();
-                window.location.href = "login.html";
+                window.location.href = "/login";
             }
         }
 
-        // এপিআই থেকে ডাটা লোড করার ডামি ফাংশন
-        async function fetchUserData() {
-            // আপনার Render API লিঙ্ক এখানে বসবে
-            console.log("Fetching live data from database...");
-        }
-        
-        // উদাহরণ স্বরূপ কল
-        updateBonusUI(false); 
+        // পেজ লোড হওয়ার সাথে সাথে রিয়েল ডাটা কল হবে
+        window.onload = loadRealData;
     </script>
 </body>
 </html>
