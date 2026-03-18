@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF Exchange | Premium Trading</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary: #00ff88; --bg: #0b0e11; --card: #161a1e; 
+            --border: #2b3139; --gold: #f3ba2f; --red: #f6465d; --text-gray: #848e9c;
+        }
+        body { background: var(--bg); color: #eaecef; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
+
+        /* Header */
+        .market-header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        #live-price { font-size: 22px; font-weight: bold; color: var(--primary); transition: 0.3s; }
+
+        .container { padding: 10px; max-width: 600px; margin: auto; }
+
+        /* Chart Area */
+        .chart-container { background: var(--card); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; height: 280px; width: 100%; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Balance Stats */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-card label { font-size: 10px; color: var(--text-gray); text-transform: uppercase; display: block; }
+        .stat-card p { margin: 5px 0 0; font-size: 16px; font-weight: 600; }
+
+        /* Trade Panel */
+        .action-panel { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; position: relative; }
+        .input-group label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-gray); margin-bottom: 8px; }
+        .input-group input { 
+            width: 100%; background: #1e2329; border: 1px solid transparent; 
+            padding: 14px; border-radius: 8px; color: white; font-size: 18px; box-sizing: border-box; outline: none;
+        }
+        .input-group input:focus { border-color: var(--primary); }
+        
+        /* Fee Calculation Box */
+        .fee-info { background: rgba(243, 186, 47, 0.1); padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px dashed var(--gold); }
+        .fee-row { display: flex; justify-content: space-between; font-size: 12px; color: #fff; margin-bottom: 4px; }
+
+        .btn-flex { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-buy { background: var(--primary); color: #0b0e11; }
+        .btn-sell { background: var(--red); color: #fff; }
+        .btn:active { transform: scale(0.98); }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-gray); text-decoration: none; padding-top: 12px; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div class="market-header">
+        <div>
+            <h2 style="margin:0; font-size:18px;">AAF/TK</h2>
+            <small style="color:var(--text-gray)">Vol: <span id="vol">1.5M</span></small>
+        </div>
+        <div style="text-align:right;">
+            <div id="live-price">1.0000</div>
+            <div id="price-percent" style="font-size:11px; color:var(--primary)">+0.00%</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="chart-container">
+            <canvas id="proChart"></canvas>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <label>Available AAF</label>
+                <p id="aaf-bal">0.00</p>
+            </div>
+            <div class="stat-card">
+                <label>Main Cash (TK)</label>
+                <p id="tk-bal">0.00</p>
+            </div>
+        </div>
+
+        <div class="action-panel">
+            <div class="input-group">
+                <label>Exchange Amount</label>
+                <input type="number" id="trade-amount" placeholder="0.00" oninput="calculateFee()">
+            </div>
+
+            <div class="fee-info">
+                <div class="fee-row"><span>Exchange Fee (10%)</span><span id="fee-amount">0.00</span></div>
+                <div class="fee-row"><span style="font-weight:bold;">Net Receive</span><span id="net-amount" style="color:var(--primary)">0.00</span></div>
+            </div>
+
+            <div class="btn-flex">
+                <button class="btn btn-buy" onclick="processTrade('BUY')">BUY AAF</button>
+                <button class="btn btn-sell" onclick="processTrade('SELL')">SELL AAF</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+        <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="trading.html" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trading</span></a>
+        <a href="account.html" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+    </nav>
+
+    <script>
+        // ক্যানভাস এবং চার্ট সেটআপ
+        const canvas = document.getElementById('proChart');
+        const ctx = canvas.getContext('2d');
+        let candles = [];
+        let basePrice = 1.0000;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawCandlesticks() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const candleWidth = 12;
+            const spacing = 6;
+            const verticalZoom = 2500; 
+
+            // গ্রিড লাইন (বাইনেন্স লুক)
+            ctx.strokeStyle = "#2b3139";
+            ctx.lineWidth = 0.5;
+            for(let i=0; i<canvas.height; i+=40) {
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+
+            candles.forEach((c, i) => {
+                const x = 30 + i * (candleWidth + spacing);
+                const isGreen = c.close >= c.open;
+                
+                ctx.strokeStyle = isGreen ? "#00ff88" : "#f6465d";
+                ctx.fillStyle = isGreen ? "#00ff88" : "#f6465d";
+                ctx.lineWidth = 1.5;
+
+                const yHigh = canvas.height / 2 - (c.high - basePrice) * verticalZoom;
+                const yLow = canvas.height / 2 - (c.low - basePrice) * verticalZoom;
+                ctx.beginPath();
+                ctx.moveTo(x + candleWidth / 2, yHigh);
+                ctx.lineTo(x + candleWidth / 2, yLow);
+                ctx.stroke();
+
+                const yOpen = canvas.height / 2 - (c.open - basePrice) * verticalZoom;
+                const yClose = canvas.height / 2 - (c.close - basePrice) * verticalZoom;
+                ctx.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.max(Math.abs(yOpen - yClose), 1));
+            });
+        }
+
+        // ফি ক্যালকুলেশন
+        function calculateFee() {
+            const amount = parseFloat(document.getElementById('trade-amount').value) || 0;
+            const fee = amount * 0.10;
+            const net = amount - fee;
+            document.getElementById('fee-amount').innerText = fee.toFixed(2);
+            document.getElementById('net-amount').innerText = net.toFixed(2);
+        }
+
+        // ট্রেড প্রসেস (বিকাশ/নগদ ডাটাবেজ ইন্টিগ্রেশন অনুযায়ী)
+        async function processTrade(type) {
+            const amount = document.getElementById('trade-amount').value;
+            const net = document.getElementById('net-amount').innerText;
+            if(!amount || amount <= 0) return alert("দয়া করে সঠিক পরিমাণ দিন!");
+
+            alert(`${type} অর্ডার সফল! আপনি পাবেন ${net} (১০% ফি বাদে)`);
+            // এখানে আপনার MongoDB এপিআই কল হবে
+        }
+
+        // লাইভ ডাটা সিমুলেশন (৩ সেকেন্ড পর পর)
+        setInterval(() => {
+            const lastPrice = candles.length > 0 ? candles[candles.length - 1].close : 1.0000;
+            const open = lastPrice;
+            const change = (Math.random() * 0.006) - 0.003;
+            const close = open + change;
+            
+            candles.push({
+                open: open,
+                close: close,
+                high: Math.max(open, close) + 0.0015,
+                low: Math.min(open, close) - 0.0015
+            });
+
+            if(candles.length > (canvas.width / 20)) candles.shift();
+            drawCandlesticks();
+            
+            // লাইভ প্রাইস টেক্সট আপডেট
+            const priceEl = document.getElementById('live-price');
+            priceEl.innerText = close.toFixed(4);
+            priceEl.style.color = close >= open ? "#00ff88" : "#f6465d";
+            basePrice = close;
+        }, 3000);
+
+    </script>
+</body>
+</html>
