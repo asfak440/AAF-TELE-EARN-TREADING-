@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF - Multi-Ad Task Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text-dim: #8b949e; }
+        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 120px; }
+        
+        /* Ad Slots Style */
+        .ad-container { width: 100%; text-align: center; background: #000; padding: 5px 0; border-bottom: 1px solid var(--border); overflow: hidden; min-height: 55px; }
+        .ad-container.bottom-ads { border-top: 1px solid var(--border); border-bottom: none; position: fixed; bottom: 65px; left: 0; z-index: 998; }
+
+        .header { text-align: center; padding: 15px; background: var(--card); }
+        .balance-box { background: linear-gradient(145deg, #1c2128, #161b22); padding: 15px; border-radius: 12px; text-align: center; margin: 10px; border: 1px solid var(--border); }
+        .balance-box h2 { margin: 5px 0 0; color: var(--primary); font-size: 24px; }
+
+        .task-container { padding: 10px; max-width: 500px; margin: auto; }
+        .task-card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        
+        .claim-btn { background: var(--primary); color: #0d1117; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+        /* Navigation */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; padding-top: 12px; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="top-ad-slot" class="ad-container">
+        <p style="font-size: 10px; color: #444;">Ad Loading...</p>
+    </div>
+
+    <div class="header"><h1>Task Center</h1></div>
+
+    <div class="balance-box">
+        <span>Current Income</span>
+        <h2 id="task-bal">৳ 0.00</h2>
+    </div>
+
+    <div id="task-list" class="task-container">
+        </div>
+
+    <div id="bottom-ad-slot" class="ad-container bottom-ads">
+        </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+        <a href="task.html" class="nav-item active"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="trading.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
+        <a href="account.html" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+    </nav>
+
+    <script>
+        const API_URL = "https://aaf-api-free.onrender.com"; 
+        const USER_ID = localStorage.getItem('user_id');
+
+        // অ্যাড রোটেশন লজিক
+        async function loadAds() {
+            try {
+                const res = await fetch(`${API_URL}/api/get_active_ads`);
+                const adData = await res.json();
+                
+                let topIndex = 0;
+                let bottomIndex = 0;
+
+                // প্রতি ১০ সেকেন্ড পর পর অ্যাড চেঞ্জ হবে
+                setInterval(() => {
+                    // টপ অ্যাড আপডেট
+                    document.getElementById('top-ad-slot').innerHTML = adData.top_ads[topIndex].code;
+                    topIndex = (topIndex + 1) % adData.top_ads.length;
+
+                    // বটম অ্যাড আপডেট
+                    document.getElementById('bottom-ad-slot').innerHTML = adData.bottom_ads[bottomIndex].code;
+                    bottomIndex = (bottomIndex + 1) % adData.bottom_ads.length;
+                }, 10000); // ১০ সেকেন্ড রোটেশন টাইম
+
+            } catch (e) { console.log("Ad Load Error"); }
+        }
+
+        async function initTasks() {
+            const container = document.getElementById('task-list');
+            try {
+                const res = await fetch(`${API_URL}/api/get_secure_tasks?user_id=${USER_ID}`);
+                const data = await res.json();
+
+                if (data.status === "ip_limit") {
+                    container.innerHTML = "<p style='color:#ff7b72; text-align:center;'>একই আইপি থেকে একাধিক অ্যাকাউন্ট ব্যবহার করা যাবে না।</p>";
+                    return;
+                }
+
+                document.getElementById('task-bal').innerText = "৳ " + data.balance.toFixed(2);
+                container.innerHTML = "";
+                data.tasks.forEach((task, index) => {
+                    container.innerHTML += `
+                        <div class="task-card">
+                            <div><h3>${task.name}</h3><p style="color:var(--primary);">+ ৳ ${task.reward}</p></div>
+                            <button class="claim-btn" onclick="window.open('${task.link}', '_blank')">Visit</button>
+                        </div>`;
+                });
+            } catch (err) { }
+        }
+
+        window.onload = () => { initTasks(); loadAds(); };
+    </script>
+</body>
+</html>
