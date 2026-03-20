@@ -51,6 +51,9 @@ def decrypt_session(encrypted_str):
         return encrypted_str
 
 # --- ৩. ফ্রন্টএন্ড পেজ রুটস ---
+@app.route('/login')
+def login():return render_template('login.html')
+
 @app.route('/')
 @app.route('/dashboard')
 def dashboard(): return render_template('dashboard.html')
