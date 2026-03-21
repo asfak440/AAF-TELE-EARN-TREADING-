@@ -1,3 +1,4 @@
+Flask==3.0.0
 Flask[async]==3.0.0
 flask-cors==4.0.0
 pymongo[srv]==4.6.1
@@ -7,4 +8,4 @@ dnspython==2.4.2
 gunicorn==21.2.0
 uvicorn==0.23.2
 asgiref==3.7.2
-nest_asyncio==1.6.0
+nest-asyncio==1.6.0
