@@ -13,7 +13,7 @@ nest_asyncio.apply()
 app = Flask(__name__)
 CORS(app)
 
-# ২. কনফিগারেশন (আপনার দেওয়া ডাটা)
+# ২. কনফিগারেশন
 API_ID = 36466824
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
@@ -52,32 +52,14 @@ def get_user_data(user_id):
         if user:
             return jsonify({
                 "status": "success",
-                "name": user.get('name', 'User'),
                 "main_balance": user.get('main_balance', 0.0),
-                "aaf_balance": user.get('aaf_balance', 0.0),
-                "active_accounts": user.get('active_accounts', 0),
-                "total_accounts": user.get('total_accounts', 0)
+                "aaf_balance": user.get('aaf_balance', 0.0)
             })
         return jsonify({"status": "error", "message": "User not found"}), 404
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ৫. ওটিপি পাঠানোর API
-@app.route('/api/send_otp', methods=['POST'])
-async def send_otp():
-    data = request.json
-    phone = data.get('phone')
-    try:
-        loop = asyncio.get_event_loop()
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        await client.connect()
-        sent_code = await client.send_code_request(phone)
-        temp_clients[phone] = {'client': client, 'hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "ওটিপি পাঠানো হয়েছে!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-# ৬. পোর্ট বাইন্ডিং (Render সার্ভারের এরর ফিক্স)
+# ৫. পোর্ট বাইন্ডিং (Render সার্ভারের এরর ফিক্স)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
