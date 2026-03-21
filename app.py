@@ -7,13 +7,13 @@ from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-# ১. ইভেন্ট লুপ ফিক্স (টেলিথন ও ফ্লাস্কের ঝগড়া মেটানোর জন্য)
+# ১. ইভেন্ট লুপ ফিক্স (Telethon ও Flask এর সংঘর্ষ এড়াতে)
 nest_asyncio.apply()
 
 app = Flask(__name__)
 CORS(app)
 
-# ২. আপনার ডাটাবেস ও টেলিগ্রাম কনফিগারেশন
+# ২. কনফিগারেশন (আপনার দেওয়া ডাটা)
 API_ID = 36466824
 API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
@@ -24,7 +24,7 @@ users_col = db['users']
 
 temp_clients = {}
 
-# ৩. আপনার সবকটি HTML পেজের রুট (Routes)
+# ৩. আপনার সবকটি HTML পেজের কানেকশন (Routes)
 @app.route('/')
 @app.route('/dashboard')
 def dashboard(): return render_template('dashboard.html')
@@ -44,7 +44,7 @@ def accounts(): return render_template('accounts.html')
 @app.route('/wallet')
 def wallet(): return render_template('wallet.html')
 
-# ৪. ডাটা আদান-প্রদানের এপিআই (API)
+# ৪. ডাটাবেস থেকে তথ্য আনার API (Dashboard-এর জন্য)
 @app.route('/api/user_data/<user_id>', methods=['GET'])
 def get_user_data(user_id):
     try:
@@ -55,8 +55,6 @@ def get_user_data(user_id):
                 "name": user.get('name', 'User'),
                 "main_balance": user.get('main_balance', 0.0),
                 "aaf_balance": user.get('aaf_balance', 0.0),
-                "task_income": user.get('task_income', 0.0),
-                "trade_profit": user.get('trade_profit', 0.0),
                 "active_accounts": user.get('active_accounts', 0),
                 "total_accounts": user.get('total_accounts', 0)
             })
@@ -64,7 +62,7 @@ def get_user_data(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ৫. ওটিপি পাঠানোর ফাংশন
+# ৫. ওটিপি পাঠানোর API
 @app.route('/api/send_otp', methods=['POST'])
 async def send_otp():
     data = request.json
@@ -75,7 +73,7 @@ async def send_otp():
         await client.connect()
         sent_code = await client.send_code_request(phone)
         temp_clients[phone] = {'client': client, 'hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "OTP Sent!"})
+        return jsonify({"success": True, "message": "ওটিপি পাঠানো হয়েছে!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
