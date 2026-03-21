@@ -5,4 +5,5 @@ telethon==1.31.1
 pycryptodome==3.19.0
 dnspython==2.4.2
 gunicorn==21.2.0
+uvicorn==0.23.2
 nest_asyncio==1.6.0
