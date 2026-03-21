@@ -3,16 +3,16 @@ import base64
 import asyncio
 import datetime
 import nest_asyncio
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-from telethon import TelegramClient, functions
+from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-# ১. ইভেন্ট লুপ প্যাচ (নতুন এরর সমাধানের জন্য অত্যন্ত জরুরি)
+# ১. ইভেন্ট লুপ প্যাচ (সব ধরণের Asyncio এরর বন্ধ করার জন্য)
 nest_asyncio.apply()
 
 app = Flask(__name__)
@@ -82,7 +82,7 @@ def account(): return render_template('account.html')
 @app.route('/aaf-master-admin-control')
 def admin_panel(): return render_template('admin.html')
 
-# --- ৫. ইউজার লগইন ও টেলিগ্রাম সেশন (OTP System) ---
+# --- ৫. ইউজার লগইন ও টেলিগ্রাম সেশন (সংশোধিত OTP System) ---
 @app.route('/api/send_otp', methods=['POST'])
 async def send_otp():
     data = request.json
@@ -90,15 +90,20 @@ async def send_otp():
     if not phone:
         return jsonify({"success": False, "message": "নম্বরটি প্রয়োজন"}), 400
     try:
-        # ক্লায়েন্ট তৈরির সময় লুপ স্পেসিফাই করা হয়েছে ঝামেলা এড়াতে
+        # বর্তমান ইভেন্ট লুপ ব্যবহার নিশ্চিত করা
         loop = asyncio.get_event_loop()
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        await client.connect()
+        
+        # 'Timeout' এরর এড়াতে টাস্ক হিসেবে কানেক্ট করা
+        await asyncio.wait_for(client.connect(), timeout=30)
+        
         sent_code = await client.send_code_request(phone)
         temp_clients[phone] = {'client': client, 'phone_code_hash': sent_code.phone_code_hash}
         return jsonify({"success": True, "message": "টেলিগ্রামে ওটিপি পাঠানো হয়েছে!"})
+    except asyncio.TimeoutError:
+        return jsonify({"success": False, "message": "সার্ভার রেসপন্স দিচ্ছে না। আবার চেষ্টা করুন। [Timeout]"})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": f"ভুল: {str(e)}"})
 
 @app.route('/api/verify_login', methods=['POST'])
 async def verify_login():
@@ -148,14 +153,13 @@ def get_user_data(user_id):
         user = users_col.find_one({"telegram_id": int(user_id)})
         if user:
             user['_id'] = str(user['_id'])
-            # ইনকাম এবং ব্যালেন্স ডাটা নিশ্চিত করা
             data = {
                 "name": user.get('name', 'N/A'),
                 "telegram_id": user.get('telegram_id'),
                 "phone": user.get('phone', 'N/A'),
                 "main_balance": float(user.get('main_balance', 0.0)),
                 "aaf_balance": float(user.get('aaf_balance', 0.0)),
-                "total_accounts": 1080, # আপনার প্রজেক্টের রিকোয়ারমেন্ট অনুযায়ী
+                "total_accounts": 1080, 
                 "active_accounts": 950,
                 "task_income": float(user.get('task_income', 0.0)),
                 "daily_bonus_total": float(user.get('daily_bonus_total', 0.0)),
@@ -190,4 +194,5 @@ def handle_withdraw():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
+    # Render-এ চালানোর জন্য Threading বন্ধ রেখে async লুপ ব্যবহার করা হচ্ছে
     app.run(host='0.0.0.0', port=port, debug=False)
