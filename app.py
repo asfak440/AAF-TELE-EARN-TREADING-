@@ -1,155 +1,219 @@
-import os
-import base64
-import asyncio
-import datetime
-import nest_asyncio
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-from pymongo import MongoClient
-from telethon import TelegramClient
-from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-from asgiref.wsgi import WsgiToAsgi # ASGI প্রোটোকলের জন্য জরুরি
-
-# ১. ইভেন্ট লুপ প্যাচ (সার্ভারের ইন্টারনাল এরর ফিক্স করে)
-nest_asyncio.apply()
-
-app = Flask(__name__)
-CORS(app)
-
-# --- ২. কনফিগারেশন ও ডাটাবেস কানেকশন ---
-API_ID = 36466824      
-API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'  
-SECRET_KEY = b'AAF_STRONG_APP_SECURE_32_BIT_KEY' 
-
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
-
-try:
-    client_db = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = client_db['AAF_TeleEarn'] 
-    users_col = db['users']
-    sessions_col = db['sessions']
-    withdrawals_col = db['withdrawals']
-    print("✅ MongoDB কানেকশন সফল!")
-except Exception as e:
-    print(f"❌ MongoDB কানেকশন এরর: {e}")
-
-temp_clients = {}
-
-# --- ৩. সেশন এনক্রিপশন লজিক ---
-def encrypt_session(session_str):
-    cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
-    ct_bytes = cipher.encrypt(pad(session_str.encode(), AES.block_size))
-    iv = base64.b64encode(cipher.iv).decode('utf-8')
-    ct = base64.b64encode(ct_bytes).decode('utf-8')
-    return f"{iv}:{ct}"
-
-# --- ৪. সব ফ্রন্টএন্ড পেজ রুটস ---
-@app.route('/')
-@app.route('/dashboard')
-def dashboard(): return render_template('dashboard.html')
-
-@app.route('/login')
-def login(): return render_template('login.html')
-
-@app.route('/wallet')
-def wallet(): return render_template('wallet.html')
-
-@app.route('/task')
-def task_page(): return render_template('task.html')
-
-@app.route('/trading')
-def trading(): return render_template('trading.html')
-
-@app.route('/account')
-def account(): return render_template('account.html')
-
-# --- ৫. ওটিপি পাঠানোর লজিক (অ্যাসিঙ্ক টাস্ক ফিক্সসহ) ---
-@app.route('/api/send_otp', methods=['POST'])
-async def send_otp():
-    data = request.json
-    phone = data.get('phone')
-    if not phone: return jsonify({"success": False, "message": "নম্বর প্রয়োজন"})
-    
-    try:
-        loop = asyncio.get_event_loop()
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        
-        async def run_task():
-            if not client.is_connected(): await client.connect()
-            return await client.send_code_request(phone)
-        
-        # টাইমআউট এরর এড়াতে create_task ব্যবহার
-        sent_code = await asyncio.wait_for(asyncio.create_task(run_task()), timeout=35)
-        temp_clients[phone] = {'client': client, 'phone_code_hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "ওটিপি পাঠানো হয়েছে!"})
-    except Exception as e:
-        print(f"OTP Error: {e}")
-        return jsonify({"success": False, "message": str(e)})
-
-# --- ৬. লগইন ভেরিফাই ও ইউজার ডাটা সেভ ---
-@app.route('/api/verify_login', methods=['POST'])
-async def verify_login():
-    data = request.json
-    phone, code, password, full_name = data.get('phone'), data.get('code'), data.get('password'), data.get('name', 'User')
-
-    if phone not in temp_clients:
-        return jsonify({"success": False, "message": "সেশন পাওয়া যায়নি"})
-
-    client = temp_clients[phone]['client']
-    try:
-        async def verify_task():
-            try:
-                return await client.sign_in(phone, code, phone_code_hash=temp_clients[phone]['phone_code_hash'])
-            except SessionPasswordNeededError:
-                if not password: return "NEED_PASS"
-                return await client.sign_in(password=password)
-
-        result = await asyncio.create_task(verify_task())
-        if result == "NEED_PASS": return jsonify({"success": False, "message": "২-স্টেপ পাসওয়ার্ড দিন"})
-
-        me = await client.get_me()
-        encrypted_session = encrypt_session(client.session.save())
-
-        # ডাটাবেসে ইউজার প্রোফাইল তৈরি
-        user_data = {
-            "telegram_id": me.id, "name": full_name, "phone": phone,
-            "status": "Active", "main_balance": 0.0, "created_at": datetime.datetime.now()
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF Strong - Master Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary: #39d353; --bg: #0d1117; --card-bg: #161b22;
+            --border: #30363d; --text-gray: #8b949e; --accent-cyan: #00ffcc; --gold: #f1c40f;
         }
-        users_col.update_one({"telegram_id": me.id}, {"$set": user_data}, upsert=True)
-        sessions_col.update_one({"phone": phone}, {"$set": {"session": encrypted_session}}, upsert=True)
+        body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
         
-        await client.disconnect()
-        if phone in temp_clients: del temp_clients[phone]
-        return jsonify({"success": True, "user_id": str(me.id)})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); }
+        .user-info h3 { margin: 0; font-size: 18px; color: var(--primary); }
+        .user-info span { font-size: 11px; color: var(--text-gray); }
 
-# --- ৭. ড্যাশবোর্ড ও অ্যাকাউন্ট এপিআই ---
-@app.route('/api/user_profile/<user_id>', methods=['GET'])
-def get_user_profile(user_id):
-    try:
-        user = users_col.find_one({"telegram_id": int(user_id)})
-        if user:
-            return jsonify({
-                "status": "success",
-                "name": user.get('name', 'N/A'),
-                "phone": user.get('phone', 'N/A'),
-                "telegram_id": user.get('telegram_id'),
-                "main_balance": float(user.get('main_balance', 0.0)),
-                "total_accounts": 1080, # আপনার প্রজেক্ট গোল
-                "active_accounts": 950,
-                "created_at": user.get('created_at', datetime.datetime.now()).strftime("%d %b %Y")
-            })
-        return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি"}), 404
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        .container { padding: 15px; }
 
-# --- ৮. ASGI অ্যাপ অ্যাডাপ্টার (Uvicorn এর জন্য) ---
-asgi_app = WsgiToAsgi(app)
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
 
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+        .card.main-tk { grid-column: span 2; background: linear-gradient(135deg, #1c2128 0%, #0d1117 100%); border-color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .card.aaf-coin { grid-column: span 2; border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
+
+        .card h4 { margin: 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card p { margin: 8px 0 0; font-size: 24px; font-weight: bold; }
+        .currency-label { font-size: 14px; color: var(--primary); margin-right: 4px; }
+        .coin-label { font-size: 14px; color: var(--gold); margin-left: 5px; }
+
+        .action-btns { display: flex; gap: 8px; }
+        .btn-sm { background: var(--primary); color: black; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; }
+        .btn-gold { background: var(--gold); }
+
+        .income-details { background: var(--card-bg); border-radius: 15px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .income-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; font-size: 13px; }
+        .income-row:last-child { border-bottom: none; }
+
+        .acc-control { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .acc-row { display: flex; justify-content: space-between; align-items: center; }
+        .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; text-decoration: none; }
+        .active-bg { background: var(--primary); color: black; }
+        .inactive-bg { background: #ea2027; color: white; }
+        .btn-logout { background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+
+        .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #0d1117; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
+        .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 10px; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+
+        .ad-container { text-align: center; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="user-info">
+            <h3 id="u-name">Loading...</h3>
+            <span id="u-id">UID: #AAF-------</span>
+        </div>
+        <div style="text-align:right;">
+            <div id="status-dot" style="color: var(--primary); font-size: 12px; font-weight: bold;">● Online</div>
+            <div style="font-size: 9px; color: var(--text-gray);">v2.0 Real-Time</div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="acc-control" style="margin-bottom: 15px; padding: 12px; border-color: rgba(57, 211, 83, 0.2);">
+            <p style="margin: 0 0 10px 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fas fa-server"></i> Server Account Analytics
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center;">
+                    <h4 style="margin: 0; font-size: 9px; color: var(--text-gray);">TOTAL ADDED</h4>
+                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #fff;" id="total-added">0</p>
+                </div>
+                <div style="background: rgba(57, 211, 83, 0.05); padding: 10px; border-radius: 10px; border: 1px solid rgba(57, 211, 83, 0.3); text-align: center;">
+                    <h4 style="margin: 0; font-size: 9px; color: var(--primary);">ACTIVE</h4>
+                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--primary);" id="active-count">0</p>
+                </div>
+                <div style="background: rgba(234, 32, 39, 0.05); padding: 10px; border-radius: 10px; border: 1px solid rgba(234, 32, 39, 0.3); text-align: center;">
+                    <h4 style="margin: 0; font-size: 9px; color: #ea2027;">INACTIVE</h4>
+                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #ea2027;" id="inactive-count">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card main-tk">
+            <div>
+                <h4><i class="fas fa-wallet"></i> Main Balance (Cash)</h4>
+                <p><span class="currency-label">৳</span><span id="m-bal">0.00</span></p>
+            </div>
+            <div class="action-btns">
+                <a href="/withdraw" class="btn-sm">Withdraw</a>
+                <a href="/transfer" class="btn-sm">Transfer</a>
+            </div>
+        </div>
+
+        <div class="ad-container">
+            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
+        </div>
+
+        <div class="balance-grid">
+            <div class="card aaf-coin">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4><i class="fas fa-coins"></i> AAF Coin (Income)</h4>
+                        <p><span id="aaf-bal" style="color: var(--gold);">0.00</span><span class="coin-label">AAF</span></p>
+                    </div>
+                    <a href="/trading" class="btn-sm btn-gold">Convert</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h4>Active Accounts</h4>
+                <p style="color: var(--accent-cyan);"><span id="active-acc">0</span></p>
+            </div>
+            <div class="card">
+                <h4>Total Accounts</h4>
+                <p><span id="acc-count">0</span></p>
+            </div>
+        </div>
+
+        <div class="income-details">
+            <div class="income-row"><span>Task Income</span><span id="task-inc">0.00 AAF</span></div>
+            <div class="income-row"><span>24h Bonus</span><span id="bonus-inc">0.00 AAF</span></div>
+            <div class="income-row"><span>Trading Profit</span><span id="trade-profit">৳ 0.00</span></div>
+            <div class="income-row"><span>Total Transactions</span><span id="total-txn">৳ 0.00</span></div>
+        </div>
+
+        <div class="acc-control">
+            <div class="acc-row">
+                <div>
+                    <p style="margin: 0; font-size: 14px;" id="u-phone">Checking...</p>
+                    <small id="bonus-status" style="color: #ff4d4d;">❌ জয়েন করুন (বোনাস বন্ধ)</small>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="https://t.me/aaf_tele_earn" id="status-btn" target="_blank" class="status-badge inactive-bg">INACTIVE</a>
+                    <button class="btn-logout" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="slim-nav">
+        <a href="/dashboard" class="nav-item active"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+        <a href="/accounts" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+    </nav>
+
+    <script>
+        const USER_ID = localStorage.getItem('user_id');
+
+        if (!USER_ID) {
+            window.location.href = "/login";
+        }
+
+        async function loadRealData() {
+            try {
+                const response = await fetch(`/api/user_data/${USER_ID}`);
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    document.getElementById('u-name').innerText = data.name;
+                    document.getElementById('u-id').innerText = "UID: #AAF" + data.telegram_id;
+                    document.getElementById('u-phone').innerText = data.phone;
+                    document.getElementById('m-bal').innerText = data.main_balance.toFixed(2);
+                    document.getElementById('aaf-bal').innerText = data.aaf_balance.toFixed(2);
+                    document.getElementById('active-acc').innerText = data.active_accounts || 0;
+                    document.getElementById('acc-count').innerText = data.total_accounts || 0;
+                    
+                    // ইনকাম সামারি
+                    document.getElementById('task-inc').innerText = data.task_income.toFixed(2) + " AAF";
+                    document.getElementById('bonus-inc').innerText = data.daily_bonus_total.toFixed(2) + " AAF";
+                    document.getElementById('trade-profit').innerText = "৳ " + data.trade_profit.toFixed(2);
+
+                    // নতুন এনালিটিক্স কার্ড ডাটা আপডেট
+                    document.getElementById('total-added').innerText = data.total_accounts || 0;
+                    document.getElementById('active-count').innerText = data.active_accounts || 0;
+                    document.getElementById('inactive-count').innerText = (data.total_accounts - data.active_accounts) || 0;
+
+                    updateBonusUI(data.is_joined_channel);
+                }
+            } catch (err) {
+                console.error("Database connection error:", err);
+            }
+        }
+
+        function updateBonusUI(isJoined) {
+            const btn = document.getElementById('status-btn');
+            const text = document.getElementById('bonus-status');
+            if (isJoined) {
+                btn.innerText = "ACTIVE";
+                btn.className = "status-badge active-bg";
+                text.style.color = "#39d353";
+                text.innerHTML = "✅ একটিভ (Daily 0.50 AAF Active)";
+            } else {
+                btn.innerText = "INACTIVE";
+                btn.className = "status-badge inactive-bg";
+                text.style.color = "#ff4d4d";
+                text.innerHTML = "❌ জয়েন করুন (Daily 0.50 AAF Stopped)";
+            }
+        }
+
+        function confirmLogout() {
+            if (confirm("আপনি কি লগআউট করতে চান?")) {
+                localStorage.clear();
+                window.location.href = "/login";
+            }
+        }
+
+        window.onload = loadRealData;
+    </script>
+</body>
+</html>
