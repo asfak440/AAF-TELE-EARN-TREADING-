@@ -8,18 +8,21 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 from datetime import datetime
 
-# ১. সিস্টেম ফিক্স (টেলিগ্রাম ক্লায়েন্ট এবং ফ্ল্যাক্স একসাথে চালানোর জন্য)
+# ১. সিস্টেম ফিক্স (nest_asyncio)
 nest_asyncio.apply()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "aaf_secret_key_786")
-CORS(app)
+app.secret_key = os.environ.get("SECRET_KEY", "aaf_super_secret_key_123")
 
-# ২. আপনার কনফিগারেশন
+# ২. CORS ফিক্স (ব্রাউজার কানেকশন এরর দূর করার জন্য)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# ৩. আপনার কনফিগারেশন
 API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
+# ৪. ডাটাবেস কানেকশন
 client_db = MongoClient(MONGO_URI)
 db = client_db['AAF_TeleEarn']
 users_col = db['users']
@@ -27,38 +30,31 @@ settings_col = db['settings']
 
 temp_clients = {}
 
-# ---------------- ৩. এইচটিএমএল রাউটস (HTML ROUTES) ----------------
+# ---------------- ৫. HTML রাউটস (HTML ROUTES) ----------------
 
 @app.route('/')
 @app.route('/login')
-def login():
-    return render_template('login.html')
+def login(): return render_template('login.html')
 
 @app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+def dashboard(): return render_template('dashboard.html')
 
 @app.route('/task')
-def task():
-    return render_template('task.html')
+def task(): return render_template('task.html')
 
 @app.route('/trading')
-def trading():
-    return render_template('treading.html')
+def trading(): return render_template('treading.html') # আপনার ফাইলের বানান অনুযায়ী
 
 @app.route('/account')
-def account():
-    return render_template('account.html')
+def account(): return render_template('account.html')
 
 @app.route('/wallet')
-def wallet():
-    return render_template('wallet.html')
+def wallet(): return render_template('wallet.html')
 
 @app.route('/admin')
-def admin_page():
-    return render_template('admin.html')
+def admin_page(): return render_template('admin.html')
 
-# ---------------- ৪. এডমিন এপিআই (ADMIN API) ----------------
+# ---------------- ৬. এডমিন এপিআই (ADMIN API) ----------------
 
 @app.route('/api/admin/users')
 def get_users():
@@ -77,16 +73,16 @@ def update_balance():
     except:
         return jsonify({"success": False})
 
-# ---------------- ৫. টেলিগ্রাম লগইন এপিআই (OTP & LOGIN) ----------------
+# ---------------- ৭. টেলিগ্রাম লগইন এপিআই (OTP & LOGIN) ----------------
 
 @app.route('/api/send_otp', methods=['POST'])
-async def send_otp():
+async def send_otp(): # async যোগ করা হয়েছে
     data = request.json
     phone = data.get('phone')
     try:
         loop = asyncio.get_event_loop()
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        await client.connect()
+        await client.connect() # await ব্যবহার করা হয়েছে
         result = await client.send_code_request(phone)
         
         temp_clients[phone] = {
@@ -119,7 +115,7 @@ async def verify_login():
             "joined": datetime.utcnow()
         }
         
-        # ডাটাবেসে নতুন ইউজার হলে মেইন ব্যালেন্স ০ সেট করবে
+        # ডাটাবেসে ইউজার সেভ (মেইন ব্যালেন্স ০ সেট করবে নতুন ইউজারের জন্য)
         users_col.update_one(
             {"telegram_id": user.id},
             {"$set": user_data, "$setOnInsert": {"main_balance": 0}},
@@ -131,13 +127,13 @@ async def verify_login():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# ---------------- ৬. টেস্ট রুট (সার্ভার চেক) ----------------
+# ---------------- ৮. টেস্ট রুট (সার্ভার চেক) ----------------
 
 @app.route('/test')
 def test():
     return "SERVER RUNNING SUCCESSFULLY"
 
-# ---------------- ৭. পোর্ট সেটিংস (RENDER FIX) ----------------
+# ---------------- ৯. পোর্ট সেটিংস (RENDER FIX) ----------------
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
