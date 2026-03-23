@@ -168,7 +168,7 @@
         }
 
         // ট্রেড প্রসেস (বিকাশ/নগদ ডাটাবেজ ইন্টিগ্রেশন অনুযায়ী)
-        async function processTrade(type) {
+        function processTrade(type) {
             const amount = document.getElementById('trade-amount').value;
             const net = document.getElementById('net-amount').innerText;
             if(!amount || amount <= 0) return alert("দয়া করে সঠিক পরিমাণ দিন!");
