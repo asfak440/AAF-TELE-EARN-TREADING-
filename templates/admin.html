@@ -111,7 +111,7 @@
         const API_URL = "https://aaf-tele-earn-treading.onrender.com";
 
         // ১. অ্যাড সেভ করার ফাংশন
-        async function saveAds() {
+        function saveAds() {
             const ads = [
                 document.getElementById('ad-slot-1').value,
                 document.getElementById('ad-slot-2').value
@@ -129,7 +129,7 @@
         }
 
         // ২. ইউজার ডাটা আপডেট (ব্যালেন্স ও ট্রেড লক)
-        async function updateUser() {
+        function updateUser() {
             const uid = document.getElementById('search-uid').value;
             const bal = document.getElementById('edit-bal').value;
             const trades = document.getElementById('edit-trades').value;
@@ -147,7 +147,7 @@
         }
 
         // ৩. লোড পেন্ডিং উইথড্র (অটো লোড)
-        async function loadWithdrawals() {
+        function loadWithdrawals() {
             // এখানে আপনার উইথড্র লিস্ট ডাটাবেস থেকে আসবে
             console.log("Fetching withdrawals...");
         }
