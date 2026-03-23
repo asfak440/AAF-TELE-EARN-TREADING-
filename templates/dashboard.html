@@ -159,7 +159,7 @@
             window.location.href = "/login";
         }
 
-        async function loadRealData() {
+        function loadRealData() {
             try {
                 const response = await fetch(`/api/user_data/${USER_ID}`);
                 const data = await response.json();
