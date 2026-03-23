@@ -145,7 +145,7 @@
         const USER_ID = localStorage.getItem('user_id');
 
         // ১. অ্যাড রোটেশন (১০ সেকেন্ড)
-        async function loadAdSystem() {
+        function loadAdSystem() {
             try {
                 const res = await fetch(`${API_URL}/api/get_active_ads`);
                 const adData = await res.json();
@@ -163,7 +163,7 @@
         }
 
         // ২. ডাটা ও লক চেক
-        async function initWallet() {
+        function initWallet() {
             if (!USER_ID) return;
             try {
                 const res = await fetch(`${API_URL}/api/user_wallet_data?user_id=${USER_ID}`);
@@ -187,7 +187,7 @@
         }
 
         // ৪. ট্রান্সফার প্রসেস
-        async function processTransfer() {
+        function processTransfer() {
             const id = document.getElementById('transfer-id').value;
             const amt = document.getElementById('transfer-amount').value;
             if(!id || !amt) return alert("ঘরগুলো পূরণ করুন!");
@@ -195,7 +195,7 @@
         }
 
         // ৫. উইথড্র প্রসেস (৫০ টাকা লিমিট)
-        async function processWithdraw() {
+        function processWithdraw() {
             const num = document.getElementById('withdraw-num').value;
             const amtVal = document.getElementById('withdraw-amount').value;
             const amt = parseFloat(amtVal);
