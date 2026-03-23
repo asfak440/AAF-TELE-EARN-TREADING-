@@ -61,7 +61,7 @@
         const USER_ID = localStorage.getItem('user_id');
 
         // অ্যাড রোটেশন লজিক
-        async function loadAds() {
+        function loadAds() {
             try {
                 const res = await fetch(`${API_URL}/api/get_active_ads`);
                 const adData = await res.json();
@@ -83,7 +83,7 @@
             } catch (e) { console.log("Ad Load Error"); }
         }
 
-        async function initTasks() {
+function initTasks() {
             const container = document.getElementById('task-list');
             try {
                 const res = await fetch(`${API_URL}/api/get_secure_tasks?user_id=${USER_ID}`);
