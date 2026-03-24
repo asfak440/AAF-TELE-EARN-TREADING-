@@ -1,5 +1,5 @@
-Flask==3.0.2
-Flask-Cors==4.0.0
+flask==3.0.2
+flask-Cors==4.0.0
 telethon==1.34.0
 pymongo[srv]==4.6.2
 nest-asyncio==1.6.0
