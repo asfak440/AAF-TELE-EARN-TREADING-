@@ -92,7 +92,7 @@ def send_otp():
         asyncio.set_event_loop(loop)
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         
-        async def connect_and_send():
+        def connect_and_send():
             await client.connect()
             return await client.send_code_request(phone)
 
@@ -114,7 +114,7 @@ def verify_login():
         client = info["client"]
         h = info["hash"]
         
-        async def sign_in_user():
+        def sign_in_user():
             user = await client.sign_in(phone, code, phone_code_hash=h, password=password)
             session_str = client.session.save()
             return user, session_str
