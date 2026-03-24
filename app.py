@@ -30,9 +30,9 @@ temp_clients = {}
 def login(): return render_template('login.html')
 
 # ---------------- ওটিপি পাঠানোর ফাংশন (SYNC) ----------------
-
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
+    import asyncio # ফাংশনের ভেতরে ইমপোর্ট করুন
     data = request.json
     phone = data.get('phone')
     
@@ -40,8 +40,12 @@ def send_otp():
         return jsonify({"success": False, "message": "Phone number missing"})
 
     try:
+        # মেইন থ্রেডে লুপ সেট করা (এই লাইনটি আপনার এরর দূর করবে)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         # Sync পদ্ধতিতে কানেক্ট করা
-        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
         
         # ওটিপি রিকোয়েস্ট
@@ -56,7 +60,6 @@ def send_otp():
         
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
 # ---------------- ভেরিফাই এবং লগইন (SYNC) ----------------
 
 @app.route('/api/verify_login', methods=['POST'])
