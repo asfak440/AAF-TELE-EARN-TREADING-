@@ -109,7 +109,7 @@ def dashboard(): return render_template('dashboard.html')
 def task(): return render_template('task.html')
 
 @app.route('/trading')
-def trading(): return render_template('treading.html')
+def treading(): return render_template('treading.html')
 
 @app.route('/account')
 def account(): return render_template('account.html')
