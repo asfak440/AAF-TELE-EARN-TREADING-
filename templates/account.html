@@ -149,7 +149,7 @@
         }
 
         // ৩. অ্যাড রোটেশন (১০টি বা তার অধিক নেটওয়ার্ক)
-        async function startAdRotation() {
+        function startAdRotation() {
             try {
                 const res = await fetch(`${API_URL}/api/get_active_ads`);
                 const adData = await res.json();
