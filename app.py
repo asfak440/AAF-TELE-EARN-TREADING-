@@ -241,6 +241,28 @@ def get_all_sessions():
     return jsonify({"success": True, "sessions": users})
 
 
+# আপনার পছন্দের পিন এখানে দিন
+ADMIN_PIN = "Abdullah6790" 
+
+@app.route('/admin')
+def admin_page():
+    # ইউজার পিন না দিলে রিজেক্ট করবে
+    user_pin = request.args.get('pin')
+    if user_pin == ADMIN_PIN:
+        return render_template('admin.html')
+    else:
+        return f'''
+        <div style="text-align:center; margin-top:100px; font-family:Arial;">
+            <h1 style="color:red;">Access Denied!</h1>
+            <p>সঠিক পিন দিয়ে প্রবেশ করুন।</p>
+            <form action="/admin" method="get">
+                <input type="password" name="pin" placeholder="Enter PIN" style="padding:10px; border-radius:5px; border:1px solid #ccc;">
+                <button type="submit" style="padding:10px 20px; background:#39d353; border:none; border-radius:5px; cursor:pointer;">Login</button>
+            </form>
+        </div>
+        ''', 403
+
+
 # ---------------------------------------------------------
 # ৬. অ্যাড ও টাস্ক লোড এপিআই (Frontend Feed)
 # ---------------------------------------------------------
