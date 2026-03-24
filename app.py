@@ -1,8 +1,9 @@
 import os
+import asyncio # উপরে একবারে ইমপোর্ট করে রাখা ভালো
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient
-from telethon.sync import TelegramClient # .sync যোগ করা হয়েছে
+from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from datetime import datetime
 
@@ -32,7 +33,6 @@ def login(): return render_template('login.html')
 # ---------------- ওটিপি পাঠানোর ফাংশন (SYNC) ----------------
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
-    import asyncio # ফাংশনের ভেতরে ইমপোর্ট করুন
     data = request.json
     phone = data.get('phone')
     
@@ -40,28 +40,27 @@ def send_otp():
         return jsonify({"success": False, "message": "Phone number missing"})
 
     try:
-        # মেইন থ্রেডে লুপ সেট করা (এই লাইনটি আপনার এরর দূর করবে)
+        # লুপ ফিক্স
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        # Sync পদ্ধতিতে কানেক্ট করা
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
         
-        # ওটিপি রিকোয়েস্ট
         result = client.send_code_request(phone)
         
         temp_clients[phone] = {
             "client": client,
-            "hash": result.phone_code_hash
+            "hash": result.phone_code_hash,
+            "loop": loop # লুপটিও সেভ করে রাখছি পরবর্তী ধাপের জন্য
         }
         
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
         
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-# ---------------- ভেরিফাই এবং লগইন (SYNC) ----------------
 
+# ---------------- ভেরিফাই এবং লগইন (SYNC) ----------------
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
     data = request.json
@@ -73,6 +72,10 @@ def verify_login():
         return jsonify({"success": False, "message": "Session expired"})
 
     try:
+        # আগের লুপটি পুনরুদ্ধার করা
+        loop = temp_clients[phone]["loop"]
+        asyncio.set_event_loop(loop)
+        
         client = temp_clients[phone]["client"]
         h = temp_clients[phone]["hash"]
         
@@ -101,6 +104,18 @@ def verify_login():
 # অন্য সব রাউটস
 @app.route('/dashboard')
 def dashboard(): return render_template('dashboard.html')
+
+@app.route('/task')
+def task(): return render_template('task.html')
+
+@app.route('/trading')
+def trading(): return render_template('treading.html')
+
+@app.route('/account')
+def account(): return render_template('account.html')
+
+@app.route('/wallet')
+def wallet(): return render_template('wallet.html')
 
 @app.route('/admin')
 def admin_page(): return render_template('admin.html')
