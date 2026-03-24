@@ -112,6 +112,12 @@
     </div>
 
     <script>
+    let masterPin = prompt("এডমিন পিন দিন:");
+    if (masterPin !== "Abdullah6790") {
+        alert("ভুল পিন! এক্সেস ডিনাইড।");
+        document.body.innerHTML = "<h1 style='color:red; text-align:center;'>Unauthorized Access!</h1>";
+    }
+        
         const API_URL = window.location.origin; // অটোমেটিক বর্তমান ডোমেইন নিবে
 
         // Tab Switching Logic
