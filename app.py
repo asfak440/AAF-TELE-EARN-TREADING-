@@ -24,7 +24,7 @@ MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.r
 
 # ডাটাবেস কানেকশন
 client_db = MongoClient(MONGO_URI)
-db = client_db['AAF_TeleEarn']
+db = client_db['aaf_tele_earn_db']
 users_col = db['users']
 ads_col = db['ads']  # বিজ্ঞাপনের জন্য আলাদা কালেকশন
 tasks_col = db['tasks'] # টাস্ক ম্যানেজমেন্টের জন্য
