@@ -7,49 +7,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --text-dim: #8b949e; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 85px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI', sans-serif; margin: 0; padding-bottom: 85px; }
 
         /* ১. অ্যাড সেকশন */
         #top-ad-slot { width: 100%; text-align: center; background: #000; padding: 5px 0; min-height: 55px; border-bottom: 1px solid var(--border); overflow: hidden; }
 
         /* ২. প্রোফাইল কার্ড */
         .profile-card { background: var(--card); padding: 25px; text-align: center; border-bottom: 1px solid var(--border); }
-        .tg-avatar { width: 75px; height: 75px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 28px; font-weight: bold; color: white; border: 2px solid var(--border); }
-        .user-name { font-size: 18px; margin: 0; color: white; }
-        .user-meta { font-weight: 500; letter-spacing: 0.5px; }
-        .user-phone { color: var(--text-dim); font-size: 13px; margin-top: 5px; }
+        .tg-avatar { width: 85px; height: 85px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 2px solid var(--primary); overflow: hidden; font-size: 32px; font-weight: bold; color: white; }
+        .tg-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; } 
 
-        .balance-display-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            background: rgba(57, 211, 83, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin: 20px 0 0;
-            padding: 15px;
-        }
+        .user-name { font-size: 20px; margin: 0; font-weight: 800; color: white; }
+        .user-meta { color: var(--primary); font-size: 13px; margin: 5px 0; font-weight: 500; }
+        .user-phone { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+
+        .balance-display-box { display: flex; align-items: center; justify-content: space-around; background: rgba(57, 211, 83, 0.05); border: 1px solid var(--border); border-radius: 15px; margin-top: 20px; padding: 15px; }
 
         /* ৩. অ্যাকাউন্ট লিস্ট */
-        .section-label { padding: 15px 15px 5px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
-        .account-box { margin: 10px 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-        .acc-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border); transition: 0.2s; }
+        .section-label { padding: 20px 15px 10px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .account-box { margin: 0 15px 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .acc-item { display: flex; align-items: center; padding: 15px; cursor: pointer; border-bottom: 1px solid var(--border); transition: 0.2s; }
         .acc-item:last-child { border-bottom: none; }
-        .acc-item.active { background: rgba(57, 211, 83, 0.1); border-left: 4px solid var(--primary); }
+        .acc-item.active { background: rgba(57, 211, 83, 0.08); border-left: 4px solid var(--primary); }
         
-        .acc-circle { width: 40px; height: 40px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; color: white; }
+        .acc-circle { width: 45px; height: 45px; border-radius: 50%; background: #2b5278; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-weight: bold; }
+        .acc-circle img { width: 100%; height: 100%; object-fit: cover; }
+        
         .acc-details { flex: 1; text-align: left; }
-        .acc-details h4 { margin: 0; font-size: 14px; color: white; }
-        .acc-details p { margin: 2px 0 0; font-size: 11px; color: var(--text-dim); }
+        .acc-details h4 { margin: 0; font-size: 15px; color: white; }
+        .acc-details p { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
 
-        .add-acc-btn { color: var(--primary); padding: 15px; cursor: pointer; font-size: 14px; display: flex; align-items: center; font-weight: 600; }
-        .add-acc-btn i { margin-right: 12px; font-size: 18px; }
+        /* ৪. অ্যাড বাটন */
+        .add-btn { color: var(--primary); padding: 18px; cursor: pointer; font-size: 14px; display: flex; align-items: center; font-weight: bold; justify-content: center; background: rgba(57, 211, 83, 0.05); }
+        .add-btn i { margin-right: 10px; font-size: 18px; }
 
-        /* ৪. বটম নেভিগেশন (ফিক্সড পাথ) */
+        /* ৫. বটম নেভিগেশন */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
         .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; }
-        .nav-item i { font-size: 20px; margin-bottom: 4px; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -59,22 +55,24 @@
     </div>
 
     <div class="profile-card">
-        <div class="tg-avatar" id="main-avatar">?</div>
+        <div class="tg-avatar" id="main-avatar-container">
+            <img id="main-photo" src="" alt="Profile">
+            <span id="main-initials">?</span>
+        </div>
         <h3 class="user-name" id="main-name">Loading...</h3>
-        <p class="user-meta" style="color: var(--primary); font-size: 13px; margin: 5px 0;">
-            @<span id="main-username">username</span>
-        </p>
+        <p class="user-meta">@<span id="main-username">username</span></p>
         <p class="user-phone" id="main-phone">+880 1XXX-XXXXXX</p>
+        <p style="color: var(--text-dim); font-size: 11px; margin-top: 5px;">UID: #<span id="display-id">000000</span></p>
 
         <div class="balance-display-box">
-            <div class="bal-item">
-                <span style="font-size: 10px; color: var(--text-dim); display: block;">Available Balance</span>
-                <p id="main-bal" style="margin: 5px 0; font-size: 18px; font-weight: bold; color: var(--primary);">৳ 0.00</p>
+            <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Available Balance</span>
+                <p id="main-bal" style="margin: 5px 0; font-size: 22px; font-weight: bold; color: var(--primary);">৳ 0.00</p>
             </div>
             <div style="width: 1px; background: var(--border); height: 30px;"></div>
-            <div class="bal-item">
-                <span style="font-size: 10px; color: var(--text-dim); display: block;">Telegram ID</span>
-                <p id="display-id" style="margin: 5px 0; font-size: 14px; font-weight: bold;">000000</p>
+            <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Account Status</span>
+                <p style="margin: 5px 0; font-size: 14px; font-weight: bold; color: #fff;">Verified</p>
             </div>
         </div>
     </div>
@@ -83,7 +81,7 @@
     <div class="account-box" id="account-list"></div>
 
     <div class="account-box">
-        <div class="add-acc-btn" onclick="addTelegramAccount()">
+        <div class="add-btn" onclick="goToLoginPage()">
             <i class="fas fa-plus-circle"></i> Add Telegram Account
         </div>
     </div>
@@ -96,97 +94,119 @@
         <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
-    <script>
-        const API_URL = "https://aaf-tele-earn-treading.onrender.com";
-        let allAccounts = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
-        let currentSessionIndex = parseInt(localStorage.getItem('aaf_active_index')) || 0;
+<script>
+    const API_URL = "https://aaf-tele-earn-treading.onrender.com";
 
-        function refreshPageData() {
-            const listDiv = document.getElementById('account-list');
-            listDiv.innerHTML = "";
-
-            if (allAccounts.length === 0) {
-                listDiv.innerHTML = "<p style='padding:15px; font-size:12px; color:var(--text-dim);'>No accounts linked.</p>";
-                return;
-            }
-
-            allAccounts.forEach((acc, index) => {
-                const isActive = (index === currentSessionIndex);
-                const item = `
-                    <div class="acc-item ${isActive ? 'active' : ''}" onclick="switchSession(${index})">
-                        <div class="acc-circle">${acc.name ? acc.name.charAt(0).toUpperCase() : 'U'}</div>
-                        <div class="acc-details">
-                            <h4>${acc.name || 'User'}</h4>
-                            <p>${acc.phone || 'No Phone'}</p>
-                        </div>
-                        ${isActive ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}
-                    </div>
-                `;
-                listDiv.innerHTML += item;
-
-                if (isActive) {
-                    document.getElementById('main-avatar').innerText = (acc.name || 'U').charAt(0).toUpperCase();
-                    document.getElementById('main-name').innerText = acc.name || 'User';
-                    document.getElementById('main-username').innerText = acc.username || "user_" + String(acc.user_id).slice(-4);
-                    document.getElementById('main-phone').innerText = acc.phone || 'No Phone';
-                    document.getElementById('main-bal').innerText = "৳ " + parseFloat(acc.balance || 0).toFixed(2);
-                    document.getElementById('display-id').innerText = acc.user_id;
-                    localStorage.setItem('user_id', acc.user_id); 
-                }
-            });
-        }
-
-        function switchSession(index) {
-            localStorage.setItem('aaf_active_index', index);
-            location.reload(); 
-        }
-
-        // অ্যাড রোটেশন ফাংশনটি async করা হয়েছে (এরর ফিক্স)
-        async function startAdRotation() {
-            try {
-                const res = await fetch(`${API_URL}/api/get_active_ads`);
-                const adData = await res.json();
-                
-                if (adData.ads && adData.ads.length > 0) {
-                    let adIndex = 0;
-                    const adSlot = document.getElementById('top-ad-slot');
-                    adSlot.innerHTML = adData.ads[adIndex].code;
-
-                    setInterval(() => {
-                        adIndex = (adIndex + 1) % adData.ads.length;
-                        adSlot.innerHTML = adData.ads[adIndex].code; 
-                    }, 10000); 
-                }
-            } catch (e) {
-                console.log("Ad Rotation Error");
-            }
-        }
-
-        function addTelegramAccount() {
-            const phoneNumber = prompt("টেলিগ্রাম নম্বর দিন (+880XXXXXXXXXX):");
-            if (!phoneNumber) return;
-            alert("OTP পাঠানো হয়েছে। টেলিগ্রাম অ্যাপ চেক করুন।");
-            const otpCode = prompt("টেলিগ্রাম কোডটি দিন:");
+    // ১. অ্যাড রোটেশন ফাংশন
+    async function startAdRotation() {
+        try {
+            const res = await fetch(`${API_URL}/api/get_active_ads`);
+            const adData = await res.json();
             
-            if (otpCode) {
-                const newAcc = {
-                    user_id: "72" + Math.floor(Math.random()*1000000),
-                    name: "User_" + phoneNumber.slice(-4),
-                    username: "tg_user_" + Math.floor(Math.random()*100),
-                    phone: phoneNumber,
-                    balance: 0.00
-                };
-                allAccounts.push(newAcc);
-                localStorage.setItem('aaf_sessions', JSON.stringify(allAccounts));
-                localStorage.setItem('aaf_active_index', allAccounts.length - 1);
-                location.reload();
+            if (adData.ads && adData.ads.length > 0) {
+                let adIndex = 0;
+                const adSlot = document.getElementById('top-ad-slot');
+                adSlot.innerHTML = adData.ads[adIndex].code;
+
+                setInterval(() => {
+                    adIndex = (adIndex + 1) % adData.ads.length;
+                    adSlot.innerHTML = adData.ads[adIndex].code; 
+                }, 10000); 
             }
+        } catch (e) {
+            console.log("Ad Rotation Error");
+        }
+    }
+
+    // ২. মেইন ফাংশন: অ্যাকাউন্ট লিস্ট লোড করা
+    async function loadAccountManager() {
+        const sessions = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
+        const activeIdx = parseInt(localStorage.getItem('aaf_active_index')) || 0;
+        const listDiv = document.getElementById('account-list');
+        listDiv.innerHTML = "";
+
+        if (sessions.length === 0) {
+            listDiv.innerHTML = "<p style='padding:20px; text-align:center; color:var(--text-dim); font-size:12px;'>No accounts linked.</p>";
+            return;
         }
 
-        window.onload = () => {
-            refreshPageData();
-            startAdRotation();
-        };
-    </script>
+        // সিরিয়াল অনুযায়ী লিস্ট তৈরি (Telegram Style)
+        sessions.forEach((acc, index) => {
+            const isActive = (index === activeIdx);
+            listDiv.innerHTML += `
+                <div class="acc-item ${isActive ? 'active' : ''}" onclick="switchAccount(${index})">
+                    <div class="acc-circle">
+                        ${acc.photo ? `<img src="${acc.photo}">` : `<span>${(acc.name || 'U').charAt(0).toUpperCase()}</span>`}
+                    </div>
+                    <div class="acc-details">
+                        <h4>${acc.name || 'User'}</h4>
+                        <p>${acc.phone || 'No Phone'}</p>
+                    </div>
+                    ${isActive ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}
+                </div>
+            `;
+        });
+
+        // একটিভ অ্যাকাউন্টের ডাটা ডাটাবেস থেকে সিঙ্ক করা
+        if (sessions[activeIdx]) {
+            syncDatabaseData(sessions[activeIdx]);
+        }
+    }
+
+    // ৩. ডাটাবেস থেকে নির্দিষ্ট অ্যাকাউন্টের ডাটা আনা (Isolation)
+    async function syncDatabaseData(currentAcc) {
+        try {
+            const response = await fetch(`${API_URL}/api/user/data/${currentAcc.user_id}`);
+            const freshData = await response.json();
+            
+            if (freshData.status === "success") {
+                // UI আপডেট (ডাটাবেস অনুযায়ী)
+                document.getElementById('main-name').innerText = freshData.name || currentAcc.name || 'User';
+                document.getElementById('main-bal').innerText = "৳ " + parseFloat(freshData.balance || 0).toFixed(2);
+                document.getElementById('display-id').innerText = freshData.uid || currentAcc.user_id;
+                document.getElementById('main-phone').innerText = freshData.phone || currentAcc.phone || 'No Phone';
+                document.getElementById('main-username').innerText = (freshData.username || "user");
+                document.getElementById('main-initials').innerText = (freshData.name || 'U').charAt(0).toUpperCase();
+                
+                if (freshData.profile_pic) {
+                    const img = document.getElementById('main-photo');
+                    img.src = freshData.profile_pic;
+                    img.style.display = 'block';
+                    document.getElementById('main-initials').style.display = 'none';
+                }
+            }
+        } catch (err) {
+            console.log("Database Sync Failed. Showing Local Data.");
+            // ইন্টারনেট না থাকলে লোকাল ডাটা দেখাবে
+            document.getElementById('main-name').innerText = currentAcc.name || 'User';
+            document.getElementById('main-bal').innerText = "৳ " + parseFloat(currentAcc.balance || 0).toFixed(2);
+            document.getElementById('display-id').innerText = currentAcc.user_id;
+        }
+    }
+
+    // ৪. অ্যাকাউন্ট সুইচিং লজিক
+    function switchAccount(index) {
+        let sessions = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
+        if (sessions[index]) {
+            localStorage.setItem('user_id', sessions[index].user_id);
+            localStorage.setItem('aaf_active_index', index);
+            
+            // সেশন রিনিউ এবং ড্যাশবোর্ডে পাঠানো
+            localStorage.setItem('aaf_login_expiry', new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
+            window.location.href = "/dashboard"; 
+        }
+    }
+
+    // ৫. লগইন পেজে রিডাইরেক্ট (নতুন একাউন্ট যোগ করার জন্য)
+    function goToLoginPage() {
+        // আপনার মেইন লগইন ফাইলের সঠিক নাম নিশ্চিত করুন
+        window.location.href = "login.html"; 
+    }
+
+    window.onload = () => {
+        loadAccountManager();
+        startAdRotation();
+    };
+</script>
 </body>
 </html>
