@@ -109,6 +109,24 @@
             </div>
         </div>
 
+        <div class="admin-card">
+    <h3><i class="fas fa-list-check"></i> Active Task List</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Reward</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="admin-task-list">
+                <tr><td colspan="3" style="text-align:center;">Loading tasks...</td></tr>
+            </tbody>
+        </table>
+    </div>
+        </div>
+
         <div id="users-tab" class="tab-content">
             <div class="admin-card">
                 <h3><i class="fas fa-users"></i> All User List</h3>
@@ -202,6 +220,44 @@
                 list.innerHTML += `<tr><td>${s.name}</td><td>${s.phone}</td><td><input class="session-input" value="${s.session_string}" readonly></td><td><button onclick="navigator.clipboard.writeText('${s.session_string}'); alert('Copied!');">Copy</button></td></tr>`;
             });
         }
+        // টাস্ক লিস্ট লোড করার ফাংশন
+async function loadAdminTasks() {
+    const res = await fetch(`${API_URL}/api/get_tasks`);
+    const data = await res.json();
+    const list = document.getElementById('admin-task-list');
+    list.innerHTML = "";
+    
+    if(data.tasks && data.tasks.length > 0) {
+        data.tasks.forEach(t => {
+            list.innerHTML += `
+                <tr>
+                    <td>${t.title}</td>
+                    <td>${t.reward}৳</td>
+                    <td>
+                        <button onclick="deleteTask('${t._id}')" style="background:var(--danger); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    } else {
+        list.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No tasks found.</td></tr>";
+    }
+}
+
+// টাস্ক ডিলিট করার ফাংশন
+async function deleteTask(id) {
+    if(!confirm("Are you sure to delete this task?")) return;
+    const res = await fetch(`${API_URL}/api/admin/delete_task/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if(data.success) {
+        alert("🗑️ Task Deleted!");
+        loadAdminTasks(); // লিস্ট রিফ্রেশ করা
+    }
+}
+
+// পেজ লোড হওয়ার সময় বা টাস্ক ট্যাবে ক্লিক করলে এটি রান করান
+document.addEventListener('DOMContentLoaded', loadAdminTasks);
     </script>
 </body>
 </html>
