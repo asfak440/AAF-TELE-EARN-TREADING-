@@ -163,6 +163,46 @@ def get_user_data():
         })
     return jsonify({"success": False, "message": "User not found"})
 
+@app.route('/api/user/tasks/claim', methods=['POST'])
+def claim_task():
+    try:
+        data = request.json
+        user_id = data.get('uid')
+        task_id = data.get('task_id')
+
+        # ১. ইউজার এবং টাস্ক খুঁজে বের করা
+        user = users_col.find_one({"uid": user_id}) # আপনার ইউজার কালেকশন নাম অনুযায়ী চেক করুন
+        task = tasks_col.find_one({"_id": ObjectId(task_id)}) # MongoDB ID দিয়ে খোঁজা
+
+        if user and task:
+            # ২. চেক করা: ইউজার কি এই টাস্ক আগে করেছে?
+            if "completed_tasks" in user and task_id in user["completed_tasks"]:
+                return jsonify({"status": "error", "message": "আপনি এই টাস্কটি আগেই করেছেন!"})
+
+            reward_amount = float(task.get('reward', 0))
+
+            # ৩. মেইন ব্যালেন্সে টাকা যোগ করা এবং টাস্ক আইডি সেভ করা
+            users_col.update_one(
+                {"uid": user_id},
+                {
+                    "$inc": {"balance": reward_amount}, 
+                    "$push": {"completed_tasks": task_id}
+                }
+            )
+
+            # ৪. নতুন ব্যালেন্স কত হলো তা চেক করা
+            updated_user = users_col.find_one({"uid": user_id})
+            
+            return jsonify({
+                "status": "success", 
+                "reward": reward_amount, 
+                "new_balance": updated_user.get('balance', 0)
+            })
+
+        return jsonify({"status": "error", "message": "তথ্য পাওয়া যায়নি!"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 
 # ---------------------------------------------------------
 # ৪. ট্রেডিং ও ব্যালেন্স আপডেট এপিআই
