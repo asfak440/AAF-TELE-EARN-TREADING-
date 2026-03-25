@@ -6,50 +6,49 @@
     <title>AAF | Multi-Account Manager</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #0088cc; --bg: #0e1621; --card: #17212b; --border: #242f3d; --text: #f5f5f5; --text-dim: #708499; }
+        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --text-dim: #8b949e; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 85px; }
 
-        /* ১. অ্যাড সেকশন (১০টি নেটওয়ার্ক রোটেশন) */
+        /* ১. অ্যাড সেকশন */
         #top-ad-slot { width: 100%; text-align: center; background: #000; padding: 5px 0; min-height: 55px; border-bottom: 1px solid var(--border); overflow: hidden; }
 
-        /* ২. প্রোফাইল কার্ড (ড্যাশবোর্ড স্টাইল) */
+        /* ২. প্রোফাইল কার্ড */
         .profile-card { background: var(--card); padding: 25px; text-align: center; border-bottom: 1px solid var(--border); }
         .tg-avatar { width: 75px; height: 75px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 28px; font-weight: bold; color: white; border: 2px solid var(--border); }
         .user-name { font-size: 18px; margin: 0; color: white; }
         .user-meta { font-weight: 500; letter-spacing: 0.5px; }
         .user-phone { color: var(--text-dim); font-size: 13px; margin-top: 5px; }
 
-        /* ব্যালেন্স বক্স (ড্যাশবোর্ড ডিজাইন) */
         .balance-display-box {
             display: flex;
             align-items: center;
             justify-content: space-around;
-            background: rgba(0, 136, 204, 0.05);
+            background: rgba(57, 211, 83, 0.05);
             border: 1px solid var(--border);
             border-radius: 12px;
             margin: 20px 0 0;
             padding: 15px;
         }
 
-        /* ৩. অ্যাকাউন্ট লিস্ট (টেলিগ্রাম স্টাইল) */
+        /* ৩. অ্যাকাউন্ট লিস্ট */
         .section-label { padding: 15px 15px 5px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
         .account-box { margin: 10px 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
         .acc-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border); transition: 0.2s; }
         .acc-item:last-child { border-bottom: none; }
-        .acc-item.active { background: rgba(0, 136, 204, 0.1); border-left: 4px solid var(--primary); }
+        .acc-item.active { background: rgba(57, 211, 83, 0.1); border-left: 4px solid var(--primary); }
         
         .acc-circle { width: 40px; height: 40px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; color: white; }
-        .acc-details { flex: 1; }
+        .acc-details { flex: 1; text-align: left; }
         .acc-details h4 { margin: 0; font-size: 14px; color: white; }
         .acc-details p { margin: 2px 0 0; font-size: 11px; color: var(--text-dim); }
 
         .add-acc-btn { color: var(--primary); padding: 15px; cursor: pointer; font-size: 14px; display: flex; align-items: center; font-weight: 600; }
         .add-acc-btn i { margin-right: 12px; font-size: 18px; }
 
-        /* ৪. বটম নেভিগেশন */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; padding-top: 12px; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        /* ৪. বটম নেভিগেশন (ফিক্সড পাথ) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
     </style>
 </head>
@@ -81,8 +80,7 @@
     </div>
 
     <div class="section-label">Switch Account</div>
-    <div class="account-box" id="account-list">
-        </div>
+    <div class="account-box" id="account-list"></div>
 
     <div class="account-box">
         <div class="add-acc-btn" onclick="addTelegramAccount()">
@@ -91,11 +89,11 @@
     </div>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
-        <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="trading.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-        <a href="account.html" class="nav-item active"><i class="fas fa-user-circle"></i><span>Account</span></a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="/treading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+        <a href="/account" class="nav-item active"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
     <script>
@@ -103,7 +101,6 @@
         let allAccounts = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
         let currentSessionIndex = parseInt(localStorage.getItem('aaf_active_index')) || 0;
 
-        // ১. অ্যাকাউন্ট ডাটা রিফ্রেশ ও ড্যাশবোর্ড আপডেট
         function refreshPageData() {
             const listDiv = document.getElementById('account-list');
             listDiv.innerHTML = "";
@@ -115,41 +112,37 @@
 
             allAccounts.forEach((acc, index) => {
                 const isActive = (index === currentSessionIndex);
-                
                 const item = `
                     <div class="acc-item ${isActive ? 'active' : ''}" onclick="switchSession(${index})">
-                        <div class="acc-circle">${acc.name.charAt(0).toUpperCase()}</div>
+                        <div class="acc-circle">${acc.name ? acc.name.charAt(0).toUpperCase() : 'U'}</div>
                         <div class="acc-details">
-                            <h4>${acc.name}</h4>
-                            <p>${acc.phone}</p>
+                            <h4>${acc.name || 'User'}</h4>
+                            <p>${acc.phone || 'No Phone'}</p>
                         </div>
                         ${isActive ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}
                     </div>
                 `;
                 listDiv.innerHTML += item;
 
-                // বর্তমানে একটিভ অ্যাকাউন্টের ডাটা হেডারে সেট করা
                 if (isActive) {
-                    document.getElementById('main-avatar').innerText = acc.name.charAt(0).toUpperCase();
-                    document.getElementById('main-name').innerText = acc.name;
-                    document.getElementById('main-username').innerText = acc.username || "user_" + acc.user_id.slice(-4);
-                    document.getElementById('main-phone').innerText = acc.phone;
+                    document.getElementById('main-avatar').innerText = (acc.name || 'U').charAt(0).toUpperCase();
+                    document.getElementById('main-name').innerText = acc.name || 'User';
+                    document.getElementById('main-username').innerText = acc.username || "user_" + String(acc.user_id).slice(-4);
+                    document.getElementById('main-phone').innerText = acc.phone || 'No Phone';
                     document.getElementById('main-bal').innerText = "৳ " + parseFloat(acc.balance || 0).toFixed(2);
                     document.getElementById('display-id').innerText = acc.user_id;
-                    
                     localStorage.setItem('user_id', acc.user_id); 
                 }
             });
         }
 
-        // ২. সেশন সুইচিং (টেলিগ্রাম স্টাইল)
         function switchSession(index) {
             localStorage.setItem('aaf_active_index', index);
             location.reload(); 
         }
 
-        // ৩. অ্যাড রোটেশন (১০টি বা তার অধিক নেটওয়ার্ক)
-        function startAdRotation() {
+        // অ্যাড রোটেশন ফাংশনটি async করা হয়েছে (এরর ফিক্স)
+        async function startAdRotation() {
             try {
                 const res = await fetch(`${API_URL}/api/get_active_ads`);
                 const adData = await res.json();
@@ -157,27 +150,22 @@
                 if (adData.ads && adData.ads.length > 0) {
                     let adIndex = 0;
                     const adSlot = document.getElementById('top-ad-slot');
-
-                    // প্রথম অ্যাড সাথে সাথে
                     adSlot.innerHTML = adData.ads[adIndex].code;
 
-                    // প্রতি ১০ সেকেন্ডে পরিবর্তন
                     setInterval(() => {
                         adIndex = (adIndex + 1) % adData.ads.length;
                         adSlot.innerHTML = adData.ads[adIndex].code; 
                     }, 10000); 
                 }
             } catch (e) {
-                console.log("Ad Rotation Sync Error");
+                console.log("Ad Rotation Error");
             }
         }
 
-        // ৪. নতুন অ্যাকাউন্ট অ্যাড করা (সিমুলেশন)
         function addTelegramAccount() {
             const phoneNumber = prompt("টেলিগ্রাম নম্বর দিন (+880XXXXXXXXXX):");
             if (!phoneNumber) return;
-            
-            alert("OTP পাঠানো হয়েছে। টেলিগ্রাম অ্যাপ চেক করুন।");
+            alert("OTP পাঠানো হয়েছে। টেলিগ্রাম অ্যাপ চেক করুন।");
             const otpCode = prompt("টেলিগ্রাম কোডটি দিন:");
             
             if (otpCode) {
