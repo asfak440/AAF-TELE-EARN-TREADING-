@@ -12,6 +12,16 @@ import random
 import time
 from threading import Thread # এটি ব্যাকগ্রাউন্ডে ক্যান্ডেল তৈরি করবে
 
+# ফাইলটির নাম এখানে দিতে হবে
+cred = credentials.Certificate("firebase-key.json")
+
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
+})
+
+# ডাটাবেস রেফারেন্স
+ref = db.reference('candles')
+
 # ফ্লাস্ক অ্যাপ সেটআপ
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
