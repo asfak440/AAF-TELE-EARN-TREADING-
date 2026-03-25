@@ -6,6 +6,11 @@ from pymongo import MongoClient
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, db
+import random
+import time
+from threading import Thread # এটি ব্যাকগ্রাউন্ডে ক্যান্ডেল তৈরি করবে
 
 # ফ্লাস্ক অ্যাপ সেটআপ
 app = Flask(__name__)
