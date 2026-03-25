@@ -165,6 +165,19 @@ def verify_login_handler():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
+@app.route('/api/admin/get_all_users')
+def manage_get_all_users():
+    # ডাটাবেস থেকে সব ইউজারের প্রয়োজনীয় তথ্য নেওয়া
+    users = list(users_col.find({}, {
+        "_id": 0, 
+        "name": 1, 
+        "phone": 1, 
+        "telegram_id": 1, 
+        "main_balance": 1,
+        "joined_at": 1
+    }))
+    return jsonify({"success": True, "users": users})
+
 # ---------------------------------------------------------
 # ৬. ইউজার প্রোফাইল ও ট্রেড এপিআই
 # ---------------------------------------------------------
