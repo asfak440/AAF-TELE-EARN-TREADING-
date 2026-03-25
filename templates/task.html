@@ -3,54 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Tasks | AAF Strong</title>
+    <title>AAF Strong | Ultimate Security Task System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
             --primary: #39d353; --bg: #0d1117; --card-bg: #161b22;
-            --border: #30363d; --text-gray: #8b949e; --accent-cyan: #00ffcc; --gold: #f1c40f;
+            --border: #30363d; --text-gray: #8b949e; --gold: #f1c40f;
+            --danger: #ff4d4d; --sky: #00d2ff;
         }
         body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
         
-        /* টপ বার */
+        /* Top Bar */
         .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 100; }
         .top-bar h3 { margin: 0; font-size: 18px; color: var(--primary); }
 
         .container { padding: 15px; }
 
-        /* ডায়নামিক ব্যানার অ্যাড স্লট */
+        /* Ad Slot Design */
         .ad-container { 
-            margin: 10px 0 20px; 
-            text-align: center; 
-            background: #000; 
-            border-radius: 10px; 
-            border: 1px solid var(--border);
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            margin: 10px 0 20px; text-align: center; background: #000; border-radius: 10px; border: 1px solid var(--border); 
+            min-height: 60px; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: opacity 0.5s ease;
         }
 
-        /* টাস্ক কার্ড ডিজাইন */
-        .task-list { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        .task-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
-        
-        .task-info { display: flex; align-items: center; gap: 15px; }
-        .task-icon { width: 45px; height: 45px; border-radius: 50%; background: rgba(57, 211, 83, 0.1); border: 1px solid rgba(57, 211, 83, 0.3); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary); }
-        .task-icon.video { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); border-color: rgba(255, 77, 77, 0.3); }
-        .task-icon.tele { color: #0088cc; background: rgba(0, 136, 204, 0.1); border-color: rgba(0, 136, 204, 0.3); }
+        /* IP Guide Box */
+        .ip-guide { 
+            background: rgba(255, 77, 77, 0.1); border: 1px dashed var(--danger); padding: 12px; border-radius: 10px; 
+            margin-bottom: 20px; font-size: 12px; text-align: center; color: #ff9999;
+        }
 
-        .task-details h4 { margin: 0; font-size: 14px; color: #fff; }
+        /* Task Card */
+        .task-list { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .task-card { 
+            background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); 
+            display: flex; flex-direction: column; gap: 12px; position: relative; transition: 0.3s;
+        }
+        
+        /* Logic Based Styles */
+        .task-card.fresh { border-color: var(--gold); box-shadow: 0 0 10px rgba(241, 196, 15, 0.1); }
+        .task-card.blocked { border-color: var(--danger); opacity: 0.7; }
+
+        .task-main { display: flex; justify-content: space-between; align-items: center; }
+        .task-info { display: flex; align-items: center; gap: 12px; }
+        .task-icon { width: 45px; height: 45px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary); }
+        
+        .task-details h4 { margin: 0; font-size: 15px; }
         .task-details p { margin: 3px 0 0; font-size: 11px; color: var(--text-gray); }
 
-        .task-reward { text-align: right; min-width: 80px; }
-        .task-reward span { font-size: 14px; font-weight: bold; color: var(--gold); display: block; margin-bottom: 5px; }
-        
-        .claim-btn { background: var(--primary); color: black; border: none; padding: 7px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; width: 100%; }
+        /* Reward Section */
+        .reward-info { text-align: right; }
+        .reward-val { font-size: 16px; font-weight: bold; color: var(--gold); display: block; }
+        .reward-type { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Status Overlay & Messages */
+        .lock-overlay { color: var(--danger); font-size: 10px; font-weight: bold; text-align: center; background: rgba(255, 77, 77, 0.1); padding: 5px; border-radius: 5px; border: 1px solid rgba(255, 77, 77, 0.2); margin-top: 5px; }
+        .msg-fresh { font-size: 10px; padding: 5px; border-radius: 5px; text-align: center; font-weight: bold; background: rgba(57, 211, 83, 0.1); color: var(--primary); border: 1px solid rgba(57, 211, 83, 0.2); margin-bottom: 5px; }
+
+        .claim-btn { 
+            background: var(--primary); color: black; border: none; padding: 10px; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; width: 100%; font-size: 13px;
+        }
         .claim-btn:disabled { background: var(--border); color: var(--text-gray); cursor: not-allowed; }
 
-        /* নেভিগেশন */
+        /* Navigation */
         .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #161b22; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
         .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 11px; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
@@ -60,123 +74,161 @@
 <body>
 
     <div class="top-bar">
-        <h3><i class="fas fa-tasks"></i> Daily Tasks</h3>
-        <div style="font-size: 11px; color: var(--text-gray); text-align: right;">
-            UID: #AAF<span id="u-id">-----</span><br>
-            <span id="u-bal" style="color: var(--primary);">৳ 0.00</span>
+        <h3><i class="fas fa-shield-alt"></i> AAF Security</h3>
+        <div style="text-align: right;">
+            <small id="u-id" style="color:var(--text-gray)">UID: #----</small><br>
+            <b id="u-bal" style="color:var(--primary);">৳ 0.00</b>
         </div>
     </div>
 
     <div class="container">
         <div class="ad-container" id="dynamic-banner-ad">
-            <small style="color: var(--text-gray)">Loading Sponsor Ad...</small>
+            <small style="color: #8b949e">Sponsor Ad Loading...</small>
         </div>
 
-        <div class="task-list" id="task-list-container">
-            <p style="text-align: center; font-size: 12px; color: var(--text-gray); padding: 20px;">Loading tasks...</p>
+        <div class="ip-guide">
+            <i class="fas fa-exclamation-triangle"></i> <b>সতর্কতা:</b> এক আইপি দিয়ে একটি কাজ একবারই করা যাবে। টাস্ক শেষে অবশ্যই <b>Airplane Mode</b> অন-অফ করে আইপি পরিবর্তন করুন।
+        </div>
+
+        <div class="task-list" id="main-task-container">
+            <p style="text-align: center; padding: 50px; color: var(--text-gray);">টাস্ক চেক করা হচ্ছে...</p>
         </div>
     </div>
 
     <nav class="slim-nav">
         <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
         <a href="/task" class="nav-item active"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="/treading" class="nav-item"><i class="fas fa-chart-line"></i><span>Treading</span></a>
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
         <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
     <script>
-        const USER_ID = localStorage.getItem('user_id') || "12345";
-        
-        // ২. অ্যাড রোটেশন ফাংশন (এডমিন প্যানেল থেকে আসবে)
-        async function startBannerRotation() {
-            try {
-                const res = await fetch('/api/get_active_ads'); // আপনার অ্যাড এপিআই
-                const data = await res.json();
-                
-                if (data.ads && data.ads.length > 0) {
-                    let currentIndex = 0;
-                    const adBox = document.getElementById('dynamic-banner-ad');
-                    
-                    const updateAd = () => {
-                        adBox.innerHTML = data.ads[currentIndex].code; // এডমিন থেকে আসা স্ক্রিপ্ট/আইফ্রেম
-                        currentIndex = (currentIndex + 1) % data.ads.length;
-                    };
+        const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+        const USER_ID = localStorage.getItem('user_id') || "DEMO_USER";
 
-                    updateAd();
-                    setInterval(updateAd, 15000); // প্রতি ১৫ সেকেন্ডে অ্যাড পরিবর্তন
-                } else {
-                    // যদি কোনো অ্যাড না থাকে তবে ডিফল্ট A-Ads
-                    document.getElementById('dynamic-banner-ad').innerHTML = `<iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block;'></iframe>`;
-                }
-            } catch (e) {
-                console.log("Ad rotation error, showing fallback.");
-            }
+        // --- ১. অ্যাড রোটেশন (১০টি স্লট) ---
+        const myAds = [
+            `<iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block;'></iframe>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+2" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+3" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+4" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+5" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+6" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+7" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+8" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+9" alt="Ad"></a>`,
+            `<a href="#"><img src="https://via.placeholder.com/320x50?text=Premium+Ad+Slot+10" alt="Ad"></a>`
+        ];
+
+        let currentAdIndex = 0;
+        function rotateAds() {
+            const adBox = document.getElementById('dynamic-banner-ad');
+            adBox.style.opacity = "0";
+            setTimeout(() => {
+                adBox.innerHTML = myAds[currentAdIndex];
+                adBox.style.opacity = "1";
+                currentAdIndex = (currentAdIndex + 1) % myAds.length;
+            }, 500);
         }
 
-        async function loadTaskPage() {
+        // --- ২. টাস্ক লোডিং ও স্ট্রিক্ট আইপি লক লজিক ---
+        async function loadTaskSystem() {
             try {
-                const res = await fetch(`/api/user/tasks/${USER_ID}`);
+                const res = await fetch(`${API_URL}/api/user/tasks/v2?user_id=${USER_ID}`);
                 const data = await res.json();
                 
                 if (data.status === "success") {
-                    document.getElementById('u-id').innerText = data.uid_last4 || "-----";
+                    document.getElementById('u-id').innerText = "UID: #" + (data.uid || "----");
                     document.getElementById('u-bal').innerText = "৳ " + (data.balance || 0).toFixed(2);
                     
-                    const container = document.getElementById('task-list-container');
+                    const container = document.getElementById('main-task-container');
                     container.innerHTML = "";
                     
                     data.tasks.forEach(task => {
-                        let icon = task.type === "video" ? '<i class="fas fa-play"></i>' : (task.type === "telegram" ? '<i class="fab fa-telegram-plane"></i>' : '<i class="fas fa-globe"></i>');
-                        let iClass = `task-icon ${task.type === "video" ? 'video' : (task.type === "telegram" ? 'tele' : '')}`;
+                        let isIpUsed = task.is_ip_used; 
+                        let cardClass = isIpUsed ? "task-card blocked" : "task-card fresh";
                         
                         container.innerHTML += `
-                            <div class="task-card">
-                                <div class="task-info">
-                                    <div class="${iClass}">${icon}</div>
-                                    <div class="task-details">
-                                        <h4>${task.title}</h4>
-                                        <p>${task.description || 'Complete to earn'}</p>
+                            <div class="${cardClass}">
+                                ${!isIpUsed ? `<div class="msg-fresh"><i class="fas fa-star"></i> FRESH IP! Bonus Active</div>` : ''}
+                                <div class="task-main">
+                                    <div class="task-info">
+                                        <div class="task-icon"><i class="fas ${task.type === 'video' ? 'fa-play-circle' : 'fa-link'}"></i></div>
+                                        <div class="task-details">
+                                            <h4>${task.title}</h4>
+                                            <p>${task.desc || 'টাস্ক সম্পন্ন করে আয় করুন'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="reward-info">
+                                        <span class="reward-val">৳${task.reward_fresh.toFixed(2)}</span>
+                                        <span class="reward-type">${isIpUsed ? 'Locked' : 'Bonus'}</span>
                                     </div>
                                 </div>
-                                <div class="task-reward">
-                                    <span>৳ ${task.reward.toFixed(2)}</span>
-                                    <button class="claim-btn" onclick="startTask('${task.id}', '${task.type}', '${task.link}')" ${task.is_completed ? 'disabled' : ''}>
-                                        ${task.is_completed ? 'Completed' : 'Claim'}
-                                    </button>
-                                </div>
+
+                                ${isIpUsed ? 
+                                    `<div class="lock-overlay"><i class="fas fa-lock"></i> এই IP দিয়ে কাজ হয়ে গেছে! Airplane Mode অন-অফ করুন।</div>` 
+                                    : ''
+                                }
+
+                                <button class="claim-btn" 
+                                        onclick="processTask('${task.id}', '${task.link}')" 
+                                        ${isIpUsed ? 'disabled' : ''}>
+                                    ${isIpUsed ? 'IP Locked' : 'Start Task'}
+                                </button>
                             </div>
                         `;
                     });
                 }
-            } catch (e) { console.error("Task loading failed"); }
+            } catch (e) { 
+                document.getElementById('main-task-container').innerHTML = `<p style="text-align:center; color:red;">সার্ভার কানেকশন এরর!</p>`;
+            }
         }
 
-        function startTask(taskId, type, url) {
+        // --- ৩. টাস্ক প্রসেসিং ও টাইমার ---
+        function processTask(taskId, url) {
             window.open(url, '_blank');
-            let waitTime = (type === "video") ? 30 : 15;
-            alert(`টাস্ক শুরু হয়েছে। ${waitTime} সেকেন্ড এই পেজে অপেক্ষা করুন।`);
-            setTimeout(() => { confirmTaskClaim(taskId); }, waitTime * 1000);
+            const btn = event.target;
+            btn.disabled = true;
+            
+            let timeLeft = 15; 
+            const timer = setInterval(() => {
+                btn.innerText = `অপেক্ষা করুন ${timeLeft}s...`;
+                timeLeft--;
+                if(timeLeft < 0) {
+                    clearInterval(timer);
+                    btn.innerText = "ভেরিফাই হচ্ছে...";
+                    finalizeTask(taskId);
+                }
+            }, 1000);
         }
         
-        async function confirmTaskClaim(taskId) {
+        // --- ৪. ব্যালেন্স ক্লাইম ---
+        async function finalizeTask(taskId) {
             try {
-                const res = await fetch(`/api/user/tasks/claim`, {
+                const res = await fetch(`${API_URL}/api/user/tasks/claim`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ uid: USER_ID, task_id: taskId })
+                    body: JSON.stringify({ 
+                        user_id: USER_ID, 
+                        task_id: taskId
+                    })
                 });
                 const data = await res.json();
+                
                 if(data.status === "success") {
-                    alert(`✅ অভিনন্দন! ৳${data.reward} আপনার মেইন ব্যালেন্সে যোগ হয়েছে।`);
-                    loadTaskPage();
-                } else { alert(`❌ ${data.message}`); }
+                    alert(`✅ অভিনন্দন! টাস্ক সফল। পরবর্তী টাস্কের জন্য আইপি পরিবর্তন করুন।`);
+                    loadTaskSystem();
+                } else { 
+                    alert(`❌ ${data.message}`); 
+                    loadTaskSystem();
+                }
             } catch (e) { alert("ভেরিফিকেশন এরর!"); }
         }
 
         window.onload = () => {
-            loadTaskPage();
-            startBannerRotation(); // অ্যাড লোড করা
+            loadTaskSystem();
+            rotateAds();
+            setInterval(rotateAds, 15000);
         };
     </script>
 </body>
