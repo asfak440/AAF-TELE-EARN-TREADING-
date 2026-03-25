@@ -138,6 +138,23 @@ def send_otp_handler():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
+@app.route('/api/add_task', methods=['POST'])
+def manage_add_task():
+    try:
+        task_data = request.json
+        tasks_col.insert_one({
+            "title": task_data.get('title'),
+            "reward": float(task_data.get('reward', 0)),
+            "link": task_data.get('link'),
+            "category": task_data.get('category', 'General'), # নতুন ঘর
+            "description": task_data.get('desc', ''),        # নতুন ঘর
+            "status": "active",
+            "created_at": datetime.utcnow()
+        })
+        return jsonify({"success": True, "message": "Task Added!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
