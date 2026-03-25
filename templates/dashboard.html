@@ -13,14 +13,13 @@
         }
         body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
         
-        /* টপ বার */
         .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 100; }
         .user-info h3 { margin: 0; font-size: 18px; color: var(--primary); }
         .user-info span { font-size: 11px; color: var(--text-gray); }
 
         .container { padding: 15px; }
 
-        /* ব্যালেন্স কার্ড ডিজাইন */
+        /* ব্যালেন্স কার্ড */
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
         .card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
 
@@ -32,29 +31,24 @@
         .currency-label { font-size: 14px; color: var(--primary); margin-right: 4px; }
         .coin-label { font-size: 14px; color: var(--gold); margin-left: 5px; }
 
-        /* বাটন স্টাইল */
         .action-btns { display: flex; gap: 8px; }
         .btn-sm { background: var(--primary); color: black; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
         .btn-gold { background: var(--gold); }
 
-        /* এনালাইটিক্স কার্ড */
         .income-details { background: var(--card-bg); border-radius: 15px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
         .income-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; font-size: 13px; }
-        .income-row:last-child { border-bottom: none; }
 
         .acc-control { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
         .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; text-decoration: none; display: inline-block; }
         .active-bg { background: var(--primary); color: black; }
         .inactive-bg { background: #ea2027; color: white; }
-        .btn-logout { background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
 
-        /* বাটন ফিক্স: বটম নেভিগেশন (মেইন পাইলের সাথে ১০০% ম্যাচ) */
         .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
-        .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 11px; transition: 0.3s; }
-        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
+        .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 11px; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        .ad-container { text-align: center; margin: 10px 0; }
+        /* অ্যাড স্লট ডিজাইন */
+        .ad-unit { width: 100%; min-height: 50px; background: rgba(255,255,255,0.02); margin: 10px 0; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -66,15 +60,13 @@
         </div>
         <div style="text-align:right;">
             <div id="status-dot" style="color: var(--primary); font-size: 12px; font-weight: bold;">● Online</div>
-            <div style="font-size: 9px; color: var(--text-gray);">v2.1 Master</div>
+            <div style="font-size: 9px; color: var(--text-gray);">v master v2.2</div>
         </div>
     </div>
 
     <div class="container">
         <div class="acc-control" style="margin-bottom: 15px; border-color: rgba(57, 211, 83, 0.2);">
-            <p style="margin: 0 0 10px 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase;">
-                <i class="fas fa-server"></i> Server Analytics
-            </p>
+            <p style="margin: 0 0 10px 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase;"><i class="fas fa-server"></i> Server Analytics</p>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                 <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center;">
                     <h4 style="margin: 0; font-size: 9px; color: var(--text-gray);">TOTAL</h4>
@@ -102,9 +94,7 @@
             </div>
         </div>
 
-        <div class="ad-container">
-            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
-        </div>
+        <div id="ad-slot-1" class="ad-unit"></div>
 
         <div class="balance-grid">
             <div class="card aaf-coin">
@@ -116,7 +106,6 @@
                     <a href="/treading" class="btn-sm btn-gold">Convert</a>
                 </div>
             </div>
-
             <div class="card">
                 <h4>Active Accounts</h4>
                 <p style="color: var(--accent-cyan);"><span id="active-acc">0</span></p>
@@ -134,15 +123,16 @@
             <div class="income-row"><span>Total Transactions</span><span id="total-txn">৳ 0.00</span></div>
         </div>
 
+        <div id="ad-slot-2" class="ad-unit"></div>
+
         <div class="acc-control">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <p style="margin: 0; font-size: 14px;" id="u-phone">Checking...</p>
-                    <small id="bonus-status" style="color: #ff4d4d;">❌ জয়েন করুন (বোনাস বন্ধ)</small>
+                    <small id="bonus-status" style="color: #ff4d4d;">❌ ইনএকটিভ (জয়েন করুন)</small>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; gap: 8px;">
                     <a href="https://t.me/aaf_tele_earn" id="status-btn" target="_blank" class="status-badge inactive-bg">JOIN</a>
-                    <button class="btn-logout" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </div>
         </div>
@@ -156,59 +146,125 @@
         <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
-    <script>
-        // ডাটাবেস থেকে রিয়েল-টাইম ডাটা লোড করার ফাংশন
-        async function loadDashboardData() {
-            try {
-                // আপনার এপিআই পাথ অনুযায়ী কল (যেমন আপনার আগের কোডে ছিল)
-                const response = await fetch('/api/user/dashboard_stats');
-                const data = await response.json();
+<script>
+    const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+    const CHANNEL_ID = "@aaf_tele_earn"; 
+    const currentUserID = localStorage.getItem('user_id');
 
-                if (data.success) {
-                    document.getElementById('u-name').innerText = data.name || "User";
-                    document.getElementById('u-id').innerText = "UID: #AAF" + (data.uid || "------");
-                    document.getElementById('m-bal').innerText = (data.balance || 0).toFixed(2);
-                    document.getElementById('aaf-bal').innerText = (data.aaf_balance || 0).toFixed(2);
-                    
-                    // এনালাইটিক্স আপডেট
-                    document.getElementById('acc-count').innerText = data.total_accounts || 0;
-                    document.getElementById('active-acc').innerText = data.active_accounts || 0;
-                    document.getElementById('total-added').innerText = data.total_accounts || 0;
-                    document.getElementById('active-count').innerText = data.active_accounts || 0;
-                    document.getElementById('inactive-count').innerText = (data.total_accounts - data.active_accounts) || 0;
-                    
-                    // ফোন নম্বর ও বোনাস
-                    document.getElementById('u-phone').innerText = data.phone || "No Phone";
-                    updateBonusUI(data.is_joined_channel);
-                }
-            } catch (err) {
-                console.error("Error loading dashboard data:", err);
+    // ১. মেইন ড্যাশবোর্ড ডাটা লোড
+    async function initDashboard() {
+        if (!currentUserID) { window.location.href = "/login"; return; }
+
+        try {
+            const response = await fetch(`${API_URL}/api/user/data/${currentUserID}`);
+            const data = await response.json();
+
+            if (data.status === "success") {
+                updateUI(data);
+                checkMembership(); 
+                loadAdManager(); // অ্যাড স্লটগুলো লোড করা
             }
-        }
+        } catch (err) { console.error("Load Error:", err); }
+    }
 
-        function updateBonusUI(isJoined) {
+    function updateUI(data) {
+        document.getElementById('u-name').innerText = data.name || "User";
+        document.getElementById('u-id').innerText = "UID: #AAF" + (data.uid || "------");
+        document.getElementById('m-bal').innerText = parseFloat(data.balance || 0).toFixed(2);
+        document.getElementById('aaf-bal').innerText = parseFloat(data.aaf_coin || 0).toFixed(2);
+        document.getElementById('u-phone').innerText = data.phone || "No Phone";
+        
+        // এনালাইটিক্স
+        const total = data.total_accounts || 0;
+        const active = data.active_accounts || 0;
+        document.getElementById('acc-count').innerText = total;
+        document.getElementById('active-acc').innerText = active;
+        document.getElementById('total-added').innerText = total;
+        document.getElementById('active-count').innerText = active;
+        document.getElementById('inactive-count').innerText = (total - active);
+
+        // ইনকাম
+        document.getElementById('task-inc').innerText = (data.task_income || 0).toFixed(2) + " AAF";
+        document.getElementById('bonus-inc').innerText = (data.bonus_income || 0).toFixed(2) + " AAF";
+        document.getElementById('trade-profit').innerText = "৳ " + (data.trade_profit || 0).toFixed(2);
+        document.getElementById('total-txn').innerText = "৳ " + (data.total_txn || 0).toFixed(2);
+    }
+
+    // ২. মেম্বারশিপ ও বোনাস চেক
+    async function checkMembership() {
+        try {
+            const checkRes = await fetch(`${API_URL}/api/check_member?user_id=${currentUserID}&channel=${CHANNEL_ID}`);
+            const memberData = await checkRes.json();
+
             const btn = document.getElementById('status-btn');
             const text = document.getElementById('bonus-status');
-            if (isJoined) {
+            const dot = document.getElementById('status-dot');
+
+            if (memberData.is_member) {
                 btn.innerText = "ACTIVE";
                 btn.className = "status-badge active-bg";
                 text.style.color = "#39d353";
-                text.innerHTML = "✅ একটিভ (Daily 0.50 AAF Active)";
+                text.innerHTML = "✅ একটিভ (Daily 10 AAF Active)";
+                dot.style.color = "var(--primary)";
+                handleDailyReward();
             } else {
                 btn.innerText = "JOIN";
                 btn.className = "status-badge inactive-bg";
                 text.style.color = "#ff4d4d";
-                text.innerHTML = "❌ জয়েন করুন (Daily 0.50 AAF Stopped)";
+                text.innerHTML = "❌ জয়েন করুন (Daily Bonus Off)";
+                dot.style.color = "#ea2027";
             }
-        }
+        } catch (e) { console.log("Member Check Failed"); }
+    }
 
-        function confirmLogout() {
-            if (confirm("আপনি কি লগআউট করতে চান?")) {
-                window.location.href = "/login";
+    // ৩. ডেইলি রিওয়ার্ড লজিক
+    async function handleDailyReward() {
+        const lastClaim = localStorage.getItem(`last_claim_${currentUserID}`);
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+
+        if (!lastClaim || (now - lastClaim) >= oneDay) {
+            try {
+                const res = await fetch(`${API_URL}/api/add_daily_reward`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserID, amount: 10 })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    localStorage.setItem(`last_claim_${currentUserID}`, now);
+                    alert("Daily reward added!");
+                    location.reload(); 
+                }
+            } catch (e) { console.log("Reward Error"); }
+        }
+    }
+
+    // ৪. ১০টি অ্যাড নেটওয়ার্ক ম্যানেজমেন্ট ফাংশন (Admin Controlled)
+    async function loadAdManager() {
+        try {
+            // অ্যাডমিন থেকে অ্যাড কনফিগারেশন আনা (এটি একটি কাল্পনিক API পাথ)
+            // যেখানে ১০টি অ্যাডের স্ক্রিপ্ট বা আইফ্রেম ডাটা থাকবে
+            const res = await fetch(`${API_URL}/api/admin/ad_config`);
+            const config = await res.json();
+
+            if (config.status === "success") {
+                // ১০টি অ্যাডের স্লট লুপ করে লোড করা (আপনার প্রয়োজনে ১০টি স্লট তৈরি করতে পারেন)
+                // উদাহরণ হিসেবে ১ ও ২ নাম্বার স্লটে অ্যাড বসাচ্ছি
+                if (config.ads[0].active) {
+                    document.getElementById('ad-slot-1').innerHTML = config.ads[0].script;
+                }
+                if (config.ads[1].active) {
+                    document.getElementById('ad-slot-2').innerHTML = config.ads[1].script;
+                }
             }
+        } catch (e) {
+            // এপিআই না থাকলে ডিফল্ট অ্যাড (A-Ads) লোড হবে
+            document.getElementById('ad-slot-1').innerHTML = `<iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden;'></iframe>`;
         }
+    }
 
-        window.onload = loadDashboardData;
-    </script>
+    window.onload = initDashboard;
+</script>
 </body>
 </html>
