@@ -268,6 +268,15 @@ def fetch_tasks():
     tasks = list(tasks_col.find({"status": "active"}))
     for t in tasks: t['_id'] = str(t['_id'])
     return jsonify({"success": True, "tasks": tasks})
+    
+@app.route('/api/admin/delete_task/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    try:
+        from bson import ObjectId
+        tasks_col.delete_one({"_id": ObjectId(task_id)})
+        return jsonify({"success": True, "message": "Task Deleted!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/get_ads')
 def fetch_ads():
