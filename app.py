@@ -203,6 +203,35 @@ def claim_task():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+@app.route('/api/trade/execute', methods=['POST'])
+def execute_trade():
+    data = request.json
+    uid = data.get('uid')
+    trade_type = data.get('type') # BUY বা SELL
+    amount = float(data.get('amount'))
+    
+    user = users_col.find_one({"uid": uid})
+    if not user: return jsonify({"status": "error", "message": "User not found"})
+
+    fee = amount * 0.10
+    net_amount = amount - fee
+
+    if trade_type == 'BUY':
+        if user['balance'] < amount:
+            return jsonify({"status": "error", "message": "অপর্যাপ্ত ব্যালেন্স (TK)!"})
+        
+        # TK কমবে, AAF বাড়বে
+        users_col.update_one({"uid": uid}, {"$inc": {"balance": -amount, "aaf_balance": net_amount}})
+    
+    else: # SELL
+        if user.get('aaf_balance', 0) < amount:
+            return jsonify({"status": "error", "message": "অপর্যাপ্ত AAF ব্যালেন্স!"})
+        
+        # AAF কমবে, TK বাড়বে
+        users_col.update_one({"uid": uid}, {"$inc": {"aaf_balance": -amount, "balance": net_amount}})
+
+    return jsonify({"status": "success"})
+
 
 # ---------------------------------------------------------
 # ৪. ট্রেডিং ও ব্যালেন্স আপডেট এপিআই
