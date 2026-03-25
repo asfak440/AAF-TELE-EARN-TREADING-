@@ -6,3 +6,4 @@ nest-asyncio
 cryptg
 gunicorn
 python-dotenv
+firebase-admin
