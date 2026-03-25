@@ -34,29 +34,29 @@ temp_clients = {}
 # ১. HTML পেজ রাউটস (আপনার সব পেজ এখানে আছে)
 # ---------------------------------------------------------
 
-@app.route('/')
-@app.route('/login')
-def render_login_page(): 
-    return render_template('login.html')
-
 @app.route('/dashboard')
 def render_dashboard_page(): 
+    if 'uid' not in session: return render_template('login.html')
     return render_template('dashboard.html')
 
 @app.route('/task')
 def render_task_page(): 
+    if 'uid' not in session: return render_template('login.html')
     return render_template('task.html')
 
 @app.route('/treading')
-def render_trading_page(): 
-    return render_template('trading.html')
+def render_treading_page():
+    if 'uid' not in session: return render_template('login.html')
+    return render_template('treading.html')
 
 @app.route('/account')
-def render_account_page(): 
+def render_account_page():
+    if 'uid' not in session: return render_template('login.html')
     return render_template('account.html')
 
 @app.route('/wallet')
 def render_wallet_page(): 
+    if 'uid' not in session: return render_template('login.html')
     return render_template('wallet.html')
 
 # অ্যাডমিন পিন কনফিগারেশন
