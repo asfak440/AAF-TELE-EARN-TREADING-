@@ -3,110 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF - Multi-Ad Task Center</title>
+    <title>Daily Tasks | AAF Strong</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text-dim: #8b949e; }
-        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 120px; }
+        :root { 
+            --primary: #39d353; --bg: #0d1117; --card-bg: #161b22;
+            --border: #30363d; --text-gray: #8b949e; --accent-cyan: #00ffcc; --gold: #f1c40f;
+        }
+        body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
         
-        /* Ad Slots Style */
-        .ad-container { width: 100%; text-align: center; background: #000; padding: 5px 0; border-bottom: 1px solid var(--border); overflow: hidden; min-height: 55px; }
-        .ad-container.bottom-ads { border-top: 1px solid var(--border); border-bottom: none; position: fixed; bottom: 65px; left: 0; z-index: 998; }
+        .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 100; }
+        .top-bar h3 { margin: 0; font-size: 18px; color: var(--primary); }
 
-        .header { text-align: center; padding: 15px; background: var(--card); }
-        .balance-box { background: linear-gradient(145deg, #1c2128, #161b22); padding: 15px; border-radius: 12px; text-align: center; margin: 10px; border: 1px solid var(--border); }
-        .balance-box h2 { margin: 5px 0 0; color: var(--primary); font-size: 24px; }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
 
-        .task-container { padding: 10px; max-width: 500px; margin: auto; }
-        .task-card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .task-list { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .task-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+        .task-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+        .task-info { display: flex; align-items: center; gap: 15px; }
+        .task-icon { width: 45px; height: 45px; border-radius: 50%; background: rgba(57, 211, 83, 0.1); border: 1px solid rgba(57, 211, 83, 0.3); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary); }
+        .task-icon.video { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); border-color: rgba(255, 77, 77, 0.3); }
+        .task-icon.tele { color: #0088cc; background: rgba(0, 136, 204, 0.1); border-color: rgba(0, 136, 204, 0.3); }
+
+        .task-details h4 { margin: 0; font-size: 14px; color: #fff; text-align: left; }
+        .task-details p { margin: 3px 0 0; font-size: 11px; color: var(--text-gray); text-align: left; }
+
+        .task-reward { text-align: right; min-width: 85px; }
+        .task-reward span { font-size: 14px; font-weight: bold; color: var(--gold); display: block; margin-bottom: 5px; }
         
-        .claim-btn { background: var(--primary); color: #0d1117; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .claim-btn { background: var(--primary); color: black; border: none; padding: 8px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
+        .claim-btn:disabled { background: var(--border); color: var(--text-gray); cursor: not-allowed; }
 
-        /* Navigation */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; padding-top: 12px; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        .ad-slot { margin: 15px 0; text-align: center; border-radius: 10px; overflow: hidden; min-height: 50px; background: #000; }
+
+        .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #161b22; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
+        .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 11px; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="top-ad-slot" class="ad-container">
-        <p style="font-size: 10px; color: #444;">Ad Loading...</p>
+    <div class="top-bar">
+        <h3><i class="fas fa-tasks"></i> Daily Tasks</h3>
+        <div style="font-size: 11px; color: var(--text-gray); text-align: right;">
+            UID: #AAF<span id="u-id">-----</span><br>
+            <span id="u-bal" style="color: var(--primary); font-weight: bold;">৳ 0.00</span>
+        </div>
     </div>
 
-    <div class="header"><h1>Task Center</h1></div>
+    <div class="container">
+        <div class="ad-slot" id="task-ad-slot">
+            <iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden; display:block; margin:auto;'></iframe>
+        </div>
 
-    <div class="balance-box">
-        <span>Current Income</span>
-        <h2 id="task-bal">৳ 0.00</h2>
+        <div class="task-list" id="task-list-container">
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary);"></i>
+                <p style="font-size: 12px; color: var(--text-gray); margin-top: 10px;">Fetching tasks...</p>
+            </div>
+        </div>
     </div>
 
-    <div id="task-list" class="task-container">
-        </div>
-
-    <div id="bottom-ad-slot" class="ad-container bottom-ads">
-        </div>
-
-    <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
-        <a href="task.html" class="nav-item active"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="trading.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-        <a href="account.html" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+    <nav class="slim-nav">
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="/task" class="nav-item active"><i class="fas fa-tasks"></i><span>Task</span></a>
+        <a href="/treading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+        <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     </nav>
 
     <script>
-        const API_URL = "https://aaf-tele-earn-treading.onrender.com"; 
-        const USER_ID = localStorage.getItem('user_id');
-
-        // অ্যাড রোটেশন লজিক
-        function loadAds() {
+        const USER_ID = localStorage.getItem('user_id') || "default_user";
+        
+        async function loadTaskPage() {
             try {
-                const res = await fetch(`${API_URL}/api/get_active_ads`);
-                const adData = await res.json();
-                
-                let topIndex = 0;
-                let bottomIndex = 0;
-
-                // প্রতি ১০ সেকেন্ড পর পর অ্যাড চেঞ্জ হবে
-                setInterval(() => {
-                    // টপ অ্যাড আপডেট
-                    document.getElementById('top-ad-slot').innerHTML = adData.top_ads[topIndex].code;
-                    topIndex = (topIndex + 1) % adData.top_ads.length;
-
-                    // বটম অ্যাড আপডেট
-                    document.getElementById('bottom-ad-slot').innerHTML = adData.bottom_ads[bottomIndex].code;
-                    bottomIndex = (bottomIndex + 1) % adData.bottom_ads.length;
-                }, 10000); // ১০ সেকেন্ড রোটেশন টাইম
-
-            } catch (e) { console.log("Ad Load Error"); }
-        }
-
-function initTasks() {
-            const container = document.getElementById('task-list');
-            try {
-                const res = await fetch(`${API_URL}/api/get_secure_tasks?user_id=${USER_ID}`);
+                const res = await fetch(`/api/user/tasks/${USER_ID}`);
                 const data = await res.json();
+                
+                if (data.status === "success") {
+                    document.getElementById('u-id').innerText = data.uid_last4 || "-----";
+                    document.getElementById('u-bal').innerText = "৳ " + (data.balance || 0).toFixed(2);
+                    
+                    const container = document.getElementById('task-list-container');
+                    if (data.tasks.length === 0) {
+                        container.innerHTML = `<p style="text-align:center; color:var(--text-gray); padding:20px;">No tasks available right now.</p>`;
+                        return;
+                    }
 
-                if (data.status === "ip_limit") {
-                    container.innerHTML = "<p style='color:#ff7b72; text-align:center;'>একই আইপি থেকে একাধিক অ্যাকাউন্ট ব্যবহার করা যাবে না।</p>";
-                    return;
+                    container.innerHTML = "";
+                    data.tasks.forEach(task => {
+                        let icon = '<i class="fas fa-globe"></i>';
+                        let iClass = "task-icon";
+                        if(task.type === "video") { icon = '<i class="fas fa-play"></i>'; iClass += " video"; }
+                        if(task.type === "telegram") { icon = '<i class="fab fa-telegram-plane"></i>'; iClass += " tele"; }
+                        
+                        const isDone = task.is_completed;
+                        
+                        container.innerHTML += `
+                            <div class="task-card">
+                                <div class="task-info">
+                                    <div class="${iClass}">${icon}</div>
+                                    <div class="task-details">
+                                        <h4>${task.title}</h4>
+                                        <p>${task.description || 'Complete to earn reward'}</p>
+                                    </div>
+                                </div>
+                                <div class="task-reward">
+                                    <span>৳ ${task.reward.toFixed(2)}</span>
+                                    <button class="claim-btn" id="btn-${task.id}"
+                                        onclick="startTask('${task.id}', '${task.type}', '${task.link}')" 
+                                        ${isDone ? 'disabled' : ''}>
+                                        ${isDone ? 'Completed' : 'Claim'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
                 }
-
-                document.getElementById('task-bal').innerText = "৳ " + data.balance.toFixed(2);
-                container.innerHTML = "";
-                data.tasks.forEach((task, index) => {
-                    container.innerHTML += `
-                        <div class="task-card">
-                            <div><h3>${task.name}</h3><p style="color:var(--primary);">+ ৳ ${task.reward}</p></div>
-                            <button class="claim-btn" onclick="window.open('${task.link}', '_blank')">Visit</button>
-                        </div>`;
-                });
-            } catch (err) { }
+            } catch (e) {
+                document.getElementById('task-list-container').innerHTML = `<p style="text-align:center; color:#ff4d4d; padding:20px;">Failed to load tasks. Please refresh.</p>`;
+            }
         }
 
-        window.onload = () => { initTasks(); loadAds(); };
+        function startTask(taskId, type, url) {
+            const btn = document.getElementById(`btn-${taskId}`);
+            window.open(url, '_blank', 'noopener,noreferrer');
+            
+            let waitTime = (type === "video") ? 30 : 15;
+            btn.disabled = true;
+            btn.innerText = "Verifying...";
+            
+            alert(`টাস্ক শুরু হয়েছে। ${waitTime} সেকেন্ড এই পেজে অপেক্ষা করুন।`);
+            
+            setTimeout(() => {
+                confirmTaskClaim(taskId);
+            }, waitTime * 1000);
+        }
+        
+        async function confirmTaskClaim(taskId) {
+            try {
+                const res = await fetch(`/api/user/tasks/claim`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ uid: USER_ID, task_id: taskId })
+                });
+                const data = await res.json();
+                
+                if(data.status === "success") {
+                    alert(`✅ অভিনন্দন! ৳${data.reward} আপনার মেইন ব্যালেন্সে যোগ হয়েছে।`);
+                    loadTaskPage(); 
+                } else {
+                    alert(`❌ ${data.message}`);
+                    loadTaskPage(); // রিফ্রেশ টু রিসেট বাটন
+                }
+            } catch (e) {
+                alert("ভেরিফিকেশন এরর! আবার চেষ্টা করুন।");
+                loadTaskPage();
+            }
+        }
+
+        window.onload = loadTaskPage;
     </script>
 </body>
-</html>
+    </html>
