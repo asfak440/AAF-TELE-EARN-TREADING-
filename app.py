@@ -47,7 +47,7 @@ def render_dashboard_page():
 def render_task_page(): 
     return render_template('task.html')
 
-@app.route('/trading')
+@app.route('/treading')
 def render_trading_page(): 
     return render_template('trading.html')
 
@@ -169,7 +169,7 @@ def get_user_data():
 # ---------------------------------------------------------
 
 @app.route('/api/trade/update_result', methods=['POST'])
-def update_trading_result():
+def update_treading_result():
     uid = session.get('uid')
     if not uid: return jsonify({"success": False, "message": "Login required"})
 
