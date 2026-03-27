@@ -55,11 +55,11 @@
 
     <div class="top-bar">
         <div class="user-info">
-            <h3 id="u-name">Loading...</h3>
+            <h3 id="u-name">User...</h3>
             <span id="u-id">UID: #AAF-------</span>
         </div>
         <div style="text-align:right;">
-            <div id="status-dot" style="color: var(--primary); font-size: 12px; font-weight: bold;">● Online</div>
+            <div id="status-dot" style="color: #ea2027; font-size: 12px; font-weight: bold;">● Offline</div>
             <div style="font-size: 9px; color: var(--text-gray);">v master v2.2</div>
         </div>
     </div>
@@ -129,7 +129,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <p style="margin: 0; font-size: 14px;" id="u-phone">Checking...</p>
-                    <small id="bonus-status" style="color: #ff4d4d;">❌ ইনএকটিভ (জয়েন করুন)</small>
+                    <small id="bonus-status" style="color: #ff4d4d;">❌ ইনএকটিভ (জয়েন করুন)</small>
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <a href="https://t.me/aaf_tele_earn" id="status-btn" target="_blank" class="status-badge inactive-bg">JOIN</a>
@@ -147,50 +147,66 @@
     </nav>
 
 <script>
-    const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+    const API_URL = window.location.origin; // একই ডোমেইন হলে এটি সেরা
     const CHANNEL_ID = "@aaf_tele_earn"; 
     const currentUserID = localStorage.getItem('user_id');
 
     // ১. মেইন ড্যাশবোর্ড ডাটা লোড
     async function initDashboard() {
-        if (!currentUserID) { window.location.href = "/login"; return; }
+        if (!currentUserID) { 
+            console.log("No User ID found, checking session...");
+            // যদি localStorage এ না থাকে তবে সার্ভার সেশন থেকে নেওয়ার চেষ্টা
+        }
 
         try {
+            // ইউজারের সব তথ্য ডাটাবেস থেকে নিয়ে আসা
             const response = await fetch(`${API_URL}/api/user/data/${currentUserID}`);
             const data = await response.json();
 
-            if (data.status === "success") {
+            if (data.status === "success" || data.id || data.telegram_id) {
                 updateUI(data);
                 checkMembership(); 
-                loadAdManager(); // অ্যাড স্লটগুলো লোড করা
+                loadAdManager();
+            } else {
+                console.error("Data Load Failed:", data.message);
+                document.getElementById('u-name').innerText = "Guest User";
             }
-        } catch (err) { console.error("Load Error:", err); }
+        } catch (err) { 
+            console.error("Load Error:", err); 
+            document.getElementById('u-name').innerText = "Connection Error";
+        }
     }
 
     function updateUI(data) {
-        document.getElementById('u-name').innerText = data.name || "User";
-        document.getElementById('u-id').innerText = "UID: #AAF" + (data.uid || "------");
-        document.getElementById('m-bal').innerText = parseFloat(data.balance || 0).toFixed(2);
-        document.getElementById('aaf-bal').innerText = parseFloat(data.aaf_coin || 0).toFixed(2);
-        document.getElementById('u-phone').innerText = data.phone || "No Phone";
+        // ইউজারের নাম এবং ইউআইডি আপডেট (Data Keys matching backend)
+        const name = data.name || data.first_name || "User";
+        const uid = data.telegram_id || data.uid || data.id || "------";
         
-        // এনালাইটিক্স
+        document.getElementById('u-name').innerText = name;
+        document.getElementById('u-id').innerText = "UID: #AAF" + uid;
+        
+        // ব্যালেন্স আপডেট
+        document.getElementById('m-bal').innerText = parseFloat(data.main_balance || data.balance || 0).toFixed(2);
+        document.getElementById('aaf-bal').innerText = parseFloat(data.aaf_balance || data.aaf_coin || 0).toFixed(2);
+        document.getElementById('u-phone').innerText = data.phone || "No Phone Connected";
+        
+        // এনালাইটিক্স (Server Analytics ফিক্স করা হয়েছে)
         const total = data.total_accounts || 0;
         const active = data.active_accounts || 0;
         document.getElementById('acc-count').innerText = total;
         document.getElementById('active-acc').innerText = active;
         document.getElementById('total-added').innerText = total;
         document.getElementById('active-count').innerText = active;
-        document.getElementById('inactive-count').innerText = (total - active);
+        document.getElementById('inactive-count').innerText = Math.max(0, total - active);
 
-        // ইনকাম
-        document.getElementById('task-inc').innerText = (data.task_income || 0).toFixed(2) + " AAF";
-        document.getElementById('bonus-inc').innerText = (data.bonus_income || 0).toFixed(2) + " AAF";
-        document.getElementById('trade-profit').innerText = "৳ " + (data.trade_profit || 0).toFixed(2);
-        document.getElementById('total-txn').innerText = "৳ " + (data.total_txn || 0).toFixed(2);
+        // ইনকাম ডিটেইলস
+        document.getElementById('task-inc').innerText = (parseFloat(data.task_income || 0)).toFixed(2) + " AAF";
+        document.getElementById('bonus-inc').innerText = (parseFloat(data.bonus_income || 0)).toFixed(2) + " AAF";
+        document.getElementById('trade-profit').innerText = "৳ " + (parseFloat(data.trade_profit || 0)).toFixed(2);
+        document.getElementById('total-txn').innerText = "৳ " + (parseFloat(data.total_txn || 0)).toFixed(2);
     }
 
-    // ২. মেম্বারশিপ ও বোনাস চেক
+    // ২. মেম্বারশিপ ও বোনাস চেক (চ্যানেলে জয়েন না থাকলে কী হবে)
     async function checkMembership() {
         try {
             const checkRes = await fetch(`${API_URL}/api/check_member?user_id=${currentUserID}&channel=${CHANNEL_ID}`);
@@ -201,23 +217,29 @@
             const dot = document.getElementById('status-dot');
 
             if (memberData.is_member) {
+                // চ্যানেলে জয়েন থাকলে:
                 btn.innerText = "ACTIVE";
                 btn.className = "status-badge active-bg";
                 text.style.color = "#39d353";
                 text.innerHTML = "✅ একটিভ (Daily 10 AAF Active)";
                 dot.style.color = "var(--primary)";
+                dot.innerText = "● Online";
                 handleDailyReward();
             } else {
+                // চ্যানেলে জয়েন না থাকলে:
                 btn.innerText = "JOIN";
                 btn.className = "status-badge inactive-bg";
                 text.style.color = "#ff4d4d";
-                text.innerHTML = "❌ জয়েন করুন (Daily Bonus Off)";
+                text.innerHTML = "❌ জয়েন করুন (Daily Bonus Off)";
                 dot.style.color = "#ea2027";
+                dot.innerText = "● Offline";
             }
-        } catch (e) { console.log("Member Check Failed"); }
+        } catch (e) { 
+            console.log("Member Check Failed"); 
+        }
     }
 
-    // ৩. ডেইলি রিওয়ার্ড লজিক
+    // ৩. ডেইলি রিওয়ার্ড লজিক (অটোমেটিক বোনাস এড হবে)
     async function handleDailyReward() {
         const lastClaim = localStorage.getItem(`last_claim_${currentUserID}`);
         const now = new Date().getTime();
@@ -233,33 +255,29 @@
                 const result = await res.json();
                 if (result.status === "success") {
                     localStorage.setItem(`last_claim_${currentUserID}`, now);
-                    alert("Daily reward added!");
-                    location.reload(); 
+                    // ব্যালেন্স আপডেট করার জন্য পেজ রিলোড না করে ডাটা রি-লোভ করা যায়
+                    console.log("Reward Claimed!");
                 }
             } catch (e) { console.log("Reward Error"); }
         }
     }
 
-    // ৪. ১০টি অ্যাড নেটওয়ার্ক ম্যানেজমেন্ট ফাংশন (Admin Controlled)
+    // ৪. অ্যাড ম্যানেজমেন্ট
     async function loadAdManager() {
         try {
-            // অ্যাডমিন থেকে অ্যাড কনফিগারেশন আনা (এটি একটি কাল্পনিক API পাথ)
-            // যেখানে ১০টি অ্যাডের স্ক্রিপ্ট বা আইফ্রেম ডাটা থাকবে
             const res = await fetch(`${API_URL}/api/admin/ad_config`);
             const config = await res.json();
 
-            if (config.status === "success") {
-                // ১০টি অ্যাডের স্লট লুপ করে লোড করা (আপনার প্রয়োজনে ১০টি স্লট তৈরি করতে পারেন)
-                // উদাহরণ হিসেবে ১ ও ২ নাম্বার স্লটে অ্যাড বসাচ্ছি
-                if (config.ads[0].active) {
+            if (config.status === "success" && config.ads) {
+                if (config.ads[0] && config.ads[0].active) {
                     document.getElementById('ad-slot-1').innerHTML = config.ads[0].script;
                 }
-                if (config.ads[1].active) {
+                if (config.ads[1] && config.ads[1].active) {
                     document.getElementById('ad-slot-2').innerHTML = config.ads[1].script;
                 }
             }
         } catch (e) {
-            // এপিআই না থাকলে ডিফল্ট অ্যাড (A-Ads) লোড হবে
+            // ডিফল্ট এ-অ্যাডস (A-Ads)
             document.getElementById('ad-slot-1').innerHTML = `<iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden;'></iframe>`;
         }
     }
