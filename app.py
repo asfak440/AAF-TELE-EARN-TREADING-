@@ -18,8 +18,14 @@ from firebase_admin import credentials, db
 # ---------------------------------------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_tele_earn_786")
-# সেশন ১ বছর স্থায়ী করার জন্য
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=10)
+
+# Render/HTTPS এর জন্য সেশন সিকিউরিটি আপডেট (এটিই ড্যাশবোর্ড ফিক্স করবে)
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=10)
+)
 
 @app.before_request
 def make_session_permanent():
@@ -93,8 +99,14 @@ def index():
 
 @app.route('/dashboard')
 def render_dashboard_page(): 
-    if 'uid' not in session: return redirect(url_for('index'))
-    user = users_col.find_one({"telegram_id": int(session['uid'])})
+    uid = session.get('uid')
+    if not uid: return redirect(url_for('index'))
+    
+    user = users_col.find_one({"telegram_id": int(uid)})
+    if not user:
+        session.pop('uid', None)
+        return redirect(url_for('index'))
+        
     return render_template('dashboard.html', user=user)
 
 @app.route('/task')
@@ -119,7 +131,7 @@ def render_wallet_page():
 
 @app.route('/logout')
 def user_logout():
-    session.pop('uid', None)
+    session.clear()
     return redirect(url_for('index'))
 
 # ---------------------------------------------------------
@@ -145,22 +157,28 @@ def manage_get_sessions():
 
 @app.route('/api/add_task', methods=['POST'])
 def manage_add_task():
-    data = request.json
-    tasks_col.insert_one({
-        "title": data.get('title'),
-        "reward": float(data.get('reward', 0)),
-        "link": data.get('link'),
-        "category": data.get('category', 'General'),
-        "description": data.get('desc', ''),
-        "status": "active",
-        "created_at": datetime.utcnow()
-    })
-    return jsonify({"success": True})
+    try:
+        data = request.json
+        tasks_col.insert_one({
+            "title": data.get('title'),
+            "reward": float(data.get('reward', 0)),
+            "link": data.get('link'),
+            "category": data.get('category', 'General'),
+            "description": data.get('desc', ''),
+            "status": "active",
+            "created_at": datetime.utcnow()
+        })
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/admin/delete_task/<task_id>', methods=['DELETE'])
 def delete_task_api(task_id):
-    tasks_col.delete_one({"_id": ObjectId(task_id)})
-    return jsonify({"success": True})
+    try:
+        tasks_col.delete_one({"_id": ObjectId(task_id)})
+        return jsonify({"success": True})
+    except:
+        return jsonify({"success": False})
 
 @app.route('/api/admin/update_user', methods=['POST'])
 def manage_update_user():
@@ -173,7 +191,7 @@ def manage_update_user():
 @app.route('/api/update_ads', methods=['POST'])
 def manage_update_ads():
     data = request.json
-    ads_col.delete_many({}) # আগের অ্যাড মুছে ফেলা
+    ads_col.delete_many({})
     if data.get('ads'):
         ads_col.insert_many(data.get('ads'))
     return jsonify({"success": True})
@@ -200,7 +218,7 @@ def send_otp_handler():
 def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
-    if phone not in temp_clients: return jsonify({"success": False, "message": "Expired"})
+    if phone not in temp_clients: return jsonify({"success": False, "message": "Expired Session"})
     try:
         client = temp_clients[phone]["client"]
         h = temp_clients[phone]["hash"]
@@ -219,7 +237,7 @@ def verify_login_handler():
             upsert=True
         )
         session["uid"] = user.id
-        return jsonify({"success": True})
+        return jsonify({"success": True, "uid": user.id})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
@@ -245,36 +263,43 @@ def fetch_tasks():
 
 @app.route('/api/user/tasks/claim', methods=['POST'])
 def claim_task():
-    data = request.json
-    uid = session.get('uid')
-    task_id = data.get('task_id')
-    user = users_col.find_one({"telegram_id": int(uid)})
-    if task_id in user.get("completed_tasks", []):
-        return jsonify({"status": "error", "message": "Already Claimed"})
-    
-    task = tasks_col.find_one({"_id": ObjectId(task_id)})
-    reward = float(task.get('reward', 0))
-    users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": reward}, "$push": {"completed_tasks": task_id}})
-    return jsonify({"status": "success", "reward": reward})
+    try:
+        data = request.json
+        uid = session.get('uid')
+        task_id = data.get('task_id')
+        user = users_col.find_one({"telegram_id": int(uid)})
+        
+        if task_id in user.get("completed_tasks", []):
+            return jsonify({"status": "error", "message": "Already Claimed"})
+        
+        task = tasks_col.find_one({"_id": ObjectId(task_id)})
+        reward = float(task.get('reward', 0))
+        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": reward}, "$push": {"completed_tasks": task_id}})
+        return jsonify({"status": "success", "reward": reward})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/api/trade/execute', methods=['POST'])
 def execute_trade():
-    data = request.json
-    uid = session.get('uid')
-    trade_type = data.get('type')
-    amount = float(data.get('amount', 0))
-    user = users_col.find_one({"telegram_id": int(uid)})
-    
-    fee = amount * 0.10
-    net = amount - fee
+    try:
+        data = request.json
+        uid = session.get('uid')
+        trade_type = data.get('type')
+        amount = float(data.get('amount', 0))
+        user = users_col.find_one({"telegram_id": int(uid)})
+        
+        fee = amount * 0.10
+        net = amount - fee
 
-    if trade_type == 'BUY':
-        if user['main_balance'] < amount: return jsonify({"status": "error"})
-        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": -amount, "aaf_balance": net}})
-    else:
-        if user['aaf_balance'] < amount: return jsonify({"status": "error"})
-        users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"aaf_balance": -amount, "main_balance": net}})
-    return jsonify({"status": "success"})
+        if trade_type == 'BUY':
+            if user['main_balance'] < amount: return jsonify({"status": "error", "message": "Low Balance"})
+            users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"main_balance": -amount, "aaf_balance": net}})
+        else:
+            if user['aaf_balance'] < amount: return jsonify({"status": "error", "message": "Low AAF"})
+            users_col.update_one({"telegram_id": int(uid)}, {"$inc": {"aaf_balance": -amount, "main_balance": net}})
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/api/get_ads')
 def fetch_ads():
