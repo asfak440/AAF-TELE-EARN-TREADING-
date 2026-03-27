@@ -301,6 +301,10 @@ def execute_trade():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+@app.route('/ping')
+def ping():
+    return "I am alive!", 200
+
 @app.route('/api/get_ads')
 def fetch_ads():
     return jsonify({"success": True, "ads": list(ads_col.find({}, {"_id": 0}))})
