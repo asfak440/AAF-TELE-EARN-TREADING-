@@ -2,69 +2,115 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Payment History - AAF Master</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@400;600;700&display=swap');
-        body {
-            background: #020617; color: #fff; font-family: 'Rajdhani', sans-serif;
-            margin: 0; padding: 20px;
+        
+        :root {
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff0055;
+            --text-muted: #94a3b8;
         }
+
+        body {
+            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif;
+            margin: 0; padding: 20px;
+            background-image: radial-gradient(circle at top, rgba(112, 0, 255, 0.1), transparent);
+        }
+
         .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-        .title { font-family: 'Syncopate'; font-size: 18px; color: #ffaa00; }
+        .back-link { color: #fff; text-decoration: none; font-size: 20px; padding: 5px; }
+        .title { font-family: 'Syncopate'; font-size: 16px; color: var(--warning); letter-spacing: 1px; }
         
         .history-card {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1);
+            background: var(--glass); border: 1px solid var(--border);
             border-radius: 18px; padding: 15px; margin-bottom: 12px;
             display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px);
         }
-        .pay-info b { font-size: 18px; color: #00ff88; display: block; }
-        .pay-info small { color: #94a3b8; }
+
+        .pay-info b { font-size: 18px; color: var(--success); display: block; font-family: 'Syncopate'; }
+        .pay-info small { color: var(--text-muted); font-size: 12px; }
+
         .pay-status { text-align: right; }
-        .st-badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: bold; text-transform: uppercase; }
-        .success { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
-        .pending { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+        .st-badge { 
+            font-size: 10px; padding: 4px 10px; border-radius: 20px; 
+            font-weight: bold; text-transform: uppercase; display: inline-block;
+            margin-bottom: 5px;
+        }
+        
+        /* Status Colors */
+        .status-success { background: rgba(0, 255, 136, 0.15); color: var(--success); border: 1px solid var(--success); }
+        .status-pending { background: rgba(255, 170, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
+        .status-rejected { background: rgba(255, 0, 85, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+        
+        .trx-id { font-size: 10px; color: var(--text-muted); display: block; }
+        
+        #loader { text-align: center; padding: 40px; color: var(--text-muted); }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <a href="/" style="color:#fff; text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i></a>
         <div class="title">PAYMENT HISTORY</div>
     </div>
 
     <div id="payment-list">
-        <div class="history-card">
-            <div class="pay-info">
-                <b>৳ 500.00</b>
-                <small>Bkash | 25 Mar 2026</small>
-            </div>
-            <div class="pay-status">
-                <div class="st-badge success">Completed</div>
-                <small style="font-size:10px; color:#94a3b8">TrxID: AX782K</small>
-            </div>
-        </div>
-        
-        <div class="history-card">
-            <div class="pay-info">
-                <b>৳ 200.00</b>
-                <small>Nagad | 30 Mar 2026</small>
-            </div>
-            <div class="pay-status">
-                <div class="st-badge pending">Pending</div>
-            </div>
-        </div>
+        <div id="loader"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>
     </div>
 
     <script>
         async function fetchPayments() {
             try {
+                // আপনার Flask API থেকে ডাটা কল করা
                 const res = await fetch('/get_payment_data');
                 const data = await res.json();
-                // এখানে লুপ চালিয়ে ডাটাবেজ থেকে আসা পেমেন্টগুলো দেখাবেন
-            } catch(e) {}
+                const listContainer = document.getElementById('payment-list');
+                
+                listContainer.innerHTML = ''; // লোডার সরিয়ে ফেলা
+
+                if (!data.payments || data.payments.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align:center; color:gray; margin-top:50px;">No transaction history found.</p>';
+                    return;
+                }
+
+                // ডাটাবেজ থেকে আসা ডাটা দিয়ে লুপ চালানো
+                data.payments.forEach(p => {
+                    // স্ট্যাটাস অনুযায়ী ক্লাস নির্ধারণ
+                    let statusClass = 'status-pending';
+                    if(p.status.toLowerCase() === 'success' || p.status.toLowerCase() === 'completed') statusClass = 'status-success';
+                    if(p.status.toLowerCase() === 'rejected') statusClass = 'status-rejected';
+
+                    const card = `
+                        <div class="history-card">
+                            <div class="pay-info">
+                                <b>৳ ${p.amount}</b>
+                                <small>${p.method} | ${p.date}</small>
+                            </div>
+                            <div class="pay-status">
+                                <div class="st-badge ${statusClass}">${p.status}</div>
+                                ${p.id ? `<span class="trx-id">TrxID: ${p.id}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    listContainer.innerHTML += card;
+                });
+
+            } catch(e) {
+                document.getElementById('payment-list').innerHTML = '<p style="text-align:center; color:red;">Failed to load data.</p>';
+                console.error("Fetch Error:", e);
+            }
         }
-        // window.onload = fetchPayments;
+
+        // পেজ লোড হওয়ার সাথে সাথে ফাংশনটি চালু হবে
+        window.onload = fetchPayments;
     </script>
 </body>
 </html>
