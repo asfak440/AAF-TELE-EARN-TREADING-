@@ -374,19 +374,73 @@
         }, 500);
     }
 
-    // ডেটা আপডেট ফাংশন
+// --- UI এবং ডাটা আপডেট ফাংশন (এখান থেকে কপি করুন) ---
     function updateUI(data) {
-        document.getElementById('u-name').innerText = data.username || "MASTER_USER";
+        // প্রোফাইল এবং ব্যালেন্স আপডেট
+        document.getElementById('u-name').innerText = data.username || "MASTER_PRO";
         document.getElementById('u-phone').innerText = data.phone || "017XXXXXXXX";
         document.getElementById('h-cash').innerText = data.cash_bal || "0.00";
         document.getElementById('h-aaf').innerText = data.aaf_bal || "0.00";
         document.getElementById('m-bal').innerText = data.cash_bal || "0.00";
         document.getElementById('aaf-bal').innerText = data.aaf_bal || "0.00";
         document.getElementById('display-acc-no').innerText = data.phone || "017XXXXXXXX";
+        
+        // অ্যানালিটিকস কার্ড আপডেট
         document.getElementById('total-users').innerText = data.total || "0";
         document.getElementById('active-users').innerText = data.active || "0";
         document.getElementById('inactive-users').innerText = data.inactive || "0";
 
+        // ইনকাম এবং প্রফিট আপডেট
+        if(document.getElementById('task-inc')) 
+            document.getElementById('task-inc').innerText = (data.task_inc || "0.00") + " AAF";
+        if(document.getElementById('trade-profit')) 
+            document.getElementById('trade-profit').innerText = data.trade_profit || "0.00";
+
+        // যদি ইউজার আগে থেকেই জয়েন করা থাকে (Status Active)
         if(data.is_active) {
             isUserJoined = true;
-            document.
+            document.getElementById('status-dot').classList.add('active');
+            document.getElementById('join-card').classList.add('active-border');
+            document.getElementById('channel-btn').classList.add('btn-active');
+            document.getElementById('channel-btn').innerText = "JOINED";
+        }
+    }
+
+    // পেজ লোড হওয়ার সময় যা যা ঘটবে
+    window.onload = () => {
+        // ১. সেভ করা থিম চেক করা (ডার্ক/লাইট)
+        if(localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        } else {
+            document.body.classList.remove('light-mode');
+        }
+        
+        // ২. ডামি ডাটা দিয়ে UI টেস্ট করা (এখানে আপনার সার্ভারের ডাটা বসবে)
+        updateUI({
+            username: "MASTER_PRO", 
+            phone: "01822-334455", 
+            cash_bal: "1250.00", 
+            aaf_bal: "45000",
+            task_inc: "3200.00",
+            trade_profit: "450.00",
+            total: "1.5K", 
+            active: "1.1K", 
+            inactive: "400", 
+            is_active: false // এটি true করলে অটোমেটিক JOINED দেখাবে
+        });
+    };
+
+    // মোবাইল ভিউতে কিবোর্ড ওপেন হলে লেআউট ফিক্স করার জন্য (ঐচ্ছিক)
+    window.addEventListener('resize', () => {
+        let dock = document.querySelector('.dock-container');
+        if (window.innerHeight < 500) {
+            dock.style.display = 'none'; // টাইপিং এর সময় নেভিগেশন হাইড হবে
+        } else {
+            dock.style.display = 'flex';
+        }
+    });
+
+</script>
+
+</body>
+</html>
