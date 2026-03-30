@@ -115,17 +115,17 @@
 
         <div class="grid-3">
             <div class="premium-card stat-card" onclick="smartRedirect('refer_list')">
-                <i class="fas fa-users"></i>
-                <h4>Refer List</h4>
+                <i class="fas fa-users" style="color:var(--primary)"></i>
+                <h4>Refer Center</h4>
                 <p id="total-ref">0</p>
             </div>
-            <div class="premium-card stat-card" onclick="copyReferLink()">
-                <i class="fas fa-share-nodes"></i>
-                <h4>Refer Link</h4>
-                <p>COPY</p>
+            <div class="premium-card stat-card" onclick="smartRedirect('trading')">
+                <i class="fas fa-coins" style="color:var(--gold)"></i>
+                <h4>My Trading</h4>
+                <p id="my-trading-income">৳0.00</p>
             </div>
             <div class="premium-card stat-card" onclick="smartRedirect('payment_history')">
-                <i class="fas fa-file-invoice-dollar"></i>
+                <i class="fas fa-file-invoice-dollar" style="color:var(--active-green)"></i>
                 <h4>Payments</h4>
                 <p>HISTORY</p>
             </div>
@@ -133,24 +133,6 @@
 
         <div class="banner-ad-box" id="banner-top">
             <small style="color:gray;">ADVERTISEMENT</small>
-        </div>
-
-        <div class="grid-3">
-            <div class="premium-card stat-card">
-                <i class="fas fa-wallet" style="color:var(--active-green)"></i>
-                <h4>My Income</h4>
-                <p id="my-total-income">৳0.00</p>
-            </div>
-            <div class="premium-card stat-card">
-                <i class="fas fa-coins" style="color:var(--gold)"></i>
-                <h4>My Trading</h4>
-                <p id="my-trading-income">৳0.00</p>
-            </div>
-            <div class="premium-card stat-card" onclick="smartRedirect('support')">
-                <i class="fas fa-headset"></i>
-                <h4>Support</h4>
-                <p>HELP</p>
-            </div>
         </div>
 
         <div class="premium-card balance-card">
@@ -215,9 +197,8 @@
                 document.getElementById('srv-total-trading').innerText = '৳' + adminConfig.server_trading;
                 document.getElementById('total-users-global').innerText = adminConfig.total_users;
 
-                // User Stats
+                // User Stats (Removed my-total-income logic as per request)
                 document.getElementById('total-ref').innerText = userData.total_refer;
-                document.getElementById('my-total-income').innerText = '৳' + userData.total_earned;
                 document.getElementById('my-trading-income').innerText = '৳' + userData.trading_profit;
 
                 // Status & Channel Link
@@ -235,19 +216,11 @@
             } catch (e) { console.log("Init Error"); }
         }
 
-        // Referral Link Copy
-        function copyReferLink() {
-            const refLink = `https://t.me/aaf_tele_earn_bot?start=${userData.user_id}`;
-            navigator.clipboard.writeText(refLink);
-            alert("Referral Link Copied!");
-        }
-
         function joinChannel() {
             window.open(adminConfig.channel_url || "https://t.me/aafteleearn", "_blank");
         }
 
         function smartRedirect(page) {
-            // Admin control check for ads before redirect
             window.location.href = `/${page}`;
         }
 
