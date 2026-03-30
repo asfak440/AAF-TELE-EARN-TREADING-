@@ -2,287 +2,391 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Strong | Master Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF Master Dashboard v10.0 Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --primary: #39d353; --bg: #0d1117; --card-bg: #161b22;
-            --border: #30363d; --text-gray: #8b949e; --accent-cyan: #00ffcc; --gold: #f1c40f;
-            --nav-bg: #161b22;
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --bg: #020617;
+            --glass-card: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #00f2fe; 
+            --secondary: #7000ff; 
+            --danger: #ff0055;
+            --gold: #ffaa00;
+            --active-green: #00ff88;
+            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            --grad-primary: linear-gradient(135deg, #00f2fe 0%, #7000ff 100%);
+            --grad-gold: linear-gradient(135deg, #ffaa00 0%, #d97706 100%);
         }
-        body { background: var(--bg); color: #f0f6fc; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
+
+        .light-mode {
+            --bg: #e5e9f0;
+            --glass-card: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(30, 41, 59, 0.1);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --neon-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+
+        body { 
+            background: var(--bg); color: var(--text-main); 
+            font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding-bottom: 100px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            background-attachment: fixed;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.1) 0%, transparent 60%);
+        }
+
+        /* --- Glassmorphism Framework --- */
+        .premium-card {
+            background: var(--glass-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            box-shadow: var(--neon-shadow); transition: 0.4s ease;
+        }
+
+        /* --- Header Top --- */
+        .nav-header { 
+            background: var(--glass-card); backdrop-filter: blur(20px);
+            padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--glass-border);
+        }
         
-        .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 100; }
-        .user-info h3 { margin: 0; font-size: 18px; color: var(--primary); }
-        .user-info span { font-size: 11px; color: var(--text-gray); }
+        .u-profile { display: flex; flex-direction: column; gap: 2px; }
+        .u-info { font-size: 14px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px; font-family: 'Syncopate', sans-serif;}
+        .u-id { font-size: 11px; color: var(--danger); font-weight: bold; }
 
-        .container { padding: 15px; }
+        .header-mid-bal {
+            flex: 1; text-align: center; background: rgba(0,0,0,0.3);
+            margin: 0 10px; padding: 6px; border-radius: 12px; border: 1px solid var(--glass-border);
+        }
+        .header-mid-bal .title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px; display: block; letter-spacing: 1px;}
+        .bal-items { display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .bal-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: bold; }
+        
+        .aaf-logo-mini {
+            width: 16px; height: 16px; background: var(--grad-gold); color: #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 900;
+        }
 
-        /* ব্যালেন্স কার্ড */
-        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
+        .status-light {
+            width: 12px; height: 12px; border-radius: 50%; background: var(--danger); 
+            box-shadow: 0 0 10px var(--danger); border: 2px solid var(--glass-card); transition: 0.5s;
+        }
+        .status-light.active { background: var(--active-green); box-shadow: 0 0 10px var(--active-green); }
 
-        .card.main-tk { grid-column: span 2; background: linear-gradient(135deg, #1c2128 0%, #0d1117 100%); border-color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .card.aaf-coin { grid-column: span 2; border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
+        /* --- Pop-Up Master --- */
+        .pop-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center;
+            z-index: 9999; backdrop-filter: blur(8px);
+        }
+        .pop-box {
+            background: var(--glass-card); width: 85%; max-width: 350px; border-radius: 25px;
+            padding: 30px 20px; text-align: center; border: 1px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.2); transform: scale(0.8); transition: 0.4s;
+        }
+        .pop-box.show { transform: scale(1); }
+        .pop-icon { font-size: 45px; margin-bottom: 15px; }
+        .pop-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: var(--primary); font-family: 'Syncopate', sans-serif; }
+        .pop-msg { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 25px; }
+        .pop-btn { 
+            width: 100%; padding: 14px; border-radius: 12px; border: none; font-family: 'Syncopate', sans-serif;
+            font-weight: bold; cursor: pointer; transition: 0.2s; background: var(--grad-primary); color: #fff; text-transform: uppercase;
+        }
+        .pop-btn-danger { background: var(--danger); box-shadow: 0 5px 15px rgba(255,0,85,0.3); }
 
-        .card h4 { margin: 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
-        .card p { margin: 8px 0 0; font-size: 24px; font-weight: bold; }
-        .currency-label { font-size: 14px; color: var(--primary); margin-right: 4px; }
-        .coin-label { font-size: 14px; color: var(--gold); margin-left: 5px; }
+        .container { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
 
-        .action-btns { display: flex; gap: 8px; }
-        .btn-sm { background: var(--primary); color: black; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
-        .btn-gold { background: var(--gold); }
+        /* --- 5 Column Analytics Grid --- */
+        .analytics-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+        .stat-card { padding: 12px 2px; text-align: center; cursor: pointer; }
+        .stat-card:active { transform: scale(0.95); }
+        .stat-card i { font-size: 16px; margin-bottom: 6px; color: var(--primary); }
+        .stat-card h4 { margin: 0; font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-card p { margin: 5px 0 0; font-size: 12px; font-weight: bold; font-family: 'Syncopate', sans-serif; }
 
-        .income-details { background: var(--card-bg); border-radius: 15px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-        .income-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #30363d; font-size: 13px; }
+        /* --- Income Box --- */
+        .income-box { padding: 15px 20px; margin-bottom: 20px; }
+        .income-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 14px; font-weight: 600; }
+        .income-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .income-row span { color: var(--text-muted); }
 
-        .acc-control { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-        .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; text-decoration: none; display: inline-block; }
-        .active-bg { background: var(--primary); color: black; }
-        .inactive-bg { background: #ea2027; color: white; }
+        /* --- Balance Cards --- */
+        .balance-card { 
+            padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; position: relative; overflow: hidden;
+        }
+        .main-cash-card { background: linear-gradient(135deg, rgba(0, 242, 254, 0.05) 0%, rgba(112, 0, 255, 0.05) 100%); }
+        
+        .bal-info { display: flex; align-items: center; gap: 12px; z-index: 1; }
+        .bal-icon-circle { width: 45px; height: 45px; border-radius: 50%; background: var(--grad-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; color:#fff; box-shadow: 0 0 15px rgba(0,242,254,0.3); }
+        .aaf-logo-big { width: 45px; height: 45px; background: var(--grad-gold); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; box-shadow: 0 0 15px rgba(255,170,0,0.3); }
+        
+        .btn-action { 
+            padding: 10px 15px; border-radius: 12px; font-size: 11px; font-weight: bold; font-family: 'Syncopate', sans-serif;
+            border: none; cursor: pointer; transition: 0.2s; text-transform: uppercase; z-index: 1;
+        }
+        .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 5px 15px rgba(112,0,255,0.3); }
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--text-main); }
+        .btn-gold { background: var(--grad-gold); color: #fff; box-shadow: 0 5px 15px rgba(255,170,0,0.3);}
 
-        .slim-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 9999; }
-        .nav-item { text-decoration: none; color: var(--text-gray); text-align: center; flex: 1; font-size: 11px; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
+        /* --- Join Box --- */
+        .join-box { padding: 18px; display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--danger); margin-top: 20px; }
+        .join-box.active-border { border-left-color: var(--active-green); background: rgba(0, 255, 136, 0.05); }
+        .join-info { flex: 1; }
+        .join-info span { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: bold; }
+        .join-info b { font-size: 16px; color: var(--text-main); letter-spacing: 1px; font-family: 'Syncopate', sans-serif;}
+        .btn-join { background: var(--danger); color: #fff; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Syncopate', sans-serif; font-size: 10px;}
+        .btn-join.btn-active { background: var(--active-green); color: #000; box-shadow: 0 0 15px rgba(0,255,136,0.4); }
 
-        /* অ্যাড স্লট ডিজাইন */
-        .ad-unit { width: 100%; min-height: 50px; background: rgba(255,255,255,0.02); margin: 10px 0; display: flex; justify-content: center; align-items: center; border-radius: 8px; overflow: hidden; }
+        /* --- PRE-ORDERED DOCK NAV (ছবি অনুযায়ী) --- */
+        .dock-container {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            padding: 10px 0 20px 0; z-index: 2000;
+            display: flex; justify-content: center;
+        }
+        
+        .dock-nav {
+            width: 92%; max-width: 500px; height: 65px;
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px);
+            border-radius: 24px; border: 1px solid var(--glass-border);
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        .nav-item { 
+            position: relative; color: var(--text-muted); text-decoration: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 18%; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .nav-item i { font-size: 22px; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item span { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+
+        /* Active State */
+        .nav-item.active { color: var(--text-main); }
+        .nav-item.active i { color: var(--primary); transform: translateY(-5px); filter: drop-shadow(0 0 8px var(--primary)); }
+
+        /* Sparkle Icon (✦) - ছবির মতো */
+        .nav-item .sparkle {
+            position: absolute; top: 0; right: 2px;
+            font-size: 16px; color: #fff;
+            opacity: 0; transform: scale(0) rotate(0deg);
+            transition: 0.5s; pointer-events: none;
+        }
+        
+        .nav-item.active .sparkle {
+            opacity: 1; transform: scale(1) rotate(20deg);
+            filter: drop-shadow(0 0 5px #fff);
+        }
+
+        /* Responsive Optimization */
+        @media (min-width: 768px) {
+            .dock-nav { width: 450px; }
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div class="user-info">
-            <h3 id="u-name">User...</h3>
-            <span id="u-id">UID: #AAF-------</span>
+    <div class="pop-overlay" id="master-pop">
+        <div class="pop-box" id="pop-box">
+            <div class="pop-icon" id="pop-icon">⚠️</div>
+            <div class="pop-title" id="pop-title">Warning / সাবধান!</div>
+            <div class="pop-msg" id="pop-msg">Message body here...</div>
+            <button class="pop-btn" id="pop-btn" onclick="closePop()">I AGREE / আমি রাজি</button>
         </div>
-        <div style="text-align:right;">
-            <div id="status-dot" style="color: #ea2027; font-size: 12px; font-weight: bold;">● Offline</div>
-            <div style="font-size: 9px; color: var(--text-gray);">v master v2.2</div>
+    </div>
+
+    <div class="nav-header">
+        <div class="u-profile">
+            <div class="u-info"><i class="fas fa-user-astronaut"></i> <span id="u-name">LOADING...</span></div>
+            <div class="u-id"><i class="fas fa-satellite-dish"></i> <span id="u-phone">017XXXXXXXX</span></div>
         </div>
+        <div class="header-mid-bal">
+            <span class="title">Balance Summary</span>
+            <div class="bal-items">
+                <div class="bal-item"><i class="fas fa-money-bill-wave" style="color:var(--primary)"></i> ৳ <span id="h-cash">0.00</span></div>
+                <div class="bal-item"><div class="aaf-logo-mini">AAF</div><span id="h-aaf">0.00</span></div>
+            </div>
+        </div>
+        <div class="status-light" id="status-dot"></div>
     </div>
 
     <div class="container">
-        <div class="acc-control" style="margin-bottom: 15px; border-color: rgba(57, 211, 83, 0.2);">
-            <p style="margin: 0 0 10px 0; font-size: 10px; color: var(--text-gray); text-transform: uppercase;"><i class="fas fa-server"></i> Server Analytics</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center;">
-                    <h4 style="margin: 0; font-size: 9px; color: var(--text-gray);">TOTAL</h4>
-                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold;" id="total-added">0</p>
-                </div>
-                <div style="background: rgba(57, 211, 83, 0.05); padding: 10px; border-radius: 10px; border: 1px solid var(--primary); text-align: center;">
-                    <h4 style="margin: 0; font-size: 9px; color: var(--primary);">ACTIVE</h4>
-                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--primary);" id="active-count">0</p>
-                </div>
-                <div style="background: rgba(234, 32, 39, 0.05); padding: 10px; border-radius: 10px; border: 1px solid #ea2027; text-align: center;">
-                    <h4 style="margin: 0; font-size: 9px; color: #ea2027;">OFFLINE</h4>
-                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #ea2027;" id="inactive-count">0</p>
-                </div>
+        
+        <div class="analytics-row">
+            <div class="premium-card stat-card" onclick="alert('Refer List')"><i class="fas fa-users-viewfinder"></i><h4>REFER</h4><p>LIST</p></div>
+            <div class="premium-card stat-card"><h4>TOTAL</h4><p id="total-users">--</p></div>
+            <div class="premium-card stat-card" style="border-color: rgba(0, 242, 254, 0.3);"><h4>ACTIVE</h4><p id="active-users" style="color:var(--primary)">--</p></div>
+            <div class="premium-card stat-card" style="border-color: rgba(255, 0, 85, 0.3);"><h4>OFF</h4><p id="inactive-users" style="color:var(--danger)">--</p></div>
+            <div class="premium-card stat-card" onclick="goToPage('/history')"><i class="fas fa-receipt"></i><h4>PAID</h4><p>LOG</p></div>
+        </div>
+
+        <div class="premium-card income-box">
+            <div class="income-row"><span>Task Income</span><b id="task-inc">0.00 AAF</b></div>
+            <div class="income-row"><span>Daily Bonus</span><b id="bonus-inc" style="color:var(--primary)">150.00 AAF</b></div>
+            <div class="income-row"><span>Trading Profit</span><b style="color:var(--active-green)">৳ <span id="trade-profit">0.00</span></b></div>
+        </div>
+
+        <div class="premium-card balance-card main-cash-card">
+            <div class="bal-info">
+                <div class="bal-icon-circle"><i class="fas fa-wallet"></i></div>
+                <div><span style="font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:1px;">MAIN BALANCE (CASH)</span><div style="font-size:24px; font-weight:800; font-family:'Syncopate', sans-serif;">৳ <span id="m-bal">0.00</span></div></div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-action btn-secondary" onclick="handleAction('/wallet/transfer')">Transfer</button>
+                <button class="btn-action btn-primary" onclick="handleAction('/wallet/withdraw')">Withdraw</button>
             </div>
         </div>
 
-        <div class="card main-tk">
-            <div>
-                <h4><i class="fas fa-wallet"></i> Main Balance (Cash)</h4>
-                <p><span class="currency-label">৳</span><span id="m-bal">0.00</span></p>
+        <div class="premium-card balance-card" style="border-color: rgba(255, 170, 0, 0.4);">
+            <div class="bal-info">
+                <div class="aaf-logo-big">AAF</div>
+                <div><span style="font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:1px;">AAF COIN (INCOME)</span><div style="font-size:24px; font-weight:800; color:var(--gold); font-family:'Syncopate', sans-serif;"><span id="aaf-bal">0.00</span></div></div>
             </div>
-            <div class="action-btns">
-                <a href="/wallet" class="btn-sm">Withdraw</a>
-                <a href="/wallet" class="btn-sm">Wallet</a>
-            </div>
+            <button class="btn-action btn-gold" onclick="handleAction('/trading')">Convert</button>
         </div>
 
-        <div id="ad-slot-1" class="ad-unit"></div>
-
-        <div class="balance-grid">
-            <div class="card aaf-coin">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h4><i class="fas fa-coins"></i> AAF Coin (Income)</h4>
-                        <p><span id="aaf-bal" style="color: var(--gold);">0.00</span><span class="coin-label">AAF</span></p>
-                    </div>
-                    <a href="/treading" class="btn-sm btn-gold">Convert</a>
-                </div>
-            </div>
-            <div class="card">
-                <h4>Active Accounts</h4>
-                <p style="color: var(--accent-cyan);"><span id="active-acc">0</span></p>
-            </div>
-            <div class="card">
-                <h4>Total Accounts</h4>
-                <p><span id="acc-count">0</span></p>
-            </div>
-        </div>
-
-        <div class="income-details">
-            <div class="income-row"><span>Task Income</span><span id="task-inc">0.00 AAF</span></div>
-            <div class="income-row"><span>24h Bonus</span><span id="bonus-inc">0.00 AAF</span></div>
-            <div class="income-row"><span>Trading Profit</span><span id="trade-profit">৳ 0.00</span></div>
-            <div class="income-row"><span>Total Transactions</span><span id="total-txn">৳ 0.00</span></div>
-        </div>
-
-        <div id="ad-slot-2" class="ad-unit"></div>
-
-        <div class="acc-control">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <p style="margin: 0; font-size: 14px;" id="u-phone">Checking...</p>
-                    <small id="bonus-status" style="color: #ff4d4d;">❌ ইনএকটিভ (জয়েন করুন)</small>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <a href="https://t.me/aaf_tele_earn" id="status-btn" target="_blank" class="status-badge inactive-bg">JOIN</a>
-                </div>
-            </div>
+        <div class="premium-card join-box" id="join-card">
+            <div class="join-info"><span>Account Status Control</span><b id="display-acc-no">017XXXXXXXX</b></div>
+            <button class="btn-join" id="channel-btn" onclick="triggerJoinFlow()">JOIN CHANNEL</button>
         </div>
     </div>
 
-    <nav class="slim-nav">
-        <a href="/dashboard" class="nav-item active"><i class="fas fa-home"></i><span>Home</span></a>
-        <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="/treading" class="nav-item"><i class="fas fa-chart-line"></i><span>Treading</span></a>
-        <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
-        <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-    </nav>
+    <div class="dock-container">
+        <nav class="dock-nav">
+            <a href="#" class="nav-item active" onclick="goToPage('/home')">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+                <div class="sparkle">✦</div>
+            </a>
+            <a href="#" class="nav-item" onclick="goToPage('/task')">
+                <i class="fa-solid fa-clipboard-check"></i>
+                <span>Task</span>
+                <div class="sparkle">✦</div>
+            </a>
+            <a href="#" class="nav-item" onclick="goToPage('/trading')">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Trading</span>
+                <div class="sparkle">✦</div>
+            </a>
+            <a href="#" class="nav-item" onclick="goToPage('/wallet')">
+                <i class="fa-solid fa-wallet"></i>
+                <span>Wallet</span>
+                <div class="sparkle">✦</div>
+            </a>
+            <a href="#" class="nav-item" onclick="goToPage('/account')">
+                <i class="fa-solid fa-circle-user"></i>
+                <span>Account</span>
+                <div class="sparkle">✦</div>
+            </a>
+        </nav>
+    </div>
 
 <script>
-    const API_URL = window.location.origin; // একই ডোমেইন হলে এটি সেরা
-    const CHANNEL_ID = "@aaf_tele_earn"; 
-    const currentUserID = localStorage.getItem('user_id');
+    let isUserJoined = false;
 
-    // ১. মেইন ড্যাশবোর্ড ডাটা লোড
-    async function initDashboard() {
-        if (!currentUserID) { 
-            console.log("No User ID found, checking session...");
-            // যদি localStorage এ না থাকে তবে সার্ভার সেশন থেকে নেওয়ার চেষ্টা
+    // পপ-আপ ফাংশন
+    function showPop(type, title, msg, btnText, callback = null) {
+        const overlay = document.getElementById('master-pop');
+        const box = document.getElementById('pop-box');
+        const icon = document.getElementById('pop-icon');
+        const btn = document.getElementById('pop-btn');
+
+        document.getElementById('pop-title').innerText = title;
+        document.getElementById('pop-msg').innerText = msg;
+        btn.innerText = btnText;
+        
+        if(type === 'warning') {
+            icon.innerText = "⚠️";
+            btn.className = "pop-btn pop-btn-danger";
+        } else {
+            icon.innerText = "✅";
+            btn.className = "pop-btn";
         }
 
-        try {
-            // ইউজারের সব তথ্য ডাটাবেস থেকে নিয়ে আসা
-            const response = await fetch(`${API_URL}/api/user/data/${currentUserID}`);
-            const data = await response.json();
+        overlay.style.display = 'flex';
+        setTimeout(() => box.classList.add('show'), 10);
+        window.currentPopAction = callback;
+    }
 
-            if (data.status === "success" || data.id || data.telegram_id) {
-                updateUI(data);
-                checkMembership(); 
-                loadAdManager();
-            } else {
-                console.error("Data Load Failed:", data.message);
-                document.getElementById('u-name').innerText = "Guest User";
-            }
-        } catch (err) { 
-            console.error("Load Error:", err); 
-            document.getElementById('u-name').innerText = "Connection Error";
+    function closePop() {
+        const overlay = document.getElementById('master-pop');
+        const box = document.getElementById('pop-box');
+        box.classList.remove('show');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            if(window.currentPopAction) window.currentPopAction();
+        }, 300);
+    }
+
+    // জয়েন লজিক
+    function triggerJoinFlow() {
+        showPop(
+            'warning', 
+            'Attention / সাবধান!', 
+            'আপনি চ্যানেলে জয়েন না থাকলে প্রতিদিনের অফার থেকে ১ দিন কেটে নেওয়া হবে। অনুগ্রহ করে জয়েন করুন।', 
+            'I UNDERSTAND / আমি রাজি',
+            () => { handleJoin(); }
+        );
+    }
+
+    function handleAction(url) {
+        if(!isUserJoined) {
+            showPop('warning', 'Action Required / জয়েন করুন', 'এই সুবিধাটি পেতে আপনাকে আগে আমাদের চ্যানেলে জয়েন করতে হবে।', 'OK / ঠিক আছে');
+        } else {
+            window.location.href = url;
         }
     }
 
+    function goToPage(url) { 
+        // আপনি যখন পেজগুলো কানেক্ট করবেন তখন এই ফাংশনটি কাজ করবে
+        window.location.href = url; 
+    }
+
+    // থিম সুইচ (এটি এখন একাউন্ট পেজ থেকে কল করার জন্য প্রস্তুত)
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+        localStorage.setItem('theme', currentTheme);
+    }
+
+    function handleJoin() {
+        const dot = document.getElementById('status-dot');
+        const card = document.getElementById('join-card');
+        const btn = document.getElementById('channel-btn');
+
+        dot.classList.add('active');
+        card.classList.add('active-border');
+        btn.classList.add('btn-active');
+        btn.innerText = "JOINED";
+        isUserJoined = true;
+
+        setTimeout(() => {
+            showPop('success', 'Congratulations / অভিনন্দন!', 'আপনি সফলভাবে জয়েন করেছেন। এখন থেকে আপনি নিয়মিত অফার পাবেন।', 'GREAT / ধন্যবাদ');
+        }, 500);
+    }
+
+    // ডেটা আপডেট ফাংশন
     function updateUI(data) {
-        // ইউজারের নাম এবং ইউআইডি আপডেট (Data Keys matching backend)
-        const name = data.name || data.first_name || "User";
-        const uid = data.telegram_id || data.uid || data.id || "------";
-        
-        document.getElementById('u-name').innerText = name;
-        document.getElementById('u-id').innerText = "UID: #AAF" + uid;
-        
-        // ব্যালেন্স আপডেট
-        document.getElementById('m-bal').innerText = parseFloat(data.main_balance || data.balance || 0).toFixed(2);
-        document.getElementById('aaf-bal').innerText = parseFloat(data.aaf_balance || data.aaf_coin || 0).toFixed(2);
-        document.getElementById('u-phone').innerText = data.phone || "No Phone Connected";
-        
-        // এনালাইটিক্স (Server Analytics ফিক্স করা হয়েছে)
-        const total = data.total_accounts || 0;
-        const active = data.active_accounts || 0;
-        document.getElementById('acc-count').innerText = total;
-        document.getElementById('active-acc').innerText = active;
-        document.getElementById('total-added').innerText = total;
-        document.getElementById('active-count').innerText = active;
-        document.getElementById('inactive-count').innerText = Math.max(0, total - active);
+        document.getElementById('u-name').innerText = data.username || "MASTER_USER";
+        document.getElementById('u-phone').innerText = data.phone || "017XXXXXXXX";
+        document.getElementById('h-cash').innerText = data.cash_bal || "0.00";
+        document.getElementById('h-aaf').innerText = data.aaf_bal || "0.00";
+        document.getElementById('m-bal').innerText = data.cash_bal || "0.00";
+        document.getElementById('aaf-bal').innerText = data.aaf_bal || "0.00";
+        document.getElementById('display-acc-no').innerText = data.phone || "017XXXXXXXX";
+        document.getElementById('total-users').innerText = data.total || "0";
+        document.getElementById('active-users').innerText = data.active || "0";
+        document.getElementById('inactive-users').innerText = data.inactive || "0";
 
-        // ইনকাম ডিটেইলস
-        document.getElementById('task-inc').innerText = (parseFloat(data.task_income || 0)).toFixed(2) + " AAF";
-        document.getElementById('bonus-inc').innerText = (parseFloat(data.bonus_income || 0)).toFixed(2) + " AAF";
-        document.getElementById('trade-profit').innerText = "৳ " + (parseFloat(data.trade_profit || 0)).toFixed(2);
-        document.getElementById('total-txn').innerText = "৳ " + (parseFloat(data.total_txn || 0)).toFixed(2);
-    }
-
-    // ২. মেম্বারশিপ ও বোনাস চেক (চ্যানেলে জয়েন না থাকলে কী হবে)
-    async function checkMembership() {
-        try {
-            const checkRes = await fetch(`${API_URL}/api/check_member?user_id=${currentUserID}&channel=${CHANNEL_ID}`);
-            const memberData = await checkRes.json();
-
-            const btn = document.getElementById('status-btn');
-            const text = document.getElementById('bonus-status');
-            const dot = document.getElementById('status-dot');
-
-            if (memberData.is_member) {
-                // চ্যানেলে জয়েন থাকলে:
-                btn.innerText = "ACTIVE";
-                btn.className = "status-badge active-bg";
-                text.style.color = "#39d353";
-                text.innerHTML = "✅ একটিভ (Daily 10 AAF Active)";
-                dot.style.color = "var(--primary)";
-                dot.innerText = "● Online";
-                handleDailyReward();
-            } else {
-                // চ্যানেলে জয়েন না থাকলে:
-                btn.innerText = "JOIN";
-                btn.className = "status-badge inactive-bg";
-                text.style.color = "#ff4d4d";
-                text.innerHTML = "❌ জয়েন করুন (Daily Bonus Off)";
-                dot.style.color = "#ea2027";
-                dot.innerText = "● Offline";
-            }
-        } catch (e) { 
-            console.log("Member Check Failed"); 
-        }
-    }
-
-    // ৩. ডেইলি রিওয়ার্ড লজিক (অটোমেটিক বোনাস এড হবে)
-    async function handleDailyReward() {
-        const lastClaim = localStorage.getItem(`last_claim_${currentUserID}`);
-        const now = new Date().getTime();
-        const oneDay = 24 * 60 * 60 * 1000;
-
-        if (!lastClaim || (now - lastClaim) >= oneDay) {
-            try {
-                const res = await fetch(`${API_URL}/api/add_daily_reward`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserID, amount: 10 })
-                });
-                const result = await res.json();
-                if (result.status === "success") {
-                    localStorage.setItem(`last_claim_${currentUserID}`, now);
-                    // ব্যালেন্স আপডেট করার জন্য পেজ রিলোড না করে ডাটা রি-লোভ করা যায়
-                    console.log("Reward Claimed!");
-                }
-            } catch (e) { console.log("Reward Error"); }
-        }
-    }
-
-    // ৪. অ্যাড ম্যানেজমেন্ট
-    async function loadAdManager() {
-        try {
-            const res = await fetch(`${API_URL}/api/admin/ad_config`);
-            const config = await res.json();
-
-            if (config.status === "success" && config.ads) {
-                if (config.ads[0] && config.ads[0].active) {
-                    document.getElementById('ad-slot-1').innerHTML = config.ads[0].script;
-                }
-                if (config.ads[1] && config.ads[1].active) {
-                    document.getElementById('ad-slot-2').innerHTML = config.ads[1].script;
-                }
-            }
-        } catch (e) {
-            // ডিফল্ট এ-অ্যাডস (A-Ads)
-            document.getElementById('ad-slot-1').innerHTML = `<iframe data-aa='2430456' src='//ad.a-ads.com/2430456/?size=320x50' style='border:0; padding:0; width:320px; height:50px; overflow:hidden;'></iframe>`;
-        }
-    }
-
-    window.onload = initDashboard;
-</script>
-</body>
-</html>
+        if(data.is_active) {
+            isUserJoined = true;
+            document.
