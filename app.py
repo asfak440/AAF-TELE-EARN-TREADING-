@@ -301,6 +301,14 @@ def execute_trade():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+@app.route('/refer_list')
+def refer_list():
+    return render_template('refer_list.html')
+
+@app.route('/payment_history')
+def payment_history():
+    return render_template('payment_history.html')
+
 @app.route('/ping')
 def ping():
     return "I am alive!", 200
