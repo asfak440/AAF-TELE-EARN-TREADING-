@@ -36,21 +36,19 @@
         body { 
             background: var(--bg); color: var(--text-main); 
             font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 100px;
+            margin: 0; padding-bottom: 120px;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-x: hidden;
             background-attachment: fixed;
             background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.1) 0%, transparent 60%);
         }
 
-        /* --- Glassmorphism Framework --- */
         .premium-card {
             background: var(--glass-card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border); border-radius: 20px;
             box-shadow: var(--neon-shadow); transition: 0.4s ease;
         }
 
-        /* --- Header Top --- */
         .nav-header { 
             background: var(--glass-card); backdrop-filter: blur(20px);
             padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; 
@@ -80,7 +78,6 @@
         }
         .status-light.active { background: var(--active-green); box-shadow: 0 0 10px var(--active-green); }
 
-        /* --- Pop-Up Master --- */
         .pop-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center;
@@ -99,97 +96,61 @@
             width: 100%; padding: 14px; border-radius: 12px; border: none; font-family: 'Syncopate', sans-serif;
             font-weight: bold; cursor: pointer; transition: 0.2s; background: var(--grad-primary); color: #fff; text-transform: uppercase;
         }
-        .pop-btn-danger { background: var(--danger); box-shadow: 0 5px 15px rgba(255,0,85,0.3); }
 
         .container { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
-
-        /* --- 5 Column Analytics Grid --- */
         .analytics-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
-        .stat-card { padding: 12px 2px; text-align: center; cursor: pointer; }
+        .stat-card { padding: 12px 2px; text-align: center; cursor: pointer; border: 1px solid var(--glass-border); }
         .stat-card:active { transform: scale(0.95); }
         .stat-card i { font-size: 16px; margin-bottom: 6px; color: var(--primary); }
         .stat-card h4 { margin: 0; font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
         .stat-card p { margin: 5px 0 0; font-size: 12px; font-weight: bold; font-family: 'Syncopate', sans-serif; }
 
-        /* --- Income Box --- */
         .income-box { padding: 15px 20px; margin-bottom: 20px; }
         .income-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 14px; font-weight: 600; }
-        .income-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .income-row span { color: var(--text-muted); }
 
-        /* --- Balance Cards --- */
         .balance-card { 
             padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 15px; position: relative; overflow: hidden;
         }
-        .main-cash-card { background: linear-gradient(135deg, rgba(0, 242, 254, 0.05) 0%, rgba(112, 0, 255, 0.05) 100%); }
-        
-        .bal-info { display: flex; align-items: center; gap: 12px; z-index: 1; }
+        .bal-info { display: flex; align-items: center; gap: 12px; }
         .bal-icon-circle { width: 45px; height: 45px; border-radius: 50%; background: var(--grad-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; color:#fff; box-shadow: 0 0 15px rgba(0,242,254,0.3); }
         .aaf-logo-big { width: 45px; height: 45px; background: var(--grad-gold); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; box-shadow: 0 0 15px rgba(255,170,0,0.3); }
         
         .btn-action { 
             padding: 10px 15px; border-radius: 12px; font-size: 11px; font-weight: bold; font-family: 'Syncopate', sans-serif;
-            border: none; cursor: pointer; transition: 0.2s; text-transform: uppercase; z-index: 1;
+            border: none; cursor: pointer; transition: 0.2s; text-transform: uppercase;
         }
         .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 5px 15px rgba(112,0,255,0.3); }
-        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--text-main); }
         .btn-gold { background: var(--grad-gold); color: #fff; box-shadow: 0 5px 15px rgba(255,170,0,0.3);}
 
-        /* --- Join Box --- */
         .join-box { padding: 18px; display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--danger); margin-top: 20px; }
         .join-box.active-border { border-left-color: var(--active-green); background: rgba(0, 255, 136, 0.05); }
-        .join-info { flex: 1; }
-        .join-info span { font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: bold; }
-        .join-info b { font-size: 16px; color: var(--text-main); letter-spacing: 1px; font-family: 'Syncopate', sans-serif;}
         .btn-join { background: var(--danger); color: #fff; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-family: 'Syncopate', sans-serif; font-size: 10px;}
         .btn-join.btn-active { background: var(--active-green); color: #000; box-shadow: 0 0 15px rgba(0,255,136,0.4); }
 
-        /* --- PRE-ORDERED DOCK NAV (ছবি অনুযায়ী) --- */
         .dock-container {
             position: fixed; bottom: 0; left: 0; width: 100%;
             padding: 10px 0 20px 0; z-index: 2000;
             display: flex; justify-content: center;
         }
-        
         .dock-nav {
-            width: 92%; max-width: 500px; height: 65px;
-            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px);
-            border-radius: 24px; border: 1px solid var(--glass-border);
+            width: 92%; max-width: 500px; height: 70px;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px);
+            border-radius: 28px; border: 1px solid var(--glass-border);
             display: flex; justify-content: space-around; align-items: center;
             box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
-
         .nav-item { 
             position: relative; color: var(--text-muted); text-decoration: none;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 18%; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 18%; transition: 0.4s;
         }
-
-        .nav-item i { font-size: 22px; margin-bottom: 4px; transition: 0.3s; }
-        .nav-item span { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
-
-        /* Active State */
+        .nav-item i { font-size: 22px; margin-bottom: 5px; }
+        .nav-item span { font-size: 10px; font-weight: 700; }
         .nav-item.active { color: var(--text-main); }
-        .nav-item.active i { color: var(--primary); transform: translateY(-5px); filter: drop-shadow(0 0 8px var(--primary)); }
-
-        /* Sparkle Icon (✦) - ছবির মতো */
-        .nav-item .sparkle {
-            position: absolute; top: 0; right: 2px;
-            font-size: 16px; color: #fff;
-            opacity: 0; transform: scale(0) rotate(0deg);
-            transition: 0.5s; pointer-events: none;
-        }
-        
-        .nav-item.active .sparkle {
-            opacity: 1; transform: scale(1) rotate(20deg);
-            filter: drop-shadow(0 0 5px #fff);
-        }
-
-        /* Responsive Optimization */
-        @media (min-width: 768px) {
-            .dock-nav { width: 450px; }
-        }
+        .nav-item.active i { color: var(--primary); transform: translateY(-5px); filter: drop-shadow(0 0 10px var(--primary)); }
+        .sparkle { position: absolute; top: -5px; right: 5px; font-size: 16px; color: #fff; opacity: 0; transform: scale(0); transition: 0.5s; }
+        .nav-item.active .sparkle { opacity: 1; transform: scale(1); }
 
     </style>
 </head>
@@ -198,249 +159,147 @@
     <div class="pop-overlay" id="master-pop">
         <div class="pop-box" id="pop-box">
             <div class="pop-icon" id="pop-icon">⚠️</div>
-            <div class="pop-title" id="pop-title">Warning / সাবধান!</div>
-            <div class="pop-msg" id="pop-msg">Message body here...</div>
-            <button class="pop-btn" id="pop-btn" onclick="closePop()">I AGREE / আমি রাজি</button>
+            <div class="pop-title" id="pop-title">Alert</div>
+            <div class="pop-msg" id="pop-msg">Connecting to database...</div>
+            <button class="pop-btn" id="pop-btn" onclick="closePop()">OK</button>
         </div>
     </div>
 
     <div class="nav-header">
         <div class="u-profile">
             <div class="u-info"><i class="fas fa-user-astronaut"></i> <span id="u-name">LOADING...</span></div>
-            <div class="u-id"><i class="fas fa-satellite-dish"></i> <span id="u-phone">017XXXXXXXX</span></div>
+            <div class="u-id"><i class="fas fa-satellite-dish"></i> <span id="u-phone">...</span></div>
         </div>
         <div class="header-mid-bal">
             <span class="title">Balance Summary</span>
             <div class="bal-items">
                 <div class="bal-item"><i class="fas fa-money-bill-wave" style="color:var(--primary)"></i> ৳ <span id="h-cash">0.00</span></div>
-                <div class="bal-item"><div class="aaf-logo-mini">AAF</div><span id="h-aaf">0.00</span></div>
+                <div class="bal-item"><div class="aaf-logo-mini">AAF</div><span id="h-aaf">0</span></div>
             </div>
         </div>
         <div class="status-light" id="status-dot"></div>
     </div>
 
     <div class="container">
-        
         <div class="analytics-row">
-            <div class="premium-card stat-card" onclick="alert('Refer List')"><i class="fas fa-users-viewfinder"></i><h4>REFER</h4><p>LIST</p></div>
-            <div class="premium-card stat-card"><h4>TOTAL</h4><p id="total-users">--</p></div>
-            <div class="premium-card stat-card" style="border-color: rgba(0, 242, 254, 0.3);"><h4>ACTIVE</h4><p id="active-users" style="color:var(--primary)">--</p></div>
-            <div class="premium-card stat-card" style="border-color: rgba(255, 0, 85, 0.3);"><h4>OFF</h4><p id="inactive-users" style="color:var(--danger)">--</p></div>
-            <div class="premium-card stat-card" onclick="goToPage('/history')"><i class="fas fa-receipt"></i><h4>PAID</h4><p>LOG</p></div>
+            <div class="premium-card stat-card" onclick="goToPage('/refer')"><i class="fas fa-users-viewfinder"></i><h4>REFER</h4><p>LIST</p></div>
+            <div class="premium-card stat-card"><h4>TOTAL</h4><p id="total-users">0</p></div>
+            <div class="premium-card stat-card"><h4>ACTIVE</h4><p id="active-users" style="color:var(--primary)">0</p></div>
+            <div class="premium-card stat-card"><h4>OFF</h4><p id="inactive-users" style="color:var(--danger)">0</p></div>
+            <div class="premium-card stat-card" onclick="goToPage('/paid_log')"><i class="fas fa-receipt"></i><h4>PAID</h4><p>LOG</p></div>
         </div>
 
         <div class="premium-card income-box">
             <div class="income-row"><span>Task Income</span><b id="task-inc">0.00 AAF</b></div>
-            <div class="income-row"><span>Daily Bonus</span><b id="bonus-inc" style="color:var(--primary)">150.00 AAF</b></div>
+            <div class="income-row"><span>Daily Bonus</span><b id="bonus-inc" style="color:var(--primary)">0.00 AAF</b></div>
             <div class="income-row"><span>Trading Profit</span><b style="color:var(--active-green)">৳ <span id="trade-profit">0.00</span></b></div>
         </div>
 
-        <div class="premium-card balance-card main-cash-card">
+        <div class="premium-card balance-card">
             <div class="bal-info">
                 <div class="bal-icon-circle"><i class="fas fa-wallet"></i></div>
-                <div><span style="font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:1px;">MAIN BALANCE (CASH)</span><div style="font-size:24px; font-weight:800; font-family:'Syncopate', sans-serif;">৳ <span id="m-bal">0.00</span></div></div>
+                <div><span style="font-size:10px; color:var(--text-muted);">CASH BALANCE</span><div style="font-size:24px; font-weight:800; font-family:'Syncopate';">৳ <span id="m-bal">0.00</span></div></div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-action btn-secondary" onclick="handleAction('/wallet/transfer')">Transfer</button>
-                <button class="btn-action btn-primary" onclick="handleAction('/wallet/withdraw')">Withdraw</button>
-            </div>
+            <button class="btn-action btn-primary" onclick="handleAction('/withdraw')">Withdraw</button>
         </div>
 
-        <div class="premium-card balance-card" style="border-color: rgba(255, 170, 0, 0.4);">
+        <div class="premium-card balance-card">
             <div class="bal-info">
                 <div class="aaf-logo-big">AAF</div>
-                <div><span style="font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:1px;">AAF COIN (INCOME)</span><div style="font-size:24px; font-weight:800; color:var(--gold); font-family:'Syncopate', sans-serif;"><span id="aaf-bal">0.00</span></div></div>
+                <div><span style="font-size:10px; color:var(--text-muted);">AAF COIN</span><div style="font-size:24px; font-weight:800; color:var(--gold); font-family:'Syncopate';"><span id="aaf-bal">0</span></div></div>
             </div>
-            <button class="btn-action btn-gold" onclick="handleAction('/trading')">Convert</button>
+            <button class="btn-action btn-gold" onclick="handleAction('/convert')">Convert</button>
         </div>
 
         <div class="premium-card join-box" id="join-card">
-            <div class="join-info"><span>Account Status Control</span><b id="display-acc-no">017XXXXXXXX</b></div>
-            <button class="btn-join" id="channel-btn" onclick="triggerJoinFlow()">JOIN CHANNEL</button>
+            <div class="join-info"><span>Status Control</span><b id="display-acc-no">OFFLINE</b></div>
+            <button class="btn-join" id="channel-btn" onclick="triggerJoinFlow()">JOIN NOW</button>
         </div>
     </div>
 
     <div class="dock-container">
         <nav class="dock-nav">
-            <a href="#" class="nav-item active" onclick="goToPage('/home')">
-                <i class="fa-solid fa-house"></i>
-                <span>Home</span>
-                <div class="sparkle">✦</div>
-            </a>
-            <a href="#" class="nav-item" onclick="goToPage('/task')">
-                <i class="fa-solid fa-clipboard-check"></i>
-                <span>Task</span>
-                <div class="sparkle">✦</div>
-            </a>
-            <a href="#" class="nav-item" onclick="goToPage('/trading')">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Trading</span>
-                <div class="sparkle">✦</div>
-            </a>
-            <a href="#" class="nav-item" onclick="goToPage('/wallet')">
-                <i class="fa-solid fa-wallet"></i>
-                <span>Wallet</span>
-                <div class="sparkle">✦</div>
-            </a>
-            <a href="#" class="nav-item" onclick="goToPage('/account')">
-                <i class="fa-solid fa-circle-user"></i>
-                <span>Account</span>
-                <div class="sparkle">✦</div>
-            </a>
+            <a href="#" class="nav-item active"><i class="fas fa-house"></i><span>Home</span><div class="sparkle">✦</div></a>
+            <a href="#" class="nav-item" onclick="goToPage('/task')"><i class="fas fa-clipboard-check"></i><span>Task</span><div class="sparkle">✦</div></a>
+            <a href="#" class="nav-item" onclick="goToPage('/trading')"><i class="fas fa-chart-line"></i><span>Trading</span><div class="sparkle">✦</div></a>
+            <a href="#" class="nav-item" onclick="goToPage('/wallet')"><i class="fas fa-wallet"></i><span>Wallet</span><div class="sparkle">✦</div></a>
+            <a href="#" class="nav-item" onclick="goToPage('/account')"><i class="fas fa-circle-user"></i><span>Account</span><div class="sparkle">✦</div></a>
         </nav>
     </div>
 
-<script>
-    let isUserJoined = false;
+    <script>
+        let isUserJoined = false;
 
-    // পপ-আপ ফাংশন
-    function showPop(type, title, msg, btnText, callback = null) {
-        const overlay = document.getElementById('master-pop');
-        const box = document.getElementById('pop-box');
-        const icon = document.getElementById('pop-icon');
-        const btn = document.getElementById('pop-btn');
-
-        document.getElementById('pop-title').innerText = title;
-        document.getElementById('pop-msg').innerText = msg;
-        btn.innerText = btnText;
-        
-        if(type === 'warning') {
-            icon.innerText = "⚠️";
-            btn.className = "pop-btn pop-btn-danger";
-        } else {
-            icon.innerText = "✅";
-            btn.className = "pop-btn";
+        function showPop(title, msg, type = 'info', callback = null) {
+            const overlay = document.getElementById('master-pop');
+            document.getElementById('pop-title').innerText = title;
+            document.getElementById('pop-msg').innerText = msg;
+            document.getElementById('pop-icon').innerText = (type === 'warning') ? "⚠️" : "✅";
+            overlay.style.display = 'flex';
+            setTimeout(() => document.getElementById('pop-box').classList.add('show'), 10);
+            window.currentPopAction = callback;
         }
 
-        overlay.style.display = 'flex';
-        setTimeout(() => box.classList.add('show'), 10);
-        window.currentPopAction = callback;
-    }
-
-    function closePop() {
-        const overlay = document.getElementById('master-pop');
-        const box = document.getElementById('pop-box');
-        box.classList.remove('show');
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            if(window.currentPopAction) window.currentPopAction();
-        }, 300);
-    }
-
-    // জয়েন লজিক
-    function triggerJoinFlow() {
-        showPop(
-            'warning', 
-            'Attention / সাবধান!', 
-            'আপনি চ্যানেলে জয়েন না থাকলে প্রতিদিনের অফার থেকে ১ দিন কেটে নেওয়া হবে। অনুগ্রহ করে জয়েন করুন।', 
-            'I UNDERSTAND / আমি রাজি',
-            () => { handleJoin(); }
-        );
-    }
-
-    function handleAction(url) {
-        if(!isUserJoined) {
-            showPop('warning', 'Action Required / জয়েন করুন', 'এই সুবিধাটি পেতে আপনাকে আগে আমাদের চ্যানেলে জয়েন করতে হবে।', 'OK / ঠিক আছে');
-        } else {
-            window.location.href = url;
+        function closePop() {
+            document.getElementById('pop-box').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('master-pop').style.display = 'none';
+                if(window.currentPopAction) window.currentPopAction();
+            }, 300);
         }
-    }
 
-    function goToPage(url) { 
-        // আপনি যখন পেজগুলো কানেক্ট করবেন তখন এই ফাংশনটি কাজ করবে
-        window.location.href = url; 
-    }
-
-    // থিম সুইচ (এটি এখন একাউন্ট পেজ থেকে কল করার জন্য প্রস্তুত)
-    function toggleTheme() {
-        document.body.classList.toggle('light-mode');
-        const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
-        localStorage.setItem('theme', currentTheme);
-    }
-
-    function handleJoin() {
-        const dot = document.getElementById('status-dot');
-        const card = document.getElementById('join-card');
-        const btn = document.getElementById('channel-btn');
-
-        dot.classList.add('active');
-        card.classList.add('active-border');
-        btn.classList.add('btn-active');
-        btn.innerText = "JOINED";
-        isUserJoined = true;
-
-        setTimeout(() => {
-            showPop('success', 'Congratulations / অভিনন্দন!', 'আপনি সফলভাবে জয়েন করেছেন। এখন থেকে আপনি নিয়মিত অফার পাবেন।', 'GREAT / ধন্যবাদ');
-        }, 500);
-    }
-
-// --- UI এবং ডাটা আপডেট ফাংশন (এখান থেকে কপি করুন) ---
-    function updateUI(data) {
-        // প্রোফাইল এবং ব্যালেন্স আপডেট
-        document.getElementById('u-name').innerText = data.username || "MASTER_PRO";
-        document.getElementById('u-phone').innerText = data.phone || "017XXXXXXXX";
-        document.getElementById('h-cash').innerText = data.cash_bal || "0.00";
-        document.getElementById('h-aaf').innerText = data.aaf_bal || "0.00";
-        document.getElementById('m-bal').innerText = data.cash_bal || "0.00";
-        document.getElementById('aaf-bal').innerText = data.aaf_bal || "0.00";
-        document.getElementById('display-acc-no').innerText = data.phone || "017XXXXXXXX";
-        
-        // অ্যানালিটিকস কার্ড আপডেট
-        document.getElementById('total-users').innerText = data.total || "0";
-        document.getElementById('active-users').innerText = data.active || "0";
-        document.getElementById('inactive-users').innerText = data.inactive || "0";
-
-        // ইনকাম এবং প্রফিট আপডেট
-        if(document.getElementById('task-inc')) 
-            document.getElementById('task-inc').innerText = (data.task_inc || "0.00") + " AAF";
-        if(document.getElementById('trade-profit')) 
-            document.getElementById('trade-profit').innerText = data.trade_profit || "0.00";
-
-        // যদি ইউজার আগে থেকেই জয়েন করা থাকে (Status Active)
-        if(data.is_active) {
-            isUserJoined = true;
-            document.getElementById('status-dot').classList.add('active');
-            document.getElementById('join-card').classList.add('active-border');
-            document.getElementById('channel-btn').classList.add('btn-active');
-            document.getElementById('channel-btn').innerText = "JOINED";
+        // --- Real Database Interaction (Fetch from app.py) ---
+        async function fetchRealData() {
+            try {
+                // আপনার app.py এর API এন্ডপয়েন্ট
+                const response = await fetch('/get_user_data'); 
+                const data = await response.json();
+                if(data) updateUI(data);
+            } catch (err) {
+                console.error("Database connection failed:", err);
+                showPop("Error", "সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না!", "warning");
+            }
         }
-    }
 
-    // পেজ লোড হওয়ার সময় যা যা ঘটবে
-    window.onload = () => {
-        // ১. সেভ করা থিম চেক করা (ডার্ক/লাইট)
-        if(localStorage.getItem('theme') === 'light') {
-            document.body.classList.add('light-mode');
-        } else {
-            document.body.classList.remove('light-mode');
+        function updateUI(data) {
+            document.getElementById('u-name').innerText = data.username || "USER";
+            document.getElementById('u-phone').innerText = data.phone || "---";
+            document.getElementById('h-cash').innerText = data.cash || "0.00";
+            document.getElementById('m-bal').innerText = data.cash || "0.00";
+            document.getElementById('h-aaf').innerText = data.aaf || "0";
+            document.getElementById('aaf-bal').innerText = data.aaf || "0";
+            document.getElementById('total-users').innerText = data.total_ref || "0";
+            document.getElementById('active-users').innerText = data.active_ref || "0";
+            document.getElementById('inactive-users').innerText = data.off_ref || "0";
+            document.getElementById('display-acc-no').innerText = data.phone || "---";
+            
+            if(data.is_joined) {
+                isUserJoined = true;
+                document.getElementById('status-dot').classList.add('active');
+                document.getElementById('join-card').classList.add('active-border');
+                document.getElementById('channel-btn').classList.add('btn-active');
+                document.getElementById('channel-btn').innerText = "JOINED";
+            }
         }
-        
-        // ২. ডামি ডাটা দিয়ে UI টেস্ট করা (এখানে আপনার সার্ভারের ডাটা বসবে)
-        updateUI({
-            username: "MASTER_PRO", 
-            phone: "01822-334455", 
-            cash_bal: "1250.00", 
-            aaf_bal: "45000",
-            task_inc: "3200.00",
-            trade_profit: "450.00",
-            total: "1.5K", 
-            active: "1.1K", 
-            inactive: "400", 
-            is_active: false // এটি true করলে অটোমেটিক JOINED দেখাবে
-        });
-    };
 
-    // মোবাইল ভিউতে কিবোর্ড ওপেন হলে লেআউট ফিক্স করার জন্য (ঐচ্ছিক)
-    window.addEventListener('resize', () => {
-        let dock = document.querySelector('.dock-container');
-        if (window.innerHeight < 500) {
-            dock.style.display = 'none'; // টাইপিং এর সময় নেভিগেশন হাইড হবে
-        } else {
-            dock.style.display = 'flex';
+        function triggerJoinFlow() {
+            showPop("Attention!", "চ্যানেলে জয়েন না করলে অফার বাতিল হতে পারে।", "warning", () => {
+                window.open('https://t.me/your_channel', '_blank');
+                // জয়েন হওয়ার পর ডাটাবেজ আপডেট করার ফাংশন এখানে কল করতে পারেন
+            });
         }
-    });
 
-</script>
+        function handleAction(url) {
+            if(!isUserJoined) showPop("Join Required", "আগে চ্যানেলে জয়েন করুন!", "warning");
+            else window.location.href = url;
+        }
 
+        function goToPage(url) { window.location.href = url; }
+
+        window.onload = () => {
+            if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+            fetchRealData(); // পেজ লোড হলেই রিয়েল ডাটা কল হবে
+        };
+    </script>
 </body>
-</html>
+    </html>
