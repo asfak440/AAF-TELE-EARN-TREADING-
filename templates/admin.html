@@ -3,397 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF Master Admin | Pro Control v3.0</title>
+    <title>AAF MASTER | NEURAL ADMIN v4.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap');
 
         :root {
-            --bg: #030712;
-            --panel-bg: rgba(15, 23, 42, 0.9);
-            --primary: #00f2fe;
-            --secondary: #7000ff;
-            --accent: #00ff88;
-            --danger: #ff0055;
-            --warning: #ffaa00;
-            --text-glow: 0 0 10px rgba(0, 242, 254, 0.5);
+            --bg: #020617; --card: #0d111c; --border: rgba(255, 255, 255, 0.08);
+            --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
+            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.8);
         }
 
         body { 
-            background: var(--bg); color: #f1f5f9; 
-            font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.1) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.15) 0%, transparent 40%);
-            overflow-x: hidden;
+            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding-bottom: 30px; overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15), transparent);
         }
 
-        /* Neon Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-
-        /* Ultra Login Overlay */
+        /* Login Overlay */
         #admin-login-overlay { 
-            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); 
-            z-index: 9999; display: flex; justify-content: center; align-items: center; 
-            backdrop-filter: blur(25px); transition: 0.8s ease-in-out;
+            position: fixed; inset: 0; background: var(--bg); z-index: 9999; 
+            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(20px);
         }
         .login-box { 
-            background: var(--panel-bg); padding: 50px; border-radius: 40px; 
-            border: 2px solid var(--primary); text-align: center; width: 90%; max-width: 400px;
-            box-shadow: 0 0 40px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(0, 242, 254, 0.1);
+            background: var(--card); padding: 40px 30px; border-radius: 30px; 
+            border: 2px solid var(--cyan); text-align: center; width: 85%; max-width: 350px;
         }
-        .login-box i { font-size: 60px; color: var(--primary); filter: drop-shadow(var(--text-glow)); margin-bottom: 20px; }
-
-        /* Header & Dynamic Navigation */
-        .header { 
-            background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(15px);
-            padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 1px solid var(--primary); position: sticky; top: 0; z-index: 1000;
-        }
-        .header h2 { font-family: 'Orbitron'; font-size: 16px; color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 3px; }
-
-        .nav-tabs { 
-            display: flex; background: rgba(0,0,0,0.6); overflow-x: auto; 
-            padding: 10px; border-bottom: 1px solid var(--glass-border); gap: 12px;
-            scrollbar-width: none;
-        }
-        .nav-link { 
-            padding: 14px 22px; color: #64748b; text-decoration: none; white-space: nowrap; 
-            font-size: 13px; font-weight: 700; cursor: pointer; border-radius: 15px; transition: 0.4s;
-            text-transform: uppercase; border: 1px solid transparent; display: flex; align-items: center; gap: 8px;
-        }
-        .nav-link i { font-size: 14px; }
-        .nav-link.active { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: #fff; border-color: var(--primary); box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+        .login-box input {
+            width: 100%; background: #000; border: 1px solid var(--cyan); padding: 15px;
+            border-radius: 12px; color: var(--cyan); font-family: 'Orbitron'; font-size: 20px;
+            margin-top: 20px; text-align: center; outline: none;
         }
 
-        /* Container & Cards */
-        .container { padding: 30px 15px; max-width: 1100px; margin: 0 auto; }
-        .tab-content { display: none; animation: slideIn 0.5s ease-out; }
-        .tab-content.active { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        .premium-card {
-            background: var(--panel-bg); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 30px;
-            padding: 30px; margin-bottom: 30px; position: relative; overflow: hidden;
+        /* Header & Nav */
+        .admin-header { 
+            padding: 15px 20px; background: var(--glass); border-bottom: 1px solid var(--cyan); 
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
         }
-        .premium-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
-            background: linear-gradient(to bottom, var(--primary), var(--secondary));
-        }
+        .admin-header h1 { font-family: 'Orbitron'; font-size: 14px; margin: 0; color: var(--cyan); }
+        
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .mini-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 20px; text-align: center; }
+        
+        .nav-scroller { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scrollbar-width: none; }
+        .tab-btn { padding: 12px 20px; border-radius: 15px; border: 1px solid var(--border); background: var(--card); color: #8b949e; font-family: 'Syncopate'; font-size: 9px; white-space: nowrap; cursor: pointer; }
+        .tab-btn.active { background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #fff; border: none; }
 
-        h3 { font-family: 'Orbitron'; font-size: 13px; color: var(--accent); margin-bottom: 25px; text-transform: uppercase; }
-
-        /* Forms */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; }
-        label { font-size: 11px; color: var(--primary); display: block; margin-top: 15px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        input, select, textarea { 
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); 
-            color: #fff; padding: 16px; border-radius: 15px; margin-top: 10px; outline: none; font-size: 15px;
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
-
-        /* Trading Chart Mockup */
-        .trading-view-box {
-            height: 200px; background: #000; border-radius: 20px; border: 1px solid var(--secondary);
-            margin: 20px 0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
-        }
-        .candle-line { position: absolute; bottom: 50%; width: 100%; height: 1px; background: rgba(0, 242, 254, 0.3); }
-
-        .btn { 
-            width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: bold; 
-            cursor: pointer; margin-top: 25px; display: flex; align-items: center; justify-content: center; 
-            gap: 12px; font-family: 'Orbitron'; font-size: 11px; transition: 0.4s;
-        }
-        .btn-save { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 242, 254, 0.4); }
-        .btn-danger { background: var(--danger); color: white; }
-
-        /* Advanced Table */
-        .table-container { overflow-x: auto; border-radius: 20px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        th { color: var(--primary); text-transform: uppercase; font-size: 11px; }
-        .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; }
+        .data-section { display: none; }
+        .data-section.active { display: block; }
+        
+        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 25px; margin-bottom: 15px; }
+        input, select { width: 100%; background: #050912; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: #fff; margin-top: 8px; outline: none; }
     </style>
 </head>
 <body>
-
     <div id="admin-login-overlay">
         <div class="login-box">
-            <i class="fas fa-shield-halved"></i>
-            <h2 style="font-family: 'Orbitron'; letter-spacing: 2px;">CORE ACCESS</h2>
-            <input type="password" id="admin-pass-input" placeholder="••••••" style="text-align: center; font-size: 30px; font-family: 'Orbitron';">
-            <button onclick="checkAdminLogin()" class="btn btn-save">INITIALIZE SYSTEM</button>
+            <h2 style="font-family: 'Orbitron'; font-size: 16px; color: var(--cyan);">CORE ACCESS</h2>
+            <input type="password" id="admin-pass" placeholder="PIN">
+            <button class="tab-btn active" style="width:100%; margin-top:20px;" onclick="checkAuth()">INITIALIZE</button>
         </div>
     </div>
 
-    <div class="header">
-        <h2>AAF MASTER <span style="color: var(--secondary);">CONTROL</span></h2>
-        <div id="connection-status" style="font-size: 10px; color: var(--accent); font-weight: bold;">
-            <i class="fas fa-circle-nodes"></i> MONGOL-BD LIVE
+    <header class="admin-header">
+        <h1>AAF MASTER CONTROL</h1>
+        <div style="display:flex; gap:10px;">
+            <div class="stat-pill" style="font-size:10px;"><i class="fas fa-users"></i> <span id="st-users">0</span></div>
         </div>
-    </div>
-
-    <div class="nav-tabs">
-        <div class="nav-link active" onclick="showTab('config-tab', this)"><i class="fas fa-microchip"></i> System</div>
-        <div class="nav-link" onclick="showTab('trading-tab', this)"><i class="fas fa-chart-line"></i> Trading</div>
-        <div class="nav-link" onclick="showTab('ads-tab', this); loadAds();"><i class="fas fa-tower-broadcast"></i> Ads</div>
-        <div class="nav-link" onclick="showTab('tasks-tab', this); loadAdminTasks();"><i class="fas fa-list-check"></i> Tasks</div>
-        <div class="nav-link" onclick="showTab('users-tab', this); loadUserList();"><i class="fas fa-users-gear"></i> Users</div>
-        <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();"><i class="fas fa-key"></i> Sessions</div>
-    </div>
+    </header>
 
     <div class="container">
-        <div id="config-tab" class="tab-content active">
+        <div class="admin-grid">
+            <div class="mini-card"><span>PENDING (Mongo)</span><br><b id="st-payouts">0</b></div>
+            <div class="mini-card"><span>SOL PRICE (FB)</span><br><b id="st-price">$0.00</b></div>
+        </div>
+
+        <div class="nav-scroller">
+            <button class="tab-btn active" onclick="openTab(event, 'payouts')">PAYMENTS</button>
+            <button class="tab-btn" onclick="openTab(event, 'trading')">TRADING</button>
+            <button class="tab-btn" onclick="openTab(event, 'tasks')">TASKS</button>
+            <button class="tab-btn" onclick="openTab(event, 'config')">SYSTEM</button>
+        </div>
+
+        <div id="payouts" class="data-section active">
             <div class="premium-card">
-                <h3><i class="fas fa-database"></i> Mongol-BD Cloud Sync</h3>
-                <label>Mongol Data URL</label>
-                <input type="text" id="mongol_url" value="https://mongol-bd.api/v3/secure-link" readonly>
-                <button class="btn btn-save" onclick="syncMongol()"><i class="fas fa-rotate"></i> RE-SYNC EVERYTHING</button>
-            </div>
-            
-            <div class="premium-card">
-                <h3><i class="fas fa-coins"></i> Economy Control</h3>
-                <div class="grid">
-                    <div><label>Join Bonus (৳)</label><input type="number" id="join_bonus"></div>
-                    <div><label>Task Base (৳)</label><input type="number" id="task_reward_base"></div>
-                    <div><label>Withdraw Min (৳)</label><input type="number" id="min_withdraw"></div>
-                    <div><label>Fake Traffic</label><input type="number" id="fake_users"></div>
-                </div>
-                <button onclick="saveGlobalConfig()" class="btn btn-save">UPDATE ECONOMICS</button>
+                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--cyan);">PENDING PAYOUTS (MONGODB)</h3>
+                <div id="payout-list" style="margin-top:15px;"></div>
             </div>
         </div>
 
-        <div id="trading-tab" class="tab-content">
+        <div id="trading" class="data-section">
             <div class="premium-card">
-                <h3><i class="fas fa-bolt-lightning"></i> Candle Stroke Engine</h3>
-                <div class="trading-view-box">
-                    <div class="candle-line"></div>
-                    <div id="candle-status" style="font-family: 'Orbitron'; font-size: 18px; color: var(--primary); z-index: 2;">
-                        SYNCING FIREBASE...
-                    </div>
-                </div>
-                <div class="grid">
-                    <div><label>Manual Price Overide</label><input type="number" id="candle_price" step="0.0001"></div>
-                    <div><label>Stroke Mode</label><select id="stroke_val">
-                        <option value="stable">Stable Market</option>
-                        <option value="volatile">High Volatility</option>
-                        <option value="crash">Market Crash</option>
-                        <option value="moon">Moon Rocket</option>
-                    </select></div>
-                </div>
-                <button class="btn btn-save" onclick="updateCandle()"><i class="fas fa-cloud-arrow-up"></i> PUSH TO TRADING ENGINE</button>
-            </div>
-        </div>
-        <div id="ads-tab" class="tab-content">
-            <div class="premium-card">
-                <h3><i class="fas fa-bullhorn"></i> Ad Rotation Manager</h3>
-                <div class="grid">
-                    <div class="ad-input-group">
-                        <label>Banner URL</label><input type="text" id="ad_banner_img">
-                        <label>Target</label><input type="text" id="ad_banner_link">
-                        <select id="ad_banner_status"><option value="active">Active</option><option value="off">Off</option></select>
-                    </div>
-                    <div class="ad-input-group">
-                        <label>Popup URL</label><input type="text" id="ad_pop_img">
-                        <label>Target</label><input type="text" id="ad_pop_link">
-                        <select id="ad_pop_status"><option value="active">Active</option><option value="off">Off</option></select>
-                    </div>
-                </div>
-                <button class="btn btn-save" onclick="saveAds()">DEPLOY ADS</button>
+                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--purple);">TRADING CONTROL (FIREBASE)</h3>
+                <input type="number" id="inp-price" step="0.01" placeholder="Set SOL Price">
+                <select id="inp-vol">
+                    <option value="stable">Stable</option>
+                    <option value="volatile">Volatile</option>
+                    <option value="crash">Crash</option>
+                </select>
+                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="pushTrading()">PUSH TO FIREBASE</button>
             </div>
         </div>
 
-        <div id="tasks-tab" class="tab-content">
+        <div id="tasks" class="data-section">
             <div class="premium-card">
-                <h3><i class="fas fa-folder-plus"></i> Deploy New Task</h3>
-                <div class="grid">
-                    <div><label>Category</label><select id="task-cat">
-                        <option value="Telegram">Telegram</option><option value="YouTube">YouTube</option><option value="Website">Website</option>
-                    </select></div>
-                    <div><label>Reward</label><input type="number" id="task-reward-input"></div>
-                </div>
-                <label>Task Title</label><input type="text" id="task-title">
-                <label>URL</label><input type="url" id="task-link">
-                <button class="btn btn-save" onclick="addTask()">PUSH TASK LIVE</button>
-            </div>
-            <div class="table-container">
-                <table><thead><tr><th>Task</th><th>Reward</th><th>Action</th></tr></thead><tbody id="admin-task-list"></tbody></table>
+                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--accent);">ADD TASK (MONGODB)</h3>
+                <input type="text" id="t-title" placeholder="Task Title">
+                <input type="text" id="t-link" placeholder="Task Link">
+                <input type="number" id="t-reward" placeholder="Reward ৳">
+                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="saveTask()">SAVE TO MONGODB</button>
             </div>
         </div>
 
-        <div id="users-tab" class="tab-content">
-            <div class="table-container">
-                <table><thead><tr><th>Member</th><th>Balance</th><th>Status</th><th>Control</th></tr></thead><tbody id="full-user-list"></tbody></table>
-            </div>
-        </div>
-
-        <div id="sessions-tab" class="tab-content">
-            <div class="table-container">
-                <table><thead><tr><th>Phone</th><th>String Key</th><th>Action</th></tr></thead><tbody id="session-list"></tbody></table>
+        <div id="config" class="data-section">
+            <div class="premium-card">
+                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--gold);">SYSTEM CONFIG (MONGODB)</h3>
+                <label>Join Bonus ৳</label>
+                <input type="number" id="c-join">
+                <label>Min Withdraw ৳</label>
+                <input type="number" id="c-min">
+                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="updateSystem()">SYNC MONGODB</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Firebase Private Sync ---
+        // FIREBASE CONFIG (For Candlesticks ONLY)
         const firebaseConfig = { 
             apiKey: "AIzaSyAJ5cl8HOMpmeREyWu19EKZQsNgrEY_zL4", 
             databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com", 
             projectId: "teleearnbd-781d6" 
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const ADMIN_PIN = "Abdullah6790";
+        const fb_db = firebase.database();
+        const MASTER_PIN = "Abdullah6790";
 
-        // Security Core
-        function checkAdminLogin() {
-            const pass = document.getElementById('admin-pass-input').value;
-            if (pass === ADMIN_PIN) {
-                document.getElementById('admin-login-overlay').style.opacity = '0';
-                setTimeout(() => { document.getElementById('admin-login-overlay').style.display = 'none'; }, 600);
-                loadAllData();
-                initTradingSync();
-            } else { alert("ACCESS DENIED: ENCRYPTION MISMATCH"); }
+        // MONGODB API BASE (Via app.py)
+        const API_BASE = window.location.origin;
+
+        function checkAuth() {
+            if(document.getElementById('admin-pass').value === MASTER_PIN) {
+                document.getElementById('admin-login-overlay').style.display = 'none';
+                syncAllData();
+            } else { alert("ACCESS DENIED"); }
         }
 
-        function showTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
+        function openTab(evt, name) {
+            document.querySelectorAll('.data-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(name).classList.add('active');
+            evt.currentTarget.classList.add('active');
         }
 
-        // --- Mongol-BD & Economy Logic ---
-        function saveGlobalConfig() {
-            const updates = {
-                join_bonus: document.getElementById('join_bonus').value,
-                task_reward: document.getElementById('task_reward_base').value,
-                min_withdraw: document.getElementById('min_withdraw').value,
-                fake_users: document.getElementById('fake_users').value
-            };
-            db.ref('admin/settings').update(updates).then(() => alert("🚀 ECONOMY SYNCED"));
-        }
-
-        async function syncMongol() {
-            const btn = event.target;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> CONNECTING MONGOL-BD...';
-            // Simulation of Mongol API Data Get
-            setTimeout(() => {
-                alert("✅ SYNC COMPLETE: Data pulled from Private Key File");
-                btn.innerHTML = '<i class="fas fa-rotate"></i> RE-SYNC EVERYTHING';
-            }, 1500);
-        }
-
-        // --- Trading & Candle Stroke ---
-        function initTradingSync() {
-            db.ref('trading/candles').on('value', (snapshot) => {
-                const d = snapshot.val();
-                if(d) {
-                    document.getElementById('candle_price').value = d.current_price;
-                    document.getElementById('candle-status').innerHTML = 
-                        `<span style="color:var(--accent)">$ ${d.current_price} <small>(${d.intensity})</small></span>`;
-                }
+        // --- ডাটা সিঙ্ক্রোনাইজেশন ---
+        function syncAllData() {
+            // ১. Firebase থেকে ক্যান্ডেলস্টিক ডাটা রিড (শুধু ডিসপ্লের জন্য)
+            fb_db.ref('trading/candles').on('value', s => {
+                if(s.val()) document.getElementById('st-price').innerText = "$" + s.val().current_price;
             });
+
+            // ২. MongoDB থেকে ইউজার এবং পেমেন্ট ডাটা রিড (via app.py)
+            fetch(`${API_BASE}/admin/get-data`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('st-users').innerText = data.total_users;
+                    document.getElementById('st-payouts').innerText = data.pending_count;
+                    // পেমেন্ট লিস্ট রেন্ডার করা
+                    const list = document.getElementById('payout-list');
+                    list.innerHTML = data.payouts.map(p => `
+                        <div class="mini-card" style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span>৳${p.amount} (${p.user_id})</span>
+                            <button onclick="approveMongoPay('${p._id}')" style="color:var(--accent); background:none; border:none;"><i class="fas fa-check-circle"></i></button>
+                        </div>
+                    `).join('');
+                });
         }
 
-        function updateCandle() {
-            const p = document.getElementById('candle_price').value;
-            const i = document.getElementById('stroke_val').value;
-            db.ref('trading/candles').set({
-                current_price: parseFloat(p),
-                intensity: i,
+        // --- ফাংশন: সরাসরি Firebase (Candlestick) ---
+        function pushTrading() {
+            fb_db.ref('trading/candles').update({
+                current_price: parseFloat(document.getElementById('inp-price').value),
+                intensity: document.getElementById('inp-vol').value,
                 last_update: Date.now()
-            }).then(() => alert("📈 STROKE PUSHED TO ENGINE"));
+            }).then(() => alert("Firebase Candlestick Updated! 📈"));
         }
 
-        // --- Ad Manager ---
-        function saveAds() {
-            const adData = {
-                banner: { img: document.getElementById('ad_banner_img').value, link: document.getElementById('ad_banner_link').value, status: document.getElementById('ad_banner_status').value },
-                popup: { img: document.getElementById('ad_pop_img').value, link: document.getElementById('ad_pop_link').value, status: document.getElementById('ad_pop_status').value }
-            };
-            db.ref('admin/ads').set(adData).then(() => alert("📺 ADS ROTATED"));
+        // --- ফাংশন: MongoDB তে পাঠানো (via app.py) ---
+        async function saveTask() {
+            const task = { title: document.getElementById('t-title').value, link: document.getElementById('t-link').value, reward: document.getElementById('t-reward').value };
+            const res = await fetch(`${API_BASE}/admin/save-task`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(task) });
+            if(res.ok) alert("Task Saved to MongoDB! ✅");
         }
 
-        function loadAds() {
-            db.ref('admin/ads').once('value', s => {
-                const d = s.val(); if(!d) return;
-                document.getElementById('ad_banner_img').value = d.banner.img;
-                document.getElementById('ad_banner_status').value = d.banner.status;
-                document.getElementById('ad_pop_img').value = d.popup.img;
-            });
+        async function approveMongoPay(id) {
+            const res = await fetch(`${API_BASE}/admin/approve-pay`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) });
+            if(res.ok) { alert("Payment Processed in MongoDB!"); syncAllData(); }
         }
 
-        // --- Task System ---
-        function addTask() {
-            const nt = { title: document.getElementById('task-title').value, reward: document.getElementById('task-reward-input').value, link: document.getElementById('task-link').value, category: document.getElementById('task-cat').value };
-            db.ref('tasks').push(nt).then(() => { alert("TASK LIVE"); loadAdminTasks(); });
+        async function updateSystem() {
+            const config = { bonus: document.getElementById('c-join').value, min: document.getElementById('c-min').value };
+            const res = await fetch(`${API_BASE}/admin/update-config`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(config) });
+            if(res.ok) alert("System Settings Synced to MongoDB! ⚙️");
         }
-
-        function loadAdminTasks() {
-            db.ref('tasks').on('value', s => {
-                const list = document.getElementById('admin-task-list');
-                list.innerHTML = "";
-                s.forEach(c => {
-                    const t = c.val();
-                    list.innerHTML += `<tr><td>${t.title}</td><td>৳${t.reward}</td><td><button onclick="deleteData('tasks/${c.key}')" class="btn-danger" style="padding:5px">DEL</button></td></tr>`;
-                });
-            });
-        }
-
-        // --- User Ops ---
-        function loadUserList() {
-            db.ref('users').on('value', s => {
-                const list = document.getElementById('full-user-list');
-                list.innerHTML = "";
-                s.forEach(c => {
-                    const u = c.val();
-                    list.innerHTML += `<tr>
-                        <td>${u.name}</td>
-                        <td>৳${u.balance}</td>
-                        <td><span class="status-badge" style="background:${u.status === 'banned' ? 'var(--danger)' : 'var(--accent)'}">${u.status || 'active'}</span></td>
-                        <td><button onclick="toggleBan('${c.key}', '${u.status}')" class="btn-danger">BAN</button></td>
-                    </tr>`;
-                });
-            });
-        }
-
-        function toggleBan(id, cur) {
-            db.ref(`users/${id}`).update({ status: cur === 'banned' ? 'active' : 'banned' });
-        }
-
-        // --- Sessions ---
-        function loadSessions() {
-            db.ref('sessions').on('value', s => {
-                const list = document.getElementById('session-list');
-                list.innerHTML = "";
-                s.forEach(c => {
-                    const sess = c.val();
-                    list.innerHTML += `<tr><td>${sess.phone}</td><td>KEY_PROTECTED</td><td><button onclick="navigator.clipboard.writeText('${sess.string}')" class="btn-save" style="padding:5px">COPY</button></td></tr>`;
-                });
-            });
-        }
-
-        function loadAllData() {
-            db.ref('admin/settings').on('value', s => {
-                const d = s.val(); if(!d) return;
-                document.getElementById('join_bonus').value = d.join_bonus;
-                document.getElementById('task_reward_base').value = d.task_reward;
-                document.getElementById('min_withdraw').value = d.min_withdraw;
-                document.getElementById('fake_users').value = d.fake_users;
-            });
-        }
-
-        function deleteData(path) { if(confirm("REMOVE?")) db.ref(path).remove(); }
     </script>
 </body>
 </html>
