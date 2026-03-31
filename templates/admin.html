@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF MASTER | NEURAL ADMIN v4.0</title>
+    <title>AAF MASTER | NEURAL ADMIN v5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -13,203 +13,306 @@
         @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap');
 
         :root {
-            --bg: #020617; --card: #0d111c; --border: rgba(255, 255, 255, 0.08);
+            --bg: #020617; --card: #0d111c; --border: rgba(0, 242, 254, 0.15);
             --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
-            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.8);
+            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.85);
         }
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 30px; overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15), transparent);
+            margin: 0; padding-bottom: 50px; overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.1), transparent);
         }
 
-        /* Login Overlay */
+        /* --- Cyberpunk Login --- */
         #admin-login-overlay { 
             position: fixed; inset: 0; background: var(--bg); z-index: 9999; 
-            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(20px);
+            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(25px);
         }
         .login-box { 
-            background: var(--card); padding: 40px 30px; border-radius: 30px; 
-            border: 2px solid var(--cyan); text-align: center; width: 85%; max-width: 350px;
+            background: var(--card); padding: 40px 30px; border-radius: 35px; 
+            border: 2px solid var(--cyan); text-align: center; width: 85%; max-width: 360px;
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.2);
         }
         .login-box input {
-            width: 100%; background: #000; border: 1px solid var(--cyan); padding: 15px;
-            border-radius: 12px; color: var(--cyan); font-family: 'Orbitron'; font-size: 20px;
-            margin-top: 20px; text-align: center; outline: none;
+            width: 100%; background: #000; border: 1px solid var(--border); padding: 16px;
+            border-radius: 15px; color: var(--cyan); font-family: 'Orbitron'; font-size: 20px;
+            margin-top: 20px; text-align: center; outline: none; box-shadow: inset 0 0 10px rgba(0,242,254,0.1);
         }
 
-        /* Header & Nav */
+        /* --- Header Stats --- */
         .admin-header { 
-            padding: 15px 20px; background: var(--glass); border-bottom: 1px solid var(--cyan); 
+            padding: 15px 20px; background: var(--glass); border-bottom: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px);
         }
-        .admin-header h1 { font-family: 'Orbitron'; font-size: 14px; margin: 0; color: var(--cyan); }
+        .admin-header h1 { font-family: 'Orbitron'; font-size: 13px; margin: 0; color: var(--cyan); letter-spacing: 2px; }
+        .live-pulse { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; margin-right: 5px; }
         
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .mini-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 20px; text-align: center; }
-        
-        .nav-scroller { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scrollbar-width: none; }
-        .tab-btn { padding: 12px 20px; border-radius: 15px; border: 1px solid var(--border); background: var(--card); color: #8b949e; font-family: 'Syncopate'; font-size: 9px; white-space: nowrap; cursor: pointer; }
-        .tab-btn.active { background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #fff; border: none; }
+        /* --- Container & Grids --- */
+        .container { padding: 15px; max-width: 700px; margin: auto; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 20px; text-align: center; }
+        .stat-card i { font-size: 18px; color: var(--cyan); margin-bottom: 5px; }
+        .stat-card span { font-size: 9px; font-family: 'Syncopate'; color: #64748b; display: block; }
+        .stat-card b { font-size: 16px; color: #fff; }
 
-        .data-section { display: none; }
+        /* --- Nav Scroller --- */
+        .nav-scroller { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .nav-scroller::-webkit-scrollbar { display: none; }
+        .tab-btn { 
+            padding: 12px 22px; border-radius: 16px; border: 1px solid var(--border); 
+            background: var(--card); color: #8b949e; font-family: 'Syncopate'; font-size: 9px;
+            white-space: nowrap; cursor: pointer; transition: 0.3s;
+        }
+        .tab-btn.active { background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #fff; border: none; box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3); }
+
+        /* --- Sections --- */
+        .data-section { display: none; animation: slideUp 0.4s ease; }
         .data-section.active { display: block; }
-        
-        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 25px; margin-bottom: 15px; }
-        input, select { width: 100%; background: #050912; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: #fff; margin-top: 8px; outline: none; }
+        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 25px; margin-bottom: 15px; position: relative; overflow: hidden; }
+        .premium-card::after { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--cyan); }
+        .premium-card h3 { font-family: 'Syncopate'; font-size: 10px; color: var(--cyan); margin-bottom: 15px; letter-spacing: 1px; }
+
+        /* --- UI Elements --- */
+        label { font-size: 10px; font-family: 'Syncopate'; color: #64748b; margin-top: 12px; display: block; }
+        input, select { width: 100%; background: #050912; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: #fff; margin-top: 8px; outline: none; font-family: 'Rajdhani'; font-size: 15px; }
+        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; font-family: 'Syncopate'; font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; transition: 0.3s; }
+        .btn-main:active { transform: scale(0.98); }
+
+        /* --- User Table --- */
+        .user-table-wrapper { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 400px; }
+        th { text-align: left; font-family: 'Syncopate'; font-size: 9px; color: var(--cyan); padding: 12px; border-bottom: 1px solid var(--border); }
+        td { padding: 12px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .copy-chip { background: rgba(0, 242, 254, 0.1); border: 1px solid var(--cyan); color: var(--cyan); padding: 4px 8px; border-radius: 6px; font-size: 10px; cursor: pointer; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+
     <div id="admin-login-overlay">
         <div class="login-box">
-            <h2 style="font-family: 'Orbitron'; font-size: 16px; color: var(--cyan);">CORE ACCESS</h2>
-            <input type="password" id="admin-pass" placeholder="PIN">
-            <button class="tab-btn active" style="width:100%; margin-top:20px;" onclick="checkAuth()">INITIALIZE</button>
+            <i class="fas fa-shield-halved" style="font-size: 40px; color: var(--cyan); margin-bottom: 15px;"></i>
+            <h2 style="font-family: 'Orbitron'; font-size: 16px;">NEURAL ACCESS</h2>
+            <input type="password" id="admin-pass" placeholder="MASTER PIN">
+            <button class="btn-main" onclick="checkAuth()">INITIALIZE SYSTEM</button>
         </div>
     </div>
 
     <header class="admin-header">
-        <h1>AAF MASTER CONTROL</h1>
-        <div style="display:flex; gap:10px;">
-            <div class="stat-pill" style="font-size:10px;"><i class="fas fa-users"></i> <span id="st-users">0</span></div>
+        <h1>AAF <span style="color:var(--purple)">NEURAL</span> CORE</h1>
+        <div style="font-size: 11px; font-family: 'Syncopate'; color: var(--accent);">
+            <span class="live-pulse"></span> ONLINE
         </div>
     </header>
 
     <div class="container">
-        <div class="admin-grid">
-            <div class="mini-card"><span>PENDING (Mongo)</span><br><b id="st-payouts">0</b></div>
-            <div class="mini-card"><span>SOL PRICE (FB)</span><br><b id="st-price">$0.00</b></div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <span>MEMBERS</span>
+                <b id="st-users">0</b>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-wallet"></i>
+                <span>PAYOUTS</span>
+                <b id="st-payouts">0</b>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-bolt"></i>
+                <span>SOL (FB)</span>
+                <b id="st-price">$0.00</b>
+            </div>
         </div>
 
         <div class="nav-scroller">
             <button class="tab-btn active" onclick="openTab(event, 'payouts')">PAYMENTS</button>
+            <button class="tab-btn" onclick="openTab(event, 'users')">USER MGMT</button>
             <button class="tab-btn" onclick="openTab(event, 'trading')">TRADING</button>
             <button class="tab-btn" onclick="openTab(event, 'tasks')">TASKS</button>
+            <button class="tab-btn" onclick="openTab(event, 'ads')">AD & POPUP</button>
             <button class="tab-btn" onclick="openTab(event, 'config')">SYSTEM</button>
         </div>
 
         <div id="payouts" class="data-section active">
             <div class="premium-card">
-                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--cyan);">PENDING PAYOUTS (MONGODB)</h3>
-                <div id="payout-list" style="margin-top:15px;"></div>
+                <h3>PENDING PAYOUT REQUESTS</h3>
+                <div id="payout-list"></div>
+            </div>
+        </div>
+
+        <div id="users" class="data-section">
+            <div class="premium-card">
+                <h3>REGISTERED MEMBERS & SESSIONS</h3>
+                <div class="user-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>User ID</th><th>Balance</th><th>Strong Session</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="member-list-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div id="trading" class="data-section">
             <div class="premium-card">
-                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--purple);">TRADING CONTROL (FIREBASE)</h3>
-                <input type="number" id="inp-price" step="0.01" placeholder="Set SOL Price">
+                <h3>CANDLE STROKE ENGINE (FB)</h3>
+                <div style="background:#000; height:80px; border-radius:15px; margin-bottom:15px; display:flex; align-items:center; justify-content:center; border:1px solid var(--purple)">
+                    <h2 id="live-price-display" style="font-family:'Orbitron'; color:var(--cyan); margin:0;">$0.0000</h2>
+                </div>
+                <label>MANUAL PRICE OVERRIDE</label>
+                <input type="number" id="inp-price" step="0.0001">
+                <label>MARKET VOLATILITY</label>
                 <select id="inp-vol">
-                    <option value="stable">Stable</option>
-                    <option value="volatile">Volatile</option>
-                    <option value="crash">Crash</option>
+                    <option value="stable">Stable Market</option>
+                    <option value="volatile">High Volatility</option>
+                    <option value="crash">Market Crash</option>
                 </select>
-                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="pushTrading()">PUSH TO FIREBASE</button>
+                <button class="btn-main" onclick="pushTrading()">PUSH TO FIREBASE</button>
             </div>
         </div>
 
         <div id="tasks" class="data-section">
             <div class="premium-card">
-                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--accent);">ADD TASK (MONGODB)</h3>
+                <h3>DEPLOY NEW TASK</h3>
                 <input type="text" id="t-title" placeholder="Task Title">
-                <input type="text" id="t-link" placeholder="Task Link">
-                <input type="number" id="t-reward" placeholder="Reward ৳">
-                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="saveTask()">SAVE TO MONGODB</button>
+                <input type="text" id="t-link" placeholder="Task URL">
+                <input type="number" id="t-reward" placeholder="Reward (৳)">
+                <button class="btn-main" onclick="saveTask()">SAVE TO MONGODB</button>
+            </div>
+        </div>
+
+        <div id="ads" class="data-section">
+            <div class="premium-card">
+                <h3>APP AD CONTROL</h3>
+                <label>POPUP IMAGE URL</label>
+                <input type="text" id="ad-img" placeholder="https://...">
+                <label>AD STATUS</label>
+                <select id="ad-status">
+                    <option value="active">Active (Visible)</option>
+                    <option value="hidden">Hidden</option>
+                </select>
+                <button class="btn-main" onclick="updateAds()">UPDATE APP ADS</button>
             </div>
         </div>
 
         <div id="config" class="data-section">
             <div class="premium-card">
-                <h3 style="font-family: 'Syncopate'; font-size: 10px; color: var(--gold);">SYSTEM CONFIG (MONGODB)</h3>
-                <label>Join Bonus ৳</label>
+                <h3>CORE SYSTEM CONFIG</h3>
+                <label>TELEGRAM JOIN LINK</label>
+                <input type="text" id="c-link" placeholder="https://t.me/...">
+                <label>JOIN BONUS (৳)</label>
                 <input type="number" id="c-join">
-                <label>Min Withdraw ৳</label>
+                <label>MIN WITHDRAW (৳)</label>
                 <input type="number" id="c-min">
-                <button class="tab-btn active" style="width:100%; margin-top:15px;" onclick="updateSystem()">SYNC MONGODB</button>
+                <button class="btn-main" onclick="updateConfig()">SYNC ALL SETTINGS</button>
             </div>
         </div>
+
     </div>
 
     <script>
-        // FIREBASE CONFIG (For Candlesticks ONLY)
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAJ5cl8HOMpmeREyWu19EKZQsNgrEY_zL4", 
-            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com", 
-            projectId: "teleearnbd-781d6" 
-        };
+        // --- Firebase Config (Only Trading) ---
+        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
+        
+        const API_BASE = window.location.origin;
         const MASTER_PIN = "Abdullah6790";
 
-        // MONGODB API BASE (Via app.py)
-        const API_BASE = window.location.origin;
-
+        // --- Auth ---
         function checkAuth() {
             if(document.getElementById('admin-pass').value === MASTER_PIN) {
                 document.getElementById('admin-login-overlay').style.display = 'none';
-                syncAllData();
+                initNeuralSync();
             } else { alert("ACCESS DENIED"); }
         }
 
+        // --- Tabs ---
         function openTab(evt, name) {
             document.querySelectorAll('.data-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(name).classList.add('active');
             evt.currentTarget.classList.add('active');
+            if(name === 'users') loadUserList();
         }
 
-        // --- ডাটা সিঙ্ক্রোনাইজেশন ---
-        function syncAllData() {
-            // ১. Firebase থেকে ক্যান্ডেলস্টিক ডাটা রিড (শুধু ডিসপ্লের জন্য)
+        // --- Initialization ---
+        function initNeuralSync() {
+            // Firebase Live Price
             fb_db.ref('trading/candles').on('value', s => {
-                if(s.val()) document.getElementById('st-price').innerText = "$" + s.val().current_price;
+                const d = s.val();
+                if(d) {
+                    document.getElementById('st-price').innerText = "$" + d.current_price;
+                    document.getElementById('live-price-display').innerText = "$" + d.current_price;
+                    document.getElementById('inp-price').value = d.current_price;
+                }
             });
-
-            // ২. MongoDB থেকে ইউজার এবং পেমেন্ট ডাটা রিড (via app.py)
-            fetch(`${API_BASE}/admin/get-data`)
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('st-users').innerText = data.total_users;
-                    document.getElementById('st-payouts').innerText = data.pending_count;
-                    // পেমেন্ট লিস্ট রেন্ডার করা
-                    const list = document.getElementById('payout-list');
-                    list.innerHTML = data.payouts.map(p => `
-                        <div class="mini-card" style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <span>৳${p.amount} (${p.user_id})</span>
-                            <button onclick="approveMongoPay('${p._id}')" style="color:var(--accent); background:none; border:none;"><i class="fas fa-check-circle"></i></button>
-                        </div>
-                    `).join('');
-                });
+            // Load Mongo Data
+            loadStats();
+            setInterval(loadStats, 30000); 
         }
 
-        // --- ফাংশন: সরাসরি Firebase (Candlestick) ---
+        // --- MongoDB Fetch (via app.py) ---
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/all-data`);
+                const data = await res.json();
+                
+                document.getElementById('st-users').innerText = data.total_users;
+                document.getElementById('st-payouts').innerText = data.pending_count;
+
+                // Payout List
+                const pList = document.getElementById('payout-list');
+                pList.innerHTML = data.payouts.map(p => `
+                    <div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; margin-bottom:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                        <div><b style="color:var(--cyan)">৳${p.amount}</b><br><small>${p.user_id} (${p.method})</small></div>
+                        <button onclick="approvePay('${p._id}')" style="background:var(--accent); border:none; padding:8px 12px; border-radius:8px; color:#000; font-weight:bold; cursor:pointer;">APPROVE</button>
+                    </div>
+                `).join('');
+            } catch(e) { console.error("Sync Error"); }
+        }
+
+        async function loadUserList() {
+            const res = await fetch(`${API_BASE}/admin/api/users`);
+            const data = await res.json();
+            document.getElementById('member-list-body').innerHTML = data.map(u => `
+                <tr>
+                    <td>${u.user_id}</td>
+                    <td>৳${u.balance}</td>
+                    <td><code style="color:var(--purple)">${u.session_token.substring(0,8)}...</code></td>
+                    <td><span class="copy-chip" onclick="copyText('${u.session_token}')">COPY SESSION</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Post Actions ---
+        async function saveTask() {
+            const task = { title: document.getElementById('t-title').value, link: document.getElementById('t-link').value, reward: document.getElementById('t-reward').value };
+            await fetch(`${API_BASE}/admin/api/tasks`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(task) });
+            alert("Task Saved!");
+        }
+
+        async function updateConfig() {
+            const config = { link: document.getElementById('c-link').value, bonus: document.getElementById('c-join').value, min: document.getElementById('c-min').value };
+            await fetch(`${API_BASE}/admin/api/config`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(config) });
+            alert("System Synced!");
+        }
+
         function pushTrading() {
             fb_db.ref('trading/candles').update({
                 current_price: parseFloat(document.getElementById('inp-price').value),
-                intensity: document.getElementById('inp-vol').value,
-                last_update: Date.now()
-            }).then(() => alert("Firebase Candlestick Updated! 📈"));
+                intensity: document.getElementById('inp-vol').value
+            }).then(() => alert("Firebase Price Live!"));
         }
 
-        // --- ফাংশন: MongoDB তে পাঠানো (via app.py) ---
-        async function saveTask() {
-            const task = { title: document.getElementById('t-title').value, link: document.getElementById('t-link').value, reward: document.getElementById('t-reward').value };
-            const res = await fetch(`${API_BASE}/admin/save-task`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(task) });
-            if(res.ok) alert("Task Saved to MongoDB! ✅");
-        }
-
-        async function approveMongoPay(id) {
-            const res = await fetch(`${API_BASE}/admin/approve-pay`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) });
-            if(res.ok) { alert("Payment Processed in MongoDB!"); syncAllData(); }
-        }
-
-        async function updateSystem() {
-            const config = { bonus: document.getElementById('c-join').value, min: document.getElementById('c-min').value };
-            const res = await fetch(`${API_BASE}/admin/update-config`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(config) });
-            if(res.ok) alert("System Settings Synced to MongoDB! ⚙️");
+        function copyText(txt) {
+            navigator.clipboard.writeText(txt);
+            alert("Copied to Clipboard!");
         }
     </script>
 </body>
