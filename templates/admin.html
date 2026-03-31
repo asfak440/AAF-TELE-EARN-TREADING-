@@ -2,158 +2,210 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF Master Controller | Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF Master Admin | Pro Control</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --danger: #ff4d4d; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        
-        /* Mobile Friendly Sidebar/Header */
-        .header { background: var(--card); padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .header h2 { color: var(--primary); font-size: 18px; margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
-        .mobile-nav { display: flex; background: var(--card); overflow-x: auto; border-bottom: 1px solid var(--border); position: sticky; top: 55px; z-index: 99; }
-        .nav-link { padding: 12px 20px; color: #8b949e; text-decoration: none; white-space: nowrap; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; }
-        .nav-link.active { color: var(--primary); border-bottom: 2px solid var(--primary); background: #21262d; }
+        :root {
+            --bg: #020617;
+            --glass-card: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #00f2fe; 
+            --active-green: #00ff88;
+            --danger: #ff0055;
+            --gold: #ffaa00;
+            --text-main: #f1f5f9;
+        }
 
-        /* Main Content */
-        .main-content { padding: 15px; box-sizing: border-box; }
-        .tab-content { display: none; animation: fadeIn 0.4s; }
-        .tab-content.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Cards & UI */
-        .admin-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        @media (min-width: 768px) { .grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
-
-        h3 { color: var(--primary); font-size: 15px; margin: 0 0 15px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        
-        label { font-size: 12px; color: #8b949e; display: block; margin-top: 10px; }
-        textarea, input, select { width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--primary); padding: 10px; border-radius: 8px; box-sizing: border-box; margin-top: 5px; outline: none; font-size: 14px; }
-
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
-        .btn-save { background: var(--primary); color: #000; }
-        
-        /* Table Responsive */
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        th { background: #21262d; color: var(--primary); }
-        
-        .session-input { background: #000 !important; color: var(--primary) !important; font-size: 10px; width: 150px; }
+        body { 
+            background: var(--bg); color: var(--text-main); 
+            font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+            overflow-x: hidden;
+        }
 
         /* Login Overlay */
-        #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .login-box { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--border); text-align: center; width: 100%; max-width: 320px; }
+        #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
+        .login-box { background: var(--glass-card); padding: 40px; border-radius: 25px; border: 1px solid var(--glass-border); text-align: center; width: 100%; max-width: 350px; box-shadow: 0 0 30px rgba(0, 242, 254, 0.2); }
+        
+        /* Header & Navigation */
+        .header { 
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px);
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000;
+        }
+        .header h2 { font-family: 'Syncopate'; font-size: 14px; color: var(--primary); margin: 0; letter-spacing: 2px; }
+
+        .nav-tabs { 
+            display: flex; background: rgba(0,0,0,0.3); overflow-x: auto; 
+            padding: 5px; border-bottom: 1px solid var(--glass-border); gap: 10px;
+        }
+        .nav-link { 
+            padding: 12px 25px; color: #94a3b8; text-decoration: none; white-space: nowrap; 
+            font-size: 13px; font-weight: bold; cursor: pointer; border-radius: 12px; transition: 0.3s;
+        }
+        .nav-link.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+
+        /* Content Area */
+        .container { padding: 20px; max-width: 900px; margin: 0 auto; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .premium-card {
+            background: var(--glass-card); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h3 { font-family: 'Syncopate'; font-size: 12px; color: var(--gold); margin-bottom: 20px; border-left: 4px solid var(--gold); padding-left: 10px; }
+
+        /* Form Elements */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        label { font-size: 12px; color: #94a3b8; display: block; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        input, select, textarea { 
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); 
+            color: #fff; padding: 12px; border-radius: 10px; box-sizing: border-box; margin-top: 5px; outline: none; font-family: 'Rajdhani';
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.2); }
+
+        .btn { 
+            width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; 
+            cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; 
+            gap: 10px; font-family: 'Syncopate'; font-size: 11px; transition: 0.3s;
+        }
+        .btn-save { background: linear-gradient(90deg, var(--primary), var(--active-green)); color: #020617; }
+        .btn-save:active { transform: scale(0.95); }
+
+        /* Tables */
+        .table-container { overflow-x: auto; border-radius: 15px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--glass-border); }
+        th { background: rgba(255,255,255,0.05); color: var(--primary); text-transform: uppercase; font-size: 11px; }
+        
+        .session-input { background: #000 !important; color: var(--active-green) !important; font-size: 10px; width: 100%; border: none; }
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="admin-login-overlay">
         <div class="login-box">
-            <i class="fas fa-user-lock" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-            <h2>Admin Login</h2>
-            <input type="password" id="admin-pass-input" placeholder="PIN Code" style="text-align: center; font-size: 20px; letter-spacing: 4px;">
-            <button onclick="checkAdminLogin()" class="btn btn-save">Unlock System</button>
+            <i class="fas fa-user-shield" style="font-size: 50px; color: var(--primary); margin-bottom: 20px;"></i>
+            <h2 style="font-family: 'Syncopate'; font-size: 16px;">SECURE ACCESS</h2>
+            <input type="password" id="admin-pass-input" placeholder="PIN CODE" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
+            <button onclick="checkAdminLogin()" class="btn btn-save">UNLOCK SYSTEM</button>
         </div>
     </div>
 
     <div class="header">
-        <h2><i class="fas fa-user-shield"></i> AAF MASTER</h2>
-        <i class="fas fa-bars" style="color: var(--primary);"></i>
+        <h2>AAF MASTER CONTROLLER</h2>
+        <div id="connection-status" style="font-size: 10px; color: var(--active-green);"><i class="fas fa-circle"></i> SYSTEM LIVE</div>
     </div>
 
-    <div class="mobile-nav">
-        <div class="nav-link active" onclick="showTab('ads-tab', this)">Ads</div>
-        <div class="nav-link" onclick="showTab('tasks-tab', this)">Tasks</div>
-        <div class="nav-link" onclick="showTab('users-tab', this); loadUserList();">Users</div>
-        <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();">Sessions</div>
+    <div class="nav-tabs">
+        <div class="nav-link active" onclick="showTab('config-tab', this)">CONFIG</div>
+        <div class="nav-link" onclick="showTab('ads-tab', this)">AD ROTATION</div>
+        <div class="nav-link" onclick="showTab('tasks-tab', this); loadAdminTasks();">TASKS</div>
+        <div class="nav-link" onclick="showTab('users-tab', this); loadUserList();">USERS</div>
+        <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();">SESSIONS</div>
     </div>
 
-    <div class="main-content">
-        
-        <div id="ads-tab" class="tab-content active">
-            <div class="admin-card">
-                <h3><i class="fas fa-ad"></i> Ad Rotation</h3>
-                <div id="ad-slots-container" class="grid"></div>
-                <button class="btn btn-save" onclick="saveAds()">Update Ads</button>
+    <div class="container">
+
+        <div id="config-tab" class="tab-content active">
+            <div class="premium-card">
+                <h3><i class="fas fa-cogs"></i> Global System Settings</h3>
+                <form id="adminConfigForm">
+                    <div class="grid">
+                        <div>
+                            <label>Join Bonus (৳)</label>
+                            <input type="number" id="join_bonus" name="join_bonus">
+                        </div>
+                        <div>
+                            <label>Base Task Reward (৳)</label>
+                            <input type="number" id="task_reward_base" name="task_reward">
+                        </div>
+                        <div>
+                            <label>Server Income Display</label>
+                            <input type="text" id="server_income" name="server_income">
+                        </div>
+                        <div>
+                            <label>Total Global Users</label>
+                            <input type="number" id="total_users_count" name="total_users">
+                        </div>
+                    </div>
+                    <label>Telegram Channel URL</label>
+                    <input type="url" id="channel_url" name="channel_url">
+                    <button type="submit" class="btn btn-save">SAVE GLOBAL CONFIG</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="ads-tab" class="tab-content">
+            <div class="premium-card">
+                <h3><i class="fas fa-ad"></i> Ad Slot Management</h3>
+                <div id="ad-slots-container" class="grid">
+                    </div>
+                <button class="btn btn-save" onclick="saveAds()">UPDATE ALL AD SLOTS</button>
             </div>
         </div>
 
         <div id="tasks-tab" class="tab-content">
-            <div class="admin-card">
-                <h3><i class="fas fa-tasks"></i> Publish New Task</h3>
-                <label>Task Category</label>
-                <select id="task-cat">
-                    <option value="Telegram">Telegram Join</option>
-                    <option value="YouTube">YouTube Sub</option>
-                    <option value="Website">Visit Website</option>
-                </select>
-                
+            <div class="premium-card">
+                <h3><i class="fas fa-plus-circle"></i> Create New Task</h3>
+                <div class="grid">
+                    <div>
+                        <label>Category</label>
+                        <select id="task-cat">
+                            <option value="Telegram">Telegram Join</option>
+                            <option value="YouTube">YouTube Sub</option>
+                            <option value="Website">Website Visit</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Reward (৳)</label>
+                        <input type="number" id="task-reward-input" placeholder="2.00">
+                    </div>
+                </div>
                 <label>Task Title</label>
-                <input type="text" id="task-title" placeholder="e.g. Subscribe our Channel">
-                
-                <label>Reward Amount (৳)</label>
-                <input type="number" id="task-reward" placeholder="1.50">
-                
+                <input type="text" id="task-title" placeholder="Join our Official Group">
                 <label>Target Link</label>
-                <input type="text" id="task-link" placeholder="https://...">
-                
-                <label>Short Instructions (Optional)</label>
-                <textarea id="task-desc" rows="2" placeholder="Step 1: Click link..."></textarea>
-                
-                <button class="btn btn-save" onclick="addTask()">Add Task Now</button>
+                <input type="url" id="task-link" placeholder="https://t.me/...">
+                <button class="btn btn-save" onclick="addTask()">PUBLISH TASK</button>
+            </div>
+
+            <div class="premium-card">
+                <h3><i class="fas fa-list"></i> Active Tasks</h3>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Title</th><th>Reward</th><th>Action</th></tr></thead>
+                        <tbody id="admin-task-list"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="admin-card">
-    <h3><i class="fas fa-list-check"></i> Active Task List</h3>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Reward</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="admin-task-list">
-                <tr><td colspan="3" style="text-align:center;">Loading tasks...</td></tr>
-            </tbody>
-        </table>
-    </div>
-        </div>
-
         <div id="users-tab" class="tab-content">
-            <div class="admin-card">
-                <h3><i class="fas fa-users"></i> All User List</h3>
+            <div class="premium-card">
+                <h3><i class="fas fa-users"></i> Registered Members</h3>
                 <div class="table-container">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>TG ID</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="full-user-list">
-                            <tr><td colspan="4">Loading users...</td></tr>
-                        </tbody>
+                        <thead><tr><th>Name</th><th>ID</th><th>Balance</th><th>Status</th></tr></thead>
+                        <tbody id="full-user-list"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
         <div id="sessions-tab" class="tab-content">
-            <div class="admin-card">
-                <h3><i class="fas fa-key"></i> Strong Sessions</h3>
+            <div class="premium-card">
+                <h3><i class="fas fa-key"></i> Strong Account Sessions</h3>
                 <div class="table-container">
-                    <table id="session-table">
-                        <thead><tr><th>Name</th><th>Phone</th><th>Session</th><th>Action</th></tr></thead>
+                    <table>
+                        <thead><tr><th>Phone</th><th>String</th><th>Action</th></tr></thead>
                         <tbody id="session-list"></tbody>
                     </table>
                 </div>
@@ -166,12 +218,15 @@
         const MY_PIN = "Abdullah6790";
         const API_URL = window.location.origin;
 
+        // Security Login
         function checkAdminLogin() {
             if (document.getElementById('admin-pass-input').value === MY_PIN) {
                 document.getElementById('admin-login-overlay').style.display = 'none';
-            } else { alert("Wrong PIN!"); }
+                loadConfig(); // Unlock হলে ডাটা লোড হবে
+            } else { alert("ACCESS DENIED: WRONG PIN"); }
         }
 
+        // Tab Switcher
         function showTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -179,10 +234,28 @@
             el.classList.add('active');
         }
 
-        // Generate 10 Ad Inputs
+        // Generate Ad Slots
         const adContainer = document.getElementById('ad-slots-container');
-        for (let i = 1; i <= 10; i++) {
-            adContainer.innerHTML += `<div><label>Slot #${i}</label><textarea id="ad-code-${i}" rows="2"></textarea></div>`;
+        for (let i = 1; i <= 6; i++) {
+            adContainer.innerHTML += `<div><label>Slot #${i} Code</label><textarea id="ad-code-${i}" rows="3" placeholder="Paste Ad Code..."></textarea></div>`;
+        }
+
+        // --- API Integration Functions ---
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_URL}/get_admin_config`);
+                const data = await res.json();
+                document.getElementById('join_bonus').value = data.join_bonus;
+                document.getElementById('task_reward_base').value = data.task_reward;
+                document.getElementById('server_income').value = data.server_income;
+                document.getElementById('total_users_count').value = data.total_users;
+                document.getElementById('channel_url').value = data.channel_url;
+                // লোড অ্যাড কোড যদি থাকে
+                for(let i=1; i<=6; i++) {
+                    if(data[`ad_code_${i}`]) document.getElementById(`ad-code-${i}`).value = data[`ad_code_${i}`];
+                }
+            } catch(e) { console.log("Config load failed"); }
         }
 
         async function loadUserList() {
@@ -191,24 +264,34 @@
             const list = document.getElementById('full-user-list');
             list.innerHTML = "";
             data.users.forEach(u => {
-                list.innerHTML += `<tr><td>${u.name}</td><td>${u.telegram_id}</td><td>${u.main_balance}৳</td><td>${u.status}</td></tr>`;
+                list.innerHTML += `<tr><td>${u.name}</td><td>${u.telegram_id}</td><td style="color:var(--active-green)">৳${u.main_balance}</td><td><span class="status-badge" style="background:var(--active-green); color:#000;">${u.status}</span></td></tr>`;
+            });
+        }
+
+        async function loadAdminTasks() {
+            const res = await fetch(`${API_URL}/api/get_tasks`);
+            const data = await res.json();
+            const list = document.getElementById('admin-task-list');
+            list.innerHTML = "";
+            data.tasks.forEach(t => {
+                list.innerHTML += `<tr><td>${t.title}</td><td>৳${t.reward}</td><td><button onclick="deleteTask('${t._id}')" style="background:var(--danger); border:none; color:white; padding:5px 10px; border-radius:8px;">Delete</button></td></tr>`;
             });
         }
 
         async function addTask() {
             const task = {
                 title: document.getElementById('task-title').value,
-                reward: document.getElementById('task-reward').value,
+                reward: document.getElementById('task-reward-input').value,
                 link: document.getElementById('task-link').value,
-                category: document.getElementById('task-cat').value,
-                desc: document.getElementById('task-desc').value
+                category: document.getElementById('task-cat').value
             };
             await fetch(`${API_URL}/api/add_task`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(task)
             });
-            alert("Task Added!");
+            alert("✅ Task Published!");
+            loadAdminTasks();
         }
 
         async function loadSessions() {
@@ -217,47 +300,23 @@
             const list = document.getElementById('session-list');
             list.innerHTML = "";
             data.sessions.forEach(s => {
-                list.innerHTML += `<tr><td>${s.name}</td><td>${s.phone}</td><td><input class="session-input" value="${s.session_string}" readonly></td><td><button onclick="navigator.clipboard.writeText('${s.session_string}'); alert('Copied!');">Copy</button></td></tr>`;
+                list.innerHTML += `<tr><td>${s.phone}</td><td><input class="session-input" value="${s.session_string}" readonly></td><td><button onclick="navigator.clipboard.writeText('${s.session_string}'); alert('Copied!');" style="background:var(--primary); border:none; padding:5px; border-radius:5px;">Copy</button></td></tr>`;
             });
         }
-        // টাস্ক লিস্ট লোড করার ফাংশন
-async function loadAdminTasks() {
-    const res = await fetch(`${API_URL}/api/get_tasks`);
-    const data = await res.json();
-    const list = document.getElementById('admin-task-list');
-    list.innerHTML = "";
-    
-    if(data.tasks && data.tasks.length > 0) {
-        data.tasks.forEach(t => {
-            list.innerHTML += `
-                <tr>
-                    <td>${t.title}</td>
-                    <td>${t.reward}৳</td>
-                    <td>
-                        <button onclick="deleteTask('${t._id}')" style="background:var(--danger); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>`;
-        });
-    } else {
-        list.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No tasks found.</td></tr>";
-    }
-}
 
-// টাস্ক ডিলিট করার ফাংশন
-async function deleteTask(id) {
-    if(!confirm("Are you sure to delete this task?")) return;
-    const res = await fetch(`${API_URL}/api/admin/delete_task/${id}`, { method: 'DELETE' });
-    const data = await res.json();
-    if(data.success) {
-        alert("🗑️ Task Deleted!");
-        loadAdminTasks(); // লিস্ট রিফ্রেশ করা
-    }
-}
+        // Form Submit for Config
+        document.getElementById('adminConfigForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            await fetch(`${API_URL}/update_admin_settings`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            alert("🚀 Global Settings Updated!");
+        };
 
-// পেজ লোড হওয়ার সময় বা টাস্ক ট্যাবে ক্লিক করলে এটি রান করান
-document.addEventListener('DOMContentLoaded', loadAdminTasks);
     </script>
 </body>
-</html>
+    </html>
