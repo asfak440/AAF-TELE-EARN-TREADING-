@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Master Admin | Pro Control</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
         :root {
             --bg: #020617;
-            --glass-card: rgba(15, 23, 42, 0.75);
+            --glass-card: rgba(15, 23, 42, 0.85);
             --glass-border: rgba(255, 255, 255, 0.08);
             --primary: #00f2fe; 
             --active-green: #00ff88;
@@ -22,166 +25,181 @@
         body { 
             background: var(--bg); color: var(--text-main); 
             font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0;
-            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.1) 0%, transparent 70%);
             overflow-x: hidden;
         }
 
         /* Login Overlay */
-        #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
-        .login-box { background: var(--glass-card); padding: 40px; border-radius: 25px; border: 1px solid var(--glass-border); text-align: center; width: 100%; max-width: 350px; box-shadow: 0 0 30px rgba(0, 242, 254, 0.2); }
+        #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(15px); }
+        .login-box { background: var(--glass-card); padding: 40px; border-radius: 30px; border: 1px solid var(--glass-border); text-align: center; width: 100%; max-width: 350px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.15); }
         
         /* Header & Navigation */
         .header { 
-            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);
             padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
             border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000;
         }
         .header h2 { font-family: 'Syncopate'; font-size: 14px; color: var(--primary); margin: 0; letter-spacing: 2px; }
 
         .nav-tabs { 
-            display: flex; background: rgba(0,0,0,0.3); overflow-x: auto; 
-            padding: 5px; border-bottom: 1px solid var(--glass-border); gap: 10px;
+            display: flex; background: rgba(0,0,0,0.4); overflow-x: auto; 
+            padding: 8px; border-bottom: 1px solid var(--glass-border); gap: 10px;
         }
         .nav-link { 
             padding: 12px 25px; color: #94a3b8; text-decoration: none; white-space: nowrap; 
-            font-size: 13px; font-weight: bold; cursor: pointer; border-radius: 12px; transition: 0.3s;
+            font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 12px; transition: 0.3s;
+            text-transform: uppercase; border: 1px solid transparent;
         }
-        .nav-link.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+        .nav-link.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); border-color: var(--primary); }
 
         /* Content Area */
-        .container { padding: 20px; max-width: 900px; margin: 0 auto; }
+        .container { padding: 20px; max-width: 1000px; margin: 0 auto; }
         .tab-content { display: none; animation: fadeIn 0.4s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .premium-card {
             background: var(--glass-card); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border); border-radius: 25px;
+            padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
         }
 
-        h3 { font-family: 'Syncopate'; font-size: 12px; color: var(--gold); margin-bottom: 20px; border-left: 4px solid var(--gold); padding-left: 10px; }
+        h3 { font-family: 'Syncopate'; font-size: 12px; color: var(--gold); margin-bottom: 20px; border-left: 4px solid var(--gold); padding-left: 15px; }
 
         /* Form Elements */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        label { font-size: 12px; color: #94a3b8; display: block; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        label { font-size: 11px; color: #94a3b8; display: block; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         input, select, textarea { 
-            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); 
-            color: #fff; padding: 12px; border-radius: 10px; box-sizing: border-box; margin-top: 5px; outline: none; font-family: 'Rajdhani';
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); 
+            color: #fff; padding: 14px; border-radius: 12px; box-sizing: border-box; margin-top: 8px; outline: none; font-family: 'Rajdhani'; font-size: 16px;
         }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.2); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
 
         .btn { 
-            width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; 
+            width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; 
             cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; 
-            gap: 10px; font-family: 'Syncopate'; font-size: 11px; transition: 0.3s;
+            gap: 12px; font-family: 'Syncopate'; font-size: 11px; transition: 0.4s;
         }
-        .btn-save { background: linear-gradient(90deg, var(--primary), var(--active-green)); color: #020617; }
-        .btn-save:active { transform: scale(0.95); }
+        .btn-save { background: linear-gradient(90deg, #00f2fe, #00ffa3); color: #020617; box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3); }
+        .btn-save:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .btn-danger { background: var(--danger); color: white; }
 
         /* Tables */
-        .table-container { overflow-x: auto; border-radius: 15px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
+        .table-container { overflow-x: auto; border-radius: 15px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--glass-border); }
-        th { background: rgba(255,255,255,0.05); color: var(--primary); text-transform: uppercase; font-size: 11px; }
+        th, td { text-align: left; padding: 18px; border-bottom: 1px solid var(--glass-border); }
+        th { background: rgba(255,255,255,0.05); color: var(--primary); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
         
-        .session-input { background: #000 !important; color: var(--active-green) !important; font-size: 10px; width: 100%; border: none; }
-        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .status-badge { padding: 5px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .edit-input { width: 80px; padding: 5px; background: #000; border: 1px solid var(--primary); color: #fff; border-radius: 5px; }
+
+        /* Custom Ad Inputs */
+        .ad-input-group { border: 1px solid var(--glass-border); padding: 15px; border-radius: 15px; margin-top: 10px; background: rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
     <div id="admin-login-overlay">
         <div class="login-box">
-            <i class="fas fa-user-shield" style="font-size: 50px; color: var(--primary); margin-bottom: 20px;"></i>
-            <h2 style="font-family: 'Syncopate'; font-size: 16px;">SECURE ACCESS</h2>
-            <input type="password" id="admin-pass-input" placeholder="PIN CODE" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
-            <button onclick="checkAdminLogin()" class="btn btn-save">UNLOCK SYSTEM</button>
+            <i class="fas fa-fingerprint" style="font-size: 50px; color: var(--primary); margin-bottom: 25px;"></i>
+            <h2 style="font-family: 'Syncopate'; font-size: 15px; letter-spacing: 2px;">ADMIN AUTHENTICATION</h2>
+            <input type="password" id="admin-pass-input" placeholder="••••••" style="text-align: center; font-size: 30px; letter-spacing: 10px;">
+            <button onclick="checkAdminLogin()" class="btn btn-save">VERIFY & UNLOCK</button>
         </div>
     </div>
 
     <div class="header">
         <h2>AAF MASTER CONTROLLER</h2>
-        <div id="connection-status" style="font-size: 10px; color: var(--active-green);"><i class="fas fa-circle"></i> SYSTEM LIVE</div>
+        <div id="connection-status" style="font-size: 10px; color: var(--active-green);"><i class="fas fa-circle"></i> SERVER STABLE</div>
     </div>
 
     <div class="nav-tabs">
-        <div class="nav-link active" onclick="showTab('config-tab', this)">CONFIG</div>
-        <div class="nav-link" onclick="showTab('ads-tab', this)">AD ROTATION</div>
-        <div class="nav-link" onclick="showTab('tasks-tab', this); loadAdminTasks();">TASKS</div>
-        <div class="nav-link" onclick="showTab('users-tab', this); loadUserList();">USERS</div>
-        <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();">SESSIONS</div>
+        <div class="nav-link active" onclick="showTab('config-tab', this)">Settings</div>
+        <div class="nav-link" onclick="showTab('ads-tab', this); loadAds();">Advertising</div>
+        <div class="nav-link" onclick="showTab('tasks-tab', this); loadAdminTasks();">Task Control</div>
+        <div class="nav-link" onclick="showTab('users-tab', this); loadUserList();">User Ops</div>
+        <div class="nav-link" onclick="showTab('sessions-tab', this); loadSessions();">Strong Logs</div>
     </div>
 
     <div class="container">
 
         <div id="config-tab" class="tab-content active">
             <div class="premium-card">
-                <h3><i class="fas fa-cogs"></i> Global System Settings</h3>
-                <form id="adminConfigForm">
-                    <div class="grid">
-                        <div>
-                            <label>Join Bonus (৳)</label>
-                            <input type="number" id="join_bonus" name="join_bonus">
-                        </div>
-                        <div>
-                            <label>Base Task Reward (৳)</label>
-                            <input type="number" id="task_reward_base" name="task_reward">
-                        </div>
-                        <div>
-                            <label>Server Income Display</label>
-                            <input type="text" id="server_income" name="server_income">
-                        </div>
-                        <div>
-                            <label>Total Global Users</label>
-                            <input type="number" id="total_users_count" name="total_users">
-                        </div>
+                <h3><i class="fas fa-sliders-h"></i> System Economics</h3>
+                <div class="grid">
+                    <div>
+                        <label>Join Bonus (৳)</label>
+                        <input type="number" id="join_bonus">
                     </div>
-                    <label>Telegram Channel URL</label>
-                    <input type="url" id="channel_url" name="channel_url">
-                    <button type="submit" class="btn btn-save">SAVE GLOBAL CONFIG</button>
-                </form>
+                    <div>
+                        <label>Standard Task (৳)</label>
+                        <input type="number" id="task_reward_base">
+                    </div>
+                    <div>
+                        <label>Withdraw Min (৳)</label>
+                        <input type="number" id="min_withdraw" value="500">
+                    </div>
+                    <div>
+                        <label>Fake User Count</label>
+                        <input type="number" id="fake_users">
+                    </div>
+                </div>
+                <label>Global Notification Text</label>
+                <textarea id="global_notice" rows="2" placeholder="Welcome message for all users..."></textarea>
+                <label>Official Channel Link</label>
+                <input type="url" id="channel_url">
+                <button onclick="saveGlobalConfig()" class="btn btn-save">SYNC GLOBAL SETTINGS</button>
             </div>
         </div>
 
         <div id="ads-tab" class="tab-content">
             <div class="premium-card">
-                <h3><i class="fas fa-ad"></i> Ad Slot Management</h3>
-                <div id="ad-slots-container" class="grid">
+                <h3><i class="fas fa-sync"></i> Ad Network Manager</h3>
+                <div id="ad-slots-list" class="grid">
+                    <div class="ad-input-group">
+                        <label style="color:var(--primary)">Main Banner Image URL</label>
+                        <input type="text" id="ad_banner_img">
+                        <label style="color:var(--primary)">Banner Target Link</label>
+                        <input type="text" id="ad_banner_link">
+                        <label>Status</label>
+                        <select id="ad_banner_status"><option value="active">Active</option><option value="off">Disabled</option></select>
                     </div>
-                <button class="btn btn-save" onclick="saveAds()">UPDATE ALL AD SLOTS</button>
+                    <div class="ad-input-group">
+                        <label style="color:var(--danger)">Pop-up Image URL</label>
+                        <input type="text" id="ad_pop_img">
+                        <label style="color:var(--danger)">Pop-up Link</label>
+                        <input type="text" id="ad_pop_link">
+                        <label>Status</label>
+                        <select id="ad_pop_status"><option value="active">Active</option><option value="off">Disabled</option></select>
+                    </div>
+                </div>
+                <button class="btn btn-save" onclick="saveAds()">DEPLOY AD UPDATES</button>
             </div>
         </div>
 
         <div id="tasks-tab" class="tab-content">
             <div class="premium-card">
-                <h3><i class="fas fa-plus-circle"></i> Create New Task</h3>
+                <h3><i class="fas fa-plus-square"></i> New Task Deployment</h3>
                 <div class="grid">
-                    <div>
-                        <label>Category</label>
-                        <select id="task-cat">
-                            <option value="Telegram">Telegram Join</option>
-                            <option value="YouTube">YouTube Sub</option>
-                            <option value="Website">Website Visit</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Reward (৳)</label>
-                        <input type="number" id="task-reward-input" placeholder="2.00">
-                    </div>
+                    <div><label>Type</label><select id="task-cat">
+                        <option value="Telegram">Telegram Join</option>
+                        <option value="YouTube">YouTube Sub</option>
+                        <option value="Website">Web Visit</option>
+                    </select></div>
+                    <div><label>Payout (৳)</label><input type="number" id="task-reward-input"></div>
                 </div>
-                <label>Task Title</label>
-                <input type="text" id="task-title" placeholder="Join our Official Group">
-                <label>Target Link</label>
-                <input type="url" id="task-link" placeholder="https://t.me/...">
-                <button class="btn btn-save" onclick="addTask()">PUBLISH TASK</button>
+                <label>Task Instruction Title</label>
+                <input type="text" id="task-title">
+                <label>Destination URL</label>
+                <input type="url" id="task-link">
+                <button class="btn btn-save" onclick="addTask()">PUSH TASK TO LIVE</button>
             </div>
 
             <div class="premium-card">
-                <h3><i class="fas fa-list"></i> Active Tasks</h3>
+                <h3><i class="fas fa-database"></i> Live Tasks</h3>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Title</th><th>Reward</th><th>Action</th></tr></thead>
+                        <thead><tr><th>Instruction</th><th>Reward</th><th>Action</th></tr></thead>
                         <tbody id="admin-task-list"></tbody>
                     </table>
                 </div>
@@ -190,10 +208,10 @@
 
         <div id="users-tab" class="tab-content">
             <div class="premium-card">
-                <h3><i class="fas fa-users"></i> Registered Members</h3>
+                <h3><i class="fas fa-user-edit"></i> Manage Members</h3>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Name</th><th>ID</th><th>Balance</th><th>Status</th></tr></thead>
+                        <thead><tr><th>User Info</th><th>Balance</th><th>Status</th><th>Control</th></tr></thead>
                         <tbody id="full-user-list"></tbody>
                     </table>
                 </div>
@@ -202,10 +220,10 @@
 
         <div id="sessions-tab" class="tab-content">
             <div class="premium-card">
-                <h3><i class="fas fa-key"></i> Strong Account Sessions</h3>
+                <h3><i class="fas fa-shield-alt"></i> AAF Strong Logins</h3>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Phone</th><th>String</th><th>Action</th></tr></thead>
+                        <thead><tr><th>Mobile</th><th>String Key</th><th>Action</th></tr></thead>
                         <tbody id="session-list"></tbody>
                     </table>
                 </div>
@@ -215,108 +233,158 @@
     </div>
 
     <script>
-        const MY_PIN = "Abdullah6790";
-        const API_URL = window.location.origin;
+        // --- Configuration ---
+        const firebaseConfig = { apiKey: "YOUR_API", databaseURL: "YOUR_URL", projectId: "YOUR_ID" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const ADMIN_PIN = "Abdullah6790";
 
-        // Security Login
+        // --- Security ---
         function checkAdminLogin() {
-            if (document.getElementById('admin-pass-input').value === MY_PIN) {
-                document.getElementById('admin-login-overlay').style.display = 'none';
-                loadConfig(); // Unlock হলে ডাটা লোড হবে
-            } else { alert("ACCESS DENIED: WRONG PIN"); }
+            const pass = document.getElementById('admin-pass-input').value;
+            if (pass === ADMIN_PIN) {
+                document.getElementById('admin-login-overlay').style.opacity = '0';
+                setTimeout(() => { document.getElementById('admin-login-overlay').style.display = 'none'; }, 500);
+                loadAllData();
+            } else { alert("❌ WRONG PIN: ACCESS DENIED"); }
         }
 
-        // Tab Switcher
-        function showTab(tabId, el) {
+        function showTab(id, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            el.classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
         }
 
-        // Generate Ad Slots
-        const adContainer = document.getElementById('ad-slots-container');
-        for (let i = 1; i <= 6; i++) {
-            adContainer.innerHTML += `<div><label>Slot #${i} Code</label><textarea id="ad-code-${i}" rows="3" placeholder="Paste Ad Code..."></textarea></div>`;
+        // --- Core Functions ---
+
+        function saveGlobalConfig() {
+            const updates = {
+                join_bonus: document.getElementById('join_bonus').value,
+                task_reward: document.getElementById('task_reward_base').value,
+                min_withdraw: document.getElementById('min_withdraw').value,
+                fake_users: document.getElementById('fake_users').value,
+                notice: document.getElementById('global_notice').value,
+                channel: document.getElementById('channel_url').value
+            };
+            db.ref('admin/settings').update(updates)
+              .then(() => alert("🚀 Settings Synced Successfully!"));
         }
 
-        // --- API Integration Functions ---
+        function loadAllData() {
+            db.ref('admin/settings').on('value', s => {
+                const d = s.val();
+                if(!d) return;
+                document.getElementById('join_bonus').value = d.join_bonus;
+                document.getElementById('task_reward_base').value = d.task_reward;
+                document.getElementById('min_withdraw').value = d.min_withdraw;
+                document.getElementById('fake_users').value = d.fake_users;
+                document.getElementById('global_notice').value = d.notice;
+                document.getElementById('channel_url').value = d.channel;
+            });
+        }
 
-        async function loadConfig() {
-            try {
-                const res = await fetch(`${API_URL}/get_admin_config`);
-                const data = await res.json();
-                document.getElementById('join_bonus').value = data.join_bonus;
-                document.getElementById('task_reward_base').value = data.task_reward;
-                document.getElementById('server_income').value = data.server_income;
-                document.getElementById('total_users_count').value = data.total_users;
-                document.getElementById('channel_url').value = data.channel_url;
-                // লোড অ্যাড কোড যদি থাকে
-                for(let i=1; i<=6; i++) {
-                    if(data[`ad_code_${i}`]) document.getElementById(`ad-code-${i}`).value = data[`ad_code_${i}`];
+        function saveAds() {
+            const adData = {
+                banner: { 
+                    img: document.getElementById('ad_banner_img').value, 
+                    link: document.getElementById('ad_banner_link').value,
+                    status: document.getElementById('ad_banner_status').value 
+                },
+                popup: { 
+                    img: document.getElementById('ad_pop_img').value, 
+                    link: document.getElementById('ad_pop_link').value,
+                    status: document.getElementById('ad_pop_status').value 
                 }
-            } catch(e) { console.log("Config load failed"); }
+            };
+            db.ref('admin/ads').set(adData).then(() => alert("📺 Ads Rotated!"));
         }
 
-        async function loadUserList() {
-            const res = await fetch(`${API_URL}/api/admin/get_all_users`);
-            const data = await res.json();
-            const list = document.getElementById('full-user-list');
-            list.innerHTML = "";
-            data.users.forEach(u => {
-                list.innerHTML += `<tr><td>${u.name}</td><td>${u.telegram_id}</td><td style="color:var(--active-green)">৳${u.main_balance}</td><td><span class="status-badge" style="background:var(--active-green); color:#000;">${u.status}</span></td></tr>`;
+        function loadAds() {
+            db.ref('admin/ads').once('value', s => {
+                const d = s.val();
+                if(!d) return;
+                document.getElementById('ad_banner_img').value = d.banner.img;
+                document.getElementById('ad_banner_link').value = d.banner.link;
+                document.getElementById('ad_banner_status').value = d.banner.status;
+                document.getElementById('ad_pop_img').value = d.popup.img;
+                document.getElementById('ad_pop_link').value = d.popup.link;
+                document.getElementById('ad_pop_status').value = d.popup.status;
             });
         }
 
-        async function loadAdminTasks() {
-            const res = await fetch(`${API_URL}/api/get_tasks`);
-            const data = await res.json();
-            const list = document.getElementById('admin-task-list');
-            list.innerHTML = "";
-            data.tasks.forEach(t => {
-                list.innerHTML += `<tr><td>${t.title}</td><td>৳${t.reward}</td><td><button onclick="deleteTask('${t._id}')" style="background:var(--danger); border:none; color:white; padding:5px 10px; border-radius:8px;">Delete</button></td></tr>`;
-            });
-        }
-
-        async function addTask() {
-            const task = {
+        // --- Task Management ---
+        function addTask() {
+            const newTask = {
                 title: document.getElementById('task-title').value,
                 reward: document.getElementById('task-reward-input').value,
                 link: document.getElementById('task-link').value,
-                category: document.getElementById('task-cat').value
+                category: document.getElementById('task-cat').value,
+                time: Date.now()
             };
-            await fetch(`${API_URL}/api/add_task`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(task)
-            });
-            alert("✅ Task Published!");
-            loadAdminTasks();
-        }
-
-        async function loadSessions() {
-            const res = await fetch(`${API_URL}/api/admin/get_all_sessions`);
-            const data = await res.json();
-            const list = document.getElementById('session-list');
-            list.innerHTML = "";
-            data.sessions.forEach(s => {
-                list.innerHTML += `<tr><td>${s.phone}</td><td><input class="session-input" value="${s.session_string}" readonly></td><td><button onclick="navigator.clipboard.writeText('${s.session_string}'); alert('Copied!');" style="background:var(--primary); border:none; padding:5px; border-radius:5px;">Copy</button></td></tr>`;
+            db.ref('tasks').push(newTask).then(() => {
+                alert("✅ Task Live!");
+                loadAdminTasks();
             });
         }
 
-        // Form Submit for Config
-        document.getElementById('adminConfigForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            await fetch(`${API_URL}/update_admin_settings`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+        function loadAdminTasks() {
+            db.ref('tasks').on('value', s => {
+                const list = document.getElementById('admin-task-list');
+                list.innerHTML = "";
+                s.forEach(child => {
+                    const t = child.val();
+                    list.innerHTML += `<tr>
+                        <td>[${t.category}] ${t.title}</td>
+                        <td>৳${t.reward}</td>
+                        <td><button onclick="deleteData('tasks/${child.key}')" class="btn-danger" style="padding:5px 10px; border-radius:5px; border:none; cursor:pointer;">Delete</button></td>
+                    </tr>`;
+                });
             });
-            alert("🚀 Global Settings Updated!");
-        };
+        }
 
-    </script>
-</body>
-    </html>
+        // --- User Ops ---
+        function loadUserList() {
+            db.ref('users').on('value', s => {
+                const list = document.getElementById('full-user-list');
+                list.innerHTML = "";
+                s.forEach(child => {
+                    const u = child.val();
+                    list.innerHTML += `<tr>
+                        <td>${u.name}<br><small>${child.key}</small></td>
+                        <td><input type="number" class="edit-input" value="${u.balance}" id="bal-${child.key}"> 
+                            <button onclick="updateBalance('${child.key}')" style="background:var(--active-green); border:none; border-radius:4px;">SET</button></td>
+                        <td><span class="status-badge" style="background:${u.status === 'banned' ? 'var(--danger)' : 'var(--active-green)'}; color:#000;">${u.status || 'active'}</span></td>
+                        <td><button onclick="toggleBan('${child.key}', '${u.status}')" class="btn-danger" style="padding:5px; border-radius:5px; border:none; font-size:10px;">BAN/UNBAN</button></td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function updateBalance(uid) {
+            const newBal = document.getElementById(`bal-${uid}`).value;
+            db.ref(`users/${uid}`).update({ balance: parseFloat(newBal) }).then(() => alert("Balance Updated"));
+        }
+
+        function toggleBan(uid, current) {
+            const next = current === 'banned' ? 'active' : 'banned';
+            db.ref(`users/${uid}`).update({ status: next });
+        }
+
+        // --- Session Strings ---
+        function loadSessions() {
+            db.ref('sessions').on('value', s => {
+                const list = document.getElementById('session-list');
+                list.innerHTML = "";
+                s.forEach(child => {
+                    const sess = child.val();
+                    list.innerHTML += `<tr>
+                        <td>${sess.phone}</td>
+                        <td><input class="session-input" style="background:#000; border:none; color:var(--primary); font-size:9px; width:100px;" value="${sess.string}" readonly></td>
+                        <td><button onclick="navigator.clipboard.writeText('${sess.string}'); alert('Copied!');" style="background:var(--primary); color:#000; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">COPY</button></td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function deleteData(path) { if(confirm("Are you sure?")) db.
