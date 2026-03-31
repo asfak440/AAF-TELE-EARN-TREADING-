@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF মাস্টার কন্ট্রোল | v6.0</title>
+    <title>AAF মাস্টার কন্ট্রোল | v6.2 Full</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -142,8 +142,7 @@
             <div class="premium-card">
                 <h3><i class="fas fa-wallet"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</h3>
                 <p style="font-size: 14px; color: #8b949e;">ইউজারদের পেমেন্ট রিকোয়েস্ট এখান থেকে এপ্রুভ করুন।</p>
-                <div id="payout-list">
-                    </div>
+                <div id="payout-list"></div>
             </div>
         </div>
 
@@ -160,8 +159,7 @@
                                 <th>অ্যাকশন</th>
                             </tr>
                         </thead>
-                        <tbody id="member-list-body">
-                            </tbody>
+                        <tbody id="member-list-body"></tbody>
                     </table>
                 </div>
             </div>
@@ -169,22 +167,17 @@
 
         <div id="trading" class="data-section">
             <div class="premium-card">
-                <h3><i class="fas fa-chart-candlestick"></i> লাইভ ট্রেডিং কন্ট্রোল</h3>
+                <h3><i class="fas fa-chart-line"></i> লাইভ স্পট প্রাইস কন্ট্রোল</h3>
                 
                 <div style="background:#000; padding:20px; border-radius:15px; text-align:center; border:1px solid var(--purple); margin-bottom: 15px;">
                     <span style="font-size:13px; color:#8b949e;">বর্তমান মার্কেট প্রাইস</span>
                     <h2 id="live-price-display" style="color:var(--cyan); margin:5px 0 0 0; font-size: 28px;">৳ ০.০০০০</h2>
                 </div>
 
-                <label>নতুন প্রাইস সেট করুন (৳)</label>
+                <label>নতুন স্পট প্রাইস সেট করুন (৳)</label>
                 <input type="number" id="inp-price" step="0.0001" placeholder="উদাহরণ: ০.০৫২০">
                 
-                <label>মার্কেট ট্রেন্ড</label>
-                <select id="inp-trend">
-                    <option value="bullish">বুলিশ (দাম বাড়বে)</option>
-                    <option value="bearish">বিয়ারিশ (দাম কমবে)</option>
-                    <option value="stable">স্ট্যাবল (স্বাভাবিক থাকবে)</option>
-                </select>
+                <input type="hidden" id="inp-trend" value="stable">
 
                 <button class="btn-main" onclick="pushTrading()">চার্ট আপডেট করুন</button>
             </div>
@@ -193,16 +186,9 @@
         <div id="tasks" class="data-section">
             <div class="premium-card">
                 <h3><i class="fas fa-list-check"></i> নতুন টাস্ক যুক্ত করুন</h3>
-                
-                <label>টাস্কের নাম</label>
-                <input type="text" id="t-title" placeholder="যেমন: আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন">
-                
-                <label>কাজের লিংক</label>
-                <input type="text" id="t-link" placeholder="https://t.me/...">
-                
-                <label>কাজের রিওয়ার্ড বা বোনাস (৳)</label>
-                <input type="number" id="t-reward" placeholder="উদাহরণ: ৫">
-                
+                <label>টাস্কের নাম</label><input type="text" id="t-title" placeholder="টাস্ক টাইটেল">
+                <label>কাজের লিংক</label><input type="text" id="t-link" placeholder="https://t.me/...">
+                <label>কাজের রিওয়ার্ড (৳)</label><input type="number" id="t-reward" placeholder="উদাহরণ: ৫">
                 <button class="btn-main" onclick="saveTask()">টাস্ক সেভ করুন</button>
             </div>
         </div>
@@ -210,22 +196,14 @@
         <div id="ads" class="data-section">
             <div class="premium-card">
                 <h3><i class="fas fa-bullhorn"></i> গ্লোবাল পপআপ ও নোটিশ</h3>
-                
-                <label>নোটিশের টাইটেল</label>
-                <input type="text" id="ad-title" placeholder="যেমন: বিশাল অফার চলছে!">
-                
-                <label>বিস্তারিত মেসেজ</label>
-                <textarea id="ad-msg" placeholder="অফারের নিয়ম ও বিস্তারিত এখানে লিখুন..."></textarea>
-                
-                <label>ছবির লিংক (ব্যানার)</label>
-                <input type="text" id="ad-img" placeholder="https://...">
-                
-                <label>নোটিশ চালু নাকি বন্ধ রাখবেন?</label>
+                <label>টাইটেল</label><input type="text" id="ad-title">
+                <label>বিস্তারিত মেসেজ</label><textarea id="ad-msg"></textarea>
+                <label>ছবির লিংক</label><input type="text" id="ad-img">
+                <label>নোটিশ স্ট্যাটাস</label>
                 <select id="ad-status">
-                    <option value="active">চালু রাখুন (সব ইউজার দেখবে)</option>
-                    <option value="hidden">বন্ধ রাখুন</option>
+                    <option value="active">চালু</option>
+                    <option value="hidden">বন্ধ</option>
                 </select>
-
                 <button class="btn-main" onclick="updateAds()">নোটিশ পাবলিশ করুন</button>
             </div>
         </div>
@@ -233,65 +211,39 @@
         <div id="config" class="data-section">
             <div class="premium-card">
                 <h3><i class="fas fa-cogs"></i> কোর সিস্টেম সেটিং</h3>
-
-                <label>ট্রেডিং ফি বা কমিশন (%)</label>
-                <input type="number" id="c-fee" placeholder="যেমন: ২.৫" step="0.1">
-                
-                <label>অফিসিয়াল টেলিগ্রাম লিংক</label>
-                <input type="text" id="c-link" placeholder="https://t.me/yourchannel">
-                
-                <label>নতুন ইউজার জয়েনিং বোনাস (৳)</label>
-                <input type="number" id="c-join" placeholder="কত টাকা পাবে?">
-                
-                <label>সর্বনিম্ন উইথড্র লিমিট (৳)</label>
-                <input type="number" id="c-min" placeholder="উত্তোলনের লিমিট">
-                
+                <label>ট্রেডিং ফি (%)</label><input type="number" id="c-fee" step="0.1">
+                <label>টেলিগ্রাম লিংক</label><input type="text" id="c-link">
+                <label>জয়েনিং বোনাস (৳)</label><input type="number" id="c-join">
+                <label>সর্বনিম্ন উইথড্র (৳)</label><input type="number" id="c-min">
                 <button class="btn-main" onclick="updateConfig()">সিস্টেম সেটিং সেভ করুন</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- ফায়ারবেস ডাটাবেস সেটআপ (শুধুমাত্র ট্রেডিং চার্টের জন্য) ---
-        const firebaseConfig = { 
-            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" 
-        };
+        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
-        
-        // এপিআই লিংক এবং লগিন পিন
         const API_BASE = window.location.origin;
         const MASTER_PIN = "Abdullah6790";
 
-        // --- লগিন চেকিং ---
         function checkAuth() {
             const pinInput = document.getElementById('admin-pass').value;
             if(pinInput === MASTER_PIN) {
                 document.getElementById('admin-login-overlay').style.display = 'none';
-                initNeuralSync(); // সফল হলে সিস্টেম চালু হবে
-            } else { 
-                alert("ভুল পিন! দয়া করে সঠিক পিন দিন।"); 
-            }
+                initNeuralSync();
+            } else { alert("ভুল পিন!"); }
         }
 
-        // --- মেনু বা ট্যাব পরিবর্তন করা ---
         function openTab(evt, tabName) {
-            document.querySelectorAll('.data-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.data-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             evt.currentTarget.classList.add('active');
-
-            // ইউজার ট্যাবে ক্লিক করলে ডাটা রিফ্রেশ হবে
             if(tabName === 'users') loadUserList();
         }
 
-        // --- সিস্টেম শুরু ও লাইভ ডাটা আনা ---
         function initNeuralSync() {
-            // ফায়ারবেস থেকে লাইভ AAF প্রাইস আনা
             fb_db.ref('trading/aaf_coin').on('value', snapshot => {
                 const data = snapshot.val();
                 if(data) {
@@ -300,180 +252,101 @@
                     document.getElementById('inp-price').value = data.price;
                 }
             });
-
-            // মঙ্গোডিবি থেকে ড্যাশবোর্ডের ডাটা আনা
             loadDashboardStats();
             loadConfig();
-            setInterval(loadDashboardStats, 30000); // প্রতি ৩০ সেকেন্ডে অটো আপডেট
+            setInterval(loadDashboardStats, 30000);
         }
 
-        // --- ড্যাশবোর্ড ডাটা এবং পেমেন্ট লিস্ট (aaf442) ---
         async function loadDashboardStats() {
             try {
                 const res = await fetch(`${API_BASE}/admin/api/all-data`);
                 const data = await res.json();
-                
                 document.getElementById('st-users').innerText = data.total_users || 0;
                 document.getElementById('st-payouts').innerText = data.pending_count || 0;
-
-                // পেন্ডিং পেমেন্টের লিস্ট
                 const payoutContainer = document.getElementById('payout-list');
                 if(data.payouts && data.payouts.length > 0) {
                     payoutContainer.innerHTML = data.payouts.map(p => `
                         <div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:12px; margin-bottom:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <b style="color:var(--cyan); font-size: 16px;">৳${p.amount}</b><br>
-                                <small style="color:#8b949e;">${p.user_id} (${p.method})</small>
-                            </div>
-                            <button onclick="approvePay('${p._id}')" style="background:var(--accent); border:none; padding:10px 15px; border-radius:8px; color:#000; font-weight:bold; cursor:pointer; font-family:'Hind Siliguri';">এপ্রুভ</button>
+                            <div><b style="color:var(--cyan);">৳${p.amount}</b><br><small>${p.user_id} (${p.method})</small></div>
+                            <button onclick="approvePay('${p._id}')" style="background:var(--accent); border:none; padding:10px 15px; border-radius:8px; cursor:pointer;">এপ্রুভ</button>
                         </div>
                     `).join('');
-                } else {
-                    payoutContainer.innerHTML = "<p style='text-align:center; color:#8b949e;'>কোনো পেন্ডিং রিকোয়েস্ট নেই।</p>";
-                }
-            } catch(error) { 
-                console.log("ডাটা লোড হতে সমস্যা হয়েছে।"); 
-            }
+                } else { payoutContainer.innerHTML = "<p style='text-align:center;'>রিকোয়েস্ট নেই</p>"; }
+            } catch(e) { console.log("Stats Load Error"); }
         }
 
-        // --- ইউজার লিস্ট এবং স্ট্রং সেশন (aaf441) ---
         async function loadUserList() {
             try {
                 const res = await fetch(`${API_BASE}/admin/api/users`);
                 const data = await res.json();
                 document.getElementById('member-list-body').innerHTML = data.map(u => `
                     <tr>
-                        <td style="font-weight: bold;">${u.user_id}</td>
-                        <td style="color: var(--accent);">৳${u.balance}</td>
-                        <td><code style="color:var(--cyan); background: rgba(0,242,254,0.1); padding: 4px; border-radius: 4px;">${u.session_token ? u.session_token.substring(0,8) + '...' : 'N/A'}</code></td>
-                        <td><button class="copy-btn" onclick="copyText('${u.session_token}')">কপি করুন</button></td>
+                        <td><b>${u.user_id}</b></td>
+                        <td style="color:var(--accent);">৳${u.balance}</td>
+                        <td><code>${u.session_token ? u.session_token.substring(0,8)+'...' : 'N/A'}</code></td>
+                        <td><button class="copy-btn" onclick="copyText('${u.session_token}')">কপি</button></td>
                     </tr>
                 `).join('');
-            } catch(error) {
-                document.getElementById('member-list-body').innerHTML = "<tr><td colspan='4' style='text-align:center;'>কোনো ইউজারের ডাটা পাওয়া যায়নি।</td></tr>";
-            }
+            } catch(e) { console.log("User List Error"); }
         }
 
-        // --- সিস্টেম কনফিগারেশন লোড করা ---
-async function loadConfig() {
-    try {
-        const res = await fetch(`${API_BASE}/admin/api/config`);
-        const config = await res.json();
-        if(config) {
-            document.getElementById('c-fee').value = config.trade_fee || 0;
-            document.getElementById('c-link').value = config.telegram_link || '';
-            document.getElementById('c-join').value = config.join_bonus || 0;
-            document.getElementById('c-min').value = config.min_withdraw || 0;
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/config`);
+                const config = await res.json();
+                if(config) {
+                    document.getElementById('c-fee').value = config.trade_fee || 0;
+                    document.getElementById('c-link').value = config.telegram_link || '';
+                    document.getElementById('c-join').value = config.join_bonus || 0;
+                    document.getElementById('c-min').value = config.min_withdraw || 0;
+                }
+            } catch (err) { console.log("Config Load Error"); }
         }
-    } catch (err) { console.log("Config Load Error"); }
-}
 
-// --- সিস্টেম কনফিগারেশন আপডেট করা ---
-async function updateConfig() {
-    const configData = { 
-        trade_fee: document.getElementById('c-fee').value,
-        telegram_link: document.getElementById('c-link').value, 
-        join_bonus: document.getElementById('c-join').value, 
-        min_withdraw: document.getElementById('c-min').value 
-    };
-    
-    try {
-        const res = await fetch(`${API_BASE}/admin/api/config`, { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(configData) 
-        });
-        if(res.ok) {
-            alert("সব সেটিংস ও ট্রেডিং ফি সফলভাবে সেভ হয়েছে!");
-        } else {
-            alert("সেভ করতে সমস্যা হয়েছে।");
-        }
-    } catch (error) {
-        alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
-    }
-}
-
-        // --- ট্রেডিং ডাটা আপডেট করা (aaf445) ---
+        // স্পট ট্রেডিং আপডেট লজিক
         function pushTrading() {
             const newPrice = parseFloat(document.getElementById('inp-price').value);
             const newTrend = document.getElementById('inp-trend').value;
-
-            if(!newPrice) { alert("দয়া করে সঠিক প্রাইস লিখুন!"); return; }
+            if(!newPrice) { alert("প্রাইস দিন!"); return; }
 
             fb_db.ref('trading/aaf_coin').update({
                 price: newPrice,
                 trend: newTrend,
                 last_updated: Date.now()
-            }).then(() => {
-                alert("লাইভ চার্টের প্রাইস সফলভাবে আপডেট হয়েছে!");
-            });
+            }).then(() => { alert("স্পট প্রাইস আপডেট হয়েছে!"); });
         }
 
-        // --- নতুন টাস্ক সেভ করা (aaf443) ---
         async function saveTask() {
-            const taskData = { 
-                title: document.getElementById('t-title').value, 
-                link: document.getElementById('t-link').value, 
-                reward: document.getElementById('t-reward').value 
-            };
-            
-            if(!taskData.title || !taskData.link) { alert("দয়া করে সবগুলো ঘর পূরণ করুন!"); return; }
-
-            await fetch(`${API_BASE}/admin/api/tasks`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(taskData) 
-            });
-            alert("নতুন টাস্ক সফলভাবে পাবলিশ হয়েছে!");
+            const taskData = { title: document.getElementById('t-title').value, link: document.getElementById('t-link').value, reward: document.getElementById('t-reward').value };
+            if(!taskData.title || !taskData.link) { alert("ঘর পূরণ করুন!"); return; }
+            await fetch(`${API_BASE}/admin/api/tasks`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(taskData) });
+            alert("টাস্ক পাবলিশ হয়েছে!");
         }
 
-        // --- নোটিশ ও পপআপ আপডেট করা (aaf446) ---
         async function updateAds() {
-            const adData = {
-                title: document.getElementById('ad-title').value,
-                message: document.getElementById('ad-msg').value,
-                image: document.getElementById('ad-img').value,
-                status: document.getElementById('ad-status').value
-            };
-            
-            await fetch(`${API_BASE}/admin/api/update-popup`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(adData) 
-            });
-            alert("নোটিশ বোর্ড সফলভাবে আপডেট করা হয়েছে!");
+            const adData = { title: document.getElementById('ad-title').value, message: document.getElementById('ad-msg').value, image: document.getElementById('ad-img').value, status: document.getElementById('ad-status').value };
+            await fetch(`${API_BASE}/admin/api/update-popup`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(adData) });
+            alert("নোটিশ আপডেট হয়েছে!");
         }
 
-        // --- সিস্টেম কনফিগারেশন আপডেট করা (aaf448) ---
         async function updateConfig() {
             const configData = { 
+                trade_fee: document.getElementById('c-fee').value,
                 telegram_link: document.getElementById('c-link').value, 
                 join_bonus: document.getElementById('c-join').value, 
                 min_withdraw: document.getElementById('c-min').value 
             };
-            
-            await fetch(`${API_BASE}/admin/api/config`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(configData) 
-            });
-            alert("সিস্টেম সেটিং সফলভাবে সেভ হয়েছে!");
+            await fetch(`${API_BASE}/admin/api/config`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(configData) });
+            alert("সেটিংস সেভ হয়েছে!");
         }
 
-        // --- সেশন টেক্সট কপি করা ---
         function copyText(text) {
-            if(text && text !== 'undefined') {
-                navigator.clipboard.writeText(text);
-                alert("সেশন টোকেন কপি করা হয়েছে!");
-            } else {
-                alert("কপি করার মতো কোনো সেশন নেই।");
-            }
+            if(text && text !== 'undefined') { navigator.clipboard.writeText(text); alert("কপি হয়েছে!"); }
         }
-        
-        // --- পেমেন্ট এপ্রুভ করা ---
+
         async function approvePay(id) {
-            alert("পেমেন্ট এপ্রুভ করার রিকোয়েস্ট পাঠানো হয়েছে!");
-            // এখানে আপনার ব্যাকএন্ডের এপ্রুভ API কল বসবে
+            const res = await fetch(`${API_BASE}/admin/api/approve-payout`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) });
+            if(res.ok) { alert("এপ্রুভ হয়েছে!"); loadDashboardStats(); }
         }
     </script>
 </body>
