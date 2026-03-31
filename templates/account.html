@@ -2,211 +2,201 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF | Multi-Account Manager</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF | Account Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; --text-dim: #8b949e; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI', sans-serif; margin: 0; padding-bottom: 85px; }
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
 
-        /* ১. অ্যাড সেকশন */
-        #top-ad-slot { width: 100%; text-align: center; background: #000; padding: 5px 0; min-height: 55px; border-bottom: 1px solid var(--border); overflow: hidden; }
+        :root {
+            --bg: #030712; --card: #0d111c; --border: rgba(255, 255, 255, 0.1);
+            --cyan: #00f2fe; --primary: #39d353; --gold: #ffaa00;
+            --text-dim: #8b949e; --glass: rgba(255, 255, 255, 0.05);
+        }
 
-        /* ২. প্রোফাইল কার্ড */
-        .profile-card { background: var(--card); padding: 25px; text-align: center; border-bottom: 1px solid var(--border); }
-        .tg-avatar { width: 85px; height: 85px; border-radius: 50%; background: #2b5278; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 2px solid var(--primary); overflow: hidden; font-size: 32px; font-weight: bold; color: white; }
-        .tg-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; } 
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 120px; overflow-x: hidden; }
 
-        .user-name { font-size: 20px; margin: 0; font-weight: 800; color: white; }
-        .user-meta { color: var(--primary); font-size: 13px; margin: 5px 0; font-weight: 500; }
-        .user-phone { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
-
-        .balance-display-box { display: flex; align-items: center; justify-content: space-around; background: rgba(57, 211, 83, 0.05); border: 1px solid var(--border); border-radius: 15px; margin-top: 20px; padding: 15px; }
-
-        /* ৩. অ্যাকাউন্ট লিস্ট */
-        .section-label { padding: 20px 15px 10px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        .account-box { margin: 0 15px 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-        .acc-item { display: flex; align-items: center; padding: 15px; cursor: pointer; border-bottom: 1px solid var(--border); transition: 0.2s; }
-        .acc-item:last-child { border-bottom: none; }
-        .acc-item.active { background: rgba(57, 211, 83, 0.08); border-left: 4px solid var(--primary); }
+        /* --- Sliding Cover Section --- */
+        .profile-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #000; }
+        .cover-slider { position: absolute; width: 200%; height: 100%; display: flex; transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slide { width: 50%; height: 100%; background-size: cover; background-position: center; }
         
-        .acc-circle { width: 45px; height: 45px; border-radius: 50%; background: #2b5278; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-weight: bold; }
-        .acc-circle img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .acc-details { flex: 1; text-align: left; }
-        .acc-details h4 { margin: 0; font-size: 15px; color: white; }
-        .acc-details p { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+        /* ডিফল্ট ব্র্যান্ড ইমেজ */
+        .slide-default { background-image: url('cb5ab54f-d9c5-41f6-9a24-fe714060a2f6.jpeg'); }
+        /* অ্যাডমিন প্যানেল থেকে আসা অ্যাড ইমেজ */
+        .slide-ad { background-color: #0d111c; background-size: cover; background-position: center; }
 
-        /* ৪. অ্যাড বাটন */
-        .add-btn { color: var(--primary); padding: 18px; cursor: pointer; font-size: 14px; display: flex; align-items: center; font-weight: bold; justify-content: center; background: rgba(57, 211, 83, 0.05); }
-        .add-btn i { margin-right: 10px; font-size: 18px; }
+        .profile-info-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 0;
+            background: linear-gradient(to top, var(--bg) 20%, transparent); z-index: 5; text-align: center;
+        }
 
-        /* ৫. বটম নেভিগেশন */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
-        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .avatar-wrapper { position: relative; width: 85px; height: 85px; margin: -45px auto 10px; z-index: 10; }
+        .tg-avatar { 
+            width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--cyan); 
+            overflow: hidden; background: #1e293b; box-shadow: 0 0 20px rgba(0,242,254,0.4); 
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+        }
+        .tg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- Info Cards --- */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px 20px; }
+        .info-card { background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 18px; text-align: center; }
+        .info-card span { font-size: 8px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 5px; }
+        .info-card h4 { margin: 0; font-size: 15px; font-family: 'Syncopate'; letter-spacing: 1px; }
+
+        /* --- Buttons --- */
+        .action-btn { margin: 15px 20px; padding: 16px; border-radius: 15px; text-align: center; font-family: 'Syncopate'; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .btn-offer { background: linear-gradient(90deg, #00f2fe, #0088cc); color: #000; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); }
+        .btn-add { border: 1px dashed var(--cyan); color: var(--cyan); margin-top: 5px; }
+
+        /* --- Ad Modal --- */
+        #ad-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 380px; background: var(--card); border: 1px solid var(--cyan); border-radius: 25px; padding: 25px; text-align: center; }
+        .modal-content img { width: 100%; border-radius: 15px; margin-bottom: 15px; border: 1px solid var(--border); }
+
+        /* --- Navigation --- */
+        .bottom-nav-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; z-index: 2000; }
+        .bottom-nav { background: #0d111c; display: flex; justify-content: space-around; padding: 12px; border: 1px solid var(--border); border-radius: 50px; backdrop-filter: blur(10px); }
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 10px; text-align: center; flex: 1; }
+        .nav-item i { font-size: 18px; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
     </style>
 </head>
 <body>
 
-    <div id="top-ad-slot">
-        <p style="font-size: 10px; color: var(--text-dim); padding-top: 15px;">Loading Sponsored Ads...</p>
-    </div>
-
-    <div class="profile-card">
-        <div class="tg-avatar" id="main-avatar-container">
-            <img id="main-photo" src="" alt="Profile">
-            <span id="main-initials">?</span>
-        </div>
-        <h3 class="user-name" id="main-name">Loading...</h3>
-        <p class="user-meta">@<span id="main-username">username</span></p>
-        <p class="user-phone" id="main-phone">+880 1XXX-XXXXXX</p>
-        <p style="color: var(--text-dim); font-size: 11px; margin-top: 5px;">UID: #<span id="display-id">000000</span></p>
-
-        <div class="balance-display-box">
-            <div>
-                <span style="font-size: 11px; color: var(--text-dim);">Available Balance</span>
-                <p id="main-bal" style="margin: 5px 0; font-size: 22px; font-weight: bold; color: var(--primary);">৳ 0.00</p>
-            </div>
-            <div style="width: 1px; background: var(--border); height: 30px;"></div>
-            <div>
-                <span style="font-size: 11px; color: var(--text-dim);">Account Status</span>
-                <p style="margin: 5px 0; font-size: 14px; font-weight: bold; color: #fff;">Verified</p>
-            </div>
+    <div id="ad-modal">
+        <div class="modal-content">
+            <img id="popup-img" src="" alt="Ad">
+            <h3 id="popup-title" style="color: var(--cyan); margin: 0 0 10px 0; font-family: 'Syncopate'; font-size: 16px;">OFFER</h3>
+            <p id="popup-desc" style="font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 20px;"></p>
+            <button onclick="closePopup()" style="width: 100%; background: var(--cyan); border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; font-family: 'Syncopate';">CLOSE</button>
         </div>
     </div>
 
-    <div class="section-label">Switch Account</div>
-    <div class="account-box" id="account-list"></div>
-
-    <div class="account-box">
-        <div class="add-btn" onclick="goToLoginPage()">
-            <i class="fas fa-plus-circle"></i> Add Telegram Account
+    <div class="profile-container">
+        <div class="cover-slider" id="main-slider">
+            <div class="slide slide-default"></div>
+            <div class="slide slide-ad" id="admin-banner-slide"></div>
+        </div>
+        <div class="profile-info-overlay">
+            <h2 id="u-name" style="margin:0; font-family: 'Syncopate'; font-size: 15px; letter-spacing: 1px;">LOADING...</h2>
+            <span id="u-id" style="font-size: 10px; color: var(--text-dim);">UID: 000000</span>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-        <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-        <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-        <a href="/account" class="nav-item active"><i class="fas fa-user-circle"></i><span>Account</span></a>
-    </nav>
+    <div class="avatar-wrapper">
+        <div class="tg-avatar" id="main-avatar">
+            <i class="fas fa-user-circle"></i>
+        </div>
+    </div>
 
-<script>
-    const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+    <div class="action-btn btn-offer" onclick="showOfferPopup()">
+        <i class="fas fa-bolt"></i> &nbsp; VIEW SPECIAL OFFER
+    </div>
 
-    // ১. অ্যাড রোটেশন ফাংশন
-    async function startAdRotation() {
-        try {
-            const res = await fetch(`${API_URL}/api/get_active_ads`);
-            const adData = await res.json();
+    <div class="info-grid">
+        <div class="info-card">
+            <span>CASH WALLET</span>
+            <h4 id="cash-bal">৳ 0.00</h4>
+        </div>
+        <div class="info-card" style="border-color: var(--gold);">
+            <span>AAF COINS</span>
+            <h4 id="coin-bal" style="color: var(--gold);">0.00</h4>
+        </div>
+    </div>
+
+    <div class="action-btn btn-add" onclick="window.location.href='login.html'">
+        <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
+    </div>
+
+    <div class="bottom-nav-container">
+        <nav class="bottom-nav">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i>Home</a>
+            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+            <a href="/trade" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
+            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+            <a href="/account" class="nav-item active"><i class="fas fa-user"></i>Account</a>
+        </nav>
+    </div>
+
+    <script>
+        const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+        let popupData = null;
+
+        // --- স্লাইডার কন্ট্রোল (Auto Slide) ---
+        let currentSlide = 0;
+        setInterval(() => {
+            const slider = document.getElementById('main-slider');
+            currentSlide = (currentSlide === 0) ? 50 : 0;
+            slider.style.transform = `translateX(-${currentSlide}%)`;
+        }, 6000); // প্রতি ৬ সেকেন্ডে অটো স্লাইড হবে
+
+        // --- এপিআই থেকে ডাটা লোড ---
+        async function initializeApp() {
+            const userId = localStorage.getItem('user_id');
             
-            if (adData.ads && adData.ads.length > 0) {
-                let adIndex = 0;
-                const adSlot = document.getElementById('top-ad-slot');
-                adSlot.innerHTML = adData.ads[adIndex].code;
+            try {
+                // ইউজার ডাটা এবং অ্যাড ডাটা প্যারালাল ফেচ
+                const [userRes, adRes] = await Promise.all([
+                    userId ? fetch(`${API_URL}/api/user/data/${userId}`) : null,
+                    fetch(`${API_URL}/api/ads/control`)
+                ]);
 
-                setInterval(() => {
-                    adIndex = (adIndex + 1) % adData.ads.length;
-                    adSlot.innerHTML = adData.ads[adIndex].code; 
-                }, 10000); 
-            }
-        } catch (e) {
-            console.log("Ad Rotation Error");
-        }
-    }
-
-    // ২. মেইন ফাংশন: অ্যাকাউন্ট লিস্ট লোড করা
-    async function loadAccountManager() {
-        const sessions = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
-        const activeIdx = parseInt(localStorage.getItem('aaf_active_index')) || 0;
-        const listDiv = document.getElementById('account-list');
-        listDiv.innerHTML = "";
-
-        if (sessions.length === 0) {
-            listDiv.innerHTML = "<p style='padding:20px; text-align:center; color:var(--text-dim); font-size:12px;'>No accounts linked.</p>";
-            return;
-        }
-
-        // সিরিয়াল অনুযায়ী লিস্ট তৈরি (Telegram Style)
-        sessions.forEach((acc, index) => {
-            const isActive = (index === activeIdx);
-            listDiv.innerHTML += `
-                <div class="acc-item ${isActive ? 'active' : ''}" onclick="switchAccount(${index})">
-                    <div class="acc-circle">
-                        ${acc.photo ? `<img src="${acc.photo}">` : `<span>${(acc.name || 'U').charAt(0).toUpperCase()}</span>`}
-                    </div>
-                    <div class="acc-details">
-                        <h4>${acc.name || 'User'}</h4>
-                        <p>${acc.phone || 'No Phone'}</p>
-                    </div>
-                    ${isActive ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}
-                </div>
-            `;
-        });
-
-        // একটিভ অ্যাকাউন্টের ডাটা ডাটাবেস থেকে সিঙ্ক করা
-        if (sessions[activeIdx]) {
-            syncDatabaseData(sessions[activeIdx]);
-        }
-    }
-
-    // ৩. ডাটাবেস থেকে নির্দিষ্ট অ্যাকাউন্টের ডাটা আনা (Isolation)
-    async function syncDatabaseData(currentAcc) {
-        try {
-            const response = await fetch(`${API_URL}/api/user/data/${currentAcc.user_id}`);
-            const freshData = await response.json();
-            
-            if (freshData.status === "success") {
-                // UI আপডেট (ডাটাবেস অনুযায়ী)
-                document.getElementById('main-name').innerText = freshData.name || currentAcc.name || 'User';
-                document.getElementById('main-bal').innerText = "৳ " + parseFloat(freshData.balance || 0).toFixed(2);
-                document.getElementById('display-id').innerText = freshData.uid || currentAcc.user_id;
-                document.getElementById('main-phone').innerText = freshData.phone || currentAcc.phone || 'No Phone';
-                document.getElementById('main-username').innerText = (freshData.username || "user");
-                document.getElementById('main-initials').innerText = (freshData.name || 'U').charAt(0).toUpperCase();
-                
-                if (freshData.profile_pic) {
-                    const img = document.getElementById('main-photo');
-                    img.src = freshData.profile_pic;
-                    img.style.display = 'block';
-                    document.getElementById('main-initials').style.display = 'none';
+                // ১. ইউজার ইনফো আপডেট
+                if (userRes) {
+                    const userData = await userRes.json();
+                    if (userData.status === "success") {
+                        document.getElementById('u-name').innerText = userData.name.toUpperCase();
+                        document.getElementById('u-id').innerText = "UID: " + userData.uid;
+                        document.getElementById('cash-bal').innerText = "৳ " + parseFloat(userData.balance).toFixed(2);
+                        document.getElementById('coin-bal').innerText = parseFloat(userData.aaf_coins || 0).toFixed(2);
+                        
+                        if (userData.photo) {
+                            document.getElementById('main-avatar').innerHTML = `<img src="${userData.photo}" alt="User">`;
+                        }
+                    }
                 }
+
+                // ২. অ্যাডমিন অ্যাড কন্ট্রোল আপডেট
+                const adData = await adRes.json();
+                
+                // ব্যানার অ্যাড স্লাইডারে সেট করা
+                if (adData.banner && adData.banner.enabled) {
+                    document.getElementById('admin-banner-slide').style.backgroundImage = `url('${adData.banner.image}')`;
+                } else {
+                    // ব্যানার না থাকলে স্লাইডার বন্ধ রাখা
+                    document.getElementById('main-slider').style.width = "100%";
+                    document.querySelectorAll('.slide').forEach(s => s.style.width = "100%");
+                }
+
+                // পপআপ ডাটা গ্লোবাল ভেরিয়েবলে রাখা
+                popupData = adData.popup;
+
+            } catch (error) {
+                console.error("Initialization Error:", error);
+                document.getElementById('u-name').innerText = "CONNECTION ERROR";
             }
-        } catch (err) {
-            console.log("Database Sync Failed. Showing Local Data.");
-            // ইন্টারনেট না থাকলে লোকাল ডাটা দেখাবে
-            document.getElementById('main-name').innerText = currentAcc.name || 'User';
-            document.getElementById('main-bal').innerText = "৳ " + parseFloat(currentAcc.balance || 0).toFixed(2);
-            document.getElementById('display-id').innerText = currentAcc.user_id;
         }
-    }
 
-    // ৪. অ্যাকাউন্ট সুইচিং লজিক
-    function switchAccount(index) {
-        let sessions = JSON.parse(localStorage.getItem('aaf_sessions')) || [];
-        if (sessions[index]) {
-            localStorage.setItem('user_id', sessions[index].user_id);
-            localStorage.setItem('aaf_active_index', index);
-            
-            // সেশন রিনিউ এবং ড্যাশবোর্ডে পাঠানো
-            localStorage.setItem('aaf_login_expiry', new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
-            window.location.href = "/dashboard"; 
+        // --- পপআপ ফাংশন ---
+        function showOfferPopup() {
+            if (popupData && popupData.enabled) {
+                document.getElementById('popup-img').src = popupData.image;
+                document.getElementById('popup-title').innerText = popupData.title;
+                document.getElementById('popup-desc').innerText = popupData.desc;
+                document.getElementById('ad-modal').style.display = 'block';
+            } else {
+                alert("No active offers at this moment. Check back later!");
+            }
         }
-    }
 
-    // ৫. লগইন পেজে রিডাইরেক্ট (নতুন একাউন্ট যোগ করার জন্য)
-    function goToLoginPage() {
-        // আপনার মেইন লগইন ফাইলের সঠিক নাম নিশ্চিত করুন
-        window.location.href = "login.html"; 
-    }
+        function closePopup() {
+            document.getElementById('ad-modal').style.display = 'none';
+        }
 
-    window.onload = () => {
-        loadAccountManager();
-        startAdRotation();
-    };
-</script>
+        // পেজ লোড হলে অ্যাপ রান হবে
+        window.onload = initializeApp;
+    </script>
 </body>
-</html>
+    </html>
