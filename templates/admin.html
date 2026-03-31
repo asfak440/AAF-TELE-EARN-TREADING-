@@ -233,6 +233,9 @@
         <div id="config" class="data-section">
             <div class="premium-card">
                 <h3><i class="fas fa-cogs"></i> কোর সিস্টেম সেটিং</h3>
+
+                <label>ট্রেডিং ফি বা কমিশন (%)</label>
+                <input type="number" id="c-fee" placeholder="যেমন: ২.৫" step="0.1">
                 
                 <label>অফিসিয়াল টেলিগ্রাম লিংক</label>
                 <input type="text" id="c-link" placeholder="https://t.me/yourchannel">
@@ -300,6 +303,7 @@
 
             // মঙ্গোডিবি থেকে ড্যাশবোর্ডের ডাটা আনা
             loadDashboardStats();
+            loadConfig();
             setInterval(loadDashboardStats, 30000); // প্রতি ৩০ সেকেন্ডে অটো আপডেট
         }
 
@@ -349,6 +353,45 @@
                 document.getElementById('member-list-body').innerHTML = "<tr><td colspan='4' style='text-align:center;'>কোনো ইউজারের ডাটা পাওয়া যায়নি।</td></tr>";
             }
         }
+
+        // --- সিস্টেম কনফিগারেশন লোড করা ---
+async function loadConfig() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/api/config`);
+        const config = await res.json();
+        if(config) {
+            document.getElementById('c-fee').value = config.trade_fee || 0;
+            document.getElementById('c-link').value = config.telegram_link || '';
+            document.getElementById('c-join').value = config.join_bonus || 0;
+            document.getElementById('c-min').value = config.min_withdraw || 0;
+        }
+    } catch (err) { console.log("Config Load Error"); }
+}
+
+// --- সিস্টেম কনফিগারেশন আপডেট করা ---
+async function updateConfig() {
+    const configData = { 
+        trade_fee: document.getElementById('c-fee').value,
+        telegram_link: document.getElementById('c-link').value, 
+        join_bonus: document.getElementById('c-join').value, 
+        min_withdraw: document.getElementById('c-min').value 
+    };
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/api/config`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(configData) 
+        });
+        if(res.ok) {
+            alert("সব সেটিংস ও ট্রেডিং ফি সফলভাবে সেভ হয়েছে!");
+        } else {
+            alert("সেভ করতে সমস্যা হয়েছে।");
+        }
+    } catch (error) {
+        alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
+    }
+}
 
         // --- ট্রেডিং ডাটা আপডেট করা (aaf445) ---
         function pushTrading() {
