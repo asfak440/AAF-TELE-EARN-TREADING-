@@ -39,6 +39,7 @@
             padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; 
             position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--glass-border);
         }
+        
         .u-info { font-size: 13px; font-weight: 700; color: var(--primary); font-family: 'Syncopate'; text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
         
         .container { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
@@ -83,7 +84,6 @@
         .btn-tra { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); }
         .btn-con { border-color: var(--danger); color: var(--danger); box-shadow: 0 0 15px rgba(255, 0, 85, 0.15); }
 
-        /* --- NEW: Active User Top Section --- */
         #active-user-bar {
             display: none;
             align-items: center;
@@ -120,9 +120,12 @@
 
     <div class="nav-header">
         <div class="u-profile">
-            <div class="u-info"><i class="fas fa-user-astronaut"></i> <span id="u-name">USER</span></div>
-            <div style="font-size: 10px; color: var(--danger); font-weight: bold; margin-top: 2px;"><i class="fas fa-id-badge"></i> <span id="u-phone">01XXXXXXXXX</span></div>
+            <div class="u-info"><i class="fas fa-user-astronaut"></i> <span id="u-name">LOADING...</span></div>
+            <div style="font-size: 10px; color: var(--active-green); font-weight: bold; margin-top: 2px;">
+                <i class="fab fa-telegram-plane"></i> ID: <span id="u-tg-id">N/A</span>
+            </div>
         </div>
+        
         <div class="header-mid-bal" style="background:rgba(0,0,0,0.4); padding:10px 18px; border-radius:20px; border:1px solid var(--glass-border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
             <div style="display:flex; gap:15px; font-size:12px; font-weight:bold; font-family: 'Syncopate';">
                 <span style="color: var(--active-green);">৳<span id="h-cash">0.00</span></span>
@@ -153,13 +156,13 @@
         </div>
 
         <div class="premium-card action-grid-card">
-            <div class="btn-main btn-dep" onclick="smartRedirect('wallet')">
+            <div class="btn-main btn-dep" onclick="smartRedirect('deposit')">
                 <i class="fas fa-plus-circle"></i> DEPOSIT
             </div>
-            <div class="btn-main btn-wit" onclick="smartRedirect('wallet')">
+            <div class="btn-main btn-wit" onclick="smartRedirect('withdraw')">
                 <i class="fas fa-wallet"></i> WITHDRAW
             </div>
-            <div class="btn-main btn-tra" onclick="smartRedirect('wallet')">
+            <div class="btn-main btn-tra" onclick="smartRedirect('transfar')">
                 <i class="fas fa-exchange-alt"></i> TRANSFER
             </div>
             <div class="btn-main btn-con" onclick="smartRedirect('trading')">
@@ -191,7 +194,7 @@
 
         <div id="active-user-bar">
             <img src="https://i.ibb.co/vz6mXvK/tele-logo.png" alt="Channel Logo">
-            <span id="active-user-info">ID: 01XXXXXXXXX IS NOW ACTIVE</span>
+            <span id="active-user-info">ID: LOADING... IS NOW ACTIVE</span>
         </div>
 
         <div class="premium-card" id="join-card" style="padding:18px; display:flex; align-items:center; gap:15px; border-left:5px solid var(--danger); margin-top:5px;">
@@ -217,43 +220,72 @@
         let userData = {};
         let adminConfig = {};
 
+        // ১. মেইন ড্যাশবোর্ড আপডেট ফাংশন
         async function initDashboard() {
             try {
                 const response = await fetch('/get_user_data');
+                if (!response.ok) throw new Error("API Error");
                 const data = await response.json();
+                
                 userData = data.user;
                 adminConfig = data.admin;
 
-                document.getElementById('u-name').innerText = userData.username;
-                document.getElementById('u-phone').innerText = userData.phone;
-                document.getElementById('h-cash').innerText = userData.cash;
-                document.getElementById('h-aaf').innerText = userData.aaf;
-                
-                document.getElementById('srv-total-income').innerText = '৳' + adminConfig.server_income;
-                document.getElementById('srv-total-trading').innerText = '৳' + adminConfig.server_trading;
-                document.getElementById('total-users-global').innerText = adminConfig.total_users;
-                document.getElementById('total-ref').innerText = userData.total_refer;
-                document.getElementById('my-trading-income').innerText = '৳' + userData.trading_profit;
+                updateUI(userData, adminConfig);
 
-                if(userData.is_active) {
-                    document.getElementById('status-dot').style.background = 'var(--active-green)';
-                    document.getElementById('status-dot').style.boxShadow = '0 0 20px var(--active-green)';
-                    document.getElementById('join-status').innerText = "CONNECTED";
-                    document.getElementById('join-status').style.color = 'var(--active-green)';
-                    document.getElementById('join-card').style.borderLeftColor = 'var(--active-green)';
-                    
-                    // Show Active User Bar Above Join Card
-                    const activeBar = document.getElementById('active-user-bar');
-                    activeBar.style.display = 'flex';
-                    document.getElementById('active-user-info').innerText = "ID: " + userData.phone + " IS NOW ACTIVE";
-                    
-                    // Update button if needed
-                    document.getElementById('main-join-btn').style.background = 'var(--primary)';
-                    document.getElementById('main-join-btn').innerText = "VISIT CHANNEL";
-                }
-                document.getElementById('banner-top').innerHTML = adminConfig.banner_ad_code;
-            } catch (e) { console.log("Init Error"); }
+            } catch (e) { 
+                console.error("Dashboard Init Error");
+                document.getElementById('u-name').innerText = "ERROR";
+            }
         }
+
+        // ২. ডাটা রেন্ডার করার জন্য আলাদা ফাংশন (যাতে বার বার কল করা যায়)
+        function updateUI(user, admin) {
+            document.getElementById('u-name').innerText = user.username || "USER";
+            document.getElementById('u-tg-id').innerText = user.telegram_id || "NOT SET";
+            document.getElementById('h-cash').innerText = user.cash;
+            document.getElementById('h-aaf').innerText = user.aaf;
+            
+            document.getElementById('srv-total-income').innerText = '৳' + admin.server_income;
+            document.getElementById('srv-total-trading').innerText = '৳' + admin.server_trading;
+            document.getElementById('total-users-global').innerText = admin.total_users;
+            document.getElementById('total-ref').innerText = user.total_refer;
+            document.getElementById('my-trading-income').innerText = '৳' + user.trading_profit;
+
+            // ইউজার একটিভ থাকলে ডিজাইন পরিবর্তন
+            if(user.is_active) {
+                document.getElementById('status-dot').style.background = 'var(--active-green)';
+                document.getElementById('status-dot').style.boxShadow = '0 0 20px var(--active-green)';
+                document.getElementById('join-status').innerText = "CONNECTED";
+                document.getElementById('join-status').style.color = 'var(--active-green)';
+                document.getElementById('join-card').style.borderLeftColor = 'var(--active-green)';
+                
+                const activeBar = document.getElementById('active-user-bar');
+                activeBar.style.display = 'flex';
+                document.getElementById('active-user-info').innerText = "ID: " + (user.telegram_id || "USER") + " IS NOW ACTIVE";
+                
+                document.getElementById('main-join-btn').style.background = 'var(--primary)';
+                document.getElementById('main-join-btn').innerText = "VISIT CHANNEL";
+            }
+            document.getElementById('banner-top').innerHTML = admin.banner_ad_code;
+        }
+
+        // ৩. অটো-রিফ্রেশ লজিক: প্রতি ১০ সেকেন্ডে চেক করবে
+        setInterval(async () => {
+            // যদি ইউজার এখনো একটিভ না থাকে, তবেই রিকোয়েস্ট পাঠাবে
+            if (userData && !userData.is_active) {
+                try {
+                    const response = await fetch('/get_user_data');
+                    const data = await response.json();
+                    
+                    // ব্যাকএন্ড থেকে যদি একটিভ স্ট্যাটাস আসে, তবে UI আপডেট করে দিবে
+                    if (data.user.is_active) {
+                        userData.is_active = true;
+                        updateUI(data.user, data.admin);
+                        console.log("Status Updated: USER IS NOW ACTIVE");
+                    }
+                } catch (e) { console.log("Auto-check failed"); }
+            }
+        }, 10000); 
 
         function joinChannel() {
             window.open(adminConfig.channel_url || "https://t.me/aafteleearn", "_blank");
@@ -266,4 +298,4 @@
         window.onload = initDashboard;
     </script>
 </body>
-</html>
+                </html>
