@@ -2,196 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF Exchange | Pro Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAF Trading Engine v18.0 Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
         :root {
-            --bg: #030712;
-            --border: rgba(255, 255, 255, 0.1);
-            --cyan: #00f2fe;
-            --cyan-glow: rgba(0, 242, 254, 0.6);
-            --nav-bg: #0b0f1a; 
+            --bg: #020617;
+            --primary: #00f2fe;
+            --accent: #00ff88;
+            --danger: #ff0055;
+            --glass: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-muted: #94a3b8;
         }
 
         body { 
-            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 120px; overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.1), transparent);
+            background: var(--bg); color: #fff; 
+            font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding: 20px;
+            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+        }
+        
+        .premium-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* Header */
-        .header { 
-            padding: 20px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .header h2 { font-family: 'Syncopate'; font-size: 13px; margin: 0; color: var(--cyan); text-shadow: 0 0 15px var(--cyan-glow); }
-        #live-price { font-family: 'Syncopate'; font-size: 16px; color: #00ffa3; }
+        h2, h4 { font-family: 'Syncopate'; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Chart */
-        #chart-wrapper { width: 100%; height: 300px; background: #000; border-bottom: 1px solid var(--border); margin-top: 10px; }
-        #chart-container { width: 100%; height: 100%; }
-
-        /* Stats Card */
-        .content { padding: 20px; max-width: 500px; margin: auto; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .card { 
-            background: rgba(17, 24, 39, 0.8); padding: 15px; border-radius: 20px; border: 1px solid var(--border);
-            border-left: 3px solid var(--cyan);
-        }
-        .card span { font-size: 10px; color: #94a3b8; display: block; margin-bottom: 5px; }
-        .card b { font-size: 18px; color: #fff; }
-
-        /* Trade Box */
-        .trade-box { background: rgba(255, 255, 255, 0.02); padding: 25px; border-radius: 30px; border: 1px solid var(--border); text-align: center; }
-        input { 
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); padding: 18px; 
-            color: var(--cyan); font-size: 22px; border-radius: 18px; text-align: center; outline: none; 
-            font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box;
+        /* Trading Area */
+        #candle-view {
+            height: 180px; background: rgba(0,0,0,0.4); 
+            border: 1px dashed var(--glass-border); border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; margin: 15px 0;
+            color: var(--primary); font-weight: bold;
         }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .btn { padding: 18px; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; font-family: 'Syncopate'; font-size: 10px; transition: 0.3s; }
-        .buy { background: linear-gradient(135deg, #00f2fe, #00ffa3); color: #020617; }
-        .sell { background: linear-gradient(135deg, #ff3366, #ff6b6b); color: #fff; }
-
-        /* Navigation Bar (Pill Shape - Screenshot Match) */
-        .nav-container { position: fixed; bottom: 25px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 9999; }
-        .nav-bar { 
-            width: 92%; max-width: 450px; background: var(--nav-bg); 
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 100px; 
-            display: flex; justify-content: space-around; padding: 12px 10px; backdrop-filter: blur(20px);
+        /* History Section Styles */
+        .history-container { display: none; margin-top: 20px; animation: fadeIn 0.4s ease; }
+        .trade-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .trade-table th { color: var(--text-muted); text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--glass-border); font-size: 10px; }
+        .trade-table td { padding: 14px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        
+        .btn-history {
+            background: rgba(0, 242, 254, 0.05); border: 1px solid var(--primary);
+            color: var(--primary); padding: 14px; border-radius: 15px;
+            cursor: pointer; width: 100%; font-weight: bold; font-family: 'Syncopate';
+            font-size: 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        .nav-item { text-decoration: none; text-align: center; color: #6b7280; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item i { font-size: 22px; margin-bottom: 5px; }
-        .nav-item.active { color: var(--cyan); }
-        .nav-item.active i { filter: drop-shadow(0 0 10px var(--cyan-glow)); }
-
-        /* Pop-up Ad Overlay */
-        #pop-ad-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 10001;
-            display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px);
-        }
-        .pop-ad-box {
-            width: 85%; max-width: 320px; background: #0f172a; border-radius: 30px;
-            border: 1px solid var(--cyan); padding: 15px; position: relative; text-align: center;
-        }
-        #pop-ad-img { width: 100%; border-radius: 20px; margin-bottom: 15px; cursor: pointer; border: 1px solid var(--border); }
+        .btn-history:active { transform: scale(0.96); background: var(--primary); color: #000; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <h2>AAF EXCHANGE</h2>
-        <span id="live-price">0.0000</span>
-    </header>
+    <div class="premium-card">
+        <h2 style="font-size: 14px; color: var(--primary);">
+            <i class="fas fa-chart-line"></i> LIVE TRADING ENGINE
+        </h2>
+        
+        <div id="trading-controls">
+            <div id="candle-view">
+                <i class="fas fa-spinner fa-spin"></i> &nbsp; STREAMING FROM FIREBASE...
+            </div>
+            </div>
 
-    <div id="chart-wrapper">
-        <div id="chart-container"></div>
-    </div>
+        <button class="btn-history" onclick="toggleTradeHistory()">
+            <i class="fas fa-database"></i> VIEW MONGOL-BD HISTORY
+        </button>
 
-    <div class="content">
-        <div class="stat-grid">
-            <div class="card"><span>AAF HOLDINGS</span><b id="aaf-bal">0.00</b></div>
-            <div class="card"><span>TOTAL CASH</span><b id="tk-bal">৳ 0.00</b></div>
-        </div>
-
-        <div class="trade-box">
-            <input type="number" id="trade-amount" placeholder="ENTER TK">
-            <div class="btn-group">
-                <button class="btn buy" onclick="initiateTrade('BUY')">BUY</button>
-                <button class="btn sell" onclick="initiateTrade('SELL')">SELL</button>
+        <div id="history-section" class="history-container">
+            <h4 style="font-size: 11px; color: var(--accent); margin-bottom: 5px;">
+                <i class="fas fa-history"></i> TRADE LOGS (MONGODB)
+            </h4>
+            <div style="overflow-x: auto;">
+                <table class="trade-table">
+                    <thead>
+                        <tr>
+                            <th>ASSET</th>
+                            <th>AMOUNT</th>
+                            <th>RESULT</th>
+                            <th>TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mongo-data-list">
+                        <tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-muted);">Ready to fetch data...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="nav-container">
-        <nav class="nav-bar">
-            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
-            <a href="/trade" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
-        </nav>
-    </div>
-
-    <div id="pop-ad-overlay">
-        <div class="pop-ad-box">
-            <button onclick="closePopAd()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: #fff; font-size: 24px;">&times;</button>
-            <h4 style="margin: 10px 0; color: var(--cyan); font-family: 'Syncopate'; font-size: 12px;">SPECIAL OFFER</h4>
-            <a id="pop-ad-link" href="#" target="_blank">
-                <img id="pop-ad-img" src="" alt="Promo">
-            </a>
-            <button class="btn buy" style="width: 100%; margin-top: 10px;" onclick="closePopAd()">PROCEED TO TRADE</button>
-        </div>
-    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // --- Firebase Configuration ---
-        const firebaseConfig = { apiKey: "YOUR_API", databaseURL: "YOUR_URL", projectId: "YOUR_ID" };
-        firebase.initializeApp(firebaseConfig);
+        // --- ১. FIREBASE সেটআপ (শুধুমাত্র ক্যান্ডেল/মার্কেট ডাটার জন্য) ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com",
+            projectId: "teleearnbd-781d6",
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
 
-        // 1. Chart Setup
-        const chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
-            layout: { background: { color: '#000' }, textColor: '#94a3b8' },
-            grid: { vertLines: { visible: false }, horzLines: { color: '#111827' } },
-        });
-        const candleSeries = chart.addCandlestickSeries({ upColor: '#00ffa3', downColor: '#ff3366' });
-
-        // 2. Admin Control Logic (Pop-up & Ads)
-        let adControl = { status: 'off', img: '', link: '' };
-
-        function syncAdminSettings() {
-            // পপ-আপ অ্যাড কন্ট্রোল
-            db.ref('admin/ads/popup').on('value', (s) => {
-                adControl = s.val();
-            });
-
-            // রিয়েল-টাইম ব্যালেন্স আপডেট (Example UID: user123)
-            const userId = "user123"; 
-            db.ref(`users/${userId}`).on('value', (s) => {
-                const data = s.val();
-                if(data) {
-                    document.getElementById('tk-bal').innerText = `৳ ${data.balance.toFixed(2)}`;
-                }
+        // ফায়ারবেস থেকে ক্যান্ডেলস্টিক ডাটা শো করার উদাহরণ
+        function streamMarketData() {
+            db.ref('market_candles').on('value', (snapshot) => {
+                // এখানে আপনার ক্যান্ডেল চার্ট আপডেট করার কোড থাকবে
+                console.log("Firebase Market Data Updated");
             });
         }
 
-        // 3. Trade Action with Pop-up Check
-        function initiateTrade(type) {
-            const amount = document.getElementById('trade-amount').value;
-            if(!amount || amount <= 0) return alert("Enter amount!");
-
-            // যদি এডমিন প্যানেল থেকে অ্যাড 'active' থাকে
-            if(adControl && adControl.status === 'active') {
-                document.getElementById('pop-ad-img').src = adControl.img;
-                document.getElementById('pop-ad-link').href = adControl.link;
-                document.getElementById('pop-ad-overlay').style.display = 'flex';
+        // --- ২. MONGOL-BD (MONGODB) লজিক (ট্রেড হিস্ট্রির জন্য) ---
+        
+        async function toggleTradeHistory() {
+            const section = document.getElementById('history-section');
+            if (section.style.display === "block") {
+                section.style.display = "none";
             } else {
-                processTrade(type, amount);
+                section.style.display = "block";
+                await fetchMongoHistory(); 
             }
         }
 
-        function closePopAd() {
-            document.getElementById('pop-ad-overlay').style.display = 'none';
-            // অ্যাড দেখার পর ট্রেড কনফার্ম হবে
-            alert("Trade Confirmed!");
+        async function fetchMongoHistory() {
+            const listBody = document.getElementById('mongo-data-list');
+            listBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'><i class='fas fa-sync fa-spin'></i> Connecting to Mongol-BD...</td></tr>";
+
+            try {
+                // আপনার ব্যাকএন্ড এপিআই এন্ডপয়েন্ট (যেমন: /get_trade_history)
+                const response = await fetch('/get_trade_history'); 
+                const result = await response.json();
+
+                if (result.success && result.trades.length > 0) {
+                    listBody.innerHTML = ""; 
+                    
+                    result.trades.forEach(trade => {
+                        const statusColor = trade.result === 'Win' ? '#00ff88' : '#ff0055';
+                        const timeStr = trade.time || 'N/A';
+                        
+                        listBody.innerHTML += `
+                            <tr>
+                                <td style="font-weight: bold;">${trade.asset}</td>
+                                <td style="font-family: 'Syncopate';">৳${trade.amount}</td>
+                                <td style="color: ${statusColor}; font-weight: bold;">${trade.result}</td>
+                                <td style="color: var(--text-muted); font-size: 11px;">${timeStr}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    listBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>No trades found in Mongol-BD.</td></tr>";
+                }
+            } catch (error) {
+                listBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px; color: var(--danger);'>Server Connection Failed!</td></tr>";
+                console.error("MongoDB Fetch Error:", error);
+            }
         }
 
-        function processTrade(type, amt) {
-            alert(`Order Placed: ${type} for ৳${amt}`);
-        }
-
-        window.onload = syncAdminSettings;
+        // ৩. পেজ ইনিশিয়ালাইজেশন
+        window.onload = function() {
+            streamMarketData(); // ফায়ারবেস কানেকশন শুরু
+            console.log("Trading Engine & Mongol-BD Bridge Ready");
+        };
     </script>
 </body>
-    </html>
+</html>
