@@ -25,122 +25,129 @@
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 120px; overflow-x: hidden;
+            margin: 0; padding: 0; overflow: hidden; /* Body overflow hidden to control custom scroll */
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15), transparent);
         }
 
-        /* --- Header --- */
-        .header { 
-            padding: 20px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
+        /* --- Fixed Top Section (Header + Chart) --- */
+        .fixed-top {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+            background: var(--bg); border-bottom: 1px solid var(--border);
         }
-        .header h2 { font-family: 'Syncopate'; font-size: 13px; margin: 0; color: var(--cyan); text-shadow: 0 0 15px var(--cyan-glow); }
-        #live-price { font-family: 'Syncopate'; font-size: 16px; color: #00ffa3; }
 
-        /* --- Chart --- */
-        #chart-wrapper { width: 100%; height: 320px; background: #000; position: relative; border-bottom: 1px solid var(--border); margin-top: 15px; }
+        .header { 
+            padding: 15px 20px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h2 { font-family: 'Syncopate'; font-size: 12px; margin: 0; color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
+        #live-price { font-family: 'Syncopate'; font-size: 16px; color: var(--accent); }
+
+        #chart-wrapper { width: 100%; height: 300px; background: #000; position: relative; }
         #chart-container { width: 100%; height: 100%; }
 
-        /* --- Stats --- */
-        .content { padding: 20px; max-width: 500px; margin: auto; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        /* --- Scrollable Content Section --- */
+        .scrollable-content {
+            margin-top: 365px; /* Header(~65px) + Chart(300px) */
+            height: calc(100vh - 465px); /* Adjusted for bottom nav */
+            overflow-y: auto; padding: 20px;
+            scrollbar-width: none; /* Firefox */
+        }
+        .scrollable-content::-webkit-scrollbar { display: none; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .card { 
             background: var(--glass); padding: 15px; border-radius: 20px; border: 1px solid var(--border);
-            border-left: 3px solid var(--cyan); box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-left: 3px solid var(--cyan);
         }
-        .card span { font-size: 10px; color: #94a3b8; display: block; margin-bottom: 5px; }
+        .card span { font-size: 10px; color: #94a3b8; display: block; margin-bottom: 5px; font-family: 'Syncopate'; }
         .card b { font-size: 18px; color: #fff; }
 
         /* --- Trading Form --- */
-        .trade-box { background: rgba(255, 255, 255, 0.02); padding: 25px; border-radius: 30px; border: 1px solid var(--border); }
+        .trade-box { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 25px; border: 1px solid var(--border); }
+        .input-group { position: relative; margin-bottom: 15px; }
         input { 
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); padding: 18px; 
-            color: var(--cyan); font-size: 22px; border-radius: 18px; text-align: center; outline: none; 
+            width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; 
+            color: var(--cyan); font-size: 20px; border-radius: 15px; text-align: center; outline: none; 
             font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box;
         }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .btn { padding: 18px; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; font-family: 'Syncopate'; font-size: 10px; transition: 0.3s; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { padding: 16px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-family: 'Syncopate'; font-size: 10px; transition: 0.2s; }
         .buy { background: linear-gradient(135deg, #00f2fe, #00ffa3); color: #020617; }
         .sell { background: linear-gradient(135deg, #ff3366, #ff6b6b); color: #fff; }
+        .btn:active { transform: scale(0.95); }
 
-        /* --- History Section (Mongol-BD) --- */
+        /* --- History --- */
         .btn-history {
-            margin-top: 20px; width: 100%; padding: 15px; border-radius: 15px;
+            margin-top: 15px; width: 100%; padding: 12px; border-radius: 12px;
             background: rgba(0, 242, 254, 0.05); border: 1px solid var(--cyan);
-            color: var(--cyan); font-family: 'Syncopate'; font-size: 10px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            color: var(--cyan); font-family: 'Syncopate'; font-size: 9px; cursor: pointer;
         }
-        .history-container { display: none; margin-top: 20px; animation: fadeIn 0.4s ease; }
+        .history-container { display: none; margin-top: 15px; }
         .trade-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .trade-table th { color: #94a3b8; text-align: left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 10px; }
-        .trade-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .trade-table th { color: #64748b; text-align: left; padding: 10px; font-size: 9px; border-bottom: 1px solid var(--border); }
+        .trade-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
 
-        /* --- Navigation Bar --- */
-        .nav-container { position: fixed; bottom: 25px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 9999; }
+        /* --- Navigation --- */
+        .nav-container { position: fixed; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 1000; }
         .nav-bar { 
-            width: 92%; max-width: 450px; background: var(--nav-bg); 
-            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 100px; 
-            display: flex; justify-content: space-around; padding: 15px 10px; 
-            backdrop-filter: blur(25px); box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            width: 90%; max-width: 400px; background: var(--nav-bg); 
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 50px; 
+            display: flex; justify-content: space-around; padding: 12px; 
+            backdrop-filter: blur(20px); box-shadow: 0 15px 30px rgba(0,0,0,0.5);
         }
-        .nav-item { text-decoration: none; text-align: center; color: #565d6d; font-size: 11px; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
-        .nav-item i { font-size: 22px; margin-bottom: 6px; }
+        .nav-item { text-decoration: none; text-align: center; color: #64748b; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
         .nav-item.active { color: var(--cyan); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <h2>AAF EXCHANGE</h2>
-        <span id="live-price">0.0000</span>
-    </header>
+    <div class="fixed-top">
+        <header class="header">
+            <h2>AAF EXCHANGE <span style="font-size: 8px; vertical-align: middle; opacity: 0.6;">PRO</span></h2>
+            <span id="live-price">Loading...</span>
+        </header>
 
-    <div id="chart-wrapper">
-        <div id="chart-container"></div>
+        <div id="chart-wrapper">
+            <div id="chart-container"></div>
+        </div>
     </div>
 
-    <div class="content">
+    <div class="scrollable-content">
         <div class="stat-grid">
             <div class="card"><span>AAF HOLDINGS</span><b id="aaf-bal">0.00</b></div>
-            <div class="card"><span>TOTAL CASH</span><b id="tk-bal">৳ 0.00</b></div>
+            <div class="card"><span>CASH BALANCE</span><b id="tk-bal">৳ 0.00</b></div>
         </div>
 
         <div class="trade-box">
-            <input type="number" id="trade-amount" placeholder="ENTER TK">
+            <div class="input-group">
+                <input type="number" id="trade-amount" placeholder="0.00 TK">
+            </div>
             <div class="btn-group">
-                <button class="btn buy" onclick="initiateTrade('BUY')">BUY</button>
-                <button class="btn sell" onclick="initiateTrade('SELL')">SELL</button>
+                <button class="btn buy" onclick="initiateTrade('BUY')">BUY / LONG</button>
+                <button class="btn sell" onclick="initiateTrade('SELL')">SELL / SHORT</button>
             </div>
         </div>
 
         <button class="btn-history" onclick="toggleTradeHistory()">
-            <i class="fas fa-clock-rotate-left"></i> VIEW TRADE HISTORY
+            <i class="fas fa-history"></i> TRADE HISTORY (MONGODB)
         </button>
 
         <div id="history-section" class="history-container">
-            <div class="card" style="border-left: 3px solid var(--accent);">
-                <h4 style="font-family: 'Syncopate'; font-size: 10px; margin-bottom: 15px; color: var(--accent);">RECENT TRADES (MONGOL-BD)</h4>
-                <div style="overflow-x: auto;">
-                    <table class="trade-table">
-                        <thead>
-                            <tr>
-                                <th>ASSET</th>
-                                <th>AMOUNT</th>
-                                <th>RESULT</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mongo-data-list">
-                            <tr><td colspan="3" style="text-align:center; padding: 20px; color: #64748b;">No data fetched yet.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card" style="border-left: 3px solid var(--accent); padding: 10px;">
+                <table class="trade-table">
+                    <thead>
+                        <tr><th>TYPE</th><th>AMOUNT</th><th>STATUS</th></tr>
+                    </thead>
+                    <tbody id="mongo-data-list">
+                        <tr><td colspan="3" style="text-align:center; padding: 20px; color: #64748b;">No recent trades found.</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
+        
+        <div style="height: 50px;"></div> </div>
 
     <div class="nav-container">
         <nav class="nav-bar">
@@ -148,70 +155,75 @@
             <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
             <a href="/trade" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trading</span></a>
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
         </nav>
     </div>
 
     <script>
-        // --- ১. Firebase Setup (শুধুমাত্র চার্টের জন্য) ---
+        // --- ১. Firebase Logic (Candle Stream) ---
         const firebaseConfig = { 
-            apiKey: "YOUR_API", 
-            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com", 
-            projectId: "teleearnbd-781d6" 
+            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const fb_db = firebase.database();
 
-        // চার্ট লোড করার ফাংশন (Firebase থেকে)
+        let chart, candleSeries;
+
         function initChart() {
-            console.log("Firebase Candle Stream Started...");
-            // এখানে আপনার Lightweight Charts এর লজিক বসবে
+            const chartOptions = {
+                layout: { background: { color: '#000' }, textColor: '#64748b' },
+                grid: { vertLines: { color: '#111' }, horzLines: { color: '#111' } },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: '#222' },
+                timeScale: { borderColor: '#222', timeVisible: true, secondsVisible: false }
+            };
+            
+            chart = LightweightCharts.createChart(document.getElementById('chart-container'), chartOptions);
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ffa3', downColor: '#ff3366', 
+                borderUpColor: '#00ffa3', borderDownColor: '#ff3366',
+                wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
+            });
+
+            // Firebase রিয়েল-টাইম ডাটা সিঙ্ক
+            fb_db.ref('trading/candles').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    document.getElementById('live-price').innerText = data.current_price.toFixed(4);
+                    // এখানে আপনার ক্যান্ডেল ডাটা আপডেট লজিক বসবে
+                }
+            });
         }
 
-        // --- ২. Mongol-BD History Logic (ব্যাকএন্ড এপিআই এর মাধ্যমে) ---
+        // --- ২. MongoDB History Logic ---
         async function toggleTradeHistory() {
             const section = document.getElementById('history-section');
-            if (section.style.display === "block") {
-                section.style.display = "none";
-            } else {
-                section.style.display = "block";
-                await fetchMongoHistory();
-            }
+            section.style.display = (section.style.display === "block") ? "none" : "block";
+            if(section.style.display === "block") fetchMongoHistory();
         }
 
         async function fetchMongoHistory() {
             const listBody = document.getElementById('mongo-data-list');
-            listBody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:15px;'><i class='fas fa-spinner fa-spin'></i> Loading Mongol-BD...</td></tr>";
-
             try {
-                // আপনার সার্ভারের এন্ডপয়েন্ট যা মঙ্গো-বিডি থেকে ডাটা আনে
-                const response = await fetch('/get_trade_history'); 
-                const result = await response.json();
-
-                if (result.success && result.trades.length > 0) {
-                    listBody.innerHTML = "";
-                    result.trades.forEach(trade => {
-                        const statusColor = trade.result === 'Win' ? '#00ffa3' : '#ff3366';
-                        listBody.innerHTML += `
-                            <tr>
-                                <td style="font-weight:600;">${trade.asset}</td>
-                                <td style="font-family:'Syncopate'; font-size:11px;">৳${trade.amount}</td>
-                                <td style="color:${statusColor}; font-weight:bold;">${trade.result}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    listBody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:15px;'>No records found.</td></tr>";
+                const res = await fetch('/api/user/trade-history'); // আপনার Flask এপিআই
+                const data = await res.json();
+                if(data.success && data.trades.length > 0) {
+                    listBody.innerHTML = data.trades.map(t => `
+                        <tr>
+                            <td>${t.type}</td>
+                            <td>৳${t.amount}</td>
+                            <td style="color:${t.status==='Win'?'#00ffa3':'#ff3366'}">${t.status}</td>
+                        </tr>
+                    `).join('');
                 }
-            } catch (err) {
-                listBody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:15px; color:var(--danger);'>Connection Failed!</td></tr>";
-            }
+            } catch (err) { console.log("History Fetch Error"); }
         }
 
-        window.onload = () => {
-            initChart();
-            // আপনার ব্যালেন্স আপডেট বা অন্যান্য ফাংশন এখানে থাকবে
-        };
+        window.onload = initChart;
+        // Responsive chart
+        window.addEventListener('resize', () => {
+            chart.applyOptions({ width: document.getElementById('chart-container').clientWidth });
+        });
     </script>
 </body>
 </html>
