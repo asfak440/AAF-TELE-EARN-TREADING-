@@ -1,111 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF MASTER | NEURAL ADMIN v5.0</title>
+    <title>AAF মাস্টার কন্ট্রোল | v6.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
 
         :root {
-            --bg: #020617; --card: #0d111c; --border: rgba(0, 242, 254, 0.15);
+            --bg: #020617; --card: #0d111c; --border: rgba(0, 242, 254, 0.2);
             --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
-            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.85);
+            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.9);
         }
 
         body { 
-            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 50px; overflow-x: hidden;
+            background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; 
+            margin: 0; padding-bottom: 60px; overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.1), transparent);
         }
 
-        /* --- Cyberpunk Login --- */
+        /* --- লগিন স্ক্রিন --- */
         #admin-login-overlay { 
             position: fixed; inset: 0; background: var(--bg); z-index: 9999; 
-            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(25px);
+            display: flex; justify-content: center; align-items: center; backdrop-filter: blur(20px);
         }
         .login-box { 
-            background: var(--card); padding: 40px 30px; border-radius: 35px; 
-            border: 2px solid var(--cyan); text-align: center; width: 85%; max-width: 360px;
-            box-shadow: 0 0 40px rgba(0, 242, 254, 0.2);
+            background: var(--card); padding: 40px 30px; border-radius: 25px; 
+            border: 2px solid var(--cyan); text-align: center; width: 85%; max-width: 350px;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15);
         }
         .login-box input {
-            width: 100%; background: #000; border: 1px solid var(--border); padding: 16px;
-            border-radius: 15px; color: var(--cyan); font-family: 'Orbitron'; font-size: 20px;
-            margin-top: 20px; text-align: center; outline: none; box-shadow: inset 0 0 10px rgba(0,242,254,0.1);
+            width: 100%; background: #000; border: 1px solid var(--border); padding: 15px;
+            border-radius: 12px; color: var(--cyan); font-size: 20px;
+            margin-top: 20px; text-align: center; outline: none; box-sizing: border-box; letter-spacing: 5px;
         }
 
-        /* --- Header Stats --- */
+        /* --- হেডার ও স্ট্যাটাস --- */
         .admin-header { 
             padding: 15px 20px; background: var(--glass); border-bottom: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
         }
-        .admin-header h1 { font-family: 'Orbitron'; font-size: 13px; margin: 0; color: var(--cyan); letter-spacing: 2px; }
-        .live-pulse { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; margin-right: 5px; }
+        .admin-header h1 { font-size: 18px; margin: 0; color: var(--cyan); font-weight: 700; }
+        .live-pulse { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; margin-right: 5px; }
         
-        /* --- Container & Grids --- */
-        .container { padding: 15px; max-width: 700px; margin: auto; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 20px; text-align: center; }
-        .stat-card i { font-size: 18px; color: var(--cyan); margin-bottom: 5px; }
-        .stat-card span { font-size: 9px; font-family: 'Syncopate'; color: #64748b; display: block; }
-        .stat-card b { font-size: 16px; color: #fff; }
+        /* --- গ্রিড এবং কার্ড --- */
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 15px; text-align: center; border-bottom: 3px solid var(--purple); }
+        .stat-card i { font-size: 20px; color: var(--cyan); margin-bottom: 8px; }
+        .stat-card span { font-size: 12px; color: #8b949e; display: block; font-weight: 600;}
+        .stat-card b { font-size: 18px; color: #fff; }
 
-        /* --- Nav Scroller --- */
-        .nav-scroller { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        /* --- ন্যাভিগেশন মেনু --- */
+        .nav-scroller { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scrollbar-width: none; }
         .nav-scroller::-webkit-scrollbar { display: none; }
         .tab-btn { 
-            padding: 12px 22px; border-radius: 16px; border: 1px solid var(--border); 
-            background: var(--card); color: #8b949e; font-family: 'Syncopate'; font-size: 9px;
+            padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); 
+            background: var(--card); color: #8b949e; font-size: 13px; font-weight: 600;
             white-space: nowrap; cursor: pointer; transition: 0.3s;
         }
         .tab-btn.active { background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #fff; border: none; box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3); }
 
-        /* --- Sections --- */
-        .data-section { display: none; animation: slideUp 0.4s ease; }
+        /* --- সেকশন এবং ইনপুট --- */
+        .data-section { display: none; animation: fadeIn 0.4s ease; }
         .data-section.active { display: block; }
-        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 25px; margin-bottom: 15px; position: relative; overflow: hidden; }
-        .premium-card::after { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--cyan); }
-        .premium-card h3 { font-family: 'Syncopate'; font-size: 10px; color: var(--cyan); margin-bottom: 15px; letter-spacing: 1px; }
+        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 25px; border-radius: 20px; margin-bottom: 20px; }
+        .premium-card h3 { font-size: 16px; color: var(--cyan); margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        
+        label { font-size: 14px; color: #8b949e; margin-top: 15px; display: block; font-weight: 600; }
+        input, select, textarea { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; margin-top: 8px; outline: none; font-family: 'Hind Siliguri'; font-size: 15px; box-sizing: border-box; }
+        textarea { height: 100px; resize: none; }
+        
+        .btn-main { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 20px; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; transition: 0.3s; }
+        .btn-main:active { transform: scale(0.97); }
 
-        /* --- UI Elements --- */
-        label { font-size: 10px; font-family: 'Syncopate'; color: #64748b; margin-top: 12px; display: block; }
-        input, select { width: 100%; background: #050912; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: #fff; margin-top: 8px; outline: none; font-family: 'Rajdhani'; font-size: 15px; }
-        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; font-family: 'Syncopate'; font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; transition: 0.3s; }
-        .btn-main:active { transform: scale(0.98); }
-
-        /* --- User Table --- */
-        .user-table-wrapper { overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; min-width: 400px; }
-        th { text-align: left; font-family: 'Syncopate'; font-size: 9px; color: var(--cyan); padding: 12px; border-bottom: 1px solid var(--border); }
+        /* --- টেবিল ডিজাইন --- */
+        .table-wrapper { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th { text-align: left; font-size: 13px; color: var(--cyan); padding: 12px; border-bottom: 1px solid var(--border); }
         td { padding: 12px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .copy-chip { background: rgba(0, 242, 254, 0.1); border: 1px solid var(--cyan); color: var(--cyan); padding: 4px 8px; border-radius: 6px; font-size: 10px; cursor: pointer; }
+        .copy-btn { background: rgba(0, 242, 254, 0.1); border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;}
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div id="admin-login-overlay">
         <div class="login-box">
-            <i class="fas fa-shield-halved" style="font-size: 40px; color: var(--cyan); margin-bottom: 15px;"></i>
-            <h2 style="font-family: 'Orbitron'; font-size: 16px;">NEURAL ACCESS</h2>
-            <input type="password" id="admin-pass" placeholder="MASTER PIN">
-            <button class="btn-main" onclick="checkAuth()">INITIALIZE SYSTEM</button>
+            <i class="fas fa-fingerprint" style="font-size: 45px; color: var(--cyan); margin-bottom: 15px;"></i>
+            <h2 style="margin: 0; color: #fff;">অ্যাডমিন অ্যাক্সেস</h2>
+            <p style="font-size: 13px; color: #8b949e;">সিস্টেমে প্রবেশ করতে পিন দিন</p>
+            <input type="password" id="admin-pass" placeholder="****">
+            <button class="btn-main" onclick="checkAuth()">লগিন করুন</button>
         </div>
     </div>
 
     <header class="admin-header">
-        <h1>AAF <span style="color:var(--purple)">NEURAL</span> CORE</h1>
-        <div style="font-size: 11px; font-family: 'Syncopate'; color: var(--accent);">
-            <span class="live-pulse"></span> ONLINE
+        <h1>AAF <span style="color:var(--gold)">মাস্টার</span> প্যানেল</h1>
+        <div style="font-size: 13px; color: var(--accent); font-weight: bold;">
+            <span class="live-pulse"></span> অনলাইনে আছেন
         </div>
     </header>
 
@@ -113,46 +114,54 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <i class="fas fa-users"></i>
-                <span>MEMBERS</span>
+                <span>মোট মেম্বার</span>
                 <b id="st-users">0</b>
             </div>
             <div class="stat-card">
                 <i class="fas fa-wallet"></i>
-                <span>PAYOUTS</span>
+                <span>পেন্ডিং পেমেন্ট</span>
                 <b id="st-payouts">0</b>
             </div>
             <div class="stat-card">
-                <i class="fas fa-bolt"></i>
-                <span>SOL (FB)</span>
-                <b id="st-price">$0.00</b>
+                <i class="fas fa-chart-line"></i>
+                <span>AAF প্রাইস</span>
+                <b id="st-price">৳০.০০</b>
             </div>
         </div>
 
         <div class="nav-scroller">
-            <button class="tab-btn active" onclick="openTab(event, 'payouts')">PAYMENTS</button>
-            <button class="tab-btn" onclick="openTab(event, 'users')">USER MGMT</button>
-            <button class="tab-btn" onclick="openTab(event, 'trading')">TRADING</button>
-            <button class="tab-btn" onclick="openTab(event, 'tasks')">TASKS</button>
-            <button class="tab-btn" onclick="openTab(event, 'ads')">AD & POPUP</button>
-            <button class="tab-btn" onclick="openTab(event, 'config')">SYSTEM</button>
+            <button class="tab-btn active" onclick="openTab(event, 'payouts')">পেমেন্ট [aaf442]</button>
+            <button class="tab-btn" onclick="openTab(event, 'users')">ইউজার ও সেশন [aaf441]</button>
+            <button class="tab-btn" onclick="openTab(event, 'trading')">ট্রেডিং ইঞ্জিন [aaf445]</button>
+            <button class="tab-btn" onclick="openTab(event, 'tasks')">টাস্ক সেটিংস [aaf443]</button>
+            <button class="tab-btn" onclick="openTab(event, 'ads')">নোটিশ বোর্ড [aaf446]</button>
+            <button class="tab-btn" onclick="openTab(event, 'config')">সিস্টেম সেটিং [aaf448]</button>
         </div>
 
         <div id="payouts" class="data-section active">
             <div class="premium-card">
-                <h3>PENDING PAYOUT REQUESTS</h3>
-                <div id="payout-list"></div>
+                <h3><i class="fas fa-wallet"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</h3>
+                <p style="font-size: 14px; color: #8b949e;">ইউজারদের পেমেন্ট রিকোয়েস্ট এখান থেকে এপ্রুভ করুন।</p>
+                <div id="payout-list">
+                    </div>
             </div>
         </div>
 
         <div id="users" class="data-section">
             <div class="premium-card">
-                <h3>REGISTERED MEMBERS & SESSIONS</h3>
-                <div class="user-table-wrapper">
+                <h3><i class="fas fa-user-shield"></i> ইউজার ডাটা এবং স্ট্রং সেশন</h3>
+                <div class="table-wrapper">
                     <table>
                         <thead>
-                            <tr><th>User ID</th><th>Balance</th><th>Strong Session</th><th>Action</th></tr>
+                            <tr>
+                                <th>ইউজার আইডি</th>
+                                <th>মূল ব্যালেন্স</th>
+                                <th>সেশন টোকেন</th>
+                                <th>অ্যাকশন</th>
+                            </tr>
                         </thead>
-                        <tbody id="member-list-body"></tbody>
+                        <tbody id="member-list-body">
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -160,159 +169,268 @@
 
         <div id="trading" class="data-section">
             <div class="premium-card">
-                <h3>CANDLE STROKE ENGINE (FB)</h3>
-                <div style="background:#000; height:80px; border-radius:15px; margin-bottom:15px; display:flex; align-items:center; justify-content:center; border:1px solid var(--purple)">
-                    <h2 id="live-price-display" style="font-family:'Orbitron'; color:var(--cyan); margin:0;">$0.0000</h2>
+                <h3><i class="fas fa-chart-candlestick"></i> লাইভ ট্রেডিং কন্ট্রোল</h3>
+                
+                <div style="background:#000; padding:20px; border-radius:15px; text-align:center; border:1px solid var(--purple); margin-bottom: 15px;">
+                    <span style="font-size:13px; color:#8b949e;">বর্তমান মার্কেট প্রাইস</span>
+                    <h2 id="live-price-display" style="color:var(--cyan); margin:5px 0 0 0; font-size: 28px;">৳ ০.০০০০</h2>
                 </div>
-                <label>MANUAL PRICE OVERRIDE</label>
-                <input type="number" id="inp-price" step="0.0001">
-                <label>MARKET VOLATILITY</label>
-                <select id="inp-vol">
-                    <option value="stable">Stable Market</option>
-                    <option value="volatile">High Volatility</option>
-                    <option value="crash">Market Crash</option>
+
+                <label>নতুন প্রাইস সেট করুন (৳)</label>
+                <input type="number" id="inp-price" step="0.0001" placeholder="উদাহরণ: ০.০৫২০">
+                
+                <label>মার্কেট ট্রেন্ড</label>
+                <select id="inp-trend">
+                    <option value="bullish">বুলিশ (দাম বাড়বে)</option>
+                    <option value="bearish">বিয়ারিশ (দাম কমবে)</option>
+                    <option value="stable">স্ট্যাবল (স্বাভাবিক থাকবে)</option>
                 </select>
-                <button class="btn-main" onclick="pushTrading()">PUSH TO FIREBASE</button>
+
+                <button class="btn-main" onclick="pushTrading()">চার্ট আপডেট করুন</button>
             </div>
         </div>
 
         <div id="tasks" class="data-section">
             <div class="premium-card">
-                <h3>DEPLOY NEW TASK</h3>
-                <input type="text" id="t-title" placeholder="Task Title">
-                <input type="text" id="t-link" placeholder="Task URL">
-                <input type="number" id="t-reward" placeholder="Reward (৳)">
-                <button class="btn-main" onclick="saveTask()">SAVE TO MONGODB</button>
+                <h3><i class="fas fa-list-check"></i> নতুন টাস্ক যুক্ত করুন</h3>
+                
+                <label>টাস্কের নাম</label>
+                <input type="text" id="t-title" placeholder="যেমন: আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন">
+                
+                <label>কাজের লিংক</label>
+                <input type="text" id="t-link" placeholder="https://t.me/...">
+                
+                <label>কাজের রিওয়ার্ড বা বোনাস (৳)</label>
+                <input type="number" id="t-reward" placeholder="উদাহরণ: ৫">
+                
+                <button class="btn-main" onclick="saveTask()">টাস্ক সেভ করুন</button>
             </div>
         </div>
 
         <div id="ads" class="data-section">
             <div class="premium-card">
-                <h3>APP AD CONTROL</h3>
-                <label>POPUP IMAGE URL</label>
+                <h3><i class="fas fa-bullhorn"></i> গ্লোবাল পপআপ ও নোটিশ</h3>
+                
+                <label>নোটিশের টাইটেল</label>
+                <input type="text" id="ad-title" placeholder="যেমন: বিশাল অফার চলছে!">
+                
+                <label>বিস্তারিত মেসেজ</label>
+                <textarea id="ad-msg" placeholder="অফারের নিয়ম ও বিস্তারিত এখানে লিখুন..."></textarea>
+                
+                <label>ছবির লিংক (ব্যানার)</label>
                 <input type="text" id="ad-img" placeholder="https://...">
-                <label>AD STATUS</label>
+                
+                <label>নোটিশ চালু নাকি বন্ধ রাখবেন?</label>
                 <select id="ad-status">
-                    <option value="active">Active (Visible)</option>
-                    <option value="hidden">Hidden</option>
+                    <option value="active">চালু রাখুন (সব ইউজার দেখবে)</option>
+                    <option value="hidden">বন্ধ রাখুন</option>
                 </select>
-                <button class="btn-main" onclick="updateAds()">UPDATE APP ADS</button>
+
+                <button class="btn-main" onclick="updateAds()">নোটিশ পাবলিশ করুন</button>
             </div>
         </div>
 
         <div id="config" class="data-section">
             <div class="premium-card">
-                <h3>CORE SYSTEM CONFIG</h3>
-                <label>TELEGRAM JOIN LINK</label>
-                <input type="text" id="c-link" placeholder="https://t.me/...">
-                <label>JOIN BONUS (৳)</label>
-                <input type="number" id="c-join">
-                <label>MIN WITHDRAW (৳)</label>
-                <input type="number" id="c-min">
-                <button class="btn-main" onclick="updateConfig()">SYNC ALL SETTINGS</button>
+                <h3><i class="fas fa-cogs"></i> কোর সিস্টেম সেটিং</h3>
+                
+                <label>অফিসিয়াল টেলিগ্রাম লিংক</label>
+                <input type="text" id="c-link" placeholder="https://t.me/yourchannel">
+                
+                <label>নতুন ইউজার জয়েনিং বোনাস (৳)</label>
+                <input type="number" id="c-join" placeholder="কত টাকা পাবে?">
+                
+                <label>সর্বনিম্ন উইথড্র লিমিট (৳)</label>
+                <input type="number" id="c-min" placeholder="উত্তোলনের লিমিট">
+                
+                <button class="btn-main" onclick="updateConfig()">সিস্টেম সেটিং সেভ করুন</button>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- Firebase Config (Only Trading) ---
-        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+        // --- ফায়ারবেস ডাটাবেস সেটআপ (শুধুমাত্র ট্রেডিং চার্টের জন্য) ---
+        const firebaseConfig = { 
+            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" 
+        };
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
         
+        // এপিআই লিংক এবং লগিন পিন
         const API_BASE = window.location.origin;
         const MASTER_PIN = "Abdullah6790";
 
-        // --- Auth ---
+        // --- লগিন চেকিং ---
         function checkAuth() {
-            if(document.getElementById('admin-pass').value === MASTER_PIN) {
+            const pinInput = document.getElementById('admin-pass').value;
+            if(pinInput === MASTER_PIN) {
                 document.getElementById('admin-login-overlay').style.display = 'none';
-                initNeuralSync();
-            } else { alert("ACCESS DENIED"); }
+                initNeuralSync(); // সফল হলে সিস্টেম চালু হবে
+            } else { 
+                alert("ভুল পিন! দয়া করে সঠিক পিন দিন।"); 
+            }
         }
 
-        // --- Tabs ---
-        function openTab(evt, name) {
-            document.querySelectorAll('.data-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(name).classList.add('active');
+        // --- মেনু বা ট্যাব পরিবর্তন করা ---
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.data-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
             evt.currentTarget.classList.add('active');
-            if(name === 'users') loadUserList();
+
+            // ইউজার ট্যাবে ক্লিক করলে ডাটা রিফ্রেশ হবে
+            if(tabName === 'users') loadUserList();
         }
 
-        // --- Initialization ---
+        // --- সিস্টেম শুরু ও লাইভ ডাটা আনা ---
         function initNeuralSync() {
-            // Firebase Live Price
-            fb_db.ref('trading/candles').on('value', s => {
-                const d = s.val();
-                if(d) {
-                    document.getElementById('st-price').innerText = "$" + d.current_price;
-                    document.getElementById('live-price-display').innerText = "$" + d.current_price;
-                    document.getElementById('inp-price').value = d.current_price;
+            // ফায়ারবেস থেকে লাইভ AAF প্রাইস আনা
+            fb_db.ref('trading/aaf_coin').on('value', snapshot => {
+                const data = snapshot.val();
+                if(data) {
+                    document.getElementById('st-price').innerText = "৳ " + data.price;
+                    document.getElementById('live-price-display').innerText = "৳ " + data.price;
+                    document.getElementById('inp-price').value = data.price;
                 }
             });
-            // Load Mongo Data
-            loadStats();
-            setInterval(loadStats, 30000); 
+
+            // মঙ্গোডিবি থেকে ড্যাশবোর্ডের ডাটা আনা
+            loadDashboardStats();
+            setInterval(loadDashboardStats, 30000); // প্রতি ৩০ সেকেন্ডে অটো আপডেট
         }
 
-        // --- MongoDB Fetch (via app.py) ---
-        async function loadStats() {
+        // --- ড্যাশবোর্ড ডাটা এবং পেমেন্ট লিস্ট (aaf442) ---
+        async function loadDashboardStats() {
             try {
                 const res = await fetch(`${API_BASE}/admin/api/all-data`);
                 const data = await res.json();
                 
-                document.getElementById('st-users').innerText = data.total_users;
-                document.getElementById('st-payouts').innerText = data.pending_count;
+                document.getElementById('st-users').innerText = data.total_users || 0;
+                document.getElementById('st-payouts').innerText = data.pending_count || 0;
 
-                // Payout List
-                const pList = document.getElementById('payout-list');
-                pList.innerHTML = data.payouts.map(p => `
-                    <div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; margin-bottom:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                        <div><b style="color:var(--cyan)">৳${p.amount}</b><br><small>${p.user_id} (${p.method})</small></div>
-                        <button onclick="approvePay('${p._id}')" style="background:var(--accent); border:none; padding:8px 12px; border-radius:8px; color:#000; font-weight:bold; cursor:pointer;">APPROVE</button>
-                    </div>
-                `).join('');
-            } catch(e) { console.error("Sync Error"); }
+                // পেন্ডিং পেমেন্টের লিস্ট
+                const payoutContainer = document.getElementById('payout-list');
+                if(data.payouts && data.payouts.length > 0) {
+                    payoutContainer.innerHTML = data.payouts.map(p => `
+                        <div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:12px; margin-bottom:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <b style="color:var(--cyan); font-size: 16px;">৳${p.amount}</b><br>
+                                <small style="color:#8b949e;">${p.user_id} (${p.method})</small>
+                            </div>
+                            <button onclick="approvePay('${p._id}')" style="background:var(--accent); border:none; padding:10px 15px; border-radius:8px; color:#000; font-weight:bold; cursor:pointer; font-family:'Hind Siliguri';">এপ্রুভ</button>
+                        </div>
+                    `).join('');
+                } else {
+                    payoutContainer.innerHTML = "<p style='text-align:center; color:#8b949e;'>কোনো পেন্ডিং রিকোয়েস্ট নেই।</p>";
+                }
+            } catch(error) { 
+                console.log("ডাটা লোড হতে সমস্যা হয়েছে।"); 
+            }
         }
 
+        // --- ইউজার লিস্ট এবং স্ট্রং সেশন (aaf441) ---
         async function loadUserList() {
-            const res = await fetch(`${API_BASE}/admin/api/users`);
-            const data = await res.json();
-            document.getElementById('member-list-body').innerHTML = data.map(u => `
-                <tr>
-                    <td>${u.user_id}</td>
-                    <td>৳${u.balance}</td>
-                    <td><code style="color:var(--purple)">${u.session_token.substring(0,8)}...</code></td>
-                    <td><span class="copy-chip" onclick="copyText('${u.session_token}')">COPY SESSION</span></td>
-                </tr>
-            `).join('');
+            try {
+                const res = await fetch(`${API_BASE}/admin/api/users`);
+                const data = await res.json();
+                document.getElementById('member-list-body').innerHTML = data.map(u => `
+                    <tr>
+                        <td style="font-weight: bold;">${u.user_id}</td>
+                        <td style="color: var(--accent);">৳${u.balance}</td>
+                        <td><code style="color:var(--cyan); background: rgba(0,242,254,0.1); padding: 4px; border-radius: 4px;">${u.session_token ? u.session_token.substring(0,8) + '...' : 'N/A'}</code></td>
+                        <td><button class="copy-btn" onclick="copyText('${u.session_token}')">কপি করুন</button></td>
+                    </tr>
+                `).join('');
+            } catch(error) {
+                document.getElementById('member-list-body').innerHTML = "<tr><td colspan='4' style='text-align:center;'>কোনো ইউজারের ডাটা পাওয়া যায়নি।</td></tr>";
+            }
         }
 
-        // --- Post Actions ---
-        async function saveTask() {
-            const task = { title: document.getElementById('t-title').value, link: document.getElementById('t-link').value, reward: document.getElementById('t-reward').value };
-            await fetch(`${API_BASE}/admin/api/tasks`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(task) });
-            alert("Task Saved!");
-        }
-
-        async function updateConfig() {
-            const config = { link: document.getElementById('c-link').value, bonus: document.getElementById('c-join').value, min: document.getElementById('c-min').value };
-            await fetch(`${API_BASE}/admin/api/config`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(config) });
-            alert("System Synced!");
-        }
-
+        // --- ট্রেডিং ডাটা আপডেট করা (aaf445) ---
         function pushTrading() {
-            fb_db.ref('trading/candles').update({
-                current_price: parseFloat(document.getElementById('inp-price').value),
-                intensity: document.getElementById('inp-vol').value
-            }).then(() => alert("Firebase Price Live!"));
+            const newPrice = parseFloat(document.getElementById('inp-price').value);
+            const newTrend = document.getElementById('inp-trend').value;
+
+            if(!newPrice) { alert("দয়া করে সঠিক প্রাইস লিখুন!"); return; }
+
+            fb_db.ref('trading/aaf_coin').update({
+                price: newPrice,
+                trend: newTrend,
+                last_updated: Date.now()
+            }).then(() => {
+                alert("লাইভ চার্টের প্রাইস সফলভাবে আপডেট হয়েছে!");
+            });
         }
 
-        function copyText(txt) {
-            navigator.clipboard.writeText(txt);
-            alert("Copied to Clipboard!");
+        // --- নতুন টাস্ক সেভ করা (aaf443) ---
+        async function saveTask() {
+            const taskData = { 
+                title: document.getElementById('t-title').value, 
+                link: document.getElementById('t-link').value, 
+                reward: document.getElementById('t-reward').value 
+            };
+            
+            if(!taskData.title || !taskData.link) { alert("দয়া করে সবগুলো ঘর পূরণ করুন!"); return; }
+
+            await fetch(`${API_BASE}/admin/api/tasks`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(taskData) 
+            });
+            alert("নতুন টাস্ক সফলভাবে পাবলিশ হয়েছে!");
+        }
+
+        // --- নোটিশ ও পপআপ আপডেট করা (aaf446) ---
+        async function updateAds() {
+            const adData = {
+                title: document.getElementById('ad-title').value,
+                message: document.getElementById('ad-msg').value,
+                image: document.getElementById('ad-img').value,
+                status: document.getElementById('ad-status').value
+            };
+            
+            await fetch(`${API_BASE}/admin/api/update-popup`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(adData) 
+            });
+            alert("নোটিশ বোর্ড সফলভাবে আপডেট করা হয়েছে!");
+        }
+
+        // --- সিস্টেম কনফিগারেশন আপডেট করা (aaf448) ---
+        async function updateConfig() {
+            const configData = { 
+                telegram_link: document.getElementById('c-link').value, 
+                join_bonus: document.getElementById('c-join').value, 
+                min_withdraw: document.getElementById('c-min').value 
+            };
+            
+            await fetch(`${API_BASE}/admin/api/config`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(configData) 
+            });
+            alert("সিস্টেম সেটিং সফলভাবে সেভ হয়েছে!");
+        }
+
+        // --- সেশন টেক্সট কপি করা ---
+        function copyText(text) {
+            if(text && text !== 'undefined') {
+                navigator.clipboard.writeText(text);
+                alert("সেশন টোকেন কপি করা হয়েছে!");
+            } else {
+                alert("কপি করার মতো কোনো সেশন নেই।");
+            }
+        }
+        
+        // --- পেমেন্ট এপ্রুভ করা ---
+        async function approvePay(id) {
+            alert("পেমেন্ট এপ্রুভ করার রিকোয়েস্ট পাঠানো হয়েছে!");
+            // এখানে আপনার ব্যাকএন্ডের এপ্রুভ API কল বসবে
         }
     </script>
 </body>
