@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF Exchange | Pro Terminal v6.5</title>
+    <title>AAF Exchange | Spot Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -25,32 +25,29 @@
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding: 0; overflow: hidden; /* বডি স্ক্রল হবে না */
+            margin: 0; padding: 0; overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15), transparent);
         }
 
-        /* --- ১. Fixed Top Section (Header + Chart স্থির থাকবে) --- */
+        /* --- Header & Chart (Fixed) --- */
         .fixed-top {
             position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
             background: var(--bg); border-bottom: 1px solid var(--border);
         }
-
         .header { 
-            padding: 15px 20px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px);
         }
         .header h2 { font-family: 'Syncopate'; font-size: 12px; margin: 0; color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
         #live-price { font-family: 'Syncopate'; font-size: 16px; color: var(--accent); }
 
-        #chart-wrapper { width: 100%; height: 300px; background: #000; position: relative; border-bottom: 1px solid var(--border); }
+        #chart-wrapper { width: 100%; height: 300px; background: #000; position: relative; }
         #chart-container { width: 100%; height: 100%; }
 
-        /* --- ২. Scrollable Content (নিচের অংশ স্ক্রল হবে) --- */
+        /* --- Scrollable Content --- */
         .scrollable-content {
-            margin-top: 365px; /* Header(~65px) + Chart(300px) */
-            height: calc(100vh - 465px); 
-            overflow-y: auto; padding: 20px;
-            scrollbar-width: none;
+            margin-top: 365px; height: calc(100vh - 465px); 
+            overflow-y: auto; padding: 20px; scrollbar-width: none;
         }
         .scrollable-content::-webkit-scrollbar { display: none; }
 
@@ -62,28 +59,30 @@
         .card span { font-size: 10px; color: #94a3b8; display: block; margin-bottom: 5px; font-family: 'Syncopate'; }
         .card b { font-size: 18px; color: #fff; }
 
-        /* --- Trading Form --- */
+        /* --- Trade Box --- */
         .trade-box { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 25px; border: 1px solid var(--border); }
         input { 
             width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; 
             color: var(--cyan); font-size: 20px; border-radius: 15px; text-align: center; outline: none; 
-            font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box; margin-bottom: 15px;
+            font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box;
         }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .fee-info { display: flex; justify-content: space-between; margin: 12px 5px; font-size: 11px; font-family: 'Syncopate'; color: #64748b; }
+        .fee-info b { color: var(--cyan); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
         .btn { padding: 16px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-family: 'Syncopate'; font-size: 10px; transition: 0.2s; }
         .buy { background: linear-gradient(135deg, #00f2fe, #00ffa3); color: #020617; }
         .sell { background: linear-gradient(135deg, #ff3366, #ff6b6b); color: #fff; }
-        .btn:active { transform: scale(0.95); }
 
-        /* --- History (MongoDB-BD) --- */
+        /* --- History (Mongol-BD) --- */
         .btn-history {
-            margin-top: 15px; width: 100%; padding: 12px; border-radius: 12px;
+            margin-top: 20px; width: 100%; padding: 15px; border-radius: 15px;
             background: rgba(0, 242, 254, 0.05); border: 1px solid var(--cyan);
-            color: var(--cyan); font-family: 'Syncopate'; font-size: 9px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            color: var(--cyan); font-family: 'Syncopate'; font-size: 10px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        .history-container { display: none; margin-top: 15px; animation: fadeIn 0.3s ease; }
+        .history-container { display: none; margin-top: 15px; }
         .trade-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .trade-table th { color: #64748b; text-align: left; padding: 10px; font-size: 9px; border-bottom: 1px solid var(--border); }
         .trade-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
@@ -93,27 +92,20 @@
         .nav-bar { 
             width: 90%; max-width: 400px; background: var(--nav-bg); 
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 50px; 
-            display: flex; justify-content: space-around; padding: 12px; 
-            backdrop-filter: blur(20px); box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            display: flex; justify-content: space-around; padding: 12px; backdrop-filter: blur(20px);
         }
         .nav-item { text-decoration: none; text-align: center; color: #64748b; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item i { font-size: 20px; margin-bottom: 4px; }
         .nav-item.active { color: var(--cyan); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="fixed-top">
         <header class="header">
-            <h2>AAF EXCHANGE <span style="font-size: 8px; vertical-align: middle; opacity: 0.6;">PRO</span></h2>
+            <h2>AAF EXCHANGE <span style="opacity: 0.6;">SPOT</span></h2>
             <span id="live-price">0.0000</span>
         </header>
-
-        <div id="chart-wrapper">
-            <div id="chart-container"></div>
-        </div>
+        <div id="chart-wrapper"><div id="chart-container"></div></div>
     </div>
 
     <div class="scrollable-content">
@@ -123,110 +115,96 @@
         </div>
 
         <div class="trade-box">
-            <input type="number" id="trade-amount" placeholder="ENTER TK">
+            <input type="number" id="trade-amount" placeholder="ENTER AMOUNT (৳)" oninput="calculateNet()">
+            <div class="fee-info">
+                <span>SERVICE FEE: <b id="display-fee">৳ 0.00</b></span>
+                <span>NET ASSET: <b id="display-net">৳ 0.00</b></span>
+            </div>
             <div class="btn-group">
-                <button class="btn buy" onclick="initiateTrade('BUY')">BUY / LONG</button>
-                <button class="btn sell" onclick="initiateTrade('SELL')">SELL / SHORT</button>
+                <button class="btn buy" onclick="initiateTrade('BUY')">BUY ASSET</button>
+                <button class="btn sell" onclick="initiateTrade('SELL')">SELL ASSET</button>
             </div>
         </div>
 
         <button class="btn-history" onclick="toggleTradeHistory()">
-            <i class="fas fa-history"></i> VIEW TRADE HISTORY (AAF)
+            <i class="fas fa-history"></i> ASSET HISTORY (MONGOL-BD)
         </button>
 
         <div id="history-section" class="history-container">
-            <div class="card" style="border-left: 3px solid var(--accent); padding: 10px;">
+            <div class="card" style="border-left: 3px solid var(--accent);">
                 <table class="trade-table">
-                    <thead>
-                        <tr><th>ASSET</th><th>AMOUNT</th><th>STATUS</th></tr>
-                    </thead>
+                    <thead><tr><th>ASSET</th><th>QTY</th><th>STATUS</th></tr></thead>
                     <tbody id="mongo-data-list">
-                        <tr><td colspan="3" style="text-align:center; padding: 20px; color: #64748b;">No recent trades found.</td></tr>
+                        <tr><td colspan="3" style="text-align:center; padding:15px; color:#64748b;">No recent assets.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-        
-        <div style="height: 60px;"></div> </div>
+        <div style="height: 100px;"></div>
+    </div>
 
     <div class="nav-container">
         <nav class="nav-bar">
             <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
             <a href="/trade" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trading</span></a>
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
         </nav>
     </div>
 
     <script>
-        // --- ১. Firebase Setup (Candle Stream) ---
-        const firebaseConfig = { 
-            databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
-        };
+        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
 
-        let chart, candleSeries;
+        let currentFeePercent = 0;
+
+        async function calculateNet() {
+            const amount = parseFloat(document.getElementById('trade-amount').value) || 0;
+            if(currentFeePercent === 0) {
+                try {
+                    const res = await fetch('/admin/api/config');
+                    const config = await res.json();
+                    currentFeePercent = parseFloat(config.trade_fee) || 0;
+                } catch(e) { currentFeePercent = 0; }
+            }
+            const fee = (amount * currentFeePercent) / 100;
+            const net = amount - fee;
+            document.getElementById('display-fee').innerText = `৳ ${fee.toFixed(2)}`;
+            document.getElementById('display-net').innerText = `৳ ${net.toFixed(2)}`;
+        }
 
         function initChart() {
-            const chartOptions = {
+            const chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
                 layout: { background: { color: '#000' }, textColor: '#64748b' },
-                grid: { vertLines: { color: '#111' }, horzLines: { color: '#111' } },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                rightPriceScale: { borderColor: '#222' },
-                timeScale: { borderColor: '#222', timeVisible: true }
-            };
-            
-            chart = LightweightCharts.createChart(document.getElementById('chart-container'), chartOptions);
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00ffa3', downColor: '#ff3366', 
-                borderUpColor: '#00ffa3', borderDownColor: '#ff3366',
+                grid: { vertLines: { visible: false }, horzLines: { color: '#111' } },
+                timeScale: { borderColor: '#222' },
+            });
+            const candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ffa3', downColor: '#ff3366', borderUpColor: '#00ffa3', borderDownColor: '#ff3366',
                 wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
             });
 
-            // Firebase লাইভ ডাটা রিড
             fb_db.ref('trading/aaf_coin').on('value', (snapshot) => {
                 const data = snapshot.val();
-                if(data) {
-                    document.getElementById('live-price').innerText = parseFloat(data.price).toFixed(4);
-                }
+                if(data) document.getElementById('live-price').innerText = parseFloat(data.price).toFixed(4);
             });
         }
 
-        // --- ২. Trade Logic (With Fee Calculation) ---
         async function initiateTrade(type) {
             const amount = parseFloat(document.getElementById('trade-amount').value);
-            if(!amount || amount <= 0) { alert("Please enter valid amount!"); return; }
-
-            try {
-                // অ্যাডমিন কনফিগ থেকে ফি (%) আনা
-                const configRes = await fetch('/admin/api/config');
-                const config = await configRes.json();
-                const feePercent = parseFloat(config.trade_fee) || 0;
-
-                // ফি এবং নিট ইনভেস্ট হিসাব
-                const tradingFee = (amount * feePercent) / 100;
-                const netAmount = amount - tradingFee;
-
-                if(confirm(`Confirm Trade?\nAmount: ৳${amount}\nFee (${feePercent}%): ৳${tradingFee.toFixed(2)}`)) {
-                    const res = await fetch('/api/trade/place', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            type: type,
-                            amount: amount,
-                            fee: tradingFee,
-                            net_amount: netAmount
-                        })
-                    });
-                    const result = await res.json();
-                    if(result.success) alert("Trade Placed Successfully!");
-                }
-            } catch (err) { alert("Trade placement failed!"); }
+            if(!amount || amount <= 0) return alert("Enter amount!");
+            const fee = (amount * currentFeePercent) / 100;
+            const net = amount - fee;
+            
+            // হালাল স্পট ট্রেডিং কনফার্মেশন
+            const msg = type === 'BUY' ? `Buy AAF Asset?\nInvest: ৳${net.toFixed(2)}\nFee: ৳${fee.toFixed(2)}` : `Sell your AAF Asset?`;
+            
+            if(confirm(msg)) {
+                // আপনার Mongol-BD এপিআই এখানে কল হবে
+                alert("Processing Spot Asset...");
+            }
         }
 
-        // --- ৩. MongoDB History Logic ---
         async function toggleTradeHistory() {
             const section = document.getElementById('history-section');
             section.style.display = (section.style.display === "block") ? "none" : "block";
@@ -236,26 +214,21 @@
         async function fetchMongoHistory() {
             const listBody = document.getElementById('mongo-data-list');
             try {
-                const res = await fetch('/get_trade_history'); // আপনার Flask API
+                const res = await fetch('/get_trade_history');
                 const result = await res.json();
                 if(result.success && result.trades.length > 0) {
                     listBody.innerHTML = result.trades.map(t => `
                         <tr>
                             <td style="font-weight:600;">${t.asset || 'AAF/BDT'}</td>
                             <td>৳${t.amount}</td>
-                            <td style="color:${t.result==='Win'?'#00ffa3':'#ff3366'}">${t.result}</td>
+                            <td style="color:#00ffa3">Success</td>
                         </tr>
                     `).join('');
-                } else {
-                    listBody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No records found.</td></tr>";
                 }
-            } catch (err) { console.log("History API Error"); }
+            } catch (err) { console.log("History error"); }
         }
 
-        window.onload = initChart;
-        window.addEventListener('resize', () => {
-            chart.applyOptions({ width: document.getElementById('chart-container').clientWidth });
-        });
+        window.onload = () => { initChart(); calculateNet(); };
     </script>
 </body>
 </html>
