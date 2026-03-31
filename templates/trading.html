@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF Exchange | Pro Terminal</title>
+    <title>AAF Exchange | Pro Terminal v6.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -25,11 +25,11 @@
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding: 0; overflow: hidden; /* Body overflow hidden to control custom scroll */
+            margin: 0; padding: 0; overflow: hidden; /* বডি স্ক্রল হবে না */
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15), transparent);
         }
 
-        /* --- Fixed Top Section (Header + Chart) --- */
+        /* --- ১. Fixed Top Section (Header + Chart স্থির থাকবে) --- */
         .fixed-top {
             position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
             background: var(--bg); border-bottom: 1px solid var(--border);
@@ -42,15 +42,15 @@
         .header h2 { font-family: 'Syncopate'; font-size: 12px; margin: 0; color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
         #live-price { font-family: 'Syncopate'; font-size: 16px; color: var(--accent); }
 
-        #chart-wrapper { width: 100%; height: 300px; background: #000; position: relative; }
+        #chart-wrapper { width: 100%; height: 300px; background: #000; position: relative; border-bottom: 1px solid var(--border); }
         #chart-container { width: 100%; height: 100%; }
 
-        /* --- Scrollable Content Section --- */
+        /* --- ২. Scrollable Content (নিচের অংশ স্ক্রল হবে) --- */
         .scrollable-content {
             margin-top: 365px; /* Header(~65px) + Chart(300px) */
-            height: calc(100vh - 465px); /* Adjusted for bottom nav */
+            height: calc(100vh - 465px); 
             overflow-y: auto; padding: 20px;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
         .scrollable-content::-webkit-scrollbar { display: none; }
 
@@ -64,11 +64,10 @@
 
         /* --- Trading Form --- */
         .trade-box { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 25px; border: 1px solid var(--border); }
-        .input-group { position: relative; margin-bottom: 15px; }
         input { 
             width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; 
             color: var(--cyan); font-size: 20px; border-radius: 15px; text-align: center; outline: none; 
-            font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box;
+            font-family: 'Rajdhani'; font-weight: 700; box-sizing: border-box; margin-bottom: 15px;
         }
 
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -77,19 +76,20 @@
         .sell { background: linear-gradient(135deg, #ff3366, #ff6b6b); color: #fff; }
         .btn:active { transform: scale(0.95); }
 
-        /* --- History --- */
+        /* --- History (MongoDB-BD) --- */
         .btn-history {
             margin-top: 15px; width: 100%; padding: 12px; border-radius: 12px;
             background: rgba(0, 242, 254, 0.05); border: 1px solid var(--cyan);
             color: var(--cyan); font-family: 'Syncopate'; font-size: 9px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .history-container { display: none; margin-top: 15px; }
+        .history-container { display: none; margin-top: 15px; animation: fadeIn 0.3s ease; }
         .trade-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .trade-table th { color: #64748b; text-align: left; padding: 10px; font-size: 9px; border-bottom: 1px solid var(--border); }
         .trade-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
 
         /* --- Navigation --- */
-        .nav-container { position: fixed; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 1000; }
+        .nav-container { position: fixed; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 2000; }
         .nav-bar { 
             width: 90%; max-width: 400px; background: var(--nav-bg); 
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 50px; 
@@ -99,6 +99,8 @@
         .nav-item { text-decoration: none; text-align: center; color: #64748b; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
         .nav-item i { font-size: 20px; margin-bottom: 4px; }
         .nav-item.active { color: var(--cyan); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -106,7 +108,7 @@
     <div class="fixed-top">
         <header class="header">
             <h2>AAF EXCHANGE <span style="font-size: 8px; vertical-align: middle; opacity: 0.6;">PRO</span></h2>
-            <span id="live-price">Loading...</span>
+            <span id="live-price">0.0000</span>
         </header>
 
         <div id="chart-wrapper">
@@ -121,9 +123,7 @@
         </div>
 
         <div class="trade-box">
-            <div class="input-group">
-                <input type="number" id="trade-amount" placeholder="0.00 TK">
-            </div>
+            <input type="number" id="trade-amount" placeholder="ENTER TK">
             <div class="btn-group">
                 <button class="btn buy" onclick="initiateTrade('BUY')">BUY / LONG</button>
                 <button class="btn sell" onclick="initiateTrade('SELL')">SELL / SHORT</button>
@@ -131,14 +131,14 @@
         </div>
 
         <button class="btn-history" onclick="toggleTradeHistory()">
-            <i class="fas fa-history"></i> TRADE HISTORY (MONGODB)
+            <i class="fas fa-history"></i> VIEW TRADE HISTORY (MONGODB)
         </button>
 
         <div id="history-section" class="history-container">
             <div class="card" style="border-left: 3px solid var(--accent); padding: 10px;">
                 <table class="trade-table">
                     <thead>
-                        <tr><th>TYPE</th><th>AMOUNT</th><th>STATUS</th></tr>
+                        <tr><th>ASSET</th><th>AMOUNT</th><th>STATUS</th></tr>
                     </thead>
                     <tbody id="mongo-data-list">
                         <tr><td colspan="3" style="text-align:center; padding: 20px; color: #64748b;">No recent trades found.</td></tr>
@@ -147,7 +147,7 @@
             </div>
         </div>
         
-        <div style="height: 50px;"></div> </div>
+        <div style="height: 60px;"></div> </div>
 
     <div class="nav-container">
         <nav class="nav-bar">
@@ -160,7 +160,7 @@
     </div>
 
     <script>
-        // --- ১. Firebase Logic (Candle Stream) ---
+        // --- ১. Firebase Setup (Candle Stream) ---
         const firebaseConfig = { 
             databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
         };
@@ -175,7 +175,7 @@
                 grid: { vertLines: { color: '#111' }, horzLines: { color: '#111' } },
                 crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 rightPriceScale: { borderColor: '#222' },
-                timeScale: { borderColor: '#222', timeVisible: true, secondsVisible: false }
+                timeScale: { borderColor: '#222', timeVisible: true }
             };
             
             chart = LightweightCharts.createChart(document.getElementById('chart-container'), chartOptions);
@@ -185,17 +185,48 @@
                 wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
             });
 
-            // Firebase রিয়েল-টাইম ডাটা সিঙ্ক
-            fb_db.ref('trading/candles').on('value', (snapshot) => {
+            // Firebase লাইভ ডাটা রিড
+            fb_db.ref('trading/aaf_coin').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if(data) {
-                    document.getElementById('live-price').innerText = data.current_price.toFixed(4);
-                    // এখানে আপনার ক্যান্ডেল ডাটা আপডেট লজিক বসবে
+                    document.getElementById('live-price').innerText = parseFloat(data.price).toFixed(4);
                 }
             });
         }
 
-        // --- ২. MongoDB History Logic ---
+        // --- ২. Trade Logic (With Fee Calculation) ---
+        async function initiateTrade(type) {
+            const amount = parseFloat(document.getElementById('trade-amount').value);
+            if(!amount || amount <= 0) { alert("Please enter valid amount!"); return; }
+
+            try {
+                // অ্যাডমিন কনফিগ থেকে ফি (%) আনা
+                const configRes = await fetch('/admin/api/config');
+                const config = await configRes.json();
+                const feePercent = parseFloat(config.trade_fee) || 0;
+
+                // ফি এবং নিট ইনভেস্ট হিসাব
+                const tradingFee = (amount * feePercent) / 100;
+                const netAmount = amount - tradingFee;
+
+                if(confirm(`Confirm Trade?\nAmount: ৳${amount}\nFee (${feePercent}%): ৳${tradingFee.toFixed(2)}`)) {
+                    const res = await fetch('/api/trade/place', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            type: type,
+                            amount: amount,
+                            fee: tradingFee,
+                            net_amount: netAmount
+                        })
+                    });
+                    const result = await res.json();
+                    if(result.success) alert("Trade Placed Successfully!");
+                }
+            } catch (err) { alert("Trade placement failed!"); }
+        }
+
+        // --- ৩. MongoDB History Logic ---
         async function toggleTradeHistory() {
             const section = document.getElementById('history-section');
             section.style.display = (section.style.display === "block") ? "none" : "block";
@@ -205,22 +236,23 @@
         async function fetchMongoHistory() {
             const listBody = document.getElementById('mongo-data-list');
             try {
-                const res = await fetch('/api/user/trade-history'); // আপনার Flask এপিআই
-                const data = await res.json();
-                if(data.success && data.trades.length > 0) {
-                    listBody.innerHTML = data.trades.map(t => `
+                const res = await fetch('/get_trade_history'); // আপনার Flask API
+                const result = await res.json();
+                if(result.success && result.trades.length > 0) {
+                    listBody.innerHTML = result.trades.map(t => `
                         <tr>
-                            <td>${t.type}</td>
+                            <td style="font-weight:600;">${t.asset || 'AAF/BDT'}</td>
                             <td>৳${t.amount}</td>
-                            <td style="color:${t.status==='Win'?'#00ffa3':'#ff3366'}">${t.status}</td>
+                            <td style="color:${t.result==='Win'?'#00ffa3':'#ff3366'}">${t.result}</td>
                         </tr>
                     `).join('');
+                } else {
+                    listBody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No records found.</td></tr>";
                 }
-            } catch (err) { console.log("History Fetch Error"); }
+            } catch (err) { console.log("History API Error"); }
         }
 
         window.onload = initChart;
-        // Responsive chart
         window.addEventListener('resize', () => {
             chart.applyOptions({ width: document.getElementById('chart-container').clientWidth });
         });
