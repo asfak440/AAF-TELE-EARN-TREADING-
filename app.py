@@ -114,10 +114,10 @@ def render_task_page():
     if 'uid' not in session: return redirect(url_for('index'))
     return render_template('task.html')
 
-@app.route('/treading')
+@app.route('/trading')
 def render_treading_page():
     if 'uid' not in session: return redirect(url_for('index'))
-    return render_template('treading.html')
+    return render_template('trading.html')
 
 @app.route('/account')
 def render_account_page():
