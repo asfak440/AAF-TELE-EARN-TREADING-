@@ -2,147 +2,180 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF | Central Wallet</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #39d353; --bg: #0d1117; --card: #161b22; --border: #30363d; --text-dim: #8b949e; --nagad: #f47321; }
-        body { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
 
-        /* অ্যাড রোটেশন স্লট */
-        #wallet-ad-slot { 
-            width: 100%; text-align: center; background: #000; min-height: 65px; 
-            border-bottom: 1px solid var(--border); display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; 
+        :root {
+            --bg: #030712;
+            --card: #0d111c;
+            --border: rgba(255, 255, 255, 0.1);
+            --cyan: #00f2fe;
+            --primary: #39d353;
+            --gold: #ffaa00;
+            --nagad: #f47321;
+            --text-dim: #8b949e;
         }
 
-        /* ব্যালেন্স কার্ড */
-        .balance-card { 
-            background: linear-gradient(135deg, #1c2128, #0d1117); padding: 30px 20px; 
-            margin: 15px; border-radius: 18px; border: 1px solid var(--border); 
-            text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        body { 
+            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding-bottom: 100px;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.05), transparent);
         }
-        .balance-card span { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        .balance-card h2 { color: var(--primary); font-size: 36px; margin: 12px 0; font-weight: 800; }
 
-        /* ট্যাব মেনু */
-        .tab-menu { display: flex; justify-content: space-around; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-        .tab-btn { flex: 1; padding: 18px; border: none; background: none; color: var(--text-dim); font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
-        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); background: rgba(57, 211, 83, 0.05); }
+        /* Ad Slot Rotation */
+        #top-ad-slot { 
+            width: 100%; min-height: 60px; background: #000; 
+            border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+        }
 
-        /* মেইন কন্টেইনার */
+        /* Balance Section */
+        .balance-card {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.1), rgba(13, 17, 28, 0.9));
+            padding: 30px 20px; margin: 20px; border-radius: 25px; border: 1px solid var(--border);
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .balance-card span { font-size: 11px; font-family: 'Syncopate'; color: var(--text-dim); }
+        .balance-card h2 { font-size: 38px; margin: 10px 0; color: var(--cyan); font-family: 'Syncopate'; text-shadow: 0 0 15px rgba(0, 242, 254, 0.3); }
+
+        /* Tab Navigation */
+        .tab-menu { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .tab-btn { flex: 1; padding: 18px; border: none; background: none; color: var(--text-dim); font-family: 'Syncopate'; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { color: var(--cyan); border-bottom: 3px solid var(--cyan); background: rgba(0, 242, 254, 0.05); }
+
         .container { padding: 20px; max-width: 500px; margin: auto; }
-        .wallet-page { display: none; animation: fadeIn 0.3s ease; }
+        .wallet-page { display: none; animation: slideUp 0.4s ease; }
         .wallet-page.active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ইনপুট ডিজাইন */
-        .input-box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px; position: relative; overflow: hidden; }
-        .input-box label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 10px; font-weight: 600; }
-        .input-group { margin-bottom: 15px; }
+        /* Column Style Deposit Gateways */
+        .gateway-list { display: flex; flex-direction: column; gap: 12px; }
+        .gateway-item {
+            background: var(--card); border: 1px solid var(--border); padding: 15px;
+            border-radius: 15px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; transition: 0.3s;
+        }
+        .gateway-item:active { transform: scale(0.97); border-color: var(--cyan); }
+        .gw-info { display: flex; align-items: center; gap: 15px; }
+        .gw-info img { width: 35px; border-radius: 8px; }
+        .gw-info span { font-weight: 700; font-size: 16px; }
+
+        /* Input Styles */
+        .input-box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 20px; position: relative; }
+        .input-box label { display: block; font-size: 12px; color: var(--cyan); margin-bottom: 12px; font-family: 'Syncopate'; }
         .input-group input { 
-            width: 100%; background: #0d1117; border: 1px solid var(--border); 
-            padding: 14px; border-radius: 10px; color: white; outline: none; box-sizing: border-box; font-size: 15px;
-        }
-        
-        .action-btn { 
-            width: 100%; background: var(--primary); color: #0d1117; border: none; 
-            padding: 16px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; 
+            width: 100%; background: #050912; border: 1px solid var(--border); 
+            padding: 15px; border-radius: 12px; color: white; outline: none; box-sizing: border-box; font-size: 16px; margin-bottom: 15px;
         }
 
-        /* লক ওভারলে */
+        .action-btn { 
+            width: 100%; background: var(--cyan); color: #000; border: none; 
+            padding: 18px; border-radius: 15px; font-weight: 800; font-family: 'Syncopate'; font-size: 12px; cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Feature Lock Overlay */
         .locked-overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(13, 17, 23, 0.95); display: none; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 50; text-align: center; 
-            color: #ff7b72; padding: 20px; box-sizing: border-box;
+            background: rgba(3, 7, 18, 0.96); display: none; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 50; border-radius: 20px;
+            color: #ff3e3e; text-align: center; padding: 20px; box-sizing: border-box;
         }
-        .locked-overlay i { font-size: 35px; margin-bottom: 12px; }
+        .locked-overlay i { font-size: 40px; margin-bottom: 15px; color: #ff3e3e; }
 
-        /* বটম নেভিগেশন */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--card); display: flex; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; padding-top: 14px; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item i { font-size: 20px; margin-bottom: 5px; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: #0d111c; display: flex; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-dim); text-decoration: none; padding-top: 15px; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item i { font-size: 22px; margin-bottom: 5px; }
+        .nav-item.active { color: var(--cyan); }
     </style>
 </head>
 <body>
 
-    <div id="wallet-ad-slot">
-        <span style="font-size: 10px; color: var(--text-dim);">Sponsored Ads Loading...</span>
+    <div id="top-ad-slot">
+        <span style="font-size: 10px; color: var(--text-dim);">ADS LOADING...</span>
     </div>
 
     <div class="balance-card">
-        <span>Current Balance</span>
+        <span>MAIN CASH BALANCE</span>
         <h2 id="wallet-bal">৳ 0.00</h2>
     </div>
 
     <div class="tab-menu">
-        <button class="tab-btn active" onclick="showPage(event, 'deposit')">Deposit</button>
-        <button class="tab-btn" onclick="showPage(event, 'transfer')">Transfer</button>
-        <button class="tab-btn" onclick="showPage(event, 'withdraw')">Withdraw</button>
+        <button class="tab-btn active" onclick="showPage(event, 'deposit')">DEPOSIT</button>
+        <button class="tab-btn" onclick="showPage(event, 'transfer')">TRANSFER</button>
+        <button class="tab-btn" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
     </div>
 
     <div class="container">
         <div id="deposit" class="wallet-page active">
-            <div class="input-box" style="position:relative;">
-                <label>Deposit Funds</label>
-                <div style="text-align: center; padding: 10px 0;">
-                    <i class="fab fa-telegram" style="font-size: 40px; color: #0088cc; margin-bottom: 10px;"></i>
-                    <p style="font-size: 14px;">ব্যালেন্স অ্যাড করার জন্য এডমিনকে মেসেজ দিন।</p>
+            <div class="input-box">
+                <label>SELECT GATEWAY</label>
+                <div class="gateway-list">
+                    <div class="gateway-item" onclick="window.open('https://t.me/your_bot', '_blank')">
+                        <div class="gw-info">
+                            <img src="https://raw.githubusercontent.com/Mohidul77/logo/main/bkash.png" alt="bKash">
+                            <span>bKash Manual</span>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: var(--text-dim);"></i>
+                    </div>
+                    <div class="gateway-item" onclick="window.open('https://t.me/your_bot', '_blank')">
+                        <div class="gw-info">
+                            <img src="https://raw.githubusercontent.com/Mohidul77/logo/main/nagad.png" alt="Nagad">
+                            <span>Nagad Manual</span>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: var(--text-dim);"></i>
+                    </div>
                 </div>
-                <button class="action-btn" onclick="window.open('https://t.me/aaf_tele_earn_bot', '_blank')" style="background: #0088cc; color: white;">
-                    Contact Admin
-                </button>
+                <p style="font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 15px;">Contact Admin to add funds instantly.</p>
+                
                 <div class="locked-overlay" id="lock-deposit">
-                    <i class="fas fa-lock"></i><p>ফিচারটি লক! ন্যূনতম ১০টি ট্রেড সম্পন্ন করুন।</p>
+                    <i class="fas fa-lock"></i>
+                    <p>FEATURE LOCKED!<br>Complete 10 trades to unlock.</p>
                 </div>
             </div>
         </div>
 
         <div id="transfer" class="wallet-page">
-            <div class="input-box" style="position:relative;">
-                <label>Internal Transfer (User ID)</label>
+            <div class="input-box">
+                <label>P2P TRANSFER</label>
                 <div class="input-group">
                     <input type="number" id="transfer-id" placeholder="Receiver Telegram ID">
-                </div>
-                <div class="input-group">
                     <input type="number" id="transfer-amount" placeholder="Amount (৳)">
                 </div>
-                <button class="action-btn" id="transfer-btn" onclick="processTransfer()">Confirm Transfer</button>
+                <button class="action-btn" id="transfer-btn" onclick="processTransfer()">CONFIRM SEND</button>
+                
                 <div class="locked-overlay" id="lock-transfer">
-                    <i class="fas fa-lock"></i><p>ফিচারটি লক! ন্যূনতম ১০টি ট্রেড সম্পন্ন করুন।</p>
+                    <i class="fas fa-lock"></i>
+                    <p>FEATURE LOCKED!<br>Complete 10 trades to unlock.</p>
                 </div>
             </div>
         </div>
 
         <div id="withdraw" class="wallet-page">
-            <div class="input-box" style="position:relative;">
-                <label>Withdraw via Nagad</label>
-                <div style="display: flex; align-items: center; margin-bottom: 15px; color: var(--nagad);">
-                    <i class="fas fa-wallet"></i>&nbsp;<b>Nagad Personal</b>
-                </div>
+            <div class="input-box">
+                <label>WITHDRAW (NAGAD)</label>
                 <div class="input-group">
-                    <input type="number" id="withdraw-num" placeholder="01XXXXXXXXX (Nagad No)">
+                    <input type="number" id="withdraw-num" placeholder="Nagad Personal Number">
+                    <input type="number" id="withdraw-amount" placeholder="Amount (Min ৳50)">
                 </div>
-                <div class="input-group">
-                    <input type="number" id="withdraw-amount" placeholder="Min Amount ৳ 50">
-                </div>
-                <button class="action-btn" id="withdraw-btn" onclick="processWithdraw()" style="background: var(--nagad); color: white;">
-                    Submit Withdrawal
-                </button>
+                <button class="action-btn" id="withdraw-btn" onclick="processWithdraw()" style="background: var(--nagad); color: white;">SUBMIT REQUEST</button>
+                
                 <div class="locked-overlay" id="lock-withdraw">
-                    <i class="fas fa-lock"></i><p>ফিচারটি লক! ন্যূনতম ১০টি ট্রেড সম্পন্ন করুন।</p>
+                    <i class="fas fa-lock"></i>
+                    <p>FEATURE LOCKED!<br>Complete 10 trades to unlock.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <nav class="bottom-nav">
-        <a href="/dashboard" class="nav-item"><i class="fas fa-th-large"></i><span>Home</span></a>
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
         <a href="/task" class="nav-item"><i class="fas fa-tasks"></i><span>Task</span></a>
-        <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
+        <a href="/trade" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
         <a href="/wallet" class="nav-item active"><i class="fas fa-wallet"></i><span>Wallet</span></a>
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
     </nav>
@@ -151,26 +184,24 @@
         const API_URL = "https://aaf-tele-earn-treading.onrender.com";
         const USER_ID = localStorage.getItem('user_id') || "12345";
 
-        // ১. অ্যাড রোটেশন সিস্টেম (১০+ অ্যাড সাপোর্ট)
-        async function loadAdSystem() {
+        // ১. অ্যাড রোটেশন (এডমিন কন্ট্রোলড)
+        async function loadAds() {
             try {
                 const res = await fetch(`${API_URL}/api/get_active_ads`);
-                const adData = await res.json();
-                if (adData.ads && adData.ads.length > 0) {
-                    let adIndex = 0;
-                    const adSlot = document.getElementById('wallet-ad-slot');
-                    const rotate = () => {
-                        adSlot.innerHTML = adData.ads[adIndex].code; 
-                        adIndex = (adIndex + 1) % adData.ads.length;
-                    };
-                    rotate();
-                    setInterval(rotate, 10000); // ১০ সেকেন্ড পর পর অ্যাড চেঞ্জ
+                const data = await res.json();
+                if (data.ads && data.ads.length > 0) {
+                    let i = 0;
+                    const slot = document.getElementById('top-ad-slot');
+                    setInterval(() => {
+                        slot.innerHTML = data.ads[i].code;
+                        i = (i + 1) % data.ads.length;
+                    }, 8000);
                 }
-            } catch (err) { console.log("Ads Load Failed"); }
+            } catch (e) { console.log("Ads Error"); }
         }
 
-        // ২. ডাটা ও ট্রেড লিমিট চেক
-        async function initWallet() {
+        // ২. ডাটা চেক ও লক সিস্টেম
+        async function syncWallet() {
             try {
                 const res = await fetch(`${API_URL}/api/user/data/${USER_ID}`);
                 const data = await res.json();
@@ -178,17 +209,16 @@
                 if (data.status === "success") {
                     document.getElementById('wallet-bal').innerText = "৳ " + parseFloat(data.balance || 0).toFixed(2);
                     
-                    // যদি ১০টির কম ট্রেড করে থাকে তবে লক দেখাবে
+                    // ট্রেড লিমিট চেক
                     if ((data.total_trades || 0) < 10) {
                         document.getElementById('lock-deposit').style.display = 'flex';
                         document.getElementById('lock-transfer').style.display = 'flex';
                         document.getElementById('lock-withdraw').style.display = 'flex';
                     }
                 }
-            } catch (e) { console.log("Wallet Init Error"); }
+            } catch (e) { console.log("Sync Error"); }
         }
 
-        // ৩. ট্যাব পাল্টানো
         function showPage(event, pageId) {
             document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -196,78 +226,27 @@
             event.currentTarget.classList.add('active');
         }
 
-        // ৪. ইন্টারনাল ট্রান্সফার (User ID ভিত্তিক)
+        // ৩. ট্রান্সফার ফাংশন
         async function processTransfer() {
-            const receiverId = document.getElementById('transfer-id').value;
-            const amount = document.getElementById('transfer-amount').value;
-            const btn = document.getElementById('transfer-btn');
-
-            if(!receiverId || !amount) return alert("সবগুলো ঘর পূরণ করুন!");
-            if(receiverId === USER_ID) return alert("নিজে নিজেকে টাকা পাঠানো সম্ভব নয়!");
-
-            btn.disabled = true;
-            btn.innerText = "Processing...";
-
+            const rid = document.getElementById('transfer-id').value;
+            const amt = document.getElementById('transfer-amount').value;
+            if(!rid || !amt) return alert("All fields required!");
+            
             try {
                 const res = await fetch(`${API_URL}/api/wallet/transfer`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        sender_id: USER_ID,
-                        receiver_id: receiverId,
-                        amount: parseFloat(amount)
-                    })
+                    body: JSON.stringify({sender_id: USER_ID, receiver_id: rid, amount: parseFloat(amt)})
                 });
-                const result = await res.json();
-                if(result.status === "success") {
-                    alert("✅ ট্রান্সফার সফল হয়েছে!");
-                    location.reload();
-                } else {
-                    alert("❌ ভুল: " + result.message);
-                }
-            } catch (e) { alert("সার্ভার ত্রুটি!"); }
-            btn.disabled = false;
-            btn.innerText = "Confirm Transfer";
-        }
-
-        // ৫. উইথড্র প্রসেস
-        async function processWithdraw() {
-            const num = document.getElementById('withdraw-num').value;
-            const amount = document.getElementById('withdraw-amount').value;
-            const btn = document.getElementById('withdraw-btn');
-
-            if (!num || !amount) return alert("সব তথ্য দিন!");
-            if (parseFloat(amount) < 50) return alert("সর্বনিম্ন ৫০ টাকা তোলা যাবে!");
-
-            btn.disabled = true;
-            btn.innerText = "Submitting...";
-
-            try {
-                const res = await fetch(`${API_URL}/api/wallet/withdraw`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        user_id: USER_ID,
-                        method: "Nagad",
-                        number: num,
-                        amount: parseFloat(amount)
-                    })
-                });
-                const result = await res.json();
-                if(result.status === "success") {
-                    alert("✅ উইথড্র রিকোয়েস্ট জমা হয়েছে! ২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।");
-                    location.reload();
-                } else {
-                    alert("❌ ভুল: " + result.message);
-                }
-            } catch (e) { alert("সার্ভার ত্রুটি!"); }
-            btn.disabled = false;
-            btn.innerText = "Submit Withdrawal";
+                const resData = await res.json();
+                alert(resData.message);
+                if(resData.status === "success") location.reload();
+            } catch (e) { alert("Server Error!"); }
         }
 
         window.onload = () => {
-            initWallet();
-            loadAdSystem();
+            syncWallet();
+            loadAds();
         };
     </script>
 </body>
