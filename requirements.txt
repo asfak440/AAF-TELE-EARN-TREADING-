@@ -10,4 +10,4 @@ python-dotenv
 firebase-admin
 requests
 cryptography
-StringSession
+stringSession
