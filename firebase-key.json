@@ -1,10 +1,13 @@
-try:
-    if os.path.exists("firebase-key.json"):
-        cred = credentials.Certificate("firebase-key.json")
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
-        })
-    else:
-        print("⚠️ Firebase key file not found!")
-except Exception as e:
-    print(f"Firebase Error: {e}")
+{
+  "type": "service_account",
+  "project_id": "teleearnbd-781d6",
+  "private_key_id": "c5a161556f597a8191c96f7f0556325309db19eb",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCgnXDHZf4IiobM\n2KAdoFcjlz1JouOvHW3QOOJUbe9f7ZxIT0ISZcHM19vnWAoTjkfSwC1lVW0hrA/N\ne3KLz4ykKvdVKWy7WslOVD4aaDccWcYbTOujqLNGzJ10gtkXGARRNEXtHEZ5rQtE\nY+voRfuJQY5E+vAJ8hgwgL43tjb4K2zV6KQ6uY0snNi2A2pOMWqZ95J7XGXZhhiE\nvOlleqtmsSZjBwuLYghYWcUwocnIFa6bHZpg1eEVtUkh8lkHSBvH5WCCdHrRF97b\nRFm03Lz/eL/PLn8G+6hbcWLFWoFqsgjzMLWOiz9jHneOV0Z8F7rMbrAhcKQon1D2\nPEu1CNoxAgMBAAECggEAB49Ph5AiNktUY9QKqchSL6p6w9J1HGkCgiFqTEJqKOIL\niAcEf26PEhXjK6r7+u6IjIe3f0h3gPUq/39I7YIa7t93mahf7fvcg6mBDI/FD8pd\nMevjf7YVHZ8MBnfR8WWDzwFqjOn2unuJzynTmNDB8ZR+hnpH9fThXPeTVHaY9OJt\nx27Y0OuMMNkc85k7S3oI1JfANC/MqkbDOMmWGq3hcvuY3UCkfvZMAJF4Nq7oAUbn\nLOwBYA8L+iIAhILJY0REbRv8jdlmHXuLmnfIQO3BJB3F+8gsafvFcyVF+C9jiMEN\nzaBsVaxBUaBjC1+aaStLWyoQc4nIM1n+y72bVOc5YQKBgQDNgb9R7JTncABdAmRZ\n6UirpgR+KyegPJDgNR5XrHo8W3Bc+RReCYT/NkVhnbjIGCCQ/s785wdFpb1CNiRR\ny486d+OfjPLOopJ6oejfieJva84cDTntSSCuMQmYx5YIMaM6SeE2UFhVRnolPlVf\n/XFVSP5V4fCGlSyihlbTRsGIEQKBgQDIFAZx3b5k0M9PkcRIplHlOhnXqv4L957n\nm+CzcljK4mWpsAhuijSinAVlabSuVC7G/knUMpTpAh9HizRWjrcoWjIs8YGSYak7\nKdJXxC7QkUMB3Ub/vjP9egLc6VEegevjsI8A7F+DIrWEfBLT3d6teD3jzTajgFVg\n8MyX24FQIQKBgGUOL2l2wAZK4jLacURxXeXiXoU4bWTzQ36tQD12uCkkAc4GQci4\nP6lMI7QL3givLJyAYIKmjMHn7Xg4rYV3Zvgmak1T/zYzZXpeUehSooGN7q2Gp3yS\noDpoLMLvKkzfM9f+6ntN6RIN9RSJYWwxceCxYzgSQbe8dVV6YAnG2nYxAoGBAK4p\ngFKuC4YGne9Nm+cBoFhBcy1hEzOnoRNLhRWve8tft882BKD0fUzvM2NL2JPHg9CE\nmg+02BrcVg4ZBr4yDQ17NiIZOAkMKhvuE8OCap3zVLjSvXLxRqBnDQbvskU0IvpY\nPqM3Hw0vsYJZ3qm+gI/QE0+w2tcIZ0mzUuT9llsBAoGAY4bxpuOvFnDdpuh+v+1s\nKFeU4yD3xZYCTIoHEcXiiYnhsZt4adVJqmLeXfnJ6P6SbX479eCyYiS/nqqaqms4\npZOhISB+s0sc8+b3hwAuLphC9gAI9wX+LFWxBofu+aCr+NWnun+f2d8uFDCl2P/8\nG4aRs1RpkFXlkZD23ASNk0M=\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@teleearnbd-781d6.iam.gserviceaccount.com",
+  "client_id": "116967039800940222134",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40teleearnbd-781d6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
