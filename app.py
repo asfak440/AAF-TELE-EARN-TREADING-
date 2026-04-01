@@ -79,12 +79,18 @@ def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     try:
-        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        # ইভেন্ট লুপ এরর ফিক্স করার জন্য এটি জরুরি
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
+        
         result = client.send_code_request(phone)
-        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash}
+        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True})
     except Exception as e:
+        print(f"OTP Error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/verify_login', methods=['POST'])
@@ -92,19 +98,20 @@ def verify_login_handler():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
-    password = data.get('password') # ২-স্টেপ পাসওয়ার্ড
+    password = data.get('password')
 
     if phone not in temp_clients: 
         return jsonify({"success": False, "message": "Session Expired"})
     
     client = temp_clients[phone]["client"]
     h = temp_clients[phone]["hash"]
+    loop = temp_clients[phone]["loop"]
 
     try:
+        asyncio.set_event_loop(loop)
         user = client.sign_in(phone, code, phone_code_hash=h, password=password)
         session_str = client.session.save()
         
-        # ইউজার ডাটা আপডেট (টেলিগ্রাম স্টাইল মাল্টি অ্যাকাউন্ট)
         users_col.update_one(
             {"telegram_id": user.id},
             {"$set": {
@@ -129,7 +136,6 @@ def verify_login_handler():
         return jsonify({"success": False, "requires_password": True, "message": "2-Step Verification Required"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
 # (পার্ট-১ শেষ, নিচে পার্ট-২ যোগ করুন)
 # ---------------------------------------------------------
 # ৩. পেজ রাউটস (আপনার GitHub ফাইলের নাম অনুযায়ী)
