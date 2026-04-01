@@ -16,6 +16,27 @@ from telethon.errors import SessionPasswordNeededError
 from bson import ObjectId
 import firebase_admin
 from firebase_admin import credentials, db
+import firebase_admin
+from firebase_admin import credentials, db
+import os
+
+# Firebase কানেকশন লজিক
+try:
+    if not firebase_admin._apps:
+        # ফাইলের নাম আপনার দেওয়া নামের সাথে মিল থাকতে হবে
+        cred_path = "firebase-key.json" 
+        
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred, {
+                # আপনার JSON অনুযায়ী সঠিক ডাটাবেজ লিঙ্ক
+                'databaseURL': 'https://teleearnbd-781d6-default-rtdb.firebaseio.com'
+            })
+            print("✅ Firebase Admin SDK Connected!")
+        else:
+            print("❌ Error: firebase-key.json not found!")
+except Exception as e:
+    print(f"🔥 Firebase Error: {e}")
 
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
