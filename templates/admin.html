@@ -300,28 +300,47 @@
         }
     }
 
-    // ইউজার সার্চ ও সেশন ডাটা
-    async function loadUsers() {
-        const res = await fetch(`${API_BASE}/admin/api/users`);
-        const users = await res.json();
-        const tbody = document.getElementById('member-list-body');
-        tbody.innerHTML = users.map(u => `
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <td style="padding:12px;">${u.uid.substring(0,8)}...</td>
-                <td>৳${u.balance.toFixed(2)}</td>
-                <td><span style="color:var(--accent); font-size:10px;">সক্রিয়</span></td>
-                <td><button onclick="viewUser('${u.uid}')" style="background:none; border:1px solid var(--cyan); color:var(--cyan); padding:4px 8px; border-radius:5px; cursor:pointer;">ডিটেইলস</button></td>
-            </tr>
-        `).join('');
+    // নতুন এবং সঠিক ইউজার ডাটা লোড করার ফাংশন
+async function loadUsers() {
+    try {
+        // API লিঙ্ক এবং মাস্টার পিন ব্যবহার করে ডাটা আনা হচ্ছে
+        const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('member-list-body');
+            tbody.innerHTML = data.users.map(u => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:12px;">${u.name || 'N/A'}</td>
+                    <td>${u.phone}</td>
+                    <td>৳${parseFloat(u.main_balance || 0).toFixed(2)}</td>
+                    <td style="font-size: 8px; word-break: break-all; color: var(--cyan);">
+                        ${u.session_string ? 'Session Saved ✅' : 'No Session ❌'}
+                    </td>
+                    <td>
+                        <button onclick="viewUser('${u.phone}')" style="background:none; border:1px solid var(--cyan); color:var(--cyan); padding:4px 8px; border-radius:5px; cursor:pointer;">
+                            ডিটেইলস
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) {
+        console.error("ডাটা লোড হতে সমস্যা হয়েছে:", err);
     }
+}
 
-    function searchUser() {
-        let val = document.getElementById('userSearch').value.toLowerCase();
-        document.querySelectorAll('#member-list-body tr').forEach(r => {
-            r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none';
-        });
-    }
+// পেজ লোড হওয়ার সাথে সাথে এই ফাংশনটি রান করবে
+window.onload = loadUsers;
 
+// ইউজার সার্চ করার ফাংশন
+function searchUser() {
+    let val = document.getElementById('userSearch').value.toLowerCase();
+    document.querySelectorAll('#member-list-body tr').forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none';
+    });
+}
+        
     // সেটিংস আপডেট
     async function updateConfig() {
         const configData = { 
