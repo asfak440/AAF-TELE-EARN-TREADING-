@@ -209,9 +209,7 @@ def withdraw_req():
     
     return jsonify({"status": "success", "message": "Withdrawal request sent"})
 
-# ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল (aaf449 / admin.html)
-# ---------------------------------------------------------
+# ১. অ্যাডমিন প্যানেল রেন্ডার (পিন ভেরিফিকেশন সহ)
 @app.route('/admin')
 def render_admin_panel():
     pin = request.args.get('pin')
@@ -219,8 +217,24 @@ def render_admin_panel():
         return render_template('admin.html')
     return "Unauthorized", 403
 
+# ২. অ্যাডমিন প্যানেলে সব ইউজার এবং সেশন ডাটা পাঠানোর API
+@app.route('/api/admin/get_users')
+def admin_get_users():
+    pin = request.args.get('pin')
+    if pin != "Abdullah6790":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
+    # MongoDB থেকে সব ইউজার ডাটা নিয়ে আসা (ID বাদে)
+    users = list(users_col.find({}, {"_id": 0})) 
+    return jsonify({"success": True, "users": users})
+
+# ৩. গ্লোবাল সেটিংস আপডেট (চ্যানেল লিঙ্ক, লিমিট ইত্যাদি)
 @app.route('/api/admin/update_settings', methods=['POST'])
 def update_settings():
+    pin = request.args.get('pin') # ইউআরএল থেকে পিন নিবে
+    if pin != "Abdullah6790":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
     data = request.json
     settings_col.update_one(
         {"type": "global"},
