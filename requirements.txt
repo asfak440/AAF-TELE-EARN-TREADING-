@@ -1,12 +1,8 @@
-flask-session
 flask
 flask-cors
-telethon
 pymongo[srv]
-nest-asyncio
-cryptg
+telethon
+firebase-admin
 gunicorn
 python-dotenv
-firebase-admin
-requests
 cryptography
