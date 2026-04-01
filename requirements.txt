@@ -8,3 +8,4 @@ cryptg
 gunicorn
 python-dotenv
 firebase-admin
+requests
