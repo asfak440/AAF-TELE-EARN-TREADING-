@@ -29,39 +29,42 @@
             margin: 0; padding-bottom: 100px;
         }
 
-        /* --- Header & Timeframe --- */
+        /* --- Sticky Header & Chart Section --- */
+        .sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg);
+        }
+
         .header { padding: 15px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .header h2 { font-size: 14px; margin: 0; color: var(--cyan); font-family: 'Rajdhani'; text-transform: uppercase; }
         #live-price { font-family: 'Rajdhani'; font-size: 20px; color: var(--green); font-weight: 700; }
+        
         .tf-bar { background: #000; display: flex; gap: 5px; padding: 10px; border-bottom: 1px solid var(--border); overflow-x: auto; }
         .tf-btn { background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 5px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; font-family: 'Rajdhani'; }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.05); }
 
-        /* --- Chart --- */
-        #chart-wrapper { width: 100%; height: 350px; background: #000; }
+        #chart-wrapper { width: 100%; height: 320px; background: #000; border-bottom: 1px solid var(--border); }
         #chart-container { width: 100%; height: 100%; }
 
-        /* --- Stats Card --- */
+        /* --- Scrollable Content --- */
         .container { padding: 15px; max-width: 500px; margin: auto; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .stat-card span { font-size: 11px; color: var(--text-muted); display: block; }
         .stat-card b { font-family: 'Rajdhani'; font-size: 18px; }
 
-        /* --- Trade Box (Updated for Dual Input) --- */
         .trade-box { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-        
         .input-group-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .input-box { flex: 1; position: relative; }
-        .input-box span { position: absolute; right: 15px; top: 15px; color: var(--text-muted); font-size: 12px; font-weight: bold; }
+        .input-box span { position: absolute; right: 12px; top: 15px; color: var(--text-muted); font-size: 11px; font-weight: bold; }
         .input-box input { 
             width: 100%; background: #000; border: 1px solid var(--border); 
-            padding: 15px 45px 15px 15px; color: var(--cyan); font-size: 18px; 
+            padding: 15px 40px 15px 12px; color: var(--cyan); font-size: 18px; 
             border-radius: 10px; outline: none; font-family: 'Rajdhani'; box-sizing: border-box;
         }
-        .exchange-icon { color: var(--text-muted); font-size: 18px; }
 
-        /* --- Details & Fee Label --- */
         .fee-label { 
             background: rgba(0, 242, 254, 0.05); border-radius: 8px; border: 1px dashed var(--border);
             padding: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;
@@ -76,7 +79,6 @@
         .buy { background: var(--green); color: #000; }
         .sell { background: var(--red); color: #fff; }
 
-        /* --- Navigation --- */
         .bottom-nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 65px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-radius: 35px; display: flex; justify-content: space-around; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-muted); text-decoration: none; flex: 1; }
         .nav-item i { font-size: 20px; display: block; }
@@ -86,20 +88,22 @@
 </head>
 <body>
 
-    <header class="header">
-        <h2>AAF PRO TERMINAL</h2>
-        <span id="live-price">৳ 0.0000</span>
-    </header>
+    <div class="sticky-top">
+        <header class="header">
+            <h2>AAF PRO TERMINAL</h2>
+            <span id="live-price">৳ 0.0000</span>
+        </header>
 
-    <div class="tf-bar">
-        <button class="tf-btn active" onclick="changeTF('1m', this)">1M</button>
-        <button class="tf-btn" onclick="changeTF('5m', this)">5M</button>
-        <button class="tf-btn" onclick="changeTF('1h', this)">1H</button>
-        <button class="tf-btn" onclick="changeTF('4h', this)">4H</button>
-        <button class="tf-btn" onclick="changeTF('1d', this)">1D</button>
+        <div class="tf-bar">
+            <button class="tf-btn active" onclick="changeTF('1m', this)">1M</button>
+            <button class="tf-btn" onclick="changeTF('5m', this)">5M</button>
+            <button class="tf-btn" onclick="changeTF('1h', this)">1H</button>
+            <button class="tf-btn" onclick="changeTF('4h', this)">4H</button>
+            <button class="tf-btn" onclick="changeTF('1d', this)">1D</button>
+        </div>
+
+        <div id="chart-wrapper"><div id="chart-container"></div></div>
     </div>
-
-    <div id="chart-wrapper"><div id="chart-container"></div></div>
 
     <div class="container">
         <div class="stat-grid">
@@ -113,14 +117,14 @@
                     <input type="number" id="taka-input" placeholder="0.00">
                     <span>BDT</span>
                 </div>
-                <i class="fas fa-exchange-alt exchange-icon"></i>
+                <i class="fas fa-exchange-alt" style="color:var(--text-muted)"></i>
                 <div class="input-box">
                     <input type="number" id="coin-input" placeholder="0.00">
                     <span>AAF</span>
                 </div>
             </div>
             
-            <div class="fee-label" id="calculation-display">
+            <div class="fee-label">
                 <div class="fee-row">
                     <span><i class="fas fa-arrow-down text-green"></i> BUY করলে পাবেন:</span>
                     <b class="text-green" id="buy-receive">0.0000 AAF</b>
@@ -129,7 +133,7 @@
                     <span><i class="fas fa-arrow-up text-red"></i> SELL করলে পাবেন:</span>
                     <b class="text-red" id="sell-receive">৳ 0.00</b>
                 </div>
-                <div style="text-align:center; font-size:10px; color:#64748b; margin-top:5px;">
+                <div id="fee-text" style="text-align:center; font-size:10px; color:#64748b; margin-top:5px;">
                     *০.১% ট্রেডিং ফি বাদ দিয়ে হিসাব করা হয়েছে
                 </div>
             </div>
@@ -150,13 +154,11 @@
     </nav>
 
     <script>
-        // ডাটাবেজ লজিক আগের মতই রাখা হয়েছে (Firebase + MongoDB)
         const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let chart, candleSeries, lastPrice = 0;
-
+        let chart, candleSeries, lastPrice = 0, currentFee = 0.1;
         const takaInput = document.getElementById('taka-input');
         const coinInput = document.getElementById('coin-input');
 
@@ -165,6 +167,7 @@
                 layout: { backgroundColor: '#000000', textColor: '#94a3b8' },
                 grid: { vertLines: { color: '#121926' }, horzLines: { color: '#121926' } },
                 timeScale: { timeVisible: true },
+                watermark: { visible: false } // লোগো রিমুভ
             });
             candleSeries = chart.addCandlestickSeries({ upColor: '#00ffa3', downColor: '#ff3366' });
 
@@ -177,49 +180,46 @@
                         time: Math.floor(Date.now() / 1000 / 60) * 60,
                         open: lastPrice, high: lastPrice + 0.02, low: lastPrice - 0.02, close: lastPrice
                     });
-                    calculateTrade(); // প্রাইস চেঞ্জ হলে অটো রিক্যালকুলেট হবে
+                    calculateTrade();
                 }
             });
             loadDummyData();
         }
 
-        // নতুন স্মার্ট ক্যালকুলেশন লজিক
+        async function updateUserData() {
+            try {
+                const response = await fetch('/get_user_stats');
+                const data = await response.json();
+                document.getElementById('user-aaf').innerText = data.aaf_balance.toFixed(2);
+                document.getElementById('user-cash').innerText = `৳ ${data.cash_balance.toFixed(2)}`;
+                
+                if(data.fee_percent !== undefined) {
+                    currentFee = parseFloat(data.fee_percent);
+                    document.getElementById('fee-text').innerText = `*${currentFee}% ট্রেডিং ফি বাদ দিয়ে হিসাব করা হয়েছে`;
+                }
+            } catch (e) { console.log("Sync error"); }
+        }
+
         function calculateTrade(source) {
             if(lastPrice <= 0) return;
-
-            let takaVal = parseFloat(takaInput.value) || 0;
-            let coinVal = parseFloat(coinInput.value) || 0;
+            let tkVal = parseFloat(takaInput.value) || 0;
+            let cnVal = parseFloat(coinInput.value) || 0;
 
             if (source === 'taka') {
-                coinVal = takaVal / lastPrice;
-                coinInput.value = coinVal > 0 ? coinVal.toFixed(4) : '';
+                cnVal = tkVal / lastPrice;
+                coinInput.value = cnVal > 0 ? cnVal.toFixed(4) : '';
             } else if (source === 'coin') {
-                takaVal = coinVal * lastPrice;
-                takaInput.value = takaVal > 0 ? takaVal.toFixed(2) : '';
+                tkVal = cnVal * lastPrice;
+                takaInput.value = tkVal > 0 ? tkVal.toFixed(2) : '';
             }
 
-            // ০.১% ফি হিসাব
-            let buyReceive = coinVal - (coinVal * 0.001); // টাকা দিয়ে কয়েন কিনলে কয়েন থেকে ফি কাটবে
-            let sellReceive = takaVal - (takaVal * 0.001); // কয়েন বেচলে টাকা থেকে ফি কাটবে
-
-            document.getElementById('buy-receive').innerText = `${buyReceive.toFixed(4)} AAF`;
-            document.getElementById('sell-receive').innerText = `৳ ${sellReceive.toFixed(2)}`;
+            let feeRate = currentFee / 100;
+            document.getElementById('buy-receive').innerText = `${(cnVal - (cnVal * feeRate)).toFixed(4)} AAF`;
+            document.getElementById('sell-receive').innerText = `৳ ${(tkVal - (tkVal * feeRate)).toFixed(2)}`;
         }
 
         takaInput.addEventListener('input', () => calculateTrade('taka'));
         coinInput.addEventListener('input', () => calculateTrade('coin'));
-
-        async function processTrade(type) {
-            let tk = parseFloat(takaInput.value) || 0;
-            let aaf = parseFloat(coinInput.value) || 0;
-            
-            if(tk <= 0 || aaf <= 0) return alert("দয়া করে সঠিক পরিমাণ দিন!");
-            
-            alert(`${type} অর্ডার প্রসেস হচ্ছে... (মঙ্গোডিবি তে ডাটা পাঠানো হলো)`);
-            
-            // মঙ্গোডিবি ব্যাকএন্ড এ কল: 
-            // fetch('/execute_trade', { method: 'POST', body: JSON.stringify({ action: type, taka: tk, coin: aaf, price: lastPrice }) })
-        }
 
         function changeTF(tf, btn) {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
@@ -233,7 +233,7 @@
             candleSeries.setData(data);
         }
 
-        window.onload = initChart;
+        window.onload = () => { initChart(); updateUserData(); };
     </script>
 </body>
-</html>
+    </html>
