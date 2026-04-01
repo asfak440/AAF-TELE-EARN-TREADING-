@@ -6,3 +6,5 @@ firebase-admin
 gunicorn
 python-dotenv
 cryptography
+pymongo
+requests
