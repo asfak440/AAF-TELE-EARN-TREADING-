@@ -157,6 +157,20 @@
     </nav>
 
     <script>
+
+        function processTrade(type) {
+    if(!takaInput.value || takaInput.value <= 0) return alert("পরিমাণ লিখুন!");
+
+    // ব্যাকএন্ডে ট্রেড ডাটা পাঠানো
+    fetch('/api/execute_trade', {
+        method: 'POST',
+        body: JSON.stringify({ type: type, amount: takaInput.value })
+    }).then(() => {
+        alert(`${type} রিকোয়েস্ট সফল!`);
+        updateUserData(); // ব্যালেন্স ও ট্রেড সংখ্যা আপডেট হবে
+    });
+        }
+        
         const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
