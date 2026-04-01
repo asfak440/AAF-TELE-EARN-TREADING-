@@ -1,13 +1,10 @@
-# Firebase লোড করার সময় এই ট্রাই-ক্যাচ ব্লকটি ব্যবহার করুন
 try:
-    if not firebase_admin._apps:
-        # ফাইলটি আছে কি না চেক করে লোড করা
-        if os.path.exists("firebase-key.json"):
-            cred = credentials.Certificate("firebase-key.json")
-            firebase_admin.initialize_app(cred, {
-                'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
-            })
-        else:
-            print("⚠️ Warning: firebase-key.json not found. Skipping Firebase init.")
+    if os.path.exists("firebase-key.json"):
+        cred = credentials.Certificate("firebase-key.json")
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
+        })
+    else:
+        print("⚠️ Firebase key file not found!")
 except Exception as e:
     print(f"Firebase Error: {e}")
