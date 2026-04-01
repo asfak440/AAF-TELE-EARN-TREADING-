@@ -1,297 +1,237 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from pymongo import MongoClient
-import firebase_admin
-from firebase_admin import credentials, db
-import requests
+import os
+import asyncio
+import random
+import time
 import uuid
 import datetime
+from datetime import datetime, timedelta
+from threading import Thread
 from functools import wraps
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_cors import CORS
+from pymongo import MongoClient
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError
+from bson import ObjectId
+import firebase_admin
+from firebase_admin import credentials, db
 
+# ---------------------------------------------------------
+# ১. কনফিগারেশন ও ডাটাবেস সেটআপ
+# ---------------------------------------------------------
 app = Flask(__name__)
-app.secret_key = "AAF_STRONG_SECURE_KEY_99" # এটি সেশন এনক্রিপ্ট রাখে
+app.secret_key = os.environ.get("SECRET_KEY", "aaf_strong_secure_786")
 
-# --- ১. ডাটাবেজ কানেকশন (MongoDB & Firebase) ---
-# MongoDB Atlas
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
-client = MongoClient(MONGO_URI)
-mdb = client['aaf_database']
-users_col = mdb['users']
-settings_col = mdb['settings']
+# সেশন সিকিউরিটি (Render/Mobile Server এর জন্য)
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=10)
+)
 
-# Firebase (Candlestick Chart Data - ২ মাসের হিস্ট্রি)
-# নোট: Firebase Admin SDK এর জন্য আপনার .json ফাইল লাগবে। আপাতত placeholder দিচ্ছি।
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# API & DB Credentials
+API_ID = 36466824
+API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
+MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
+
+# Firebase Setup
 try:
     if not firebase_admin._apps:
-        cred = credentials.Certificate("firebase_key.json") # আপনার ফায়ারবেজ এডমিন কি এখানে দিবেন
+        cred = credentials.Certificate("firebase-key.json")
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/'
+            'databaseURL': 'https://teleearnbd-default-rtdb.firebaseio.com/' 
         })
+    fb_ref = db.reference('candles')
 except Exception as e:
-    print(f"Firebase Sync Error: {e}")
+    print(f"Firebase Init Error: {e}")
 
-# --- ২. সিকিউরিটি চেক (Login Required Decorator) ---
+# MongoDB Setup
+client_db = MongoClient(MONGO_URI)
+mdb = client_db['aaf_tele_earn_db']
+users_col = mdb['users']
+settings_col = mdb['settings']
+tasks_col = mdb['tasks']
+
+temp_clients = {}
+
+# --- সিকিউরিটি চেক (Login Required) ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login_page'))
-        
-        # স্ট্রং সেশন চেক: ডাটাবেজের সেশনের সাথে ম্যাচ না করলে লগআউট
-        user = users_col.find_one({"_id": session['user_id']})
-        if not user or user.get('current_session_id') != session.get('sid'):
-            session.clear()
-            return redirect(url_for('login_page'))
-            
+        if 'uid' not in session:
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- ৩. টেলিগ্রাম মাল্টি-অ্যাকাউন্ট লজিক (Routes) ---
-
-@app.route('/')
-@login_required
-def dashboard():
-    # ড্যাশবোর্ডে ডাটা পাঠানো
-    user_data = users_col.find_one({"_id": session['user_id']})
-    admin_settings = settings_col.find_one({"type": "global"})
-    return render_template('aaf442.html', user=user_data, admin=admin_settings)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login_page():
-    if request.method == 'POST':
-        phone = request.form.get('phone')
-        # এখানে আপনার টেলিগ্রাম ওটিপি ভেরিফিকেশন লজিক বসবে (Telethon/Bot API)
-        
-        # সেশন আইডি জেনারেট (নতুন লগইন হলে পুরানোটা রিমুভ হবে)
-        new_sid = str(uuid.uuid4())
-        
-        # ডাটাবেজে ইউজার আপডেট বা তৈরি
-        user = users_col.find_one({"phone": phone})
-        if user:
-            # পুরানো সেশন রিমুভ করে নতুন সেশন অ্যাড (Strong Session)
-            users_col.update_one({"phone": phone}, {"$set": {"current_session_id": new_sid, "last_login": datetime.datetime.now()}})
-            user_id = user["_id"]
-        else:
-            # নতুন ইউজার ক্রিয়েট
-            res = users_col.insert_one({
-                "phone": phone,
-                "username": f"User_{phone[-4:]}",
-                "aaf_balance": 0.0,
-                "cash_balance": 0.0,
-                "trade_count": 0,
-                "is_2fa_enabled": False, # ডিফল্ট অফ
-                "current_session_id": new_sid,
-                "is_joined": False,
-                "ip_address": request.remote_addr
-            })
-            user_id = res.inserted_id
-
-        # সেশনে সেভ করা
-        session['user_id'] = str(user_id)
-        session['sid'] = new_sid
-        return jsonify({"status": "success", "redirect": "/dashboard"})
-        
-    return render_template('aaf441.html')
-
-# --- ৪. API Endpoints (ডাইনামিক ডাটা আদান-প্রদান) ---
-
-@app.route('/api/get_user_data')
-@login_required
-def get_user_data():
-    user = users_col.find_one({"_id": session['user_id']})
-    admin = settings_col.find_one({"type": "global"})
-    
-    # ObjectId স্ট্রিং এ কনভার্ট করা (JSON এর জন্য)
-    user['_id'] = str(user['_id'])
-    return jsonify({"user": user, "admin": admin})
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-
-from telethon import TelegramClient
-from telethon.errors import SessionPasswordNeededError
-import asyncio
-
-# --- ৫. টেলিগ্রাম কনফিগারেশন ---
-API_ID = 36466824
-API_HASH = '535ddcb85f2c3c74cc0ff532dd2c3406'
-# সেশন ফাইলগুলো 'sessions/' ফোল্ডারে সেভ হবে
-import os
-if not os.path.exists('sessions'):
-    os.makedirs('sessions')
-
-# --- ৬. ২-স্টেপ ভেরিফিকেশন ও ওটিপি লজিক ---
-
-@app.route('/send_otp', methods=['POST'])
-async def send_otp():
-    phone = request.json.get('phone')
-    # প্রতিটি ফোনের জন্য আলাদা সেশন ফাইল তৈরি হবে (Multi-account support)
-    client = TelegramClient(f'sessions/{phone}', API_ID, API_HASH)
-    await client.connect()
-    
-    try:
-        # ওটিপি পাঠানো
-        send_code = await client.send_code_request(phone)
-        session['temp_phone'] = phone
-        session['phone_code_hash'] = send_code.phone_code_hash
-        return jsonify({"status": "success", "message": "OTP Sent to Telegram"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-
-@app.route('/verify_login', methods=['POST'])
-async def verify_login():
+# ---------------------------------------------------------
+# ২. টেলিগ্রাম অথেন্টিকেশন (OTP & 2FA)
+# ---------------------------------------------------------
+@app.route('/api/send_otp', methods=['POST'])
+def send_otp_handler():
     data = request.json
-    otp = data.get('otp')
-    password_2fa = data.get('password') # ২-স্টেপ পাসওয়ার্ড (যদি থাকে)
-    phone = session.get('temp_phone')
+    phone = data.get('phone')
+    try:
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        client.connect()
+        result = client.send_code_request(phone)
+        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash}
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+@app.route('/api/verify_login', methods=['POST'])
+def verify_login_handler():
+    data = request.json
+    phone = data.get('phone')
+    code = data.get('code')
+    password = data.get('password') # ২-স্টেপ পাসওয়ার্ড
+
+    if phone not in temp_clients: 
+        return jsonify({"success": False, "message": "Session Expired"})
     
-    client = TelegramClient(f'sessions/{phone}', API_ID, API_HASH)
-    await client.connect()
+    client = temp_clients[phone]["client"]
+    h = temp_clients[phone]["hash"]
 
     try:
-        # ওটিপি ভেরিফাই
-        await client.sign_in(phone, otp, phone_code_hash=session.get('phone_code_hash'))
-        return finalize_login(phone)
+        user = client.sign_in(phone, code, phone_code_hash=h, password=password)
+        session_str = client.session.save()
         
-    except SessionPasswordNeededError:
-        # যদি ২-স্টেপ ভেরিফিকেশন অন থাকে
-        if not password_2fa:
-            return jsonify({"status": "2fa_required", "message": "Please enter your 2-Step Password"})
-        
-        try:
-            await client.sign_in(password=password_2fa)
-            return finalize_login(phone)
-        except Exception:
-            return jsonify({"status": "error", "message": "Wrong 2-Step Password"})
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": "Invalid OTP"})
-
-def finalize_login(phone):
-    # সেশন ও ডাটাবেজ আপডেট (Part 1 এ যেভাবে করা হয়েছে)
-    new_sid = str(uuid.uuid4())
-    user = users_col.find_one_and_update(
-        {"phone": phone},
-        {"$set": {"current_session_id": new_sid, "last_login": datetime.datetime.now()}},
-        upsert=True, return_document=True
-    )
-    session['user_id'] = str(user['_id'])
-    session['sid'] = new_sid
-    return jsonify({"status": "success", "redirect": "/dashboard"})
-
-# --- ৭. ট্রেডিং ও উইথড্র লিমিট (Security Logic) ---
-
-@app.route('/api/execute_trade', methods=['POST'])
-@login_required
-def execute_trade():
-    user_id = session['user_id']
-    # আইপি চেক (এক আইপি থেকে বারবার টাস্ক রোধ)
-    current_ip = request.remote_addr
-    
-    # অ্যাডমিন সেটিংস থেকে লিমিট চেক
-    admin = settings_col.find_one({"type": "global"})
-    if admin.get('ip_limit') == 'on':
-        existing = users_col.find_one({"ip_address": current_ip, "_id": {"$ne": user_id}})
-        if existing:
-            return jsonify({"status": "error", "message": "Multi-account detected on same IP!"})
-
-    # ট্রেড কাউন্টার বৃদ্ধি
-    users_col.update_one({"_id": user_id}, {"$inc": {"trade_count": 1}})
-    return jsonify({"status": "success", "message": "Trade Completed Successfully"})
-
-@app.route('/api/withdraw_request', methods=['POST'])
-@login_required
-def withdraw_request():
-    user = users_col.find_one({"_id": session['user_id']})
-    admin = settings_col.find_one({"type": "global"})
-    
-    # উইথড্র শর্ত চেক (ট্রেড সংখ্যা)
-    min_trades = admin.get('min_trades', 5)
-    if user.get('trade_count', 0) < min_trades:
-        return jsonify({"status": "error", "message": f"You need at least {min_trades} trades to withdraw!"})
-    
-    # বাকি উইথড্র লজিক...
-    return jsonify({"status": "success", "message": "Withdraw Request Sent"})
-
-# --- ৮. বোনাস লজিক (Channel Join Check) ---
-@app.route('/api/claim_bonus', methods=['POST'])
-@login_required
-def claim_bonus():
-    user = users_col.find_one({"_id": session['user_id']})
-    # এখানে বট এপিআই দিয়ে চেক করা হবে ইউজার চ্যানেলে আছে কি না
-    # যদি থাকে এবং প্রতিদিনের টাস্ক শেষ হয়, তবে ব্যালেন্স বাড়বে
-    return jsonify({"status": "success", "message": "Daily Bonus Added!"})
-
-# --- ৯. অ্যাডমিন কন্ট্রোল প্যানেল লজিক (aaf449) ---
-
-@app.route('/admin/settings', methods=['GET', 'POST'])
-@login_required
-def admin_settings():
-    # চেক করুন ইউজার কি অ্যাডমিন? (আপনার ফোন নম্বর দিয়ে সিকিউরিটি)
-    user = users_col.find_one({"_id": session['user_id']})
-    if user.get('phone') != "+8801XXXXXXXXX": # এখানে আপনার নিজের নম্বর দিন
-        return "Access Denied!", 403
-
-    if request.method == 'POST':
-        data = request.json
-        # গ্লোবাল সেটিংস আপডেট (চ্যানেল লিঙ্ক, ফি, লিমিট)
-        settings_col.update_one(
-            {"type": "global"},
+        # ইউজার ডাটা আপডেট (টেলিগ্রাম স্টাইল মাল্টি অ্যাকাউন্ট)
+        users_col.update_one(
+            {"telegram_id": user.id},
             {"$set": {
-                "channel_link": data.get('channel_link'),
-                "trading_fee": float(data.get('fee', 0.1)),
-                "min_trades": int(data.get('min_trades', 5)),
-                "ip_limit": data.get('ip_limit', 'on'),
-                "bonus_amount": float(data.get('bonus', 10))
+                "phone": phone,
+                "name": f"{user.first_name or ''} {user.last_name or ''}",
+                "session_string": session_str,
+                "ip_address": request.remote_addr,
+                "last_login": datetime.utcnow()
+            }, "$setOnInsert": {
+                "main_balance": 0.0, 
+                "aaf_balance": 0.0, 
+                "trade_count": 0,
+                "is_joined": False,
+                "completed_tasks": []
             }},
             upsert=True
         )
-        return jsonify({"status": "success", "message": "Settings Updated!"})
+        session["uid"] = user.id
+        return jsonify({"success": True, "uid": user.id})
 
-    # বর্তমান সেটিংস লোড করা
-    config = settings_col.find_one({"type": "global"})
-    return render_template('aaf449.html', config=config)
+    except SessionPasswordNeededError:
+        return jsonify({"success": False, "requires_password": True, "message": "2-Step Verification Required"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
-# --- ১০. ইউজার ম্যানেজমেন্ট (অ্যাডমিন ভিউ) ---
+# (পার্ট-১ শেষ, নিচে পার্ট-২ যোগ করুন)
 
-@app.route('/admin/users')
+# ---------------------------------------------------------
+# ৩. পেজ রাউটস (আপনার GitHub ফাইলের নাম অনুযায়ী)
+# ---------------------------------------------------------
+@app.route('/')
+def index():
+    if 'uid' in session: return redirect(url_for('render_dashboard_page'))
+    return render_template('login.html')
+
+@app.route('/dashboard')
 @login_required
-def list_users():
-    # সব ইউজারের লিস্ট এবং তাদের ব্যালেন্স দেখা
-    all_users = list(users_col.find({}, {"phone": 1, "aaf_balance": 1, "cash_balance": 1, "trade_count": 1}))
-    for u in all_users: u['_id'] = str(u['_id'])
-    return jsonify(all_users)
+def render_dashboard_page(): 
+    user = users_col.find_one({"telegram_id": int(session['uid'])})
+    admin = settings_col.find_one({"type": "global"})
+    return render_template('dashboard.html', user=user, admin=admin)
 
-@app.route('/admin/user/action', methods=['POST'])
+@app.route('/task')
 @login_required
-def user_action():
-    # ইউজারকে ব্যান করা বা ব্যালেন্স অ্যাড করা
+def render_task_page(): return render_template('task.html')
+
+@app.route('/trading')
+@login_required
+def render_treading_page(): return render_template('trading.html')
+
+@app.route('/wallet')
+@login_required
+def render_wallet_page(): return render_template('wallet.html')
+
+@app.route('/account')
+@login_required
+def render_account_page(): return render_template('account.html')
+
+@app.route('/refer_list')
+@login_required
+def render_refer_page(): return render_template('refer_list.html')
+
+@app.route('/payment_history')
+@login_required
+def render_history_page(): return render_template('payment_history.html')
+
+# ---------------------------------------------------------
+# ৪. ট্রেডিং ও সিকিউরিটি লজিক (উইথড্র ও আইপি লিমিট)
+# ---------------------------------------------------------
+@app.route('/api/trade/execute', methods=['POST'])
+@login_required
+def trade_execute():
     data = request.json
-    target_id = data.get('user_id')
-    action = data.get('action') # 'ban' or 'add_balance'
+    uid = int(session['uid'])
+    amount = float(data.get('amount', 0))
     
-    if action == 'ban':
-        users_col.update_one({"_id": target_id}, {"$set": {"current_session_id": "BANNED"}})
-        return jsonify({"status": "success", "message": "User Banned & Session Terminated"})
+    # অ্যাডমিন সেটিংস চেক
+    admin = settings_col.find_one({"type": "global"})
+    if admin.get('ip_limit') == 'on':
+        ip_exists = users_col.find_one({"ip_address": request.remote_addr, "telegram_id": {"$ne": uid}})
+        if ip_exists:
+            return jsonify({"status": "error", "message": "Multi-account detected on this IP!"})
+
+    # ট্রেড প্রসেস ও কাউন্টার আপডেট
+    users_col.update_one({"telegram_id": uid}, {"$inc": {"trade_count": 1}})
+    return jsonify({"status": "success", "message": "Trade completed"})
+
+@app.route('/api/withdraw/request', methods=['POST'])
+@login_required
+def withdraw_req():
+    user = users_col.find_one({"telegram_id": int(session['uid'])})
+    admin = settings_col.find_one({"type": "global"})
     
-    return jsonify({"status": "error"})
-
-# --- ১১. ক্যান্ডেলস্টিক ডাটা (Firebase Bridge) ---
-
-@app.route('/api/get_live_candle')
-def get_live_candle():
-    # এটি aaf444 ট্রেডিং চার্টের জন্য ফায়ারবেজ থেকে লেটেস্ট ক্যান্ডেল আনবে
-    try:
-        ref = db.reference('trading/current_candle')
-        candle_data = ref.get()
-        return jsonify(candle_data)
-    except:
-        return jsonify({"error": "Firebase Connection Failed"})
-
-# --- ১২. রান অ্যাপ্লিকেশন ---
-if __name__ == '__main__':
-    # সেশন ডিরেক্টরি নিশ্চিত করা
-    if not os.path.exists('sessions'):
-        os.makedirs('sessions')
+    # উইথড্র শর্ত (মিনিমাম ট্রেড)
+    if user.get('trade_count', 0) < admin.get('min_trades', 5):
+        return jsonify({"status": "error", "message": f"Minimum {admin.get('min_trades')} trades required!"})
     
-    # আপনার লোকাল পিসি বা সার্ভারে রান করুন
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    return jsonify({"status": "success", "message": "Withdrawal request sent"})
+
+# ---------------------------------------------------------
+# ৫. অ্যাডমিন কন্ট্রোল (aaf449 / admin.html)
+# ---------------------------------------------------------
+@app.route('/admin')
+def render_admin_panel():
+    pin = request.args.get('pin')
+    if pin == "Abdullah6790": # আপনার পিন
+        return render_template('admin.html')
+    return "Unauthorized", 403
+
+@app.route('/api/admin/update_settings', methods=['POST'])
+def update_settings():
+    data = request.json
+    settings_col.update_one(
+        {"type": "global"},
+        {"$set": {
+            "channel_link": data.get('link'),
+            "min_trades": int(data.get('min_trades', 5)),
+            "ip_limit": data.get('ip_limit', 'on')
+        }},
+        upsert=True
+    )
+    return jsonify({"success": True})
+
+# ---------------------------------------------------------
+# ৬. সার্ভার রান (Port 10000)
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    # ব্যাকগ্রাউন্ডে ক্যান্ডেল জেনারেটর চালু করা (আপনার পুরানো কোড থেকে)
+    # Thread(target=generate_candles_background, daemon=True).start() 
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
