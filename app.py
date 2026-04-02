@@ -134,12 +134,6 @@ def verify_login_handler():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# এডমিন প্যানেল রেন্ডার করার রাউট
-@app.route('/admin_panel')
-@login_required
-def render_admin():
-    # এখানে নিশ্চিত করুন যে আপনার templates ফোল্ডারে admin.html ফাইলটি আছে
-    return render_template('admin.html')
 
 # এডমিন সেটিংস আপডেট করার API
 @app.route('/api/update_settings', methods=['POST'])
