@@ -1,8 +1,11 @@
 import os
+import os
 import asyncio
-import requests # এটি মিসিং ছিল
-import firebase_admin
+import random
+import time
+import uuid
 from datetime import datetime, timedelta
+from threading import Thread
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
@@ -10,19 +13,34 @@ from pymongo import MongoClient
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
+from bson import ObjectId
+import firebase_admin
 from firebase_admin import credentials, db
 
-# --- কনফিগারেশন ---
+# ---------------------------------------------------------
+# ১. কনফিগারেশন ও ডাটাবেস সেটআপ
+# ---------------------------------------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_strong_secure_786")
-CORS(app, supports_credentials=True)
 
-# আপনার দেওয়া ক্রেডেনশিয়ালস
+# সেশন সিকিউরিটি
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=10)
+)
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# API & DB Credentials
 API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
-MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
-BOT_TOKEN = "7547079634:AAHLp3h7W9R86-x7vM8yZpT9m8vQ8r9x0sY"
-CHANNEL_ID = " "
+MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
 # MongoDB কানেকশন
 try:
