@@ -235,17 +235,17 @@
             });
         }
 
-        // ৪. স্মার্ট ফি ও ব্যালেন্স চেক এবং ইনপুট সিঙ্ক্রোনাইজেশন
+        /// ৪. স্মার্ট ফি, ব্যালেন্স চেক এবং ইনপুট সিঙ্ক্রোনাইজেশন
 takaInput.addEventListener('input', () => {
     let tkVal = parseFloat(takaInput.value) || 0;
-    // টাকা থেকে কয়েন কনভার্ট
+    // টাকা লিখলে কয়েন অটো আসবে: টাকা / দাম
     coinInput.value = (tkVal / lastPrice).toFixed(4); 
     calculateLogic();
 });
 
 coinInput.addEventListener('input', () => {
     let cv = parseFloat(coinInput.value) || 0;
-    // কয়েন থেকে টাকা কনভার্ট
+    // কয়েন লিখলে টাকা অটো আসবে: কয়েন * দাম
     takaInput.value = (cv * lastPrice).toFixed(2); 
     calculateLogic();
 });
@@ -257,25 +257,36 @@ function calculateLogic() {
     let fee = (tkVal * currentFee) / 100;
     let totalTakaWithFee = tkVal + fee;
 
-    // UI আপডেট (৳ সিম্বলসহ)
-    document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
-    document.getElementById('total-cost').innerHTML = `৳ ${totalTakaWithFee.toFixed(2)}`;
+    // টাকা ও ফি-এর চিহ্ন ঠিক করা
+    document.getElementById('fee-amount').innerHTML = '৳ ' + fee.toFixed(2);
+    document.getElementById('total-cost').innerHTML = '৳ ' + totalTakaWithFee.toFixed(2);
 
     const buyBtn = document.getElementById('buy-btn');
     const sellBtn = document.getElementById('sell-btn');
     const warning = document.getElementById('balance-warning');
 
-    // BUY বাটন লজিক
-    if (totalTakaWithFee > userCash || tkVal <= 0) {
+    // ১০ টাকার কম হলে বাটন ডিজেবল করার শর্ত
+    let isMinAmountOk = tkVal >= 10;
+
+    // BUY বাটন লজিক: (ব্যালেন্স থাকতে হবে + ১০ টাকার বেশি হতে হবে)
+    if (totalTakaWithFee > userCash || !isMinAmountOk) {
         buyBtn.disabled = true;
-        if(tkVal > 0) warning.style.display = 'block';
+        if (tkVal > 0 && !isMinAmountOk) {
+            warning.innerHTML = '⚠️ সর্বনিম্ন ১০ টাকা ট্রেড করতে হবে';
+            warning.style.display = 'block';
+        } else if (totalTakaWithFee > userCash) {
+            warning.innerHTML = '⚠️ পর্যাপ্ত ব্যালেন্স নেই (ফি সহ)';
+            warning.style.display = 'block';
+        } else {
+            warning.style.display = 'none';
+        }
     } else {
         buyBtn.disabled = false;
         warning.style.display = 'none';
     }
 
-    // SELL বাটন লজিক
-    if (coinVal > userAAF || coinVal <= 0) {
+    // SELL বাটন লজিক: (কয়েন থাকতে হবে + বিক্রয়মূল্য ১০ টাকার বেশি হতে হবে)
+    if (coinVal > userAAF || !isMinAmountOk) {
         sellBtn.disabled = true;
     } else {
         sellBtn.disabled = false;
