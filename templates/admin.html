@@ -129,62 +129,178 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const fb_db = firebase.database();
+        // Firebase কনফিগারেশন
+    const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const fb_db = firebase.database();
+    
+    // API_BASE: এখানে আপনার রেন্ডার লিঙ্কটি বসান (যেমন: "https://your-app.onrender.com")
+    // লিঙ্ক না থাকলে window.location.origin কাজ করবে যদি একই ডোমেইনে থাকে
+    const API_BASE = window.location.origin; 
+    const MASTER_PIN = "Abdullah6790";
+
+    // ১. অথেন্টিকেশন চেক (লগইন)
+    function checkAuth() {
+        const pin = document.getElementById('admin-pass').value;
+        if(pin === MASTER_PIN) {
+            document.getElementById('admin-login-overlay').style.display = 'none';
+            initDashboard(); // লগইন সফল হলে ড্যাশবোর্ড ডাটা লোড হবে
+        } else { 
+            alert("ভুল পিন! সঠিক পিন দিন।"); 
+        }
+    }
+
+    // ২. ট্যাব সুইচিং লজিক
+    function openTab(evt, tabName) {
+        // সব সেকশন থেকে 'active' ক্লাস সরানো
+        document.querySelectorAll('.page-section, .data-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
         
-        // আপনার সার্ভার লিঙ্ক দিন (শেষে / দিবেন না)
-        const API_BASE = window.location.origin; 
-        const MASTER_PIN = "Abdullah6790";
-
-        function checkAuth() {
-            const input = document.getElementById('admin-pass').value;
-            if (input === MASTER_PIN) {
-                document.getElementById('admin-login-overlay').style.display = 'none';
-            } else {
-                alert("ভুল পিন!");
-            }
-        }
-
-        function openTab(evt, tabName) {
-            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
+        // টার্গেট ট্যাব দেখানো
+        const target = document.getElementById(tabName);
+        if(target) {
+            target.classList.add('active');
             evt.currentTarget.classList.add('active');
-            
-            if(tabName === 'account') loadUsers();
         }
 
-        function loadUsers() {
-            fetch(`${API_BASE}/api/admin/users`, {
+        // ট্যাব অনুযায়ী ডাটা রিফ্রেশ করা
+        if(tabName === 'account' || tabName === 'users') loadUsers();
+        if(tabName === 'task' || tabName === 'tasks') renderTaskList();
+        if(tabName === 'wallet') loadStats();
+    }
+
+    // ৩. ড্যাশবোর্ড ডাটা ইনিশিয়ালাইজ (Firebase + MongoDB)
+    function initDashboard() {
+        // Firebase থেকে লাইভ ট্রেডিং প্রাইস রিড করা
+        fb_db.ref('trading/aaf_coin').on('value', snap => {
+            const val = snap.val();
+            if(val) {
+                if(document.getElementById('st-price')) document.getElementById('st-price').innerText = "৳" + val.price;
+                if(document.getElementById('live-price-display')) document.getElementById('live-price-display').innerText = "৳" + val.price;
+                if(document.getElementById('inp-price')) document.getElementById('inp-price').value = val.price;
+            }
+        });
+        
+        loadStats();  // MongoDB থেকে পরিসংখ্যান লোড
+        loadConfig(); // কনফিগ লোড
+    }
+
+    // ৪. MongoDB ইউজার লিস্ট লোড করা
+    async function loadUsers() {
+        const tbody = document.getElementById('member-list-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">লোড হচ্ছে...</td></tr>';
+
+        try {
+            const res = await fetch(`${API_BASE}/api/admin/users`, {
                 headers: { 'Authorization': MASTER_PIN }
-            })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('member-list-body');
-                tbody.innerHTML = ''; 
-                data.forEach(user => {
-                    tbody.innerHTML += `
-                        <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:15px;">${user.name || 'User'}<br><small>${user.phone}</small></td>
-                            <td>৳${user.balance || 0}</td>
-                            <td><span class="${user.is_active ? 'dot-online' : 'dot-offline'}"></span> ${user.status || 'Active'}</td>
-                        </tr>`;
-                });
-            }).catch(err => console.log("Error loading users"));
-        }
-
-        function saveAd(pageKey) {
-            const content = document.getElementById('ad-link-' + pageKey).value;
-            if (!content) { alert("কিছু লিখুন!"); return; }
-
-            fb_db.ref('popup_ads/' + pageKey).set({
-                message: content,
-                timestamp: Date.now()
-            }).then(() => {
-                alert(pageKey.toUpperCase() + " অ্যাড আপডেট হয়েছে!");
             });
+            const data = await res.json();
+            
+            tbody.innerHTML = ''; // ক্লিয়ার করা
+            data.forEach(user => {
+                tbody.innerHTML += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <td style="padding:15px;">${user.name || 'User'}<br><small>${user.phone}</small></td>
+                        <td>৳${parseFloat(user.balance || 0).toFixed(2)}</td>
+                        <td>
+                            <span class="${user.is_active ? 'dot-online' : 'dot-offline'}"></span> 
+                            ${user.status || 'Active'}
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">ইউজার লোড হতে সমস্যা হয়েছে!</td></tr>';
         }
+    }
+
+    // ৫. পপ-আপ অ্যাড সেভ করা (Firebase)
+    function saveAd(pageKey) {
+        const inputField = document.getElementById('ad-link-' + pageKey);
+        if(!inputField) return;
+        
+        const content = inputField.value;
+        if (!content) { alert("কিছু লিখুন!"); return; }
+
+        fb_db.ref('popup_ads/' + pageKey).set({
+            message: content,
+            timestamp: Date.now()
+        }).then(() => {
+            alert(pageKey.toUpperCase() + " অ্যাড আপডেট হয়েছে!");
+        });
+    }
+
+    // ৬. ট্রেডিং প্রাইস আপডেট (Firebase)
+    function pushTrading() {
+        const price = parseFloat(document.getElementById('inp-price').value);
+        if(price) {
+            fb_db.ref('trading/aaf_coin').update({ 
+                price: price, 
+                last_updated: Date.now() 
+            });
+            alert("প্রাইস আপডেট হয়েছে!");
+        }
+    }
+
+    // ৭. টাস্ক ম্যানেজমেন্ট (MongoDB)
+    async function saveTask() {
+        const task = { 
+            title: document.getElementById('t-title').value, 
+            link: document.getElementById('t-link').value, 
+            reward: document.getElementById('t-reward').value 
+        };
+        await fetch(`${API_BASE}/admin/api/tasks`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(task) 
+        });
+        alert("টাস্ক পাবলিশ হয়েছে!");
+        renderTaskList();
+    }
+
+    async function renderTaskList() {
+        const res = await fetch(`${API_BASE}/admin/api/tasks`);
+        const tasks = await res.json();
+        const listDiv = document.getElementById('current-task-list');
+        if(!listDiv) return;
+
+        listDiv.innerHTML = tasks.map(t => `
+            <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); align-items:center;">
+                <span>${t.title} (৳${t.reward})</span>
+                <button class="btn-danger" style="background:var(--danger); border:none; color:#fff; padding:5px; border-radius:5px;" onclick="deleteTask('${t._id}')">মুছুন</button>
+            </div>
+        `).join('');
+    }
+
+    async function deleteTask(id) {
+        if(confirm("টাস্কটি মুছে ফেলবেন?")) {
+            await fetch(`${API_BASE}/admin/api/tasks/${id}`, { method: 'DELETE' });
+            renderTaskList();
+        }
+    }
+
+    // ৮. স্ট্যাটাস ও সেটিংস লোড (MongoDB)
+    async function loadStats() {
+        try {
+            const res = await fetch(`${API_BASE}/admin/api/all-data`);
+            const data = await res.json();
+            if(document.getElementById('st-users')) document.getElementById('st-users').innerText = data.total_users || 0;
+            if(document.getElementById('st-payouts')) document.getElementById('st-payouts').innerText = data.pending_count || 0;
+        } catch(e) { console.log("Stats load error"); }
+    }
+
+    async function loadConfig() {
+        try {
+            const res = await fetch(`${API_BASE}/admin/api/config`);
+            const config = await res.json();
+            if(config) {
+                if(document.getElementById('c-fee')) document.getElementById('c-fee').value = config.trade_fee || 0;
+                if(document.getElementById('c-min')) document.getElementById('c-min').value = config.min_withdraw || 0;
+                if(document.getElementById('c-join')) document.getElementById('c-join').value = config.join_bonus || 0;
+                if(document.getElementById('quick-link')) document.getElementById('quick-link').value = config.telegram_link || "";
+            }
+        } catch(e) { console.log("Config load failed"); }
+    }
     </script>
 </body>
 </html>
