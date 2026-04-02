@@ -266,7 +266,14 @@ async function initDashboard() {
     if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = user.total_refer + " REFERRED";
     if(document.getElementById('my-profit')) document.getElementById('my-profit').innerText = '৳ ' + user.trading_profit;
 
-    // ৪. কমিউনিটি বা অনলাইন স্ট্যাটাস লজিক
+    // এডমিন প্যানেলের লিংকটি গ্লোবাল ভেরিয়েবলে সেভ করা
+    window.currentChannelLink = admin.channel_url;
+    
+    // জয়েন বাটনের href আপডেট করা
+    const joinBtn = document.getElementById('join-btn');
+    if (joinBtn && admin.channel_url) joinBtn.href = admin.channel_url;
+            
+            // ৪. কমিউনিটি বা অনলাইন স্ট্যাটাস লজিক
     const dot = document.getElementById('status-dot');
     const joinCard = document.getElementById('join-container');
 
@@ -305,14 +312,23 @@ async function initDashboard() {
             window.location.href = '/payment-history';
         }
 
-        function joinTelegram() {
-            window.open("https://t.me/YourChannelLink", "_blank");
-        }
-
+        // এটি আপনার HTML-এর  নম্বর লাইনের ফাংশন
+function joinTelegram() {
+    // এখানে admin.channel_url হলো ডাটাবেজ থেকে আসা লিংক
+    // initDashboard ফাংশনের মাধ্যমে এটি আপডেট হবে
+    if (window.currentChannelLink) {
+        window.open(window.currentChannelLink, "_blank");
+    } else {
+        alert("চ্যানেল লিংক এখনো লোড হয়নি, কিছুক্ষণ অপেক্ষা করুন।");
+    }
+}
+        
         function verifyJoin() {
-            // সার্ভারে চেক পাঠাবে
-            initDashboard();
-            alert("Verifying Membership... Please wait.");
+    // এটি সার্ভার থেকে লেটেস্ট মেম্বারশিপ চেক করে আনবে
+    initDashboard(); 
+    
+    // কোনো এলার্ট (Alert) না রাখাই ভালো, সরাসরি বাতি সবুজ বা লাল হবে
+    console.log("Verifying membership status..."); 
         }
 
         function copyReferLink() {
