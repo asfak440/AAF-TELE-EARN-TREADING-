@@ -333,6 +333,28 @@ function calculateLogic() {
             const twoMonthsAgo = Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 60);
             // এই লজিকটি আপনার এডমিন প্যানেল বা নোড জেএস ব্যাকএন্ডে রান করবেন।
         }
+
+        function checkAndShowAd(pageKey) {
+    const storageKey = 'last_ad_time_' + pageKey;
+    const lastSeen = localStorage.getItem(storageKey);
+    const currentTime = Date.now();
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+    // Firebase (fb_db) থেকে ডাটা চেক করা হচ্ছে
+    if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
+        fb_db.ref('popup_ads/' + pageKey).once('value', snap => {
+            const data = snap.val();
+            if (data && data.message) {
+                // পপ-আপ মেসেজ বা অ্যাড দেখানো
+                alert("📢 ঘোষণা: " + data.message); 
+                
+                // সময় সেভ করে রাখা যাতে ৬ ঘণ্টার আগে আর না আসে
+                localStorage.setItem(storageKey, currentTime);
+            }
+        });
+    }
+        }
+        
     </script>
 </body>
   </html>
