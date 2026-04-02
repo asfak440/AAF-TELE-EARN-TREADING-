@@ -233,9 +233,11 @@ def update_settings():
     )
     return jsonify({"success": True})
 
-# ---------------------------------------------------------
-# ৬. সার্ভার রান (Render Port 10000)
-# ---------------------------------------------------------
+@app.route('/')
+def home():
+    return "Server is Running!"
+
+# এটি অবশ্যই ফাংশনের বাইরে এবং নিচে আলাদাভাবে থাকবে
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
