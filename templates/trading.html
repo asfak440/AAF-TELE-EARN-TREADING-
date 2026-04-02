@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF Trading | Pro Terminal</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&display=swap');
+        
+        :root {
+            --bg: #05080d; --card: #0f172a; --border: rgba(255, 255, 255, 0.05);
+            --cyan: #00f2fe; --green: #00ffa3; --red: #ff3366; --text: #94a3b8;
+        }
+
+        body { 
+            background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; 
+            margin: 0; padding-bottom: 50px; overflow-x: hidden;
+        }
+
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header h2 { font-family: 'Rajdhani'; font-size: 16px; color: var(--cyan); margin: 0; }
+        #live-price { font-family: 'Rajdhani'; font-size: 22px; color: var(--green); font-weight: 700; }
+
+        .tf-bar { background: #000; display: flex; gap: 8px; padding: 10px; overflow-x: auto; border-bottom: 1px solid var(--border); }
+        .tf-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.05); }
+
+        #chart-container { width: 100%; height: 320px; background: #000; position: relative; }
+
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-card span { font-size: 11px; color: var(--text); display: block; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 18px; }
+
+        /* Trade Box & Lock System */
+        .trade-box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        
+        #lock-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); z-index: 50;
+            display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        }
+        #lock-overlay i { font-size: 40px; color: var(--red); margin-bottom: 10px; }
+        .join-btn { background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px; }
+
+        .input-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .input-box { flex: 1; position: relative; }
+        .input-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; color: var(--cyan); font-size: 18px; border-radius: 10px; box-sizing: border-box; font-family: 'Rajdhani'; outline: none; }
+        .input-box span { position: absolute; right: 12px; top: 18px; color: var(--text); font-size: 11px; }
+
+        .fee-card { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; border: 1px dashed var(--border); margin-bottom: 15px; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+        .warning { color: var(--red); font-size: 11px; text-align: center; display: none; margin-top: 5px; font-weight: bold; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { padding: 16px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; transition: 0.3s; }
+        .buy { background: var(--green); color: #000; }
+        .sell { background: var(--red); color: #fff; }
+        .btn:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h2>AAF TRADING PRO</h2>
+        <span id="live-price">৳ 1.0000</span>
+    </header>
+
+    <div class="tf-bar">
+        <button class="tf-btn active">1M</button>
+        <button class="tf-btn">5M</button>
+        <button class="tf-btn">15M</button>
+        <button class="tf-btn">1H</button>
+        <button class="tf-btn">1D</button>
+    </div>
+
+    <div id="chart-container"></div>
+
+    <div class="container">
+        <div class="stat-grid">
+            <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
+            <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
+        </div>
+
+        <div class="trade-box">
+            <!-- Lock Overlay -->
+            <div id="lock-overlay">
+                <i class="fas fa-lock"></i>
+                <p>ট্রেড করতে আমাদের অফিসিয়াল চ্যানেলে জয়েন করুন</p>
+                <a href="https://t.me/your_channel" class="join-btn">Join Telegram</a>
+            </div>
+
+            <div class="input-group">
+                <div class="input-box">
+                    <input type="number" id="taka-input" placeholder="0.00">
+                    <span>BDT</span>
+                </div>
+                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+                <div class="input-box">
+                    <input type="number" id="coin-input" placeholder="0.00">
+                    <span>AAF</span>
+                </div>
+            </div>
+            
+            <div class="fee-card">
+                <div class="fee-row"><span>ট্রেডিং ফি (<span id="fee-perc">0.1</span>%):</span><b id="fee-amount">৳ 0.00</b></div>
+                <div class="fee-row"><span>মোট (ফি সহ):</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div>
+                <div id="balance-warning" class="warning">⚠️ পর্যাপ্ত ব্যালেন্স নেই (ফি সহ)</div>
+            </div>
+
+            <div class="btn-group">
+                <button id="buy-btn" class="btn buy" onclick="executeTrade('BUY')">BUY SPOT</button>
+                <button id="sell-btn" class="btn sell" onclick="executeTrade('SELL')">SELL SPOT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ১. কনফিগারেশন ও ডাটাবেজ কানেকশন
+        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let chart, candleSeries, lastPrice = 1.0000, currentFee = 0.5;
+        let userCash = 0, userAAF = 0, isChannelJoined = false;
+
+        // ২. লাইটওয়েট চার্ট ইনিশিয়ালাইজেশন
+        function initChart() {
+            chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+                layout: { backgroundColor: '#000000', textColor: '#94a3b8', fontSize: 10 },
+                grid: { vertLines: { visible: false }, horzLines: { color: '#121926' } },
+                timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
+            });
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
+                wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
+            });
+
+            // হিস্টোরি লোড (২ মাসের ডাটা ফায়ারবেস থেকে)
+            db.ref('trading/history').limitToLast(1000).once('value', (snap) => {
+                const data = [];
+                snap.forEach(c => data.push(c.val()));
+                if(data.length > 0) candleSeries.setData(data);
+            });
+        }
+
+        // ৩. রিয়েল টাইম মার্কেট লজিক (প্রতি ২ সেকেন্ড আপডেট)
+        function startMarketEngine() {
+            // মঙ্গোডিবি থেকে ডাটা প্রসেস হয়ে ফায়ারবেসে আসবে
+            db.ref('trading/aaf_coin').on('value', (snap) => {
+                const data = snap.val();
+                if(data && data.price) {
+                    lastPrice = parseFloat(data.price);
+                    document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+                    
+                    // লাইভ ক্যান্ডেল আপডেট (অটো/ম্যানুয়াল মোড অনুযায়ী)
+                    candleSeries.update({
+                        time: Math.floor(Date.now() / 1000),
+                        open: data.open || lastPrice,
+                        high: data.high || lastPrice,
+                        low: data.low || lastPrice,
+                        close: lastPrice
+                    });
+                    calculateLogic(); 
+                }
+            });
+        }
+
+        // ৪. স্মার্ট ফি ও ব্যালেন্স চেক (Buy/Sell Both)
+        const takaInput = document.getElementById('taka-input');
+        const coinInput = document.getElementById('coin-input');
+
+        function calculateLogic() {
+            let tkVal = parseFloat(takaInput.value) || 0;
+            let fee = (tkVal * currentFee) / 100;
+            let totalTakaNeeded = tkVal + fee;
+            
+            let coinVal = tkVal / lastPrice;
+            if(!takaInput.matches(':focus')) coinInput.value = coinVal.toFixed(4);
+
+            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+            document.getElementById('total-cost').innerText = `৳ ${totalTakaNeeded.toFixed(2)}`;
+
+            const buyBtn = document.getElementById('buy-btn');
+            const sellBtn = document.getElementById('sell-btn');
+            const warning = document.getElementById('balance-warning');
+
+            // BUY বাটন লজিক: ক্যাশ ব্যালেন্স চেক
+            if (totalTakaNeeded > userCash || tkVal <= 0) {
+                buyBtn.disabled = true;
+                if(tkVal > 0) warning.style.display = 'block';
+            } else {
+                buyBtn.disabled = false;
+                warning.style.display = 'none';
+            }
+
+            // SELL বাটন লজিক: এএএফ কয়েন ব্যালেন্স চেক
+            if (coinVal > userAAF || coinVal <= 0) {
+                sellBtn.disabled = true;
+            } else {
+                sellBtn.disabled = false;
+            }
+        }
+
+        takaInput.addEventListener('input', calculateLogic);
+        coinInput.addEventListener('input', () => {
+            let cv = parseFloat(coinInput.value) || 0;
+            takaInput.value = (cv * lastPrice).toFixed(2);
+            calculateLogic();
+        });
+
+        // ৫. মঙ্গোডিবি থেকে ইউজার ও চ্যানেল স্ট্যাটাস লোড
+        async function loadMongoDBData() {
+            try {
+                const res = await fetch('/api/user/profile'); 
+                const data = await res.json();
+                
+                userCash = parseFloat(data.cash_balance);
+                userAAF = parseFloat(data.aaf_balance);
+                isChannelJoined = data.is_channel_joined; // MongoDB থেকে আসবে
+                currentFee = parseFloat(data.trading_fee) || 0.5;
+
+                document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+                document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+                document.getElementById('fee-perc').innerText = currentFee;
+
+                // চ্যানেল লক সিস্টেম
+                if(!isChannelJoined) {
+                    document.getElementById('lock-overlay').style.display = 'flex';
+                } else {
+                    document.getElementById('lock-overlay').style.display = 'none';
+                }
+            } catch (e) { console.log("Sync Error"); }
+        }
+
+        function executeTrade(type) {
+            // এখানে মঙ্গোডিবি লজিক ট্রিগার হবে
+            alert(`${type} সফল! আপনার চাহিদার কারণে মার্কেটে প্রভাব পড়ছে।`);
+        }
+
+        window.onload = () => {
+            initChart();
+            startMarketEngine();
+            loadMongoDBData();
+        };
+
+        // ৬. অটো ডিলিট লজিক (হিস্টোরি ক্লিনার - ব্যাকএন্ডে রাখা ভালো, এখানে স্যাম্পল দেওয়া হলো)
+        function cleanOldHistory() {
+            const twoMonthsAgo = Math.floor(Date.now() / 1000) - (60 * 60 * 24 * 60);
+            // এই লজিকটি আপনার এডমিন প্যানেল বা নোড জেএস ব্যাকএন্ডে রান করবেন।
+        }
+    </script>
+</body>
+  </html>
