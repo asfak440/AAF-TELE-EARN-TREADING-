@@ -193,6 +193,11 @@ def render_wallet(): return render_template('wallet.html')
 @login_required
 def render_account(): return render_template('account.html')
 
+@app.route('/')
+def home():
+    return "Server is Running!"
+
+# এটি অবশ্যই ফাংশনের বাইরে এবং নিচে আলাদাভাবে থাকবে
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)
