@@ -127,6 +127,14 @@
         </div>
     </div>
 
+    <div class="bottom-nav">
+    <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/task" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+    <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+    <a href="/account" class="nav-item"><i class="fas fa-user"></i><span>Account</span></a>
+    </div>
+
     <script>
         // ১. কনফিগারেশন ও ডাটাবেজ কানেকশন
         const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
@@ -178,48 +186,52 @@
             });
         }
 
-        // ৪. স্মার্ট ফি ও ব্যালেন্স চেক (Buy/Sell Both)
-        const takaInput = document.getElementById('taka-input');
-        const coinInput = document.getElementById('coin-input');
+        // ৪. স্মার্ট ফি ও ব্যালেন্স চেক এবং ইনপুট সিঙ্ক্রোনাইজেশন
+takaInput.addEventListener('input', () => {
+    let tkVal = parseFloat(takaInput.value) || 0;
+    // টাকা থেকে কয়েন কনভার্ট
+    coinInput.value = (tkVal / lastPrice).toFixed(4); 
+    calculateLogic();
+});
 
-        function calculateLogic() {
-            let tkVal = parseFloat(takaInput.value) || 0;
-            let fee = (tkVal * currentFee) / 100;
-            let totalTakaNeeded = tkVal + fee;
-            
-            let coinVal = tkVal / lastPrice;
-            if(!takaInput.matches(':focus')) coinInput.value = coinVal.toFixed(4);
+coinInput.addEventListener('input', () => {
+    let cv = parseFloat(coinInput.value) || 0;
+    // কয়েন থেকে টাকা কনভার্ট
+    takaInput.value = (cv * lastPrice).toFixed(2); 
+    calculateLogic();
+});
 
-            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-            document.getElementById('total-cost').innerText = `৳ ${totalTakaNeeded.toFixed(2)}`;
+function calculateLogic() {
+    let tkVal = parseFloat(takaInput.value) || 0;
+    let coinVal = parseFloat(coinInput.value) || 0;
+    
+    let fee = (tkVal * currentFee) / 100;
+    let totalTakaWithFee = tkVal + fee;
 
-            const buyBtn = document.getElementById('buy-btn');
-            const sellBtn = document.getElementById('sell-btn');
-            const warning = document.getElementById('balance-warning');
+    // UI আপডেট (৳ সিম্বলসহ)
+    document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
+    document.getElementById('total-cost').innerHTML = `৳ ${totalTakaWithFee.toFixed(2)}`;
 
-            // BUY বাটন লজিক: ক্যাশ ব্যালেন্স চেক
-            if (totalTakaNeeded > userCash || tkVal <= 0) {
-                buyBtn.disabled = true;
-                if(tkVal > 0) warning.style.display = 'block';
-            } else {
-                buyBtn.disabled = false;
-                warning.style.display = 'none';
-            }
+    const buyBtn = document.getElementById('buy-btn');
+    const sellBtn = document.getElementById('sell-btn');
+    const warning = document.getElementById('balance-warning');
 
-            // SELL বাটন লজিক: এএএফ কয়েন ব্যালেন্স চেক
-            if (coinVal > userAAF || coinVal <= 0) {
-                sellBtn.disabled = true;
-            } else {
-                sellBtn.disabled = false;
-            }
-        }
+    // BUY বাটন লজিক
+    if (totalTakaWithFee > userCash || tkVal <= 0) {
+        buyBtn.disabled = true;
+        if(tkVal > 0) warning.style.display = 'block';
+    } else {
+        buyBtn.disabled = false;
+        warning.style.display = 'none';
+    }
 
-        takaInput.addEventListener('input', calculateLogic);
-        coinInput.addEventListener('input', () => {
-            let cv = parseFloat(coinInput.value) || 0;
-            takaInput.value = (cv * lastPrice).toFixed(2);
-            calculateLogic();
-        });
+    // SELL বাটন লজিক
+    if (coinVal > userAAF || coinVal <= 0) {
+        sellBtn.disabled = true;
+    } else {
+        sellBtn.disabled = false;
+    }
+}
 
         // ৫. মঙ্গোডিবি থেকে ইউজার ও চ্যানেল স্ট্যাটাস লোড
         async function loadMongoDBData() {
