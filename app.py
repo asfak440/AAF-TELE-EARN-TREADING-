@@ -176,6 +176,12 @@ def render_wallet(): return render_template('wallet.html')
 @login_required
 def render_account(): return render_template('account.html')
 
+@app.route('/admin_panel')
+@login_required
+def admin_page():
+    # এখানে আপনার এডমিন ইউজার আইডি চেক করতে পারেন (ঐচ্ছিক)
+    return render_template('admin.html')
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
