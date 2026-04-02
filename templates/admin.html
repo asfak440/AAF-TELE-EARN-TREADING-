@@ -69,6 +69,13 @@
                 </div>
             </div>
 
+            <div class="premium-card">
+    <h3>ইউজার ব্যালেন্স এডিট (Manual)</h3>
+    <input type="text" id="edit-user-id" placeholder="ইউজার ফোন নম্বর বা আইডি">
+    <input type="number" id="edit-amount" placeholder="টাকার পরিমাণ (+/-)">
+    <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>
+            </div>
+
             <div id="users" class="data-section">
                 <div class="premium-card">
                     <h3>ইউজার সেশন লিস্ট</h3>
@@ -84,6 +91,14 @@
 
             <div id="payouts" class="data-section">
                 <div class="premium-card"><h3>পেমেন্ট রিকোয়েস্ট</h3><div id="payout-list">পেন্ডিং নেই...</div></div>
+            </div>
+
+            <div class="premium-card">
+    <h3>সিস্টেম কন্ট্রোল</h3>
+    <div style="display: flex; gap: 10px;">
+        <button id="master-switch" class="btn-main" style="background: var(--danger);" onclick="toggleTrading()">ট্রেডিং বন্ধ করুন</button>
+        <button class="btn-main" style="background: var(--gold);" onclick="clearChart()">চার্ট ডাটা মুছুন</button>
+    </div>
             </div>
 
             <div id="trading" class="data-section">
