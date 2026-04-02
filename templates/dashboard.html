@@ -288,17 +288,25 @@ async function initDashboard() {
         }
 
         // ৫. একটিভ ইউজার বার (প্রতি ৬ ঘণ্টা লজিক)
-        function triggerPopup(msg) {
-            const now = Date.now();
-            const sixHours = 6 * 60 * 60 * 1000;
-            
-            if (now - userStatus.last_popup > sixHours) {
-                const bar = document.getElementById('active-user-bar');
-                document.getElementById('popup-text').innerText = msg;
-                bar.style.display = 'flex';
-                setTimeout(() => { bar.style.display = 'none'; }, 5000);
-                userStatus.last_popup = now;
+        function checkAndShowAd(pageKey) {
+    const storageKey = 'last_ad_time_' + pageKey;
+    const lastSeen = localStorage.getItem(storageKey);
+    const currentTime = Date.now();
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+    // Firebase (fb_db) থেকে ডাটা চেক করা হচ্ছে
+    if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
+        fb_db.ref('popup_ads/' + pageKey).once('value', snap => {
+            const data = snap.val();
+            if (data && data.message) {
+                // পপ-আপ মেসেজ বা অ্যাড দেখানো
+                alert("📢 ঘোষণা: " + data.message); 
+                
+                // সময় সেভ করে রাখা যাতে ৬ ঘণ্টার আগে আর না আসে
+                localStorage.setItem(storageKey, currentTime);
             }
+        });
+    }
         }
 
         function handleAction(type) {
