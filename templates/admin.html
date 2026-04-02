@@ -277,6 +277,75 @@
         await fetch(`${API_BASE}/admin/api/tasks/${id}`, { method: 'DELETE' });
         renderTaskList();
     }
+
+      // ১. পেমেন্ট রিকোয়েস্ট লোড এবং এপ্রুভ
+async function loadPayouts() {
+    const res = await fetch(`${API_BASE}/admin/api/payouts?pin=${MASTER_PIN}`);
+    const data = await res.json();
+    const list = document.getElementById('payout-list');
+    
+    if (data.length > 0) {
+        list.innerHTML = data.map(p => `
+            <div class="premium-card" style="margin-top:10px; border-color:var(--gold);">
+                <p>ইউজার: ${p.phone} | পরিমাণ: ৳${p.amount}</p>
+                <p>মেথড: ${p.method} | ট্রানজ্যাকশন: ${p.trx_id || 'N/A'}</p>
+                <button onclick="approvePayout('${p._id}', 'approve')" style="background:green; color:white; padding:5px 10px; border:none; border-radius:5px;">Approve</button>
+                <button onclick="approvePayout('${p._id}', 'reject')" style="background:red; color:white; padding:5px 10px; border:none; border-radius:5px; margin-left:5px;">Reject</button>
+            </div>
+        `).join('');
+    } else {
+        list.innerText = "পেন্ডিং রিকোয়েস্ট নেই।";
+    }
+}
+
+async function approvePayout(id, status) {
+    if(!confirm("আপনি কি নিশ্চিত?")) return;
+    await fetch(`${API_BASE}/admin/api/payouts/update`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id, status, pin: MASTER_PIN })
+    });
+    alert("অ্যাকশন সফল!");
+    loadPayouts();
+}
+
+// ২. ইউজার ব্যালেন্স ম্যানুয়াল এডিট
+async function updateUserBalance() {
+    const phone = document.getElementById('edit-user-id').value;
+    const amount = document.getElementById('edit-amount').value;
+    
+    await fetch(`${API_BASE}/admin/api/user/update_balance`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ phone, amount, pin: MASTER_PIN })
+    });
+    alert("ব্যালেন্স আপডেট হয়েছে!");
+}
+
+// ৩. ট্রেডিং মাস্টার সুইচ (Firebase & MongoDB)
+let isTradeOpen = true;
+function toggleTrading() {
+    isTradeOpen = !isTradeOpen;
+    const btn = document.getElementById('master-switch');
+    
+    fb_db.ref('system/config').update({ trading_enabled: isTradeOpen });
+    
+    if(isTradeOpen) {
+        btn.innerText = "ট্রেডিং বন্ধ করুন";
+        btn.style.background = "var(--danger)";
+    } else {
+        btn.innerText = "ট্রেডিং চালু করুন";
+        btn.style.background = "var(--accent)";
+    }
+}
+
+// ৪. চার্ট ডাটা ক্লিন করা (Firebase)
+function clearChart() {
+    if(confirm("পুরো হিস্টোরি মুছে যাবে! আপনি কি নিশ্চিত?")) {
+        fb_db.ref('trading/history').remove();
+        alert("চার্ট ক্লিন হয়েছে!");
+    }
+            }
 </script>
 </body>
 </html>
