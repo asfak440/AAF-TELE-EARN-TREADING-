@@ -230,64 +230,54 @@
             last_popup: 0
         };
 
-        // মঙ্গোডিবি থেকে ডাটা লোড
-        async function initDashboard() {
-            try {
-                // ফেচ করার সময় আপনার এপিআই এন্ডপয়েন্ট ব্যবহার করুন
-                const response = await fetch('/api/user_data'); 
-                const data = await response.json();
-                
-                renderUI(data.user, data.server, data.admin);
-            } catch (err) {
-                console.log("Database Sync Error: ", err);
-            }
+        /// মঙ্গোডিবি থেকে ডাটা লোড
+async function initDashboard() {
+    try {
+        const response = await fetch('/get_user_data'); 
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error("Server Error:", data.error);
+            return;
         }
 
-        function renderUI(user, server, admin) {
-            // ১. প্রোফাইল
-            document.getElementById('u-name').innerText = user.username;
-            document.getElementById('u-id').innerText = user.telegram_id;
-            document.getElementById('h-cash').innerText = user.balance.toFixed(2);
-            document.getElementById('h-aaf').innerText = user.aaf_points;
+        // এখানে server এর বদলে শুধু user এবং admin পাঠান
+        // কারণ পাইথন থেকে এই দুটিই আসছে
+        renderUI(data.user, data.admin); 
+        
+    } catch (err) {
+        console.log("Database Sync Error: ", err);
+    }
+}
 
-            // ২. সার্ভার স্ট্যাটাস
-            document.getElementById('srv-income').innerText = '৳ ' + server.total_income;
-            document.getElementById('srv-trade').innerText = '৳ ' + server.total_trading;
-            document.getElementById('srv-users').innerText = server.total_users;
+        function renderUI(user, admin) {
+    // ১. প্রোফাইল আপডেট
+    if(document.getElementById('u-name')) document.getElementById('u-name').innerText = user.username;
+    if(document.getElementById('u-id')) document.getElementById('u-id').innerText = "ID: " + user.telegram_id;
+    if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = '৳ ' + user.cash;
+    if(document.getElementById('h-aaf')) document.getElementById('h-aaf').innerText = user.aaf;
 
-            // ৪. রেফার ও ট্রেড
-            document.getElementById('my-refs').innerText = user.refer_count + " REFERRED";
-            document.getElementById('refer-msg').innerText = `Refer & Earn ৳ ${admin.refer_bonus} (Admin Control)`;
-            document.getElementById('my-profit').innerText = '৳ ' + user.trading_profit.toFixed(2);
+    // ২. সার্ভার স্ট্যাটাস (পাইথন থেকে আসা admin ডাটা)
+    if(document.getElementById('srv-income')) document.getElementById('srv-income').innerText = '৳ ' + admin.server_income;
+    if(document.getElementById('srv-trade')) document.getElementById('srv-trade').innerText = '৳ ' + admin.server_trading;
+    if(document.getElementById('srv-users')) document.getElementById('srv-users').innerText = admin.total_users;
 
-            // ৫. বিজ্ঞাপন
-            if(admin.banner_type === 'link') {
-                document.getElementById('banner-ad').innerHTML = `<a href="${admin.banner_link}"><img src="${admin.banner_img}" style="width:100%; height:100%; object-fit:cover;"></a>`;
-            } else {
-                document.getElementById('banner-ad').innerHTML = admin.banner_custom_html;
-            }
+    // ৩. রেফার ও ট্রেড প্রফিট
+    if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = user.total_refer + " REFERRED";
+    if(document.getElementById('my-profit')) document.getElementById('my-profit').innerText = '৳ ' + user.trading_profit;
 
-            // ৬. কমিউনিটি জয়েন লজিক
-            const dot = document.getElementById('status-dot');
-            const joinCard = document.getElementById('join-container');
-            
-            if(user.is_joined) {
-                dot.className = 'dot-online';
-                joinCard.className = 'premium-card join-card connected';
-                document.getElementById('join-status').innerText = "CONNECTED";
-                document.getElementById('join-status').style.color = "var(--active-green)";
-                document.getElementById('join-info').innerText = "Verified Account: " + user.phone;
-                document.getElementById('join-btn').innerText = "COMMUNITY";
-                document.getElementById('join-btn').style.background = "var(--primary)";
-                document.getElementById('verify-btn').style.display = "none";
-            } else {
-                dot.className = 'dot-offline';
-                document.getElementById('verify-btn').style.display = "block";
-                // নতুন ইউজারের জন্য পপ-আপ মেসেজ
-                if(Date.now() - userStatus.last_popup > 5000) {
-                    alert("দয়া করে টেলিগ্রাম চ্যানেলে জয়েন করুন, নাহলে আপনার ব্যালেন্স আপডেট হবে না!");
-                }
-            }
+    // ৪. কমিউনিটি বা অনলাইন স্ট্যাটাস লজিক
+    const dot = document.getElementById('status-dot');
+    const joinCard = document.getElementById('join-container');
+
+    if (user.is_active) {
+        if(dot) dot.className = 'dot-online';
+        if(joinCard) joinCard.className = 'premium-card join-card connected';
+        if(document.getElementById('join-status')) document.getElementById('join-status').innerText = "CONNECTED";
+    } else {
+        if(dot) dot.className = 'dot-offline';
+        if(document.getElementById('join-status')) document.getElementById('join-status').innerText = "DISCONNECTED";
+    }
         }
 
         // ৫. একটিভ ইউজার বার (প্রতি ৬ ঘণ্টা লজিক)
