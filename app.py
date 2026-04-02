@@ -136,22 +136,45 @@ def verify_login_handler():
 
 
 # এডমিন সেটিংস আপডেট করার API
-@app.route('/api/update_settings', methods=['POST'])
-@login_required
-def update_settings():
-    data = request.json
-    # MongoDB-তে 'global' সেটিংস আপডেট করা
-    settings_col.update_one(
-        {"type": "global"},
-        {"$set": {
-            "server_income": data.get("income"),
-            "server_trading": data.get("trading"),
-            "banner_ad_code": data.get("banner"),
-            "channel_url": data.get("channel_url") # এখান থেকে আপনার চ্যানেলের লিংক আপডেট হবে
-        }},
-        upsert=True
-    )
-    return jsonify({"success": True})
+# অ্যাডমিন প্যানেল ওপেন করার মেইন রাস্তা (আগের ১৭৩-১৭৭ এর বদলে এটি থাকবে)
+@app.route('/admin_panel')
+def admin_panel_view():
+    return render_template('admin.html')
+
+# কনফিগ এপিআই (আগের ১৩৮-১৫৫ এর বদলে এটি ব্যবহার হবে)
+@app.route('/admin/api/config', methods=['GET', 'POST'])
+def admin_config():
+    if request.method == 'POST':
+        data = request.json
+        settings_col.update_one(
+            {"type": "global"},
+            {"$set": {
+                "telegram_link": data.get("telegram_link"),
+                "trade_fee": data.get("trade_fee"),
+                "min_withdraw": data.get("min_withdraw"),
+                "join_bonus": data.get("join_bonus")
+            }},
+            upsert=True
+        )
+        return jsonify({"success": True})
+    
+    config = settings_col.find_one({"type": "global"}) or {}
+    if '_id' in config: config['_id'] = str(config['_id'])
+    return jsonify(config)
+
+# ডাটা দেখানোর জন্য নতুন এপিআই
+@app.route('/admin/api/all-data')
+def admin_all_data():
+    try:
+        total_users = users_col.count_documents({})
+        return jsonify({
+            "total_users": total_users,
+            "pending_count": 0,
+            "payouts": []
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # পেজ রেন্ডারিং
 @app.route('/task')
@@ -169,12 +192,6 @@ def render_wallet(): return render_template('wallet.html')
 @app.route('/account')
 @login_required
 def render_account(): return render_template('account.html')
-
-@app.route('/admin_panel')
-@login_required
-def admin_page():
-    # এখানে আপনার এডমিন ইউজার আইডি চেক করতে পারেন (ঐচ্ছিক)
-    return render_template('admin.html')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
