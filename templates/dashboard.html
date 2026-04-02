@@ -127,7 +127,7 @@
         
         <div class="header-bal-box">
             <div style="color: var(--active-green);">৳ <span id="h-cash">0.00</span></div>
-            <div style="color: var(--gold);">A <span id="h-aaf">0</span></div>
+            <div style="color: var(--gold);">AAF <span id="h-aaf">0.00</span></div>
         </div>
 
         <div id="status-dot" class="dot-offline"></div>
@@ -253,8 +253,8 @@ async function initDashboard() {
         function renderUI(user, admin) {
     // ১. প্রোফাইল আপডেট
     if(document.getElementById('u-name')) document.getElementById('u-name').innerText = user.username;
-    if(document.getElementById('u-id')) document.getElementById('u-id').innerText = "ID: " + user.telegram_id;
-    if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = '৳ ' + user.cash;
+    if(document.getElementById('u-id')) document.getElementById('u-id').innerText = ": " + user.telegram_id;
+    if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = ' ' + user.cash;
     if(document.getElementById('h-aaf')) document.getElementById('h-aaf').innerText = user.aaf;
 
     // ২. সার্ভার স্ট্যাটাস (পাইথন থেকে আসা admin ডাটা)
