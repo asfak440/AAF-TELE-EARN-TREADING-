@@ -22,7 +22,7 @@ API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0"
 BOT_TOKEN = "7547079634:AAHLp3h7W9R86-x7vM8yZpT9m8vQ8r9x0sY"
-CHANNEL_ID = "@aafteleearn"
+CHANNEL_ID = " "
 
 # MongoDB কানেকশন
 try:
