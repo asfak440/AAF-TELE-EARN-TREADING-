@@ -69,6 +69,55 @@
         .buy { background: var(--green); color: #000; }
         .sell { background: var(--red); color: #fff; }
         .btn:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+
+        /* প্রিমিয়াম ৫-বাটন নেভিগেশন ডিজাইন */
+.bottom-nav {
+    position: fixed;
+    bottom: 15px;
+    left: 5%;
+    width: 90%;
+    height: 70px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 35px;
+    border: 1px solid rgba(0, 242, 254, 0.2);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+.nav-item {
+    text-decoration: none;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+/* অ্যাক্টিভ বাটন স্টাইল (Trading বাটন হাইলাইট হবে) */
+.nav-item.active {
+    color: #00f2fe;
+}
+
+.nav-item.active i {
+    font-size: 24px;
+    filter: drop-shadow(0 0 10px #00f2fe);
+    transform: translateY(-5px);
+}
+
+.nav-item i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.nav-item span {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
     </style>
 </head>
 <body>
@@ -129,8 +178,8 @@
 
     <div class="bottom-nav">
     <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="/task" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trade</span></a>
+    <a href="/task" class="nav-item"><i class="fas fa-list-ul"></i><span>Task</span></a>
+    <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i><span>Trading</span></a>
     <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
     <a href="/account" class="nav-item"><i class="fas fa-user"></i><span>Account</span></a>
     </div>
