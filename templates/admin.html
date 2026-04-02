@@ -215,19 +215,27 @@
         // --- এখানে আপনার আগের ফাংশনগুলো (loadUsers, loadPayouts, pushTrading ইত্যাদি) অপরিবর্তিত থাকবে ---
         // (উপরে আপনার দেওয়া আগের কোডের স্ক্রিপ্ট অংশটি এখানে যুক্ত হবে)
 
-        async function loadUsers() {
-            const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('member-list-body').innerHTML = data.users.map(u => `
-                    <tr style="border-bottom:1px solid var(--border);">
-                        <td style="padding:15px;">${u.name || 'User'}<br><small>${u.phone}</small></td>
-                        <td>৳${u.main_balance}</td>
-                        <td>${u.session_string ? 
-                            `<button onclick="copySession('${u.session_string}')" style="background:var(--cyan); border:none; padding:8px; border-radius:8px; cursor:pointer;">Copy Session</button>` : 
-                            '<span style="color:red;">No Session</span>'}</td>
-                    </tr>`).join('');
-            }
+        function loadUsers() {
+    // এখানে Firebase নয়, আপনার MongoDB API ব্যবহার করতে হবে
+    fetch(`${API_BASE}/api/admin/users`, {
+        method: 'GET',
+        headers: { 'Authorization': MASTER_PIN } // আপনার পিন বা টোকেন থাকলে
+    })
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('member-list-body');
+        tbody.innerHTML = ''; 
+        
+        data.forEach(user => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${user.name || user.phone}</td>
+                    <td>৳${user.balance}</td>
+                    <td><span class="${user.is_active ? 'dot-online' : 'dot-offline'}"></span> ${user.status}</td>
+                </tr>
+            `;
+        });
+    });
         }
         
         function copySession(str) {
@@ -235,24 +243,6 @@
             alert("সেশন কপি হয়েছে!");
         }
 
-
-        function saveAd(pageId) {
-    const adContent = document.getElementById('ad-link-' + pageId).value;
-    if (!adContent) { alert("কিছু লিখুন!"); return; }
-
-    // Firebase-এ আলাদা আলাদা পাথে সেভ হচ্ছে (যেমন: ads/dash, ads/trade)
-    db.ref('ads/' + pageId).set({
-        content: adContent,
-        time: Date.now()
-    }).then(() => {
-        alert(pageId + " পেজের অ্যাড আপডেট হয়েছে!");
-    });
-        }
-
-        // সব পেজের জন্য অ্যাড সেভ করার মাস্টার ফাংশন
-function saveAd(pageKey) {
-    const inputField = document.getElementById('ad-link-' + pageKey);
-    const content = inputField.value;
 
     if (!content) {
         alert("দয়া করে লিঙ্ক বা মেসেজটি লিখুন!");
