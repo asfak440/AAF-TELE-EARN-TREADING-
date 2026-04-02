@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAF আলটিমেট মাস্টার কন্ট্রোল | v7.2</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
+        :root {
+            --bg: #020617; --card: #0d111c; --border: rgba(0, 242, 254, 0.2);
+            --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
+            --danger: #ff0055; --gold: #ffaa00; --glass: rgba(15, 23, 42, 0.9);
+            --sidebar-width: 260px;
+        }
+        body { background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; margin: 0; display: flex; overflow-x: hidden; }
+        #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(20px); }
+        .login-box { background: var(--card); padding: 40px; border-radius: 25px; border: 2px solid var(--cyan); text-align: center; width: 320px; }
+        .login-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: var(--cyan); font-size: 20px; text-align: center; margin-top: 15px; }
+        .sidebar { width: var(--sidebar-width); background: var(--card); height: 100vh; position: fixed; border-right: 1px solid var(--border); }
+        .nav-links { list-style: none; padding: 15px; margin: 0; }
+        .nav-links li { padding: 14px; cursor: pointer; transition: 0.3s; border-radius: 12px; margin-bottom: 8px; color: #8b949e; display: flex; align-items: center; }
+        .nav-links li:hover, .nav-links li.active { background: linear-gradient(90deg, var(--cyan), var(--purple)); color: white; }
+        .nav-links i { margin-right: 12px; width: 20px; }
+        .main-content { margin-left: var(--sidebar-width); width: 100%; min-height: 100vh; }
+        .container { padding: 25px; max-width: 900px; margin: auto; }
+        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: #fff; margin-top: 8px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; margin-top: 15px; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; }
+        .data-section { display: none; }
+        .data-section.active { display: block; }
+        @media (max-width: 768px) { .sidebar { width: 70px; } .nav-links span { display: none; } .main-content { margin-left: 70px; } }
+    </style>
+</head>
+<body>
+
+    <div id="admin-login-overlay">
+        <div class="login-box">
+            <h2>মাস্টার লগিন</h2>
+            <input type="password" id="admin-pass" placeholder="PIN দিন">
+            <button class="btn-main" onclick="checkAuth()">আনলক করুন</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div style="padding:20px; text-align:center; color:var(--cyan); font-weight:700;">AAF PANEL</div>
+        <ul class="nav-links">
+            <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-home"></i> <span>ড্যাশবোর্ড</span></li>
+            <li onclick="openTab(event, 'payouts')"><i class="fas fa-wallet"></i> <span>পেমেন্ট রিকোয়েস্ট</span></li>
+            <li onclick="openTab(event, 'users')"><i class="fas fa-users"></i> <span>ইউজার সেশন</span></li>
+            <li onclick="openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
+            <li onclick="openTab(event, 'tasks')"><i class="fas fa-tasks"></i> <span>টাস্ক ম্যানেজমেন্ট</span></li>
+            <li onclick="openTab(event, 'ads')"><i class="fas fa-bullhorn"></i> <span>নোটিশ ও অ্যাডস</span></li>
+            <li onclick="openTab(event, 'config')"><i class="fas fa-cogs"></i> <span>সিস্টেম সেটিংস</span></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div id="dashboard" class="data-section active">
+                <div class="premium-card">
+                    <h3><i class="fas fa-link"></i> কুইক চ্যানেল লিঙ্ক</h3>
+                    <input type="text" id="quick-link" placeholder="লিঙ্ক দিন">
+                    <button class="btn-main" onclick="updateConfig('quick')">লিঙ্ক আপডেট</button>
+                </div>
+            </div>
+
+            <div id="users" class="data-section">
+                <div class="premium-card">
+                    <h3>ইউজার সেশন লিস্ট</h3>
+                    <input type="text" id="userSearch" onkeyup="searchUser()" placeholder="খুঁজুন...">
+                    <div style="overflow-x:auto; margin-top:15px;">
+                        <table style="width:100%; text-align:left; border-collapse: collapse;">
+                            <thead><tr style="color:var(--cyan); border-bottom:1px solid #333;"><th>ইউজার</th><th>ব্যালেন্স</th><th>সেশন</th></tr></thead>
+                            <tbody id="member-list-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="payouts" class="data-section">
+                <div class="premium-card"><h3>পেমেন্ট রিকোয়েস্ট</h3><div id="payout-list">পেন্ডিং নেই...</div></div>
+            </div>
+
+            <div id="trading" class="data-section">
+                <div class="premium-card">
+                    <h3>প্রাইস কন্ট্রোল</h3>
+                    <h2 id="live-price-display" style="color:var(--cyan); text-align:center;">৳ ০.০০</h2>
+                    <input type="number" id="inp-price" step="0.01">
+                    <button class="btn-main" onclick="pushTrading()">আপডেট চার্ট</button>
+                </div>
+            </div>
+
+            <div id="tasks" class="data-section">
+                <div class="premium-card">
+                    <h3>নতুন টাস্ক</h3>
+                    <input type="text" id="t-title" placeholder="টাইটেল">
+                    <input type="text" id="t-link" placeholder="লিঙ্ক">
+                    <input type="number" id="t-reward" placeholder="টাকা">
+                    <button class="btn-main" onclick="saveTask()">পাবলিশ</button>
+                    <div id="current-task-list" style="margin-top:20px;"></div>
+                </div>
+            </div>
+
+            <div id="ads" class="data-section">
+                <div class="premium-card">
+                    <h3>নোটিশ আপডেট</h3>
+                    <label>টাইটেল</label><input type="text" id="ad-title">
+                    <label>মেসেজ</label><textarea id="ad-msg"></textarea>
+                    <button class="btn-main" onclick="updateAds()">সেভ নোটিশ</button>
+                </div>
+            </div>
+
+            <div id="config" class="data-section">
+                <div class="premium-card">
+                    <h3>কোর সেটিংস</h3>
+                    <label>ট্রেডিং ফি</label><input type="number" id="c-fee">
+                    <label>মিনিমাম উইথড্র</label><input type="number" id="c-min">
+                    <label>জয়েন বোনাস</label><input type="number" id="c-join">
+                    <label>অফিসিয়াল লিঙ্ক</label><input type="text" id="c-link">
+                    <button class="btn-main" onclick="updateConfig('full')">সব সেটিংস সেভ</button>
+                </div>
+            </div>
+        </div>
+  </div>
+
+  <script>
+    const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const fb_db = firebase.database();
+    const API_BASE = window.location.origin;
+    const MASTER_PIN = "Abdullah6790";
+
+    function checkAuth() {
+        if(document.getElementById('admin-pass').value === MASTER_PIN) {
+            document.getElementById('admin-login-overlay').style.display = 'none';
+            initDashboard();
+        } else { alert("ভুল পিন!"); }
+    }
+
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.data-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+        
+        if(tabName === 'users') loadUsers();
+        if(tabName === 'tasks') renderTaskList();
+    }
+
+    function initDashboard() {
+        fb_db.ref('trading/aaf_coin').on('value', snap => {
+            const val = snap.val();
+            if(val) document.getElementById('live-price-display').innerText = "৳" + val.price;
+        });
+        loadConfig();
+    }
+
+    async function loadConfig() {
+        const res = await fetch(`${API_BASE}/admin/api/config`);
+        const config = await res.json();
+        if(config) {
+            document.getElementById('c-fee').value = config.trade_fee || 0;
+            document.getElementById('c-min').value = config.min_withdraw || 0;
+            document.getElementById('c-join').value = config.join_bonus || 0;
+            document.getElementById('c-link').value = config.telegram_link || "";
+            document.getElementById('quick-link').value = config.telegram_link || "";
+        }
+    }
+
+    async function updateConfig(type) {
+        const linkVal = (type === 'quick') ? document.getElementById('quick-link').value : document.getElementById('c-link').value;
+        const data = {
+            telegram_link: linkVal,
+            trade_fee: document.getElementById('c-fee').value,
+            min_withdraw: document.getElementById('c-min').value,
+            join_bonus: document.getElementById('c-join').value
+        };
+        await fetch(`${API_BASE}/admin/api/config`, { 
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) 
+        });
+        alert("আপডেট হয়েছে!");
+        loadConfig();
+    }
+
+    async function loadUsers() {
+        const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('member-list-body').innerHTML = data.users.map(u => `
+                <tr style="border-bottom:1px solid #1a1f2e;">
+                    <td style="padding:10px;">${u.name || 'User'}<br><small>${u.phone}</small></td>
+                    <td>৳${u.main_balance}</td>
+                    <td>${u.session_string ? '✅' : '❌'}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function loadUsers() {
+    const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById('member-list-body').innerHTML = data.users.map(u => `
+            <tr style="border-bottom:1px solid #1a1f2e;">
+                <td style="padding:10px;">${u.name || 'User'}<br><small>${u.phone}</small></td>
+                <td>৳${u.main_balance}</td>
+                <td>
+                    ${u.session_string ? 
+                        `<button onclick="copySession('${u.session_string}')" style="background:var(--cyan); color:#000; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
+                            <i class="fas fa-copy"></i> কপি সেশন
+                        </button>` : 
+                        '<span style="color:red;">No Session</span>'
+                    }
+                </td>
+            </tr>
+        `).join('');
+    }
+    }
+
+    function searchUser() {
+        let val = document.getElementById('userSearch').value.toLowerCase();
+        document.querySelectorAll('#member-list-body tr').forEach(tr => {
+            tr.style.display = tr.innerText.toLowerCase().includes(val) ? "" : "none";
+        });
+    }
+
+    function pushTrading() {
+        const price = parseFloat(document.getElementById('inp-price').value);
+        if(price) fb_db.ref('trading/aaf_coin').update({ price: price });
+        alert("প্রাইস আপডেট হয়েছে!");
+    }
+
+    async function saveTask() {
+        const task = { 
+            title: document.getElementById('t-title').value, 
+            link: document.getElementById('t-link').value, 
+            reward: document.getElementById('t-reward').value 
+        };
+        await fetch(`${API_BASE}/admin/api/tasks`, { 
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(task) 
+        });
+        alert("টাস্ক সেভ হয়েছে!");
+        renderTaskList();
+    }
+
+    async function renderTaskList() {
+        const res = await fetch(`${API_BASE}/admin/api/tasks`);
+        const tasks = await res.json();
+        document.getElementById('current-task-list').innerHTML = tasks.map(t => `
+            <div style="background:#000; padding:10px; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between;">
+                <span>${t.title}</span><button onclick="deleteTask('${t._id}')" style="color:red; background:none; border:none;">মুছুন</button>
+            </div>
+        `).join('');
+    }
+
+    async function deleteTask(id) {
+        await fetch(`${API_BASE}/admin/api/tasks/${id}`, { method: 'DELETE' });
+        renderTaskList();
+    }
+</script>
+</body>
+</html>
