@@ -16,9 +16,9 @@
             --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
             --danger: #ff0055; --gold: #ffaa00; --sidebar-width: 260px;
         }
-        body { background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; margin: 0; display: flex; }
+        body { background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; margin: 0; display: flex; overflow-x: hidden; }
         
-        .sidebar { width: var(--sidebar-width); background: var(--card); height: 100vh; position: fixed; border-right: 1px solid var(--border); z-index: 100; }
+        .sidebar { width: var(--sidebar-width); background: var(--card); height: 100vh; position: fixed; border-right: 1px solid var(--border); z-index: 100; transition: 0.3s; }
         .logo-area { padding: 30px 20px; text-align: center; font-size: 22px; font-weight: 800; color: var(--cyan); letter-spacing: 1px; border-bottom: 1px solid var(--border); }
         .nav-links { list-style: none; padding: 20px 15px; margin: 0; }
         .nav-links li { padding: 15px; cursor: pointer; transition: 0.3s; border-radius: 12px; margin-bottom: 10px; color: #94a3b8; display: flex; align-items: center; font-weight: 600; }
@@ -32,14 +32,20 @@
 
         .premium-card { background: var(--card); border: 1px solid var(--border); padding: 25px; border-radius: 24px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .card-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--cyan); display: flex; align-items: center; gap: 10px; }
-        input, textarea, select { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 14px; color: #fff; margin-top: 10px; margin-bottom: 15px; font-size: 15px; }
+        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 14px; color: #fff; margin-top: 10px; margin-bottom: 15px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; transition: 0.3s; }
         .btn-main:hover { opacity: 0.9; transform: scale(1.02); }
-
-        .dot-online { height: 10px; width: 10px; background-color: var(--accent); border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .dot-offline { height: 10px; width: 10px; background-color: var(--danger); border-radius: 50%; display: inline-block; margin-right: 5px; }
         
+        .dot-online { height: 10px; width: 10px; background: var(--accent); border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .dot-offline { height: 10px; width: 10px; background: var(--danger); border-radius: 50%; display: inline-block; margin-right: 5px; }
+
         #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; } .nav-links span, .logo-area span { display: none; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); padding: 15px; }
+            .nav-links li i { margin-right: 0; }
+        }
     </style>
 </head>
 <body>
@@ -58,13 +64,13 @@
             <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-th-large"></i> <span>ড্যাশবোর্ড</span></li>
             <li onclick="openTab(event, 'task')"><i class="fas fa-tasks"></i> <span>টাস্ক কন্ট্রোল</span></li>
             <li onclick="openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
-            <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট/পেমেন্ট</span></li>
+            <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট</span></li>
             <li onclick="openTab(event, 'account')"><i class="fas fa-users"></i> <span>ইউজার অ্যাকাউন্ট</span></li>
         </ul>
     </div>
 
     <div class="main-content">
-        <!-- Dashboard Section -->
+        
         <div id="dashboard" class="page-section active">
             <div class="premium-card">
                 <div class="card-title"><i class="fas fa-ad"></i> ড্যাশবোর্ড পপ-আপ অ্যাড</div>
@@ -73,7 +79,6 @@
             </div>
         </div>
 
-        <!-- Task Section -->
         <div id="task" class="page-section">
             <div class="premium-card">
                 <div class="card-title"><i class="fas fa-ad"></i> টাস্ক পেজ পপ-আপ অ্যাড</div>
@@ -82,7 +87,6 @@
             </div>
         </div>
 
-        <!-- Trading Section -->
         <div id="trading" class="page-section">
             <div class="premium-card">
                 <div class="card-title"><i class="fas fa-ad"></i> ট্রেডিং পেজ পপ-আপ অ্যাড</div>
@@ -91,7 +95,6 @@
             </div>
         </div>
 
-        <!-- Wallet Section -->
         <div id="wallet" class="page-section">
             <div class="premium-card">
                 <div class="card-title"><i class="fas fa-ad"></i> ওয়ালেট পেজ পপ-আপ অ্যাড</div>
@@ -100,15 +103,18 @@
             </div>
         </div>
 
-        <!-- Account Section -->
         <div id="account" class="page-section">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-search"></i> ইউজার সেশন ম্যানেজমেন্ট (MongoDB)</div>
-                <div style="overflow-x:auto; margin-top:20px;">
-                    <table style="width:100%; text-align:left; border-collapse: collapse;">
-                        <thead><tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
-                            <th style="padding:10px;">ইউজার</th><th>ব্যালেন্স</th><th>স্ট্যাটাস</th>
-                        </tr></thead>
+                <div class="card-title"><i class="fas fa-users"></i> ইউজার লিস্ট (MongoDB)</div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
+                                <th style="padding:12px;">ইউজার</th>
+                                <th>ব্যালেন্স</th>
+                                <th>স্ট্যাটাস</th>
+                            </tr>
+                        </thead>
                         <tbody id="member-list-body"></tbody>
                     </table>
                 </div>
@@ -119,6 +125,7 @@
                 <button class="btn-main" onclick="saveAd('account')">সেভ অ্যাড</button>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -126,9 +133,18 @@
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
         
-        // এখানে আপনার পাইথন সার্ভারের আসল লিঙ্কটি বসান
-        const API_BASE = "https://aaf-tele-earn-treading.onrender.com"; 
+        // আপনার সার্ভার লিঙ্ক দিন (শেষে / দিবেন না)
+        const API_BASE = window.location.origin; 
         const MASTER_PIN = "Abdullah6790";
+
+        function checkAuth() {
+            const input = document.getElementById('admin-pass').value;
+            if (input === MASTER_PIN) {
+                document.getElementById('admin-login-overlay').style.display = 'none';
+            } else {
+                alert("ভুল পিন!");
+            }
+        }
 
         function openTab(evt, tabName) {
             document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
@@ -139,51 +155,35 @@
             if(tabName === 'account') loadUsers();
         }
 
-        function checkAuth() {
-            if(document.getElementById('admin-pass').value === MASTER_PIN) {
-                document.getElementById('admin-login-overlay').style.display = 'none';
-            } else { alert("ভুল পিন!"); }
-        }
-
-        // --- MongoDB ইউজার লোড ফাংশন ---
         function loadUsers() {
             fetch(`${API_BASE}/api/admin/users`, {
-                method: 'GET',
                 headers: { 'Authorization': MASTER_PIN }
             })
             .then(res => res.json())
             .then(data => {
                 const tbody = document.getElementById('member-list-body');
                 tbody.innerHTML = ''; 
-                
                 data.forEach(user => {
                     tbody.innerHTML += `
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:10px;">${user.name || user.phone}</td>
-                            <td>৳${user.balance}</td>
+                            <td style="padding:15px;">${user.name || 'User'}<br><small>${user.phone}</small></td>
+                            <td>৳${user.balance || 0}</td>
                             <td><span class="${user.is_active ? 'dot-online' : 'dot-offline'}"></span> ${user.status || 'Active'}</td>
-                        </tr>
-                    `;
+                        </tr>`;
                 });
-            }).catch(err => console.log("MongoDB Error:", err));
+            }).catch(err => console.log("Error loading users"));
         }
 
-        // --- Firebase অ্যাড সেভ ফাংশন ---
         function saveAd(pageKey) {
-            const inputField = document.getElementById('ad-link-' + pageKey);
-            const content = inputField.value;
-
-            if (!content) {
-                alert("দয়া করে কিছু লিখুন!");
-                return;
-            }
+            const content = document.getElementById('ad-link-' + pageKey).value;
+            if (!content) { alert("কিছু লিখুন!"); return; }
 
             fb_db.ref('popup_ads/' + pageKey).set({
                 message: content,
                 timestamp: Date.now()
             }).then(() => {
-                alert(pageKey.toUpperCase() + " পেজের অ্যাড আপডেট হয়েছে!");
-            }).catch(e => alert("Error: " + e.message));
+                alert(pageKey.toUpperCase() + " অ্যাড আপডেট হয়েছে!");
+            });
         }
     </script>
 </body>
