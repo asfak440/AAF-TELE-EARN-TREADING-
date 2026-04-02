@@ -210,6 +210,20 @@
             alert("সেশন কপি হয়েছে!");
         }
 
+
+        function saveAd(pageId) {
+    const adContent = document.getElementById('ad-link-' + pageId).value;
+    if (!adContent) { alert("কিছু লিখুন!"); return; }
+
+    // Firebase-এ আলাদা আলাদা পাথে সেভ হচ্ছে (যেমন: ads/dash, ads/trade)
+    db.ref('ads/' + pageId).set({
+        content: adContent,
+        time: Date.now()
+    }).then(() => {
+        alert(pageId + " পেজের অ্যাড আপডেট হয়েছে!");
+    });
+        }
+
         // বাকি ফাংশনগুলো (updateUserBalance, approvePayout, saveTask) আপনার আগের কোড থেকে এখানে থাকবে।
     </script>
 </body>
