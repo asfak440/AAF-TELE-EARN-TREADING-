@@ -61,95 +61,120 @@
     </div>
 
     <div class="sidebar">
-        <div class="logo-area"><span>AAF</span> PANEL</div>
-        <ul class="nav-links">
-            <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-th-large"></i> <span>ড্যাশবোর্ড</span></li>
-            <li onclick="openTab(event, 'task')"><i class="fas fa-tasks"></i> <span>টাস্ক কন্ট্রোল</span></li>
-            <li onclick="event, openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
-            <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট/পেমেন্ট</span></li>
-            <li onclick="openTab(event, 'account')"><i class="fas fa-users"></i> <span>ইউজার অ্যাকাউন্ট</span></li>
-        </ul>
+    <div class="logo-area"><span>AAF</span> PANEL</div>
+    <ul class="nav-links">
+        <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-th-large"></i> <span>ড্যাশবোর্ড</span></li>
+        <li onclick="openTab(event, 'task')"><i class="fas fa-tasks"></i> <span>টাস্ক কন্ট্রোল</span></li>
+        <li onclick="openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
+        <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট/পেমেন্ট</span></li>
+        <li onclick="openTab(event, 'account')"><i class="fas fa-users"></i> <span>ইউজার অ্যাকাউন্ট</span></li>
+    </ul>
+</div>
+
+<div class="main-content">
+    
+    <!-- Dashboard Section -->
+    <div id="dashboard" class="page-section active">
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-bullhorn"></i> পপ-আপ নোটিশ ও ব্যানার</div>
+            <label>নোটিশ টাইটেল</label><input type="text" id="ad-title" placeholder="যেমন: নতুন অফার!">
+            <label>মেসেজ</label><textarea id="ad-msg" rows="3" placeholder="বিস্তারিত এখানে লিখুন..."></textarea>
+            <button class="btn-main" onclick="updateAds()">নোটিশ পাবলিশ করুন</button>
+        </div>
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-link"></i> অফিসিয়াল চ্যানেল লিঙ্ক</div>
+            <input type="text" id="c-link" placeholder="টেলিগ্রাম লিঙ্ক দিন">
+            <button class="btn-main" onclick="updateConfig('full')">লিঙ্ক আপডেট</button>
+        </div>
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-ad"></i> ড্যাশবোর্ড পপ-আপ অ্যাড</div>
+            <input type="text" id="ad-link-dash" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
+            <button class="btn-main" onclick="saveAd('dash')">সেভ অ্যাড</button>
+        </div>
     </div>
 
-    <div class="main-content">
-        
-        <div id="dashboard" class="page-section active">
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-bullhorn"></i> পপ-আপ নোটিশ ও ব্যানার</div>
-                <label>নোটিশ টাইটেল</label><input type="text" id="ad-title" placeholder="যেমন: নতুন অফার!">
-                <label>মেসেজ</label><textarea id="ad-msg" rows="3" placeholder="বিস্তারিত এখানে লিখুন..."></textarea>
-                <button class="btn-main" onclick="updateAds()">নোটিশ পাবলিশ করুন</button>
-            </div>
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-link"></i> অফিসিয়াল চ্যানেল লিঙ্ক</div>
-                <input type="text" id="c-link" placeholder="টেলিগ্রাম লিঙ্ক দিন">
-                <button class="btn-main" onclick="updateConfig('full')">লিঙ্ক আপডেট</button>
-            </div>
-            <div class="premium-card">
-    <div class="card-title"><i class="fas fa-ad"></i> ড্যাশবোর্ড পপ-আপ অ্যাড</div>
-    <input type="text" id="ad-link-dash" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
-    <button class="btn-main" onclick="saveAd('dash')">সেভ অ্যাড</button>
-            </div>
+    <!-- Task Section -->
+    <div id="task" class="page-section">
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
+            <input type="text" id="t-title" placeholder="টাস্কের নাম">
+            <input type="text" id="t-link" placeholder="ভিডিও বা কাজের লিঙ্ক">
+            <input type="number" id="t-reward" placeholder="পুরস্কারের টাকা (৳)">
+            <button class="btn-main" onclick="saveTask()">টাস্ক পাবলিশ</button>
         </div>
+        <div id="current-task-list"></div>
+        <!-- Task Page Ad Box -->
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-ad"></i> টাস্ক পেজ পপ-আপ অ্যাড</div>
+            <input type="text" id="ad-link-task" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
+            <button class="btn-main" onclick="saveAd('task')">সেভ অ্যাড</button>
+        </div>
+    </div>
 
-        <div id="task" class="page-section">
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
-                <input type="text" id="t-title" placeholder="টাস্কের নাম">
-                <input type="text" id="t-link" placeholder="ভিডিও বা কাজের লিঙ্ক">
-                <input type="number" id="t-reward" placeholder="পুরস্কারের টাকা (৳)">
-                <button class="btn-main" onclick="saveTask()">টাস্ক পাবলিশ</button>
-            </div>
-            <div id="current-task-list"></div>
+    <!-- Trading Section -->
+    <div id="trading" class="page-section">
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-bolt"></i> লাইভ প্রাইস কন্ট্রোল (MongoDB)</div>
+            <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:40px;">৳ ০.০০</h1>
+            <input type="number" id="inp-price" step="0.01" placeholder="নতুন দাম লিখুন">
+            <button class="btn-main" onclick="pushTrading()">প্রাইস আপডেট করুন</button>
         </div>
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-gears"></i> ট্রেডিং সিস্টেম সেটিংস</div>
+            <label>ট্রেডিং ফি (%)</label><input type="number" id="c-fee" step="0.1">
+            <button class="btn-main" style="background:var(--danger);" onclick="toggleTrading()" id="master-switch">ট্রেডিং বন্ধ করুন</button>
+            <button class="btn-main" style="background:var(--gold); margin-top:10px;" onclick="clearChart()">চার্ট ক্লিন করুন</button>
+        </div>
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-ad"></i> ট্রেডিং পেজ পপ-আপ অ্যাড</div>
+            <input type="text" id="ad-link-trade" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
+            <button class="btn-main" onclick="saveAd('trade')">সেভ অ্যাড</button>
+        </div>
+    </div>
 
-        <div id="trading" class="page-section">
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-bolt"></i> লাইভ প্রাইস কন্ট্রোল (MongoDB)</div>
-                <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:40px;">৳ ০.০০</h1>
-                <input type="number" id="inp-price" step="0.01" placeholder="নতুন দাম লিখুন">
-                <button class="btn-main" onclick="pushTrading()">প্রাইস আপডেট করুন</button>
-            </div>
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-gears"></i> ট্রেডিং সিস্টেম সেটিংস</div>
-                <label>ট্রেডিং ফি (%)</label><input type="number" id="c-fee" step="0.1">
-                <button class="btn-main" style="background:var(--danger);" onclick="toggleTrading()" id="master-switch">ট্রেডিং বন্ধ করুন</button>
-                <button class="btn-main" style="background:var(--gold); margin-top:10px;" onclick="clearChart()">চার্ট ক্লিন করুন</button>
-            </div>
-            <div class="premium-card">
-    <div class="card-title"><i class="fas fa-ad"></i> ট্রেডিং পেজ পপ-আপ অ্যাড</div>
-    <input type="text" id="ad-link-trade" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
-    <button class="btn-main" onclick="saveAd('trade')">সেভ অ্যাড</button>
-            </div>
+    <!-- Wallet Section -->
+    <div id="wallet" class="page-section">
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</div>
+            <div id="payout-list" style="color:#94a3b8;">লোড হচ্ছে...</div>
         </div>
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-user-edit"></i> ম্যানুয়াল ব্যালেন্স এডিট</div>
+            <input type="text" id="edit-user-id" placeholder="ইউজার ফোন নম্বর">
+            <input type="number" id="edit-amount" placeholder="কত টাকা যোগ/বিয়োগ করবেন">
+            <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>
+        </div>
+        <!-- Wallet Page Ad Box -->
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-ad"></i> ওয়ালেট পেজ পপ-আপ অ্যাড</div>
+            <input type="text" id="ad-link-wallet" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
+            <button class="btn-main" onclick="saveAd('wallet')">সেভ অ্যাড</button>
+        </div>
+    </div>
 
-        <div id="wallet" class="page-section">
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</div>
-                <div id="payout-list" style="color:#94a3b8;">লোড হচ্ছে...</div>
-            </div>
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-user-edit"></i> ম্যানুয়াল ব্যালেন্স এডিট</div>
-                <input type="text" id="edit-user-id" placeholder="ইউজার ফোন নম্বর">
-                <input type="number" id="edit-amount" placeholder="কত টাকা যোগ/বিয়োগ করবেন">
-                <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>
+    <!-- Account Section -->
+    <div id="account" class="page-section">
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-search"></i> ইউজার সেশন ম্যানেজমেন্ট</div>
+            <input type="text" id="userSearch" onkeyup="searchUser()" placeholder="নাম বা ফোন দিয়ে খুঁজুন...">
+            <div style="overflow-x:auto; margin-top:20px;">
+                <table style="width:100%; text-align:left; border-collapse: collapse;">
+                    <thead><tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
+                        <th style="padding:10px;">ইউজার</th><th>ব্যালেন্স</th><th>সেশন</th>
+                    </tr></thead>
+                    <tbody id="member-list-body"></tbody>
+                </table>
             </div>
         </div>
+        <!-- Account Page Ad Box -->
+        <div class="premium-card">
+            <div class="card-title"><i class="fas fa-ad"></i> অ্যাকাউন্ট পেজ পপ-আপ অ্যাড</div>
+            <input type="text" id="ad-link-account" placeholder="অ্যাড লিঙ্ক বা মেসেজ">
+            <button class="btn-main" onclick="saveAd('account')">সেভ অ্যাড</button>
+        </div>
+    </div>
 
-        <div id="account" class="page-section">
-            <div class="premium-card">
-                <div class="card-title"><i class="fas fa-search"></i> ইউজার সেশন ম্যানেজমেন্ট</div>
-                <input type="text" id="userSearch" onkeyup="searchUser()" placeholder="নাম বা ফোন দিয়ে খুঁজুন...">
-                <div style="overflow-x:auto; margin-top:20px;">
-                    <table style="width:100%; text-align:left; border-collapse: collapse;">
-                        <thead><tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
-                            <th style="padding:10px;">ইউজার</th><th>ব্যালেন্স</th><th>সেশন</th>
-                        </tr></thead>
-                        <tbody id="member-list-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+</div>
 
     </div>
 
@@ -224,7 +249,27 @@
     });
         }
 
+        // সব পেজের জন্য অ্যাড সেভ করার মাস্টার ফাংশন
+function saveAd(pageKey) {
+    const inputField = document.getElementById('ad-link-' + pageKey);
+    const content = inputField.value;
+
+    if (!content) {
+        alert("দয়া করে লিঙ্ক বা মেসেজটি লিখুন!");
+        return;
+    }
+
+    // Firebase database (fb_db) এ ডাটা সেভ হচ্ছে
+    fb_db.ref('popup_ads/' + pageKey).set({
+        message: content,
+        timestamp: Date.now()
+    }).then(() => {
+        alert(pageKey.toUpperCase() + " পেজের অ্যাড আপডেট হয়েছে!");
+    }).catch(e => alert("Error: " + e.message));
+        }
+
         // বাকি ফাংশনগুলো (updateUserBalance, approvePayout, saveTask) আপনার আগের কোড থেকে এখানে থাকবে।
+        
     </script>
 </body>
 </html>
