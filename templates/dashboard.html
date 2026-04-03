@@ -182,7 +182,7 @@
 
         <div class="grid-3" style="margin-top: 10px;">
             <div class="premium-card stat-box" style="margin:0">
-                <h4>My Trading</h4>
+                <h4>Refer Status</h4>
                 <p id="my-profit" style="color: var(--active-green);">৳ 0.00</p>
             </div>
             <div class="premium-card stat-box" style="margin:0; grid-column: span 2;" onclick="showPaymentHistory()">
@@ -224,131 +224,160 @@
     </div>
 
     <script>
-        // ৮. লাইভ লজিক ও ডাটাবেজ হ্যান্ডলিং
-        let userStatus = {
-            is_joined: false,
-            last_popup: 0
-        };
+    // ১. গ্লোবাল কনফিগারেশন
+    const API_URL = ""; 
+    window.currentChannelLink = ""; 
 
-        /// মঙ্গোডিবি থেকে ডাটা লোড
-async function initDashboard() {
-    try {
-        const response = await fetch('/get_user_data'); 
-        const data = await response.json();
+    // ২. মেইন ইনিশিয়াল ফাংশন (ডাটা লোড)
+    async function initDashboard() {
+        const userId = localStorage.getItem('user_id');
         
-        if (data.error) {
-            console.error("Server Error:", data.error);
+        if (!userId) {
+            console.warn("Active User ID পাওয়া যায়নি।");
             return;
         }
 
-        // এখানে server এর বদলে শুধু user এবং admin পাঠান
-        // কারণ পাইথন থেকে এই দুটিই আসছে
-        renderUI(data.user, data.admin); 
+        try {
+            const response = await fetch(`/api/user/data/${userId}`);
+            const data = await response.json();
+
+            if (data.status === "success") {
+                renderUI(data.user, data.admin);
+            }
+        } catch (err) {
+            console.error("Database Sync Error: ", err);
+        }
+    }
+
+    // ৩. UI রেন্ডারিং (রেফার লিস্ট ও স্ট্যাটাস)
+    function renderUI(user, admin) {
+        // প্রোফাইল ও আইডি
+        if(document.getElementById('u-name')) document.getElementById('u-name').innerText = user.username.toUpperCase();
+        if(document.getElementById('u-id')) document.getElementById('u-id').innerText = ": " + user.telegram_id;
         
-    } catch (err) {
-        console.log("Database Sync Error: ", err);
-    }
-}
+        // ব্যালেন্স আপডেট
+        if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = ' ' + parseFloat(user.cash).toFixed(2);
+        if(document.getElementById('h-aaf')) document.getElementById('h-aaf').innerText = user.aaf;
 
-        function renderUI(user, admin) {
-    // ১. প্রোফাইল আপডেট
-    if(document.getElementById('u-name')) document.getElementById('u-name').innerText = user.username;
-    if(document.getElementById('u-id')) document.getElementById('u-id').innerText = ": " + user.telegram_id;
-    if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = ' ' + user.cash;
-    if(document.getElementById('h-aaf')) document.getElementById('h-aaf').innerText = user.aaf;
+        // ৪. সার্ভার স্ট্যাটাস (এডমিন ডাটা)
+        if(document.getElementById('srv-income')) document.getElementById('srv-income').innerText = '৳ ' + admin.server_income;
+        if(document.getElementById('srv-trade')) document.getElementById('srv-trade').innerText = '৳ ' + admin.server_trading;
+        if(document.getElementById('srv-users')) document.getElementById('srv-users').innerText = admin.total_users;
 
-    // ২. সার্ভার স্ট্যাটাস (পাইথন থেকে আসা admin ডাটা)
-    if(document.getElementById('srv-income')) document.getElementById('srv-income').innerText = '৳ ' + admin.server_income;
-    if(document.getElementById('srv-trade')) document.getElementById('srv-trade').innerText = '৳ ' + admin.server_trading;
-    if(document.getElementById('srv-users')) document.getElementById('srv-users').innerText = admin.total_users;
-
-    // ৩. রেফার ও ট্রেড প্রফিট
-    if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = user.total_refer + " REFERRED";
-    if(document.getElementById('my-profit')) document.getElementById('my-profit').innerText = '৳ ' + user.trading_profit;
-
-    // এডমিন প্যানেলের লিংকটি গ্লোবাল ভেরিয়েবলে সেভ করা
-    window.currentChannelLink = admin.channel_url;
-    
-    // জয়েন বাটনের href আপডেট করা
-    const joinBtn = document.getElementById('join-btn');
-    if (joinBtn && admin.channel_url) joinBtn.href = admin.channel_url;
-            
-            // ৪. কমিউনিটি বা অনলাইন স্ট্যাটাস লজিক
-    const dot = document.getElementById('status-dot');
-    const joinCard = document.getElementById('join-container');
-
-    if (user.is_active) {
-        if(dot) dot.className = 'dot-online';
-        if(joinCard) joinCard.className = 'premium-card join-card connected';
-        if(document.getElementById('join-status')) document.getElementById('join-status').innerText = "CONNECTED";
-    } else {
-        if(dot) dot.className = 'dot-offline';
-        if(document.getElementById('join-status')) document.getElementById('join-status').innerText = "DISCONNECTED";
-    }
+        // ৫. রেফার লিস্ট সেকশন (আপনার নির্দেশিত পরিবর্তন)
+        if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = (user.refer_count || 0) + " REFERRED";
+        // 'my-profit' এর জায়গায় এখন রেফারেল সংখ্যা বা স্ট্যাটাস দেখাবে
+        const referStatus = document.getElementById('my-profit');
+        if(referStatus) {
+            referStatus.innerText = (user.refer_count || 0) + " Active Refs";
+            referStatus.style.color = "var(--gold)";
         }
 
-        // ৫. একটিভ ইউজার বার (প্রতি ৬ ঘণ্টা লজিক)
-        function checkAndShowAd(pageKey) {
-    const storageKey = 'last_ad_time_' + pageKey;
-    const lastSeen = localStorage.getItem(storageKey);
-    const currentTime = Date.now();
-    const SIX_HOURS = 6 * 60 * 60 * 1000;
+        window.currentChannelLink = admin.channel_url;
+        
+        // ৬. ইন্ডিকেটর ও জয়েন কার্ড লজিক (সবুজ/লাল)
+        const dot = document.getElementById('status-dot');
+        const joinCard = document.getElementById('join-container');
+        const joinStatusText = document.getElementById('join-status');
 
-    // Firebase (fb_db) থেকে ডাটা চেক করা হচ্ছে
-    if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
-        fb_db.ref('popup_ads/' + pageKey).once('value', snap => {
-            const data = snap.val();
-            if (data && data.message) {
-                // পপ-আপ মেসেজ বা অ্যাড দেখানো
-                alert("📢 ঘোষণা: " + data.message); 
-                
-                // সময় সেভ করে রাখা যাতে ৬ ঘণ্টার আগে আর না আসে
+        if (user.is_joined) {
+            if(dot) dot.className = 'dot-online'; // সবুজ বাতি
+            if(joinCard) joinCard.className = 'premium-card join-card connected';
+            if(joinStatusText) {
+                joinStatusText.innerText = "CONNECTED";
+                joinStatusText.style.color = "var(--active-green)";
+            }
+            document.getElementById('join-btn').style.display = "none"; 
+        } else {
+            if(dot) dot.className = 'dot-offline'; // লাল বাতি
+            if(joinCard) joinCard.className = 'premium-card join-card';
+            if(joinStatusText) {
+                joinStatusText.innerText = "DISCONNECTED";
+                joinStatusText.style.color = "var(--danger)";
+            }
+            document.getElementById('join-btn').style.display = "block";
+        }
+    }
+
+    // ৭. ৬ ঘণ্টার পপ-আপ অ্যাড লজিক (বাটনে ক্লিকের জন্য)
+    function checkAndShowAd() {
+        const userId = localStorage.getItem('user_id');
+        const storageKey = `last_ad_click_${userId}`;
+        const lastSeen = localStorage.getItem(storageKey);
+        const currentTime = Date.now();
+        const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+        if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
+            // Firebase থেকে পপ-আপ মেসেজ আনা
+            if (typeof fb_db !== 'undefined') {
+                fb_db.ref('popup_ads/global').once('value', snap => {
+                    const data = snap.val();
+                    if (data && data.message) {
+                        alert("📢 AD: " + data.message);
+                        localStorage.setItem(storageKey, currentTime);
+                    }
+                });
+            } else {
+                // ফায়ারবেজ না থাকলে লোকাল পপআপ
+                triggerPopup("নতুন বোনাস অফার চেক করুন!");
                 localStorage.setItem(storageKey, currentTime);
             }
-        });
+            return true; // অ্যাড দেখানো হয়েছে
+        }
+        return false; // অ্যাড দেখানোর সময় হয়নি
     }
-        }
 
-        function handleAction(type) {
-            triggerPopup(`${type.toUpperCase()} সেকশনে প্রবেশ করছেন...`);
-            window.location.href = `/${type}`;
-        }
+    // ৮. নেভিগেশন ও বাটন হ্যান্ডলার (অ্যাড চেক সহ)
+    function handleAction(type) {
+        // বাটনে ক্লিক করলেই আগে ৬ ঘণ্টার অ্যাড চেক হবে
+        checkAndShowAd();
 
-        // পেমেন্ট হিস্ট্রি (ফায়ারবেজ থেকে ৫০০ ডাটা)
-        function showPaymentHistory() {
-            // এখানে ফায়ারবেজ এপিআই কল হবে যা ৫০০ ডাটা রিটার্ন করবে
-            window.location.href = '/payment-history';
+        if (type === 'trading' || type === 'convert') {
+            window.location.href = "/trading";
+        } else if (type === 'refer-list') {
+            window.location.href = "/refer_list";
+        } else if (type === 'payment-history') {
+            window.location.href = "/payment-history";
+        } else {
+            window.location.href = "/" + type;
         }
-
-        // এটি আপনার HTML-এর  নম্বর লাইনের ফাংশন
-function joinTelegram() {
-    // এখানে admin.channel_url হলো ডাটাবেজ থেকে আসা লিংক
-    // initDashboard ফাংশনের মাধ্যমে এটি আপডেট হবে
-    if (window.currentChannelLink) {
-        window.open(window.currentChannelLink, "_blank");
-    } else {
-        alert("চ্যানেল লিংক এখনো লোড হয়নি, কিছুক্ষণ অপেক্ষা করুন।");
     }
-}
-        
-        function verifyJoin() {
-    // এটি সার্ভার থেকে লেটেস্ট মেম্বারশিপ চেক করে আনবে
-    initDashboard(); 
-    
-    // কোনো এলার্ট (Alert) না রাখাই ভালো, সরাসরি বাতি সবুজ বা লাল হবে
-    console.log("Verifying membership status..."); 
+
+    // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
+    function joinTelegram() {
+        checkAndShowAd(); // অ্যাড চেক
+        if (window.currentChannelLink) {
+            window.open(window.currentChannelLink, "_blank");
+            document.getElementById('verify-btn').style.display = "block";
         }
+    }
 
-        function copyReferLink() {
-            const id = document.getElementById('u-id').innerText;
-            navigator.clipboard.writeText(window.location.origin + "/register?ref=" + id);
-            alert("Refer link copied!");
+    // ১০. রেফার লিংক কপি
+    function copyReferLink() {
+        checkAndShowAd(); // অ্যাড চেক
+        const idText = document.getElementById('u-id').innerText;
+        const cleanId = idText.replace(': ', '').trim();
+        if(cleanId) {
+            const link = window.location.origin + "/register?ref=" + cleanId;
+            navigator.clipboard.writeText(link);
+            triggerPopup("REFER LINK COPIED!");
         }
+    }
 
-        // ৮. অটো-রিফ্রেশ (প্রতি ১০ সেকেন্ড)
-        setInterval(initDashboard, 10000);
-        window.onload = initDashboard;
+    // ১১. কাস্টম পপআপ নোটিফিকেশন
+    function triggerPopup(msg) {
+        const bar = document.getElementById('active-user-bar');
+        const text = document.getElementById('popup-text');
+        if(bar && text) {
+            text.innerText = msg;
+            bar.style.display = "flex";
+            setTimeout(() => { bar.style.display = "none"; }, 3000);
+        }
+    }
 
-    </script>
+    // ১২. অটো-রিফ্রেশ
+    window.onload = initDashboard;
+    setInterval(initDashboard, 10000); 
+                </script>
 </body>
 </html>
