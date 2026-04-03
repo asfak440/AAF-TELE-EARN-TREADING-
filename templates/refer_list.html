@@ -3,52 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Referrals - AAF Master</title>
+    <title>My Referrals - AAF Master</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* ড্যাশবোর্ডের মত একই রকম ব্যাকগ্রাউন্ড ও কালার */
-        body { background: #020617; color: white; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 20px; }
-        .refer-card { 
-            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); 
-            padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between;
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        body { 
+            background: #020617; color: white; font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding: 20px; 
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.1) 0%, transparent 70%);
         }
-        .status-active { color: #00ff88; font-weight: bold; }
-        .back-btn { color: #00f2fe; text-decoration: none; font-weight: bold; margin-bottom: 20px; display: inline-block; }
+
+        .back-btn { 
+            color: #00f2fe; text-decoration: none; font-weight: bold; 
+            display: flex; align-items: center; gap: 8px; font-family: 'Syncopate'; font-size: 10px; margin-bottom: 25px;
+        }
+
+        h2 { font-family: 'Syncopate'; font-size: 18px; color: #ffaa00; text-shadow: 0 0 10px rgba(255, 170, 0, 0.3); }
+
+        .refer-stats {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between;
+        }
+
+        .refer-card { 
+            background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.1); 
+            padding: 15px; border-radius: 18px; margin-bottom: 12px; 
+            display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px); animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .status-active { 
+            font-size: 10px; background: rgba(0, 255, 136, 0.1); color: #00ff88; 
+            padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(0, 255, 136, 0.3);
+            text-transform: uppercase; font-weight: bold;
+        }
+
+        small { color: #94a3b8; font-family: monospace; }
     </style>
 </head>
 <body>
-    <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+    <a href="/dashboard" class="back-btn"><i class="fas fa-chevron-left"></i> BACK TO PANEL</a>
     
-    <h2>My Referral List</h2>
+    <div class="refer-stats">
+        <div>
+            <span style="font-size: 10px; color: #94a3b8;">TOTAL PARTNERS</span>
+            <div id="total-ref-count" style="font-size: 20px; font-weight: bold; color: #00f2fe; font-family: 'Syncopate';">0</div>
+        </div>
+        <i class="fas fa-users" style="font-size: 30px; color: rgba(255,255,255,0.1);"></i>
+    </div>
+
+    <h2>PARTNER LIST</h2>
     <div id="referral-container">
-        <p>Loading your partners...</p>
+        <p style="color: gray;">Scanning database...</p>
     </div>
 
     <script>
         async function loadReferrals() {
             const userId = localStorage.getItem('user_id');
-            const response = await fetch(`/api/user/referrals/${userId}`);
-            const data = await response.json();
-            
-            const container = document.getElementById('referral-container');
-            container.innerHTML = ""; // আগের লেখা মুছে দিবে
+            if (!userId) return;
 
-            if (data.referrals && data.referrals.length > 0) {
-                data.referrals.forEach(ref => {
-                    container.innerHTML += `
-                        <div class="refer-card">
-                            <div>
-                                <b>Name: ${ref.name}</b><br>
-                                <small>ID: ${ref.telegram_id}</small>
-                            </div>
-                            <div class="status-active">Active</div>
-                        </div>
-                    `;
-                });
-            } else {
-                container.innerHTML = "<p>No referrals found yet.</p>";
+            try {
+                const response = await fetch(`/api/user/referrals/${userId}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('referral-container');
+                const countDisplay = document.getElementById('total-ref-count');
+                
+                if (data.status === "success") {
+                    countDisplay.innerText = data.referrals.length;
+                    container.innerHTML = ""; 
+
+                    if (data.referrals.length > 0) {
+                        data.referrals.forEach(ref => {
+                            container.innerHTML += `
+                                <div class="refer-card">
+                                    <div>
+                                        <b style="font-size: 14px;">${ref.name}</b><br>
+                                        <small>ID: ${ref.telegram_id}</small>
+                                    </div>
+                                    <div class="status-active">Verified</div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        container.innerHTML = "<p style='text-align:center; color:gray; margin-top:50px;'>No referrals found yet.</p>";
+                    }
+                }
+            } catch (err) {
+                console.error("Referral Sync Error:", err);
             }
         }
+
+        // ১০ সেকেন্ড পর পর অটো-আপডেট হবে
         window.onload = loadReferrals;
+        setInterval(loadReferrals, 10000); 
     </script>
 </body>
 </html>
