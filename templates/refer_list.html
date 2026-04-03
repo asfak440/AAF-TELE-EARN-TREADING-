@@ -2,183 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Referral Center - AAF Master Pro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Referrals - AAF Master</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
-        
-        :root {
-            --bg: #020617;
-            --glass-card: rgba(15, 23, 42, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --primary: #00f2fe;
-            --active-green: #00ff88;
-            --danger: #ff0055;
-            --gold: #ffaa00;
-            --text-muted: #94a3b8;
+        /* ড্যাশবোর্ডের মত একই রকম ব্যাকগ্রাউন্ড ও কালার */
+        body { background: #020617; color: white; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 20px; }
+        .refer-card { 
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); 
+            padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between;
         }
-
-        body {
-            background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif;
-            margin: 0; padding: 20px; padding-bottom: 50px;
-            background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.1) 0%, transparent 70%);
-        }
-
-        /* Header Style (Matching Payment Page) */
-        .nav-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-        .back-btn {
-            width: 40px; height: 40px; background: var(--glass-card);
-            border: 1px solid var(--glass-border); border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; text-decoration: none; font-size: 18px; cursor: pointer;
-        }
-        .title { font-family: 'Syncopate'; font-size: 14px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
-
-        /* Referral Link Card */
-        .premium-card {
-            background: var(--glass-card); backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 20px; margin-bottom: 25px; text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .premium-card h3 { margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); font-family: 'Syncopate'; }
-        
-        .link-box {
-            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px;
-            border: 1px dashed var(--primary); display: flex; justify-content: space-between;
-            align-items: center; margin-top: 10px;
-        }
-        #my-ref-link { font-size: 11px; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        
-        .copy-btn { 
-            background: linear-gradient(135deg, #00f2fe 0%, #7000ff 100%); 
-            color: #fff; border: none; padding: 8px 18px; border-radius: 10px; 
-            font-weight: bold; cursor: pointer; font-size: 11px; font-family: 'Syncopate';
-        }
-
-        .bonus-info { font-size: 11px; margin-top: 15px; color: var(--gold); font-weight: bold; }
-
-        /* List Section */
-        .section-label { font-family: 'Syncopate'; font-size: 11px; margin-bottom: 15px; display: block; color: var(--active-green); }
-        
-        .list-container { background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; }
-        
-        .ref-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-bottom: 1px solid var(--glass-border);
-            position: relative;
-        }
-        .ref-item:last-child { border-bottom: none; }
-        
-        .u-info-box { display: flex; align-items: center; gap: 12px; }
-        .u-avatar { 
-            width: 38px; height: 38px; background: rgba(0, 242, 254, 0.05); 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: var(--primary); border: 1px solid var(--glass-border); 
-        }
-        .u-name { font-weight: bold; font-size: 15px; display: block; color: #fff; }
-        .u-date { font-size: 10px; color: var(--text-muted); }
-
-        .status-tag { font-size: 9px; padding: 4px 10px; border-radius: 8px; font-weight: 800; letter-spacing: 0.5px; }
-        .active-tag { background: rgba(0, 255, 136, 0.1); color: var(--active-green); border: 1px solid rgba(0, 255, 136, 0.2); }
-        .inactive-tag { background: rgba(255, 0, 85, 0.1); color: var(--danger); border: 1px solid rgba(255, 0, 85, 0.2); }
-        
-        #loader { text-align: center; padding: 40px; color: var(--primary); }
+        .status-active { color: #00ff88; font-weight: bold; }
+        .back-btn { color: #00f2fe; text-decoration: none; font-weight: bold; margin-bottom: 20px; display: inline-block; }
     </style>
 </head>
 <body>
-
-    <div class="nav-header">
-        <div class="back-btn" onclick="window.history.back()"><i class="fas fa-chevron-left"></i></div>
-        <div class="title">REFERRAL CENTER</div>
-    </div>
-
-    <div class="premium-card">
-        <h3>INVITE & EARN</h3>
-        <div class="link-box">
-            <span id="my-ref-link">t.me/aaf_tele_earn_bot?start=...</span>
-            <button class="copy-btn" onclick="copyLink()">COPY</button>
-        </div>
-        <div class="bonus-info">
-            <i class="fas fa-gift"></i> 1 AAF/Refer + 0.30 AAF Task Bonus
-        </div>
-    </div>
-
-    <span class="section-label">MY REFERRALS (<span id="ref-count">0</span>)</span>
+    <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
     
-    <div class="list-container" id="list-items">
-        <div id="loader">
-            <i class="fas fa-atom fa-spin"></i><br>
-            <small style="margin-top:10px; display:block;">Fetching Referrals...</small>
-        </div>
+    <h2>My Referral List</h2>
+    <div id="referral-container">
+        <p>Loading your partners...</p>
     </div>
 
     <script>
-        let userData = {};
+        async function loadReferrals() {
+            const userId = localStorage.getItem('user_id');
+            const response = await fetch(`/api/user/referrals/${userId}`);
+            const data = await response.json();
+            
+            const container = document.getElementById('referral-container');
+            container.innerHTML = ""; // আগের লেখা মুছে দিবে
 
-        async function fetchReferralData() {
-            try {
-                // আপনার ড্যাশবোর্ড ডাটাবেজ API কল
-                const response = await fetch('/get_user_data');
-                const data = await response.json();
-                
-                if(data.user) {
-                    userData = data.user;
-                    const refLink = `https://t.me/aaf_tele_earn_bot?start=${userData.user_id}`;
-                    document.getElementById('my-ref-link').innerText = refLink;
-                    document.getElementById('ref-count').innerText = userData.total_refer || 0;
-                    
-                    // আপনার ডাটাবেজে যদি 'referrals_list' থাকে তবে তা লোড হবে
-                    loadList(userData.referrals_list); 
-                }
-            } catch (e) { 
-                document.getElementById('list-items').innerHTML = `<div style="padding:20px; text-align:center;">Error Loading Data</div>`;
-            }
-        }
-
-        function loadList(users) {
-            const container = document.getElementById('list-items');
-            container.innerHTML = ''; // লোডার ক্লিয়ার করা
-
-            if(!users || users.length === 0) {
-                container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted); font-size:14px;">No referrals found yet!</div>`;
-                return;
-            }
-
-            users.forEach(u => {
-                const item = `
-                <div class="ref-item">
-                    <div class="u-info-box">
-                        <div class="u-avatar"><i class="fas fa-user-astronaut"></i></div>
-                        <div>
-                            <span class="u-name">${u.name}</span>
-                            <span class="u-date"><i class="far fa-calendar-alt"></i> Joined: ${u.date}</span>
+            if (data.referrals && data.referrals.length > 0) {
+                data.referrals.forEach(ref => {
+                    container.innerHTML += `
+                        <div class="refer-card">
+                            <div>
+                                <b>Name: ${ref.name}</b><br>
+                                <small>ID: ${ref.telegram_id}</small>
+                            </div>
+                            <div class="status-active">Active</div>
                         </div>
-                    </div>
-                    <div class="status-tag ${u.is_active ? 'active-tag' : 'inactive-tag'}">
-                        ${u.is_active ? 'ACTIVE' : 'INACTIVE'}
-                    </div>
-                </div>`;
-                container.innerHTML += item;
-            });
+                    `;
+                });
+            } else {
+                container.innerHTML = "<p>No referrals found yet.</p>";
+            }
         }
-
-        function copyLink() {
-            const linkText = document.getElementById('my-ref-link').innerText;
-            navigator.clipboard.writeText(linkText).then(() => {
-                // সুন্দর অ্যালার্ট মেসেজ
-                const btn = document.querySelector('.copy-btn');
-                btn.innerText = "COPIED!";
-                btn.style.background = "var(--active-green)";
-                setTimeout(() => {
-                    btn.innerText = "COPY";
-                    btn.style.background = "linear-gradient(135deg, #00f2fe 0%, #7000ff 100%)";
-                }, 2000);
-            });
-        }
-
-        window.onload = fetchReferralData;
+        window.onload = loadReferrals;
     </script>
 </body>
 </html>
