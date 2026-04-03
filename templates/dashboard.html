@@ -124,12 +124,19 @@
             <h2 id="u-name">LOADING...</h2>
             <span>ID: <span id="u-id">000000</span></span>
         </div>
-        
-        <div class="header-bal-box">
-            <div style="color: var(--active-green);">৳ <span id="h-cash">0.00</span></div>
-            <div style="color: var(--gold);">AAF <span id="h-aaf">0.00</span></div>
-        </div>
 
+        <div class="header-bal-box" style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+    <div style="text-align: center;">
+        <small style="font-size: 8px; color: #94a3b8; display: block;">CASH</small>
+        <div style="color: var(--active-green); font-size: 11px;">৳ <span id="h-cash">0.00</span></div>
+    </div>
+    <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+    <div style="text-align: center;">
+        <small style="font-size: 8px; color: #94a3b8; display: block;">AAF</small>
+        <div style="color: var(--gold); font-size: 11px;"><span id="h-aaf">0.00</span></div>
+    </div>
+        </div>
+        
         <div id="status-dot" class="dot-offline"></div>
     </header>
 
@@ -180,18 +187,26 @@
     <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
 </div>
 
-<div class="grid-3" style="margin-top: 10px;">
-    <div class="premium-card stat-box" style="margin:0; cursor: pointer; border: 1px solid var(--gold);" onclick="handleAction('refer-list')">
-        <i class="fas fa-list-ul" style="font-size: 14px; color: var(--gold); margin-bottom: 5px;"></i>
-        <h4>Refer List</h4>
-        <p id="my-profit" style="color: var(--active-green); font-size: 9px;">VIEW MEMBERS</p>
+<div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-top: 10px;" onclick="handleAction('refer-list')">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
+        <div>
+            <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
+            <p style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
+        </div>
     </div>
-    
-    <div class="premium-card stat-box" style="margin:0; grid-column: span 2; cursor: pointer;" onclick="handleAction('payment-history')">
-        <i class="fas fa-history" style="font-size: 14px; color: var(--primary); margin-bottom: 5px;"></i>
-        <h4>Payment History</h4>
-        <p style="font-size: 9px;">VIEW GLOBAL 500+ LOGS</p>
+    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+</div>
+
+<div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center;" onclick="handleAction('payment-history')">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
+        <div>
+            <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
+            <p style="color: var(--primary); font-size: 9px; margin: 0;">ট্রানজেকশন লগ দেখুন</p>
+        </div>
     </div>
+    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
 </div>
 
         <div class="grid-3" style="margin-top: 10px;">
