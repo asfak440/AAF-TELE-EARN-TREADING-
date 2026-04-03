@@ -171,13 +171,20 @@
         </div>
 
         <!-- ৪. ইউজার পার্সোনাল স্ট্যাটাস -->
-        <div class="premium-card" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
-                <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);"></p>
-                <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
-            </div>
-            <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
+        <div class="premium-card" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 2px solid var(--gold);" onclick="handleAction('refer-list')">
+    <div style="flex: 1;">
+        <h4 style="font-size: 10px; color: var(--gold); margin: 0; letter-spacing: 1px;">REFERRAL SYSTEM</h4>
+        <p id="refer-msg" style="font-size: 12px; margin: 5px 0; color: #fff; font-weight: bold;">VIEW YOUR PARTNERS</p>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <b id="my-refs" style="font-family: 'Syncopate'; font-size: 14px; color: var(--primary);">0 REFERRED</b>
+            <span style="font-size: 10px; background: rgba(0,255,136,0.1); color: var(--active-green); padding: 2px 8px; border-radius: 5px;">LIVE</span>
+        </div>
+    </div>
+    <div style="text-align: right;">
+        <button onclick="event.stopPropagation(); copyReferLink()" style="background: var(--gold); border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);">
+            <i class="fas fa-copy"></i>
+        </button>
+    </div>
         </div>
 
         <div class="grid-3" style="margin-top: 10px;">
