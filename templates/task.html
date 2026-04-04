@@ -4,20 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Master | Secure Task Engine</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
         :root {
             --bg: #020617;
-            --glass-card: rgba(15, 23, 42, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-card: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.06);
             --primary: #00f2fe; 
             --active-green: #00ff88;
-            --danger: #ff4d4d;
+            --danger: #ff0055;
             --gold: #ffaa00;
             --text-main: #f1f5f9;
             --text-gray: #94a3b8;
@@ -28,94 +26,115 @@
             font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 120px;
             background-image: radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Header */
+        /* ১. হেডার: একদম নিখুঁত এবং গোছানো */
         .header { 
             background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px);
-            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; 
             border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000;
         }
-        .header h2 { font-family: 'Syncopate'; font-size: 13px; color: var(--primary); margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
-        .balance-badge { background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--glass-border); font-size: 13px; color: var(--active-green); font-weight: bold; font-family: 'Syncopate'; }
-
-        .container { padding: 20px 15px; max-width: 600px; margin: 0 auto; }
-
-        .ip-alert { 
-            background: rgba(255, 77, 77, 0.1); border: 1px dashed var(--danger); padding: 12px; border-radius: 15px; 
-            margin-bottom: 20px; font-size: 12px; text-align: center; color: #ff9999; line-height: 1.5;
+        .header h2 { font-family: 'Syncopate'; font-size: 11px; color: var(--primary); margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); letter-spacing: 1px; }
+        .header-bal-box {
+            background: rgba(0,0,0,0.4); padding: 7px 12px; border-radius: 20px;
+            border: 1px solid var(--glass-border); font-family: 'Syncopate'; font-size: 10px; font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
         }
 
-        .task-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-box { background: var(--glass-card); border: 1px solid var(--glass-border); padding: 15px; border-radius: 20px; text-align: center; backdrop-filter: blur(20px); }
-        .stat-box i { font-size: 18px; color: var(--gold); margin-bottom: 8px; }
-        .stat-box span { display: block; font-size: 9px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
-        .stat-box b { font-size: 14px; color: #fff; font-family: 'Syncopate'; }
+        .container { padding: 15px; max-width: 550px; margin: 0 auto; }
 
-        /* Task Card */
-        .task-card { background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 22px; padding: 20px; margin-bottom: 15px; transition: 0.3s; position: relative; backdrop-filter: blur(20px); }
-        .task-card.locked { opacity: 0.6; filter: grayscale(1); }
-        .task-top { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .task-icon { width: 45px; height: 45px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid var(--glass-border); color: var(--primary); }
-        .task-info h4 { margin: 0; font-size: 15px; color: #fff; }
-        .task-info p { margin: 3px 0 0; font-size: 11px; color: var(--text-gray); }
-        .reward-tag { text-align: right; margin-left: auto; }
-        .reward-tag b { display: block; color: var(--active-green); font-size: 14px; font-family: 'Syncopate'; }
+        /* ২. ব্যানার অ্যাড সেকশন: সুন্দর বর্ডার ও প্যাকিং */
+        .banner-ad-box { 
+            width: 100%; min-height: 80px; border-radius: 16px; overflow: hidden; margin-bottom: 15px; 
+            border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; 
+            justify-content: center; background: rgba(0,0,0,0.25); color: var(--text-gray); 
+            text-align: center; box-sizing: border-box; padding: 10px;
+        }
 
+        /* ৩. জয়েন ওয়ার্নিং: সফট এবং আইকনসহ */
+        .join-warn { 
+            display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid rgba(255,0,85,0.2); 
+            padding: 10px; border-radius: 12px; text-align: center; color: #ff99bb; 
+            font-size: 11px; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        /* ৪. মাইলস্টোন বোনাস প্রগ্রেস কার্ড: গোল্ডেন টাচ */
+        .bonus-card { 
+            background: var(--glass-card); border: 1px solid rgba(255, 170, 0, 0.15); border-radius: 18px; 
+            padding: 15px; margin-bottom: 15px; text-align: center; position: relative;
+            box-shadow: 0 8px 25px rgba(255, 170, 0, 0.05);
+        }
+        .bonus-card h3 { margin: 0 0 6px 0; color: var(--gold); font-size: 11px; font-family: 'Syncopate'; letter-spacing: 1px; text-transform: uppercase; }
+        .progress-bar { width: 100%; height: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; overflow: hidden; margin-top: 10px; border: 1px solid rgba(255,255,255,0.06); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #ffdd00); width: 0%; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--gold); }
+
+        /* ৫. টাস্ক কার্ড: একদম নিখুঁত গ্লাস-মর্ফিজম */
+        .task-card { 
+            background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 20px; 
+            padding: 18px; margin-bottom: 12px; transition: 0.3s; position: relative; backdrop-filter: blur(20px); 
+            box-sizing: border-box;
+        }
+        .task-card.locked { opacity: 0.45; filter: grayscale(1); pointer-events: none; }
+        .task-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .task-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--primary); border: 1px solid var(--glass-border); flex-shrink: 0; }
+        .task-info { flex-grow: 1; overflow: hidden; }
+        .task-info h4 { margin: 0; font-size: 14px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .task-info p { margin: 2px 0 0; font-size: 10px; color: var(--text-gray); }
+        .reward-tag { text-align: right; color: var(--active-green); font-size: 12px; font-family: 'Syncopate'; font-weight: bold; flex-shrink: 0; margin-left: auto;}
+        
         .btn-claim { 
-            width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; 
-            cursor: pointer; transition: 0.3s; font-family: 'Syncopate'; font-size: 10px;
+            width: 100%; padding: 14px; border-radius: 14px; border: none; font-weight: bold; 
+            cursor: pointer; transition: 0.3s; font-family: 'Syncopate'; font-size: 9px; letter-spacing: 1px;
             background: linear-gradient(135deg, var(--primary), #0088cc); color: #000;
-            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15);
         }
-        .btn-claim:active { transform: scale(0.95); }
-        .btn-claim:disabled { background: #1e293b; color: #475569; cursor: not-allowed; box-shadow: none; }
+        .btn-claim:active { transform: scale(0.97); }
 
-        /* Navigation Bar (aaf442 Style) */
-        .dock-container { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px 0 25px 0; z-index: 2000; display: flex; justify-content: center; }
-        .dock-nav {
-            width: 92%; max-width: 500px; height: 75px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(30px);
-            border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        /* নেভিগেশন ডক: পারফেক্ট শ্যাড ও পজিশন */
+        .dock-container { position: fixed; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 2000; padding: 0 10px; box-sizing: border-box; }
+        .dock-nav { 
+            width: 100%; max-width: 420px; height: 70px; background: rgba(15, 23, 42, 0.96); 
+            border-radius: 35px; border: 1px solid var(--glass-border); display: flex; 
+            justify-content: space-around; align-items: center; backdrop-filter: blur(25px);
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.4);
         }
-        .nav-item { color: var(--text-gray); text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; transition: 0.3s; }
-        .nav-item.active { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
-        .nav-item i { font-size: 22px; margin-bottom: 5px; }
-
-        .ip-lock-msg { background: rgba(255, 77, 77, 0.1); color: var(--danger); font-size: 10px; padding: 8px; border-radius: 10px; text-align: center; margin-bottom: 12px; border: 1px solid rgba(255,77,77,0.2); font-weight: bold; }
-        .bonus-msg { background: rgba(0, 255, 136, 0.1); color: var(--active-green); font-size: 10px; padding: 8px; border-radius: 10px; text-align: center; margin-bottom: 12px; border: 1px solid rgba(0,255,136,0.2); font-weight: bold; }
+        .nav-item { color: var(--text-gray); text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 9px; transition: 0.2s; flex: 1; text-align: center; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); font-weight: 600; }
     </style>
 </head>
 <body>
 
     <header class="header">
         <h2>AAF SECURE ENGINE</h2>
-        <div class="balance-badge">৳ <span id="u-bal">0.00</span></div>
+        <div class="header-bal-box">
+            <span style="color: var(--active-green);">৳ <span id="u-bal">0.00</span></span>
+            <span style="color: var(--glass-border); margin: 0 5px;">|</span>
+            <span style="color: var(--gold);">AAF <span id="u-coin">0.00</span></span>
+        </div>
     </header>
 
     <div class="container">
-        <div id="banner-ad-place" style="margin-bottom:15px; text-align:center;"></div>
-
-        <div class="ip-alert">
-            <i class="fas fa-fingerprint"></i> <b>SECURITY PROTOCOL:</b> Toggle Airplane Mode to refresh IP after each claim to avoid account lock.
+        <div class="banner-ad-box" id="banner-ad">
+            <p style="font-size: 9px; letter-spacing: 2px; color: var(--text-gray); margin: 0;">
+                <i class="fas fa-ad" style="margin-right:5px;"></i> GLOBAL ADVERTISING UNIT
+            </p>
         </div>
 
-        <div class="task-stats">
-            <div class="stat-box">
-                <i class="fas fa-check-double"></i>
-                <span>Completed</span>
-                <b id="tasks-done">0</b>
-            </div>
-            <div class="stat-box">
-                <i class="fas fa-bolt"></i>
-                <span>Status</span>
-                <b id="u-status" style="color: var(--active-green);">SECURE</b>
-            </div>
+        <div class="join-warn" id="join-warning">
+            <i class="fas fa-exclamation-triangle"></i> বোনাস আনলক করতে অফিশিয়াল চ্যানেলে জয়েন করুন!
+        </div>
+
+        <div class="bonus-card" id="bonus-section">
+            <h3>MILESTONE: <span id="t-done">0</span> / <span id="t-target">10</span></h3>
+            <p id="bonus-msg" style="font-size: 9px; color: var(--text-gray); margin: 0;">প্রগ্রেস পূর্ণ হলে এক্সট্রা AAF কয়েন পাবেন</p>
+            <div class="progress-bar"><div class="progress-fill" id="t-progress"></div></div>
         </div>
 
         <div id="main-task-list">
-            <div style="text-align:center; padding:40px; color:var(--text-gray);">
-                <i class="fas fa-circle-notch fa-spin"></i> Initializing Task Engine...
+            <div style="text-align:center; padding:40px; color:var(--text-gray); font-size: 11px;">
+                <i class="fas fa-spinner fa-spin" style="margin-right: 5px;"></i> এএএফ ইঞ্জিন লোড হচ্ছে...
             </div>
         </div>
     </div>
@@ -131,62 +150,111 @@
     </div>
 
     <script>
-        // API URL এখন আপনার app.py এর সাথে কানেক্টেড (Relative Path)
         const API_BASE = window.location.origin;
         const USER_ID = localStorage.getItem('user_id');
+        let isUserJoined = false;
 
+        // ১. ৬ ঘণ্টার গ্লোবাল পপ-আপ অ্যাড
+        function checkGlobalAd() {
+            if (!USER_ID) return;
+            const storageKey = `last_global_notice_${USER_ID}`;
+            const lastSeen = localStorage.getItem(storageKey);
+            const currentTime = Date.now();
+            const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+            if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
+                alert("🚀 [SYSTEM UPDATE]: নতুন মাইলস্টোন বোনাস চালু হয়েছে! ১০টি টাস্ক শেষ করে বোনাস নিন।");
+                localStorage.setItem(storageKey, currentTime);
+            }
+        }
+
+        // ২. ডাইনামিক ডাটা লোড (Firebase + MongoDB)
         async function loadTasks() {
+            if(!USER_ID) return;
             try {
-                // app.py থেকে ডাটা কল করা হচ্ছে
                 const res = await fetch(`${API_BASE}/api/user/tasks?user_id=${USER_ID}`);
                 const data = await res.json();
                 
                 if (data.status === "success") {
+                    // ব্যালেন্স আপডেট
                     document.getElementById('u-bal').innerText = data.balance;
-                    document.getElementById('tasks-done').innerText = data.completed_count;
+                    document.getElementById('u-coin').innerText = data.coin_balance;
+                    
+                    // জয়েন স্ট্যাটাস চেক
+                    isUserJoined = data.is_joined;
+                    document.getElementById('join-warning').style.display = isUserJoined ? 'flex' : 'none';
 
+                    // মাইলস্টোন প্রগ্রেস আপডেট
+                    const target = data.bonus_target || 10;
+                    const done = data.tasks_done % target; 
+                    document.getElementById('t-done').innerText = done;
+                    document.getElementById('t-target').innerText = target;
+                    document.getElementById('t-progress').style.width = `${(done / target) * 100}%`;
+                    
+                    if(!isUserJoined) {
+                        document.getElementById('bonus-msg').innerText = "BONUS LOCKED! JOIN CHANNEL FIRST";
+                        document.getElementById('bonus-msg').style.color = "var(--danger)";
+                    } else {
+                        document.getElementById('bonus-msg').innerText = `${target - done} tasks needed for AAF Bonus`;
+                        document.getElementById('bonus-msg').style.color = "var(--text-gray)";
+                    }
+
+                    // টাস্ক লিস্ট জেনারেট
                     const list = document.getElementById('main-task-list');
                     list.innerHTML = "";
                     
                     data.tasks.forEach(t => {
                         let locked = t.is_ip_used;
+                        let rewardText = t.currency === 'aaf' ? `AAF ${t.reward}` : `৳${t.reward}`;
+                        let taskTimer = t.timer || 15; // অ্যাডমিন থেকে আসা টাইমার
+
                         list.innerHTML += `
                             <div class="task-card ${locked ? 'locked' : ''}">
-                                ${locked ? `<div class="ip-lock-msg">IP USED - PLEASE CHANGE IP</div>` : `<div class="bonus-msg">READY TO CLAIM - SECURE IP</div>`}
                                 <div class="task-top">
-                                    <div class="task-icon"><i class="fas ${t.type === 'telegram' ? 'fa-paper-plane' : 'fa-play'}"></i></div>
+                                    <div class="task-icon"><i class="fas ${t.type === 'video' ? 'fa-play' : 'fa-link'}"></i></div>
                                     <div class="task-info">
                                         <h4>${t.title}</h4>
-                                        <p>Wait 15s to verify completion</p>
+                                        <p>${locked ? 'IP ALREADY USED' : `Required Time: ${taskTimer}s`}</p>
                                     </div>
-                                    <div class="reward-tag"><b>৳${t.reward}</b></div>
+                                    <div class="reward-tag">${rewardText}</div>
                                 </div>
-                                <button class="btn-claim" onclick="startTask('${t.id}', '${t.link}', this)" ${locked ? 'disabled' : ''}>
+                                <button class="btn-claim" id="btn-${t.id}" onclick="startTask('${t.id}', '${t.link}', ${taskTimer})" ${locked ? 'disabled' : ''}>
                                     ${locked ? 'ALREADY CLAIMED' : 'START EARNING'}
                                 </button>
                             </div>
                         `;
                     });
                 }
-            } catch (e) { 
-                document.getElementById('main-task-list').innerHTML = `<p style="text-align:center; color:red;">Failed to connect to Server.</p>`;
-            }
+            } catch (e) { console.log("Database Sync Error"); }
         }
 
-        function startTask(id, url, btn) {
+        // ৩. টাস্ক টাইমার ও জয়েনিং লজিক
+        function startTask(id, url, timerSeconds) {
+            if(!isUserJoined) {
+                const proceed = confirm("আপনি জয়েন না থাকলে বোনাস কয়েন পাবেন না। কাজ চালিয়ে যেতে চান?");
+                if(!proceed) return;
+            }
+
             window.open(url, '_blank');
+            const btn = document.getElementById(`btn-${id}`);
             btn.disabled = true;
-            let time = 15;
-            let timer = setInterval(() => {
-                btn.innerText = `VERIFYING IN ${time}s...`;
-                if(time-- <= 0) {
-                    clearInterval(timer);
-                    btn.innerText = "PROCESSING...";
+            
+            let timeLeft = timerSeconds;
+            const countdown = setInterval(() => {
+                btn.innerText = `WAITING: ${timeLeft}s`;
+                btn.style.background = "linear-gradient(135deg, #1e293b, #0f172a)";
+                btn.style.color = "#fff";
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    btn.innerText = "VERIFYING CLAIM...";
                     submitClaim(id);
                 }
+                timeLeft--;
             }, 1000);
         }
 
+        // ৪. ক্লেইম সাবমিট
         async function submitClaim(taskId) {
             try {
                 const res = await fetch(`${API_BASE}/api/user/tasks/claim`, {
@@ -196,16 +264,21 @@
                 });
                 const out = await res.json();
                 if(out.success) { 
-                    alert("Success! ৳" + out.reward + " added to your balance."); 
+                    alert(out.message); 
                     loadTasks(); 
                 } else { 
-                    alert("Error: " + out.message); 
+                    alert("Claim Error: " + out.message); 
                     loadTasks();
                 }
-            } catch (e) { alert("Claim failed. Server busy."); }
+            } catch (e) { alert("Server is busy. Try later."); }
         }
 
-        window.onload = loadTasks;
+        // ৫. অটো-রিফ্রেশ ও গ্লোবাল অ্যাড কল
+        window.onload = () => {
+            checkGlobalAd();
+            loadTasks();
+            setInterval(loadTasks, 15000); // প্রতি ১৫ সেকেন্ডে অটো-রিফ্রেশ
+        };
     </script>
 </body>
 </html>
