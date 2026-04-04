@@ -34,23 +34,28 @@
         }
 
         /* Header */
-        .header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .header h2 { font-family: 'Rajdhani'; font-size: 16px; color: var(--cyan); margin: 0; }
-        #live-price { font-family: 'Rajdhani'; font-size: 22px; color: var(--green); font-weight: 700; }
-
-        /* Timeframe Bar */
-        .tf-bar { background: #000; display: flex; gap: 8px; padding: 10px; overflow-x: auto; border-bottom: 1px solid var(--border); }
-        .tf-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.3s; white-space: nowrap; }
-        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.1); }
-
-        /* Chart Container */
-        #chart-container { width: 100%; height: 320px; background: #000; position: relative; display: block; }
-
-        .container { padding: 15px; max-width: 500px; margin: auto; }
+        /* হেডার, অ্যাড এবং চার্ট স্থির করার ম্যাজিক কোড */
+.header { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+    z-index: 3000; background: #0f172a; display: flex; 
+    justify-content: space-between; align-items: center; padding: 0 20px;
+}
+#admin-ad-box {
+    position: fixed; top: 60px; left: 0; width: 100%; height: 35px;
+    background: #1e293b; z-index: 2999; display: flex; align-items: center;
+}
+.tf-bar { 
+    position: fixed; top: 95px; left: 0; width: 100%; height: 45px;
+    z-index: 2998; background: #000; display: flex; gap: 8px; padding: 10px;
+}
+#chart-container { 
+    position: fixed; top: 140px; left: 0; width: 100%; height: 300px; 
+    z-index: 2997; background: #000;
+}
+.container { 
+    padding-top: 460px; /* চার্টের নিচ থেকে কন্টেন্ট শুরু হবে */
+    padding-bottom: 100px; max-width: 500px; margin: auto;
+}
         
         /* Stats */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
