@@ -115,6 +115,12 @@
         <h2>AAF TRADING PRO</h2>
         <span id="live-price">৳ 0.0000</span>
     </header>
+    
+    <div id="admin-ad-box">
+    <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 12px; width: 100%;">
+        অ্যাডমিন প্যানেল থেকে ঘোষণা এখানে লোড হবে...
+    </marquee>
+    </div>
 
     <div class="tf-bar" id="timeframe-bar">
         <button class="tf-btn active">1M</button>
@@ -336,6 +342,16 @@
             setInterval(syncUserData, 15000); // প্রতি ১৫ সেকেন্ডে ব্যালেন্স আপডেট
             checkAds();
         };
+
+        function loadAdminAd() {
+    fb_db.ref('trading/top_banner_ad').on('value', snap => {
+        const ad = snap.val();
+        if (ad) {
+            document.getElementById('admin-ad-text').innerText = ad.text || "";
+            document.getElementById('admin-ad-box').style.display = ad.active ? 'flex' : 'none';
+        }
+    });
+        }
     </script>
 </body>
     </html>
