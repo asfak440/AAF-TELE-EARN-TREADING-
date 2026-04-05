@@ -263,6 +263,31 @@
             event.currentTarget.classList.add('active');
         }
 
+        window.onload = () => {
+    syncData(); // আপনার আগের ডাটা সিঙ্ক ফাংশন
+
+    // URL থেকে কুয়েরি প্যারামিটার চেক করা (যেমন: ?page=withdraw)
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+
+    if (page) {
+        // সব পেজ থেকে active ক্লাস সরানো
+        document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+        // নির্দিষ্ট পেজটি ওপেন করা
+        const targetPage = document.getElementById(page);
+        if (targetPage) {
+            targetPage.classList.add('active');
+            // ট্যাব বাটনকেও একটিভ দেখানো (ইনডেক্স অনুযায়ী)
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            if (page === 'deposit') tabButtons[0].classList.add('active');
+            if (page === 'transfer') tabButtons[1].classList.add('active');
+            if (page === 'withdraw') tabButtons[2].classList.add('active');
+        }
+    }
+};
+
         window.onload = syncData;
     </script>
 </body>
