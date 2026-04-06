@@ -263,32 +263,34 @@
             event.currentTarget.classList.add('active');
         }
 
-        window.onload = () => {
-    syncData(); // আপনার আগের ডাটা সিঙ্ক ফাংশন
+        // ২৬৬ নম্বর লাইন থেকে শুরু
+window.onload = () => {
+    // ১. আপনার ডাটা লোড করার ফাংশন কল করা
+    syncData(); 
 
-    // URL থেকে কুয়েরি প্যারামিটার চেক করা (যেমন: ?page=withdraw)
+    // ২. URL থেকে কুয়েরি প্যারামিটার (যেমন: ?page=withdraw) চেক করা
     const urlParams = new URLSearchParams(window.location.search);
     const page = urlParams.get('page');
 
     if (page) {
-        // সব পেজ থেকে active ক্লাস সরানো
+        // সব পেজ এবং বাটন থেকে active ক্লাস সরানো
         document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-        // নির্দিষ্ট পেজটি ওপেন করা
+        // নির্দিষ্ট আইডি (ID) অনুযায়ী পেজটি ওপেন করা
         const targetPage = document.getElementById(page);
         if (targetPage) {
             targetPage.classList.add('active');
-            // ট্যাব বাটনকেও একটিভ দেখানো (ইনডেক্স অনুযায়ী)
+            
+            // ট্যাব বাটনগুলোকে ইনডেক্স অনুযায়ী একটিভ দেখানো
             const tabButtons = document.querySelectorAll('.tab-btn');
-            if (page === 'deposit') tabButtons[0].classList.add('active');
-            if (page === 'transfer') tabButtons[1].classList.add('active');
-            if (page === 'withdraw') tabButtons[2].classList.add('active');
+            if (page === 'deposit' && tabButtons[0]) tabButtons[0].classList.add('active');
+            if (page === 'transfer' && tabButtons[1]) tabButtons[1].classList.add('active');
+            if (page === 'withdraw' && tabButtons[2]) tabButtons[2].classList.add('active');
         }
     }
 };
-
-        window.onload = syncData;
+// ২৯১ নম্বর লাইনে থাকা 'window.onload = syncData;' অংশটি এখন আর নেই।
     </script>
 </body>
 </html>
