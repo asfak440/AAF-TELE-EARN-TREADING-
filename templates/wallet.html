@@ -204,28 +204,28 @@
     </div>
 
     <div class="bottom-nav-container">
-        <nav class="bottom-nav">
-            <a href="/dashboard" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-            <a href="/task" class="nav-item">
-                <i class="fas fa-list-ul"></i>
-                <span>Task</span>
-            </a>
-            <a href="/trading" class="nav-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Trading</span>
-            </a>
-            <a href="/wallet" class="nav-item active">
-                <i class="fas fa-wallet"></i>
-                <span>Wallet</span>
-            </a>
-            <a href="/account" class="nav-item">
-                <i class="fas fa-user-circle"></i>
-                <span>Account</span>
-            </a>
-        </nav>
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="task.html" class="nav-item">
+            <i class="fas fa-list-ul"></i>
+            <span>Task</span>
+        </a>
+        <a href="trading.html" class="nav-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Trading</span>
+        </a>
+        <a href="wallet.html" class="nav-item active">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+        <a href="account.html" class="nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>Account</span>
+        </a>
+    </nav>
     </div>
 
     <script>
@@ -276,20 +276,24 @@
 
     // মেইন লোডার
     window.onload = () => {
+        // ১. ডাটা সিঙ্ক করা
         syncData(); 
 
+        // ২. URL থেকে কুয়েরি চেক করা (যেমন: ?page=withdraw)
         const urlParams = new URLSearchParams(window.location.search);
         const page = urlParams.get('page');
 
         if (page) {
+            // সব ট্যাব থেকে active ক্লাস সরানো
             document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
             const targetPage = document.getElementById(page);
             if (targetPage) {
                 targetPage.classList.add('active');
-                const tabButtons = document.querySelectorAll('.tab-btn');
                 
+                // সঠিক বাটনটিকে হাইলাইট করা
+                const tabButtons = document.querySelectorAll('.tab-btn');
                 if (page === 'deposit' && tabButtons[0]) tabButtons[0].classList.add('active');
                 if (page === 'transfer' && tabButtons[1]) tabButtons[1].classList.add('active');
                 if (page === 'withdraw' && tabButtons[2]) tabButtons[2].classList.add('active');
