@@ -367,7 +367,16 @@ function handleAction(type) {
     if (type.includes('.html') || type.includes('?')) {
         // যদি সরাসরি লিঙ্ক পাঠানো হয় (যেমন: wallet.html?page=deposit)
         window.location.href = "/" + type;
+    }
+     else if (type === 'wallet' || type === 'deposit') {
+        window.location.href = "/wallet.html";
     } 
+     else if (type === 'wallet' || type === 'transfer') {
+        window.location.href = "/wallet.html";
+    }
+    else if (type === 'wallet' || type === 'withdraw') {
+        window.location.href = "/wallet.html";
+    }      
     else if (type === 'trading' || type === 'convert') {
         window.location.href = "/trading.html";
     } 
