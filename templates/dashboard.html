@@ -188,7 +188,7 @@
     <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
 </div>
 
-<div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" onclick="window.location.href='/refer_list.html'">
+<div onclick="handleAction('refer_list')"class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" onclick="window.location.href='/refer_list.html'">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
                 <div>
@@ -199,28 +199,19 @@
             <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
         </div>
 
-        <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" onclick="window.location.href='/payment_history.html'">
+        <div onclick="handleAction('payment_history')"class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" onclick="window.location.href='/payment_history.html'">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
                 <div>
                     <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
-                    <p style="color: var(--primary); font-size: 9px; margin: 0;">ট্রানজেকশন লগ দেখুন</p>
+                    <p style="color: var(--primary); font-size: 9px; margin: 0;">Payment History</p>
                 </div>
             </div>
             <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
         </div>
 
         <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 18px; margin-top: 10px;" onclick="handleAction('payment-history')">
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <i class="fas fa-history" style="font-size: 22px; color: var(--primary);"></i>
-        <div style="text-align: left;">
-            <h4 style="font-size: 12px; margin: 0; letter-spacing: 1px;">PAYMENT HISTORY</h4>
-            <p style="color: var(--primary); font-size: 10px; margin: 5px 0 0; font-weight: bold;">VIEW GLOBAL 500+ LOGS</p>
-        </div>
-    </div>
-    <i class="fas fa-chevron-right" style="color: var(--primary); font-size: 14px;"></i>
-        </div>
-
+    <div 
         <!-- ৫. অ্যাডভার্টাইজমেন্ট -->
         <div class="banner-ad-box" id="banner-ad">
             <!-- অ্যাডমিন প্যানেল থেকে আসা ব্যানার এখানে ইনজেক্ট হবে -->
