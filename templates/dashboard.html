@@ -358,39 +358,42 @@
 
     // ৮. নেভিগেশন ও বাটন হ্যান্ডলার (অ্যাড চেক সহ)
 function handleAction(type) {
-    // যেকোনো বাটনে ক্লিক করলেই সবার আগে ৬ ঘণ্টার অ্যাড চেক হবে
+    // ১. অ্যাড চেক করা
     if (typeof checkAndShowAd === "function") {
         checkAndShowAd();
     }
 
-    // এরপর পেজ পরিবর্তনের লজিক শুরু
+    // ২. নেভিগেশন লজিক
+    let target = "";
+
+    // যদি সরাসরি প্যারামিটার সহ লিঙ্ক পাঠানো হয় (যেমন: 'wallet.html?page=deposit')
     if (type.includes('.html') || type.includes('?')) {
-        // যদি সরাসরি লিঙ্ক পাঠানো হয় (যেমন: wallet.html?page=deposit)
-        window.location.href = "/" + type;
-    }
-     else if (type === 'wallet' || type === 'deposit') {
-        window.location.href = "/wallet.html";
+        target = type; 
     } 
-     else if (type === 'wallet' || type === 'transfer') {
-        window.location.href = "/wallet.html";
+    // মাঝখানের বাটনগুলোর জন্য শর্টকাট লজিক
+    else if (type === 'deposit') {
+        target = "wallet.html?page=deposit";
+    } 
+    else if (type === 'transfer') {
+        target = "wallet.html?page=transfer";
+    } 
+    else if (type === 'withdraw') {
+        target = "wallet.html?page=withdraw";
     }
-    else if (type === 'wallet' || type === 'withdraw') {
-        window.location.href = "/wallet.html";
-    }      
     else if (type === 'trading' || type === 'convert') {
-        window.location.href = "/trading.html";
+        target = "trading.html";
     } 
     else if (type === 'refer-list') {
-        window.location.href = "/refer_list.html";
-    } 
-    else if (type === 'payment-history') {
-        window.location.href = "/payment-history.html";
+        target = "refer_list.html";
     } 
     else {
-        // অন্য সব সাধারণ টাইপ এর জন্য শেষে .html যোগ করবে
-        window.location.href = "/" + type + ".html";
+        // অন্য সব সাধারণ টাইপ এর জন্য (যেমন: 'task', 'wallet', 'account')
+        target = type + ".html";
     }
-}
+
+    // ৩. রিডাইরেক্ট (Render-এ Not Found এরর এড়াতে স্লাশ ছাড়া ট্রাই করা ভালো)
+    window.location.href = target;
+             }
 
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
