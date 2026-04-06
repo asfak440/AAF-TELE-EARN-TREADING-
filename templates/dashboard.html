@@ -188,27 +188,31 @@
     <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
 </div>
 
-<div onclick="handleAction('refer_list')"class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" onclick="window.location.href='/refer_list.html'">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
-                <div>
-                    <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
-                    <p style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
-                </div>
-            </div>
-            <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+<!-- রেফারেল লিস্ট বাটন -->
+<div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" 
+     onclick="handleAction('refer_list')">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
+        <div>
+            <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
+            <p style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
         </div>
+    </div>
+    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+</div>
 
-        <div onclick="handleAction('payment_history')"class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" onclick="window.location.href='/payment_history.html'">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
-                <div>
-                    <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
-                    <p style="color: var(--primary); font-size: 9px; margin: 0;">Payment History</p>
-                </div>
-            </div>
-            <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+<!-- পেমেন্ট হিস্ট্রি বাটন -->
+<div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" 
+     onclick="handleAction('payment_history')">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
+        <div>
+            <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
+            <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
         </div>
+    </div>
+    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+</div>
 
         <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; padding: 18px; margin-top: 10px;" onclick="handleAction('payment-history')">
     <div 
@@ -234,14 +238,13 @@
     </div>
 
     <!-- ৭. ডক নেভিগেশন বার -->
-    <div class="dock-container">
-        <nav class="dock-nav">
-            <a href="/dashboard" class="nav-item active"><i class="fas fa-house"></i>Home</a>
-            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-            <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i>Trading</a>
-            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
-            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
-        </nav>
+    <nav class="dock-nav">
+    <a href="index.html" class="nav-item active"><i class="fas fa-house"></i>Home</a>
+    <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+    <a href="trading.html" class="nav-item"><i class="fas fa-chart-line"></i>Trading</a>
+    <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+    <a href="account.html" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
+    </nav>
     </div>
 
     <script>
@@ -347,39 +350,37 @@
         }
         return false; // অ্যাড দেখানোর সময় হয়নি
     }
-
+        
+//৮
+        
     function handleAction(type) {
-    // ১. অ্যাড চেক করা (যদি ফাংশন থাকে)
     if (typeof checkAndShowAd === "function") {
         checkAndShowAd();
     }
 
-    // ২. নেভিগেশন লজিক
     let target = "";
 
-    // যদি সরাসরি ফাইল নাম বা প্যারামিটার থাকে (যেমন: 'wallet.html?page=deposit')
     if (type.includes('.html')) {
         target = type; 
     } 
-    // শর্টকাটগুলোকে সরাসরি ফাইলে রূপান্তর
     else if (type === 'trading' || type === 'convert') {
         target = "trading.html";
     } 
-    else if (type === 'refer-list') {
+    else if (type === 'refer_list' || type === 'refer-list') {
         target = "refer_list.html";
     }
+    else if (type === 'payment_history' || type === 'payment-history') {
+        target = "payment_history.html";
+    }
     else if (type === 'dashboard') {
-        target = "index.html"; // আপনার মেইন ফাইল যেটা
+        target = "index.html";
     }
     else {
-        // বাকি সব (যেমন: task, wallet, account) এর সাথে .html যোগ হবে
         target = type + ".html";
     }
 
-    // ৩. রিডাইরেক্ট (বানান ঠিক করা হয়েছে)
     window.location.href = target;
     }
-
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
         checkAndShowAd(); // অ্যাড চেক
