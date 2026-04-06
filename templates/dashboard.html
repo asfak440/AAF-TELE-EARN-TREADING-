@@ -356,27 +356,32 @@
         return false; // অ্যাড দেখানোর সময় হয়নি
     }
 
-    /// ৮. নেভিগেশন ও বাটন হ্যান্ডলার (অ্যাড চেক সহ)
+    // ৮. নেভিগেশন ও বাটন হ্যান্ডলার (অ্যাড চেক সহ)
 function handleAction(type) {
-    // বাটনে ক্লিক করলেই আগে ৬ ঘণ্টার অ্যাড চেক হবে
-    checkAndShowAd();
+    // যেকোনো বাটনে ক্লিক করলেই সবার আগে ৬ ঘণ্টার অ্যাড চেক হবে
+    if (typeof checkAndShowAd === "function") {
+        checkAndShowAd();
+    }
 
-    // যদি সরাসরি কোনো লিঙ্ক পাঠানো হয় (যেমন: 'wallet.html?page=deposit')
+    // এরপর পেজ পরিবর্তনের লজিক শুরু
     if (type.includes('.html') || type.includes('?')) {
-        window.location.href = type;
-    } 
-    // আপনার আগের লজিকগুলো (যদি অন্য কোথাও কাজে লাগে)
-    else if (type === 'trading' || type === 'convert') {
-        window.location.href = "/trading";
-    } else if (type === 'refer-list') {
-        window.location.href = "/refer_list";
-    } else if (type === 'payment-history') {
-        window.location.href = "/payment-history";
-    } else {
-        // ডিফল্ট পেজ লোড
+        // যদি সরাসরি লিঙ্ক পাঠানো হয় (যেমন: wallet.html?page=deposit)
         window.location.href = "/" + type;
+    } 
+    else if (type === 'trading' || type === 'convert') {
+        window.location.href = "/trading.html";
+    } 
+    else if (type === 'refer-list') {
+        window.location.href = "/refer_list.html";
+    } 
+    else if (type === 'payment-history') {
+        window.location.href = "/payment-history.html";
+    } 
+    else {
+        // অন্য সব সাধারণ টাইপ এর জন্য শেষে .html যোগ করবে
+        window.location.href = "/" + type + ".html";
     }
-    }
+}
 
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
