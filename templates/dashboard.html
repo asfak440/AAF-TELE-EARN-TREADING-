@@ -164,19 +164,29 @@
 
         <!-- ৩. অ্যাকশন গ্রিড -->
         <div class="action-grid">
-    <!-- সরাসরি পেজের নাম এবং প্যারামিটার দিন -->
-    <div class="action-btn btn-dep" onclick="handleAction('wallet=deposit')">
-        <i class="fas fa-plus-circle"></i> DEPOSIT
-    </div>
-    <div class="action-btn btn-wit" onclick="handleAction('wallet=withdraw')">
-        <i class="fas fa-wallet"></i> WITHDRAW
-    </div>
-    <div class="action-btn" style="color: var(--gold);" onclick="handleAction('wallet=transfer')">
-        <i class="fas fa-exchange-alt"></i> TRANSFER
-    </div>
-    <div class="action-btn" style="color: var(--danger);" onclick="handleAction('trading')">
-        <i class="fas fa-sync"></i> CONVERT
-    </div>
+    <a href="wallet.html?page=deposit" style="text-decoration: none; color: inherit;">
+        <div class="action-btn btn-dep">
+            <i class="fas fa-plus-circle"></i> DEPOSIT
+        </div>
+    </a>
+
+    <a href="wallet.html?page=withdraw" style="text-decoration: none; color: inherit;">
+        <div class="action-btn btn-wit">
+            <i class="fas fa-wallet"></i> WITHDRAW
+        </div>
+    </a>
+
+    <a href="wallet.html?page=transfer" style="text-decoration: none; color: inherit;">
+        <div class="action-btn" style="color: var(--gold);">
+            <i class="fas fa-exchange-alt"></i> TRANSFER
+        </div>
+    </a>
+
+    <a href="trading.html" style="text-decoration: none; color: inherit;">
+        <div class="action-btn" style="color: var(--danger);">
+            <i class="fas fa-sync"></i> CONVERT
+        </div>
+    </a>
         </div>
 
         <!-- ৪. ইউজার পার্সোনাল স্ট্যাটাস -->
