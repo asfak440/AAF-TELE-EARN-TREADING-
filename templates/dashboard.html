@@ -259,7 +259,7 @@
         }
 
         try {
-            const response = await fetch(/api/user/data/${userId});
+            const response = await fetch(`/api/user/data/${userId}`);
             const data = await response.json();
 
             if (data.status === "success") {
