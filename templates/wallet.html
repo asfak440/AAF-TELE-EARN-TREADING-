@@ -24,7 +24,7 @@
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 120px; /* Space for floating nav */
+            margin: 0; padding-bottom: 120px;
             background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.08), transparent);
         }
 
@@ -76,7 +76,7 @@
             padding: 16px; border-radius: 12px; font-weight: 800; font-family: 'Syncopate'; font-size: 10px; cursor: pointer;
         }
 
-        /* --- Floating Navigation (As per screenshot) --- */
+        /* --- Floating Navigation --- */
         .bottom-nav-container {
             position: fixed;
             bottom: 25px;
@@ -93,7 +93,7 @@
             justify-content: space-around;
             align-items: center;
             border: 1px solid var(--border); 
-            border-radius: 50px; /* Pill shape */
+            border-radius: 50px; 
             padding: 12px 10px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.8);
             backdrop-filter: blur(15px);
@@ -111,25 +111,10 @@
             transition: 0.3s;
         }
 
-        .nav-item i { 
-            font-size: 22px; 
-            transition: 0.3s;
-        }
-
-        .nav-item span { 
-            font-size: 11px; 
-            font-weight: 500;
-        }
-
-        /* Active State Style from Screenshot */
-        .nav-item.active { 
-            color: var(--cyan); 
-        }
-
-        .nav-item.active i { 
-            filter: drop-shadow(0 0 8px var(--cyan));
-            transform: translateY(-2px);
-        }
+        .nav-item i { font-size: 22px; transition: 0.3s; }
+        .nav-item span { font-size: 11px; font-weight: 500; }
+        .nav-item.active { color: var(--cyan); }
+        .nav-item.active i { filter: drop-shadow(0 0 8px var(--cyan)); transform: translateY(-2px); }
 
     </style>
 </head>
@@ -159,28 +144,28 @@
         </div>
     </div>
 
-    <div class="nav-menu">
+    <div class="tab-menu">
         <button class="tab-btn active" onclick="showPage(event, 'deposit')">DEPOSIT</button>
         <button class="tab-btn" onclick="showPage(event, 'transfer')">TRANSFER</button>
         <button class="tab-btn" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
     </div>
 
     <div class="container">
-        <div id="deposit" class="deposit-page active">
+        <div id="deposit" class="wallet-page active">
             <div class="input-box">
                 <label>ADD FUNDS TO WALLET</label>
                 <div class="info-tile" id="admin-payment-info">Select method to see payment details.</div>
                 <select id="dep-method" onchange="updateAdminInfo()">
-                    <option value="Nagad">Nagad (Send Money Nombar)</option>
-                    <option value="Binance">B-Kash(Send Money Nombar)</option>
+                    <option value="Nagad">Nagad (Send Money Number)</option>
+                    <option value="Binance">B-Kash (Send Money Number)</option>
                 </select>
                 <input type="number" id="dep-amount" placeholder="Amount (৳ / $)">
-                <input type="text" id="dep-trx" placeholder="Send Money Nombar">
+                <input type="text" id="dep-trx" placeholder="Send Money Number">
                 <button class="action-btn" onclick="submitDeposit()">SUBMIT REQUEST</button>
             </div>
         </div>
 
-        <div id="transfer" class="transfer-page active">
+        <div id="transfer" class="wallet-page">
             <div class="input-box">
                 <label>P2P ASSET TRANSFER</label>
                 <select id="trans-type">
@@ -193,10 +178,10 @@
             </div>
         </div>
 
-        <div id="withdraw" class="withdraw-page active">
+        <div id="withdraw" class="wallet-page">
             <div class="input-box">
-                <label>WITHDRAW CASH (NAGAD)</label>
-                <input type="number" id="wit-num" placeholder="Nagad Personal Number">
+                <label>WITHDRAW CASH</label>
+                <input type="number" id="wit-num" placeholder="Nagad/Bkash Personal Number">
                 <input type="number" id="wit-amt" placeholder="Withdraw Amount">
                 <button class="action-btn" style="background: var(--nagad); color: #fff;" onclick="processWithdraw()">SUBMIT WITHDRAW</button>
             </div>
@@ -204,13 +189,13 @@
     </div>
 
     <div class="bottom-nav-container">
-    <nav class="bottom-nav">
-        <a href="dashboard" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-        <a href="task" class="nav-item"><i class="fas fa-list-ul"></i><span>Task</span></a>
-        <a href="trading" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-        <a href="wallet" class="nav-item active"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-        <a href="account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
-    </nav>
+        <nav class="bottom-nav">
+            <a href="javascript:void(0)" onclick="handleAction('index.html')" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="javascript:void(0)" onclick="handleAction('task.html')" class="nav-item"><i class="fas fa-list-ul"></i><span>Task</span></a>
+            <a href="javascript:void(0)" onclick="handleAction('trading.html')" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
+            <a href="javascript:void(0)" class="nav-item active"><i class="fas fa-wallet"></i><span>Wallet</span></a>
+            <a href="javascript:void(0)" onclick="handleAction('account.html')" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+        </nav>
     </div>
 
     <script>
@@ -238,14 +223,16 @@
         const infoBox = document.getElementById('admin-payment-info');
         if(window.adminWallet) {
             if(method === "Nagad") infoBox.innerHTML = `Send Money to: <b>${window.adminWallet.nagad}</b>`;
-            else infoBox.innerHTML = `USDT (BEP20): <b>${window.adminWallet.binance}</b>`;
+            else infoBox.innerHTML = `Send Money to: <b>${window.adminWallet.binance}</b>`; // Bkash or Binance address
         }
     }
 
     function showPage(event, pageId) {
+        // সব পেজ এবং বাটন থেকে active ক্লাস সরানো
         document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         
+        // শুধু টার্গেট পেজে active ক্লাস দেওয়া
         const target = document.getElementById(pageId);
         if(target) target.classList.add('active');
         
@@ -254,22 +241,31 @@
         }
     }
 
-    // পেমেন্ট সাবমিট ফাংশন (এগুলো না থাকলে এরর আসবে)
+    // ফিক্স ৪: অন্য পেজে যাওয়ার জন্য ড্যাশবোর্ডের মতো handleAction ফাংশন
+    function handleAction(type) {
+        let target = "";
+        if (type.includes('.html')) {
+            target = type;
+        } else {
+            target = type + ".html";
+        }
+        window.location.href = target;
+    }
+
+    // পেমেন্ট সাবমিট ফাংশন (এগুলো আপনার ডাটাবেসের সাথে কানেক্ট করবেন)
     function submitDeposit() { alert("Deposit Request Sent!"); }
     function processTransfer() { alert("Transfer Processing..."); }
     function processWithdraw() { alert("Withdraw Request Sent!"); }
 
     // মেইন লোডার
     window.onload = () => {
-        // ১. ডাটা সিঙ্ক করা
         syncData(); 
 
-        // ২. URL থেকে কুয়েরি চেক করা (যেমন: ?page=withdraw)
+        // URL চেক করা (যেমন ড্যাশবোর্ড থেকে wallet.html?page=transfer কল করলে কাজ করবে)
         const urlParams = new URLSearchParams(window.location.search);
         const page = urlParams.get('page');
 
         if (page) {
-            // সব ট্যাব থেকে active ক্লাস সরানো
             document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
@@ -277,7 +273,6 @@
             if (targetPage) {
                 targetPage.classList.add('active');
                 
-                // সঠিক বাটনটিকে হাইলাইট করা
                 const tabButtons = document.querySelectorAll('.tab-btn');
                 if (page === 'deposit' && tabButtons[0]) tabButtons[0].classList.add('active');
                 if (page === 'transfer' && tabButtons[1]) tabButtons[1].classList.add('active');
