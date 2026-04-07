@@ -189,8 +189,7 @@
 </div>
 
 <!-- রেফারেল লিস্ট বাটন -->
-<div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" 
-     onclick="handleAction('refer_list')">
+        <div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" onclick="handleAction('refer_list')">
     <div style="display: flex; align-items: center; gap: 12px;">
         <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
         <div>
@@ -199,7 +198,7 @@
         </div>
     </div>
     <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
-</div>
+        </div>
 
 <!-- পেমেন্ট হিস্ট্রি বাটন -->
 <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" 
@@ -262,7 +261,7 @@
         }
 
         try {
-            const response = await fetch(`/api/user/data/${userId}`);
+            const response = await fetch(/api/user/data/${userId});
             const data = await response.json();
 
             if (data.status === "success") {
