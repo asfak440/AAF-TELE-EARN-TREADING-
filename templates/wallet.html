@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF | Central Wallet Pro</title>
+    <title>AAF | Central Wallet</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@500;600;700&display=swap');
@@ -20,53 +20,77 @@
             --text-dim: #8b949e;
             --glass: rgba(255, 255, 255, 0.03);
             --nav-bg: #0d111c;
-            --neon-glow: 0 0 10px rgba(0, 242, 254, 0.3);
+            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
         }
 
         body { 
             background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
             margin: 0; padding-bottom: 120px;
-            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.1), transparent);
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.08), transparent);
         }
 
-        /* --- Profile Header --- */
+        /* --- Header --- */
         .nav-header { 
             padding: 15px 20px; border-bottom: 1px solid var(--border); background: var(--card); 
             display: flex; align-items: center; justify-content: space-between;
-            backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 1000;
+            backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000;
         }
         .u-info { display: flex; align-items: center; gap: 12px; }
         .u-info i { font-size: 32px; color: var(--cyan); filter: drop-shadow(0 0 5px var(--cyan)); }
         .u-name-box h2 { font-family: 'Syncopate'; font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* --- Dual Balance Card --- */
+        /* --- Balance Cards --- */
         .balance-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
         .bal-box { 
             background: var(--glass); border: 1px solid var(--border); padding: 18px 10px; border-radius: 20px; 
-            text-align: center; position: relative; overflow: hidden; backdrop-filter: blur(5px);
+            text-align: center; position: relative; overflow: hidden;
         }
-        .bal-box::after { content: ""; position: absolute; bottom: 0; left: 10%; width: 80%; height: 2px; background: var(--cyan); border-radius: 10px; box-shadow: var(--neon-glow); }
+        .bal-box::after { content: ""; position: absolute; bottom: 0; left: 10%; width: 80%; height: 2px; background: var(--cyan); border-radius: 10px; }
         .bal-box.coin::after { background: var(--gold); }
         .bal-box span { font-size: 9px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 5px; }
-        .bal-box h3 { font-size: 18px; margin: 0; font-family: 'Syncopate'; color: #fff; }
+        .bal-box h3 { font-size: 18px; margin: 0; font-family: 'Syncopate'; }
 
-        /* --- Updated Tab Menu --- */
-        .tab-menu { display: flex; background: var(--card); margin: 10px 15px; border-radius: 15px; border: 1px solid var(--border); padding: 5px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: none; color: var(--text-dim); font-family: 'Syncopate'; font-size: 8px; cursor: pointer; transition: 0.4s; border-radius: 10px; }
-        .tab-btn.active { color: #000; background: var(--cyan); font-weight: bold; box-shadow: var(--neon-glow); }
+        /* --- New Tab Style (As per Image) --- */
+        .tab-menu { 
+            display: flex; 
+            background: #080c14; 
+            margin: 15px; 
+            border-radius: 30px; 
+            border: 1px solid var(--border); 
+            padding: 6px;
+            justify-content: space-between;
+        }
+        .tab-btn { 
+            flex: 1; 
+            padding: 14px 5px; 
+            border: none; 
+            background: none; 
+            color: var(--text-dim); 
+            font-family: 'Syncopate'; 
+            font-size: 9px; 
+            cursor: pointer; 
+            transition: 0.3s;
+            border-radius: 25px;
+            text-align: center;
+        }
+        .tab-btn.active { 
+            color: #000; 
+            background: var(--cyan); 
+            font-weight: 800; 
+            box-shadow: var(--neon-shadow);
+        }
 
         .container { padding: 0 15px; max-width: 500px; margin: auto; }
-        
-        /* New Wallet Page Animation */
-        .wallet-page { display: none; opacity: 0; transform: translateY(10px); transition: 0.4s ease; }
-        .wallet-page.active { display: block; opacity: 1; transform: translateY(0); }
+        .wallet-page { display: none; animation: fadeIn 0.4s ease; }
+        .wallet-page.active { display: block; }
 
-        /* --- Form Elements --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Inputs & Buttons --- */
         .input-box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
         .input-box label { display: block; font-size: 10px; color: var(--cyan); margin-bottom: 12px; font-family: 'Syncopate'; }
-        
         .info-tile { background: rgba(0, 242, 254, 0.05); padding: 12px; border-radius: 10px; border: 1px dashed var(--cyan); margin-bottom: 15px; font-size: 13px; text-align: center; }
-
+        
         select, input { 
             width: 100%; background: #050912; border: 1px solid var(--border); 
             padding: 14px; border-radius: 12px; color: white; margin-bottom: 15px; font-family: 'Rajdhani'; outline: none; box-sizing: border-box;
@@ -74,18 +98,16 @@
 
         .action-btn { 
             width: 100%; background: var(--cyan); color: #000; border: none; 
-            padding: 16px; border-radius: 12px; font-weight: 800; font-family: 'Syncopate'; font-size: 10px; cursor: pointer; transition: 0.3s;
+            padding: 16px; border-radius: 12px; font-weight: 800; font-family: 'Syncopate'; font-size: 10px; cursor: pointer;
         }
-        .action-btn:active { transform: scale(0.98); }
 
         /* --- Floating Navigation --- */
-        .bottom-nav-container { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; z-index: 2000; }
-        .bottom-nav { background: #0d111c; display: flex; justify-content: space-around; align-items: center; border: 1px solid var(--border); border-radius: 50px; padding: 12px 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); backdrop-filter: blur(15px); }
-        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.3s; }
+        .bottom-nav-container { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; z-index: 2000; }
+        .bottom-nav { background: #0d111c; display: flex; justify-content: space-around; align-items: center; border: 1px solid var(--border); border-radius: 50px; padding: 12px 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item i { font-size: 20px; }
-        .nav-item span { font-size: 10px; font-weight: 500; }
+        .nav-item span { font-size: 10px; }
         .nav-item.active { color: var(--cyan); }
-        .nav-item.active i { filter: drop-shadow(0 0 5px var(--cyan)); }
     </style>
 </head>
 <body>
@@ -95,12 +117,10 @@
             <i class="fas fa-user-circle"></i>
             <div class="u-name-box">
                 <h2 id="u-name">LOADING...</h2>
-                <span id="u-tg-val" style="font-size: 10px; color: var(--primary); font-weight: bold;">ID: N/A</span>
+                <span id="u-tg-val" style="font-size: 10px; color: var(--primary);">ID: N/A</span>
             </div>
         </div>
-        <div style="text-align: right;">
-            <div id="status-tag" style="font-size: 9px; color: var(--primary); font-family: 'Syncopate';"><i class="fas fa-circle" style="font-size: 7px; animation: pulse 1.5s infinite;"></i> ONLINE</div>
-        </div>
+        <div id="status-tag" style="font-size: 9px; color: var(--primary); font-family: 'Syncopate';"><i class="fas fa-circle" style="font-size: 7px;"></i> ONLINE</div>
     </div>
 
     <div class="balance-container">
@@ -109,19 +129,20 @@
             <h3 id="wallet-bal">৳ 0.00</h3>
         </div>
         <div class="bal-box coin">
-            <span>APP COINS</span>
+            <span>AAF COINS</span>
             <h3 id="coin-bal">0.00</h3>
         </div>
     </div>
 
-    <div class="tab-menu" id="main-tabs">
-        <button class="tab-btn active" id="btn-deposit" onclick="showPage(event, 'deposit')">DEPOSIT</button>
-        <button class="tab-btn" id="btn-transfer" onclick="showPage(event, 'transfer')">TRANSFER</button>
-        <button class="tab-btn" id="btn-withdraw" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
+    <!-- Tab Menu (New Pro Look) -->
+    <div class="tab-menu">
+        <button class="tab-btn active" id="tab-deposit" onclick="showPage(event, 'deposit')">DEPOSIT</button>
+        <button class="tab-btn" id="tab-transfer" onclick="showPage(event, 'transfer')">TRANSFER</button>
+        <button class="tab-btn" id="tab-withdraw" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
     </div>
 
     <div class="container">
-        <!-- DEPOSIT SECTION -->
+        <!-- Deposit Page -->
         <div id="deposit" class="wallet-page active">
             <div class="input-box">
                 <label>ADD FUNDS TO WALLET</label>
@@ -131,12 +152,12 @@
                     <option value="Binance">Bkash (Send Money)</option>
                 </select>
                 <input type="number" id="dep-amount" placeholder="Amount (৳ / $)">
-                <input type="text" id="dep-trx" placeholder="Sender Mobile Number">
+                <input type="text" id="dep-trx" placeholder="Sender Number">
                 <button class="action-btn" onclick="submitDeposit()">SUBMIT REQUEST</button>
             </div>
         </div>
 
-        <!-- TRANSFER SECTION -->
+        <!-- Transfer Page -->
         <div id="transfer" class="wallet-page">
             <div class="input-box">
                 <label>P2P ASSET TRANSFER</label>
@@ -150,7 +171,7 @@
             </div>
         </div>
 
-        <!-- WITHDRAW SECTION -->
+        <!-- Withdraw Page -->
         <div id="withdraw" class="wallet-page">
             <div class="input-box">
                 <label>WITHDRAW CASH</label>
@@ -163,11 +184,26 @@
 
     <div class="bottom-nav-container">
         <nav class="bottom-nav">
-            <a href="javascript:void(0)" onclick="handleAction('index.html')" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-            <a href="javascript:void(0)" onclick="handleAction('task.html')" class="nav-item"><i class="fas fa-list-ul"></i><span>Task</span></a>
-            <a href="javascript:void(0)" onclick="handleAction('trading.html')" class="nav-item"><i class="fas fa-chart-line"></i><span>Trading</span></a>
-            <a href="javascript:void(0)" class="nav-item active"><i class="fas fa-wallet"></i><span>Wallet</span></a>
-            <a href="javascript:void(0)" onclick="handleAction('account.html')" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="task.html" class="nav-item">
+                <i class="fas fa-list-ul"></i>
+                <span>Task</span>
+            </a>
+            <a href="trading.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Trading</span>
+            </a>
+            <a href="wallet.html" class="nav-item active">
+                <i class="fas fa-wallet"></i>
+                <span>Wallet</span>
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="fas fa-user-circle"></i>
+                <span>Account</span>
+            </a>
         </nav>
     </div>
 
@@ -176,7 +212,7 @@
     const USER_ID = localStorage.getItem('user_id') || "12345";
     window.adminWallet = {nagad: "01XXXXXXXXX", binance: "T-Address-XYZ"};
 
-    // ১. ডাটা সিঙ্ক ফাংশন
+    // ১. ডেটা সিঙ্ক ফাংশন
     async function syncData() {
         try {
             const res = await fetch(`${API_URL}/api/user/data/${USER_ID}`);
@@ -192,7 +228,7 @@
         } catch (e) { console.error("Sync Error:", e); }
     }
 
-    // ২. এডমিন পেমেন্ট ইনফো আপডেট
+    // ২. এডমিন ইনফো আপডেট
     function updateAdminInfo() {
         const method = document.getElementById('dep-method').value;
         const infoBox = document.getElementById('admin-payment-info');
@@ -202,49 +238,44 @@
         }
     }
 
-    // ৩. স্মার্ট পেজ ডিসপ্লে (ট্যাব চেঞ্জ)
+    // ৩. স্মার্ট ট্যাব চেঞ্জার (আলাদা পেজ হিসেবে কাজ করবে)
     function showPage(event, pageId) {
-        // সব পেজ এবং বাটন রিসেট
         document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         
-        // টার্গেট পেজ দেখানো
         const target = document.getElementById(pageId);
         if(target) target.classList.add('active');
         
-        // বাটন হাইলাইট করা
         if(event && event.currentTarget) {
             event.currentTarget.classList.add('active');
         } else {
-            const btn = document.getElementById('btn-' + pageId);
-            if(btn) btn.classList.add('active');
+            const tabBtn = document.getElementById('tab-' + pageId);
+            if(tabBtn) tabBtn.classList.add('active');
         }
     }
 
-    // ৪. নেভিগেশন ফাংশন
     function handleAction(type) {
         window.location.href = type.includes('.html') ? type : type + ".html";
     }
 
-    // ৫. পেমেন্ট রিকোয়েস্ট ফাংশনসমূহ (সবগুলো ঠিক রাখা হয়েছে)
+    // ৪. সাবমিট ফাংশন (আগের মতোই রাখা হয়েছে)
     function submitDeposit() { alert("Deposit Request Sent!"); }
     function processTransfer() { alert("Transfer Processing..."); }
     function processWithdraw() { alert("Withdraw Request Sent!"); }
 
-    // ৬. স্মার্ট উইন্ডো লোডার
+    // ৫. স্মার্ট উইন্ডো লোডার (URL প্যারামিটার চেক করবে)
     window.onload = () => {
         syncData(); 
 
-        // URL থেকে ?page=name রিকোয়েস্ট হ্যান্ডেল করা
         const urlParams = new URLSearchParams(window.location.search);
-        let page = urlParams.get('page');
+        const page = urlParams.get('page');
 
-        if (page && ['deposit', 'transfer', 'withdraw'].includes(page.toLowerCase())) {
-            showPage(null, page.toLowerCase());
+        if (page && ['deposit', 'transfer', 'withdraw'].includes(page)) {
+            showPage(null, page);
         } else {
             showPage(null, 'deposit'); // ডিফল্ট ডিপোজিট
         }
     };
     </script>
 </body>
-</html>
+    </html>
