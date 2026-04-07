@@ -127,15 +127,15 @@
         </div>
 
         <div class="header-bal-box" style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
-    <div style="text-align: center;">
-        <small style="font-size: 8px; color: #94a3b8; display: block;">CASH</small>
-        <div style="color: var(--active-green); font-size: 11px;">৳ <span id="h-cash">0.00</span></div>
-    </div>
-    <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
-    <div style="text-align: center;">
-        <small style="font-size: 8px; color: #94a3b8; display: block;">AAF</small>
-        <div style="color: var(--gold); font-size: 11px;"><span id="h-aaf">0.00</span></div>
-    </div>
+            <div style="text-align: center;">
+                <small style="font-size: 8px; color: #94a3b8; display: block;">CASH</small>
+                <div style="color: var(--active-green); font-size: 11px;">৳ <span id="h-cash">0.00</span></div>
+            </div>
+            <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+            <div style="text-align: center;">
+                <small style="font-size: 8px; color: #94a3b8; display: block;">AAF</small>
+                <div style="color: var(--gold); font-size: 11px;"><span id="h-aaf">0.00</span></div>
+            </div>
         </div>
         
         <div id="status-dot" class="dot-offline"></div>
@@ -164,68 +164,71 @@
 
         <!-- ৩. অ্যাকশন গ্রিড -->
         <div class="action-grid">
-    <a href="wallet.html?page=deposit" style="text-decoration: none; color: inherit;">
-        <div class="action-btn btn-dep">
-            <i class="fas fa-plus-circle"></i> DEPOSIT
-        </div>
-    </a>
+            <a href="wallet.html?page=deposit" style="text-decoration: none; color: inherit;">
+                <div class="action-btn btn-dep">
+                    <i class="fas fa-plus-circle"></i> DEPOSIT
+                </div>
+            </a>
 
-    <a href="wallet.html?page=withdraw" style="text-decoration: none; color: inherit;">
-        <div class="action-btn btn-wit">
-            <i class="fas fa-wallet"></i> WITHDRAW
-        </div>
-    </a>
+            <a href="wallet.html?page=withdraw" style="text-decoration: none; color: inherit;">
+                <div class="action-btn btn-wit">
+                    <i class="fas fa-wallet"></i> WITHDRAW
+                </div>
+            </a>
 
-    <a href="wallet.html?page=transfer" style="text-decoration: none; color: inherit;">
-        <div class="action-btn" style="color: var(--gold);">
-            <i class="fas fa-exchange-alt"></i> TRANSFER
-        </div>
-    </a>
+            <a href="wallet.html?page=transfer" style="text-decoration: none; color: inherit;">
+                <div class="action-btn" style="color: var(--gold);">
+                    <i class="fas fa-exchange-alt"></i> TRANSFER
+                </div>
+            </a>
 
-    <a href="trading.html" style="text-decoration: none; color: inherit;">
-        <div class="action-btn" style="color: var(--danger);">
-            <i class="fas fa-sync"></i> CONVERT
-        </div>
-    </a>
+            <a href="trading.html" style="text-decoration: none; color: inherit;">
+                <div class="action-btn" style="color: var(--danger);">
+                    <i class="fas fa-sync"></i> CONVERT
+                </div>
+            </a>
         </div>
 
         <!-- ৪. ইউজার পার্সোনাল স্ট্যাটাস -->
         <div class="premium-card" style="display: flex; justify-content: space-between; align-items: center;">
-    <div>
-        <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
-        <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
-        <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
-    </div>
-    <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
-</div>
-
-<!-- রেফারেল লিস্ট বাটন -->
-        <div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;" onclick="handleAction('refer_list')">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
-        <div>
-            <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
-        <p id="refer-count-status" style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন`                                                                                                      
-        </div>
-    </div>
-    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+            <div>
+                <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
+                <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
+                <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
+            </div>
+            <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
         </div>
 
-<!-- পেমেন্ট হিস্ট্রি বাটন -->
-<div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" onclick="handleAction('payment_history')">
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
-        <div>
-            <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
-            <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
-        </div>
-    </div>
-    <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
-</div>
+        <!-- রেফারেল লিস্ট বাটন (আপডেট করা হয়েছে) -->
+        <a href="refer_list.html" style="text-decoration: none; color: inherit;">
+            <div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-users-cog" style="font-size: 18px; color: var(--gold);"></i>
+                    <div>
+                        <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
+                        <p id="refer-count-status" style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+            </div>
+        </a>
+
+        <!-- পেমেন্ট হিস্ট্রি বাটন (আপডেট করা হয়েছে) -->
+        <a href="payment_history.html" style="text-decoration: none; color: inherit;">
+            <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
+                    <div>
+                        <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
+                        <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
+            </div>
+        </a>
         
         <!-- ৫. অ্যাডভার্টাইজমেন্ট -->
         <div class="banner-ad-box" id="banner-ad">
-            <!-- অ্যাডমিন প্যানেল থেকে আসা ব্যানার এখানে ইনজেক্ট হবে -->
             <div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">
                 ADVERTISEMENT SPACE
             </div>
@@ -236,7 +239,7 @@
             <div style="flex:1">
                 <small id="join-label" style="color: var(--text-muted);">COMMUNITY STATUS</small>
                 <b id="join-status" style="display:block; font-family:'Syncopate'; margin-top:5px; font-size: 14px; color: var(--danger);">OFFLINE</b>
-                <p id="join-info" style="font-size: 11px; margin: 5px 0; color: #ccc;">চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!</p>
+                <p id="join-info" style="font-size: 11px; margin: 5px 0; color: #ccc;">চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!</p>
             </div>
             <button class="btn-join" id="join-btn" onclick="joinTelegram()">JOIN NOW</button>
             <button onclick="verifyJoin()" id="verify-btn" style="display:none; background:none; border:1px solid var(--primary); color:var(--primary); padding:10px; border-radius:10px; margin-top:10px; width:100%; cursor:pointer; font-weight:bold;">VERIFY MEMBERSHIP</button>
@@ -253,9 +256,8 @@
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
-</div>
+    </div>
     
-
     <script>
     // ১. গ্লোবাল কনফিগারেশন
     const API_URL = ""; 
@@ -266,7 +268,7 @@
         const userId = localStorage.getItem('user_id');
         
         if (!userId) {
-            console.warn("Active User ID পাওয়া যায়নি।");
+            console.warn("Active User ID পাওয়া যায়নি।");
             return;
         }
 
@@ -297,19 +299,19 @@
         if(document.getElementById('srv-trade')) document.getElementById('srv-trade').innerText = '৳ ' + admin.server_trading;
         if(document.getElementById('srv-users')) document.getElementById('srv-users').innerText = admin.total_users;
 
-        // ৫. রেফার লিস্ট সেকশন (আপনার নির্দেশিত পরিবর্তন)
+        // ৫. রেফার লিস্ট সেকশন
         if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = (user.refer_count || 0) + " REFERRED";
-        // এই কোডটি renderUI ফাংশনের ভেতর বসাবেন
-const referStatusText = document.getElementById('refer-count-status');
-if(referStatusText) {
-    let count = user.refer_count || 0;
-    referStatusText.innerText = count + " Active Members Found";
-    referStatusText.style.color = "var(--active-green)";
-}
+        
+        const referStatusText = document.getElementById('refer-count-status');
+        if(referStatusText) {
+            let count = user.refer_count || 0;
+            referStatusText.innerText = count + " Active Members Found";
+            referStatusText.style.color = "var(--active-green)";
+        }
 
         window.currentChannelLink = admin.channel_url;
         
-        // ৬. ইন্ডিকেটর ও জয়েন কার্ড লজিক (সবুজ/লাল)
+        // ৬. ইন্ডিকেটর ও জয়েন কার্ড লজিক (সবুজ/লাল)
         const dot = document.getElementById('status-dot');
         const joinCard = document.getElementById('join-container');
         const joinStatusText = document.getElementById('join-status');
@@ -333,7 +335,7 @@ if(referStatusText) {
         }
     }
 
-    // ৭. ৬ ঘণ্টার পপ-আপ অ্যাড লজিক (বাটনে ক্লিকের জন্য)
+    // ৭. ৬ ঘণ্টার পপ-আপ অ্যাড লজিক
     function checkAndShowAd() {
         const userId = localStorage.getItem('user_id');
         const storageKey = `last_ad_click_${userId}`;
@@ -352,56 +354,52 @@ if(referStatusText) {
                     }
                 });
             } else {
-                // ফায়ারবেজ না থাকলে লোকাল পপআপ
+                // ফায়ারবেজ না থাকলে লোকাল পপআপ
                 triggerPopup("নতুন বোনাস অফার চেক করুন!");
                 localStorage.setItem(storageKey, currentTime);
             }
-            return true; // অ্যাড দেখানো হয়েছে
+            return true; 
         }
-        return false; // অ্যাড দেখানোর সময় হয়নি
+        return false; 
     }
         
-//৮
-      function handleAction(type) {
-    // ১. আপনার আগের এড শো ফাংশন (হুবহু রাখা হয়েছে)
-    if (typeof checkAndShowAd === "function") {
-        checkAndShowAd();
-    }
+    // ৮. অ্যাকশন হ্যান্ডলার (আপনার কথামতো কোনো লজিক কাটা হয়নি)
+    function handleAction(type) {
+        if (typeof checkAndShowAd === "function") {
+            checkAndShowAd();
+        }
 
-    let target = "";
+        let target = "";
 
-    // ২. নতুন লজিক: যদি '=' থাকে (যেমন: 'wallet=deposit')
-    if (type.includes('=')) {
-        let parts = type.split('='); // 'wallet' এবং 'deposit' আলাদা করবে
-        let baseFile = parts[0];    // wallet
-        let pageParam = parts[1];   // deposit
-        target = baseFile + ".html?page=" + pageParam; // রেজাল্ট: wallet.html?page=deposit
-    } 
-    // ৩. আপনার আগের বাকি সব লজিক (হুবহু রাখা হয়েছে)
-    else if (type.includes('.html')) {
-        target = type; 
-    } 
-    else if (type === 'trading' || type === 'convert') {
-        target = "trading.html";
-    } 
-    else if (type === 'refer_list' || type === 'refer-list') {
-        target = "refer_list.html";
-    }
-    else if (type === 'payment_history' || type === 'payment-history') {
-        target = "payment_history.html";
-    }
-    else if (type === 'dashboard') {
-        target = "dashboard.html";
-    }
-    else {
-        target = type + ".html";
-    }
+        if (type.includes('=')) {
+            let parts = type.split('='); 
+            let baseFile = parts[0];    
+            let pageParam = parts[1];   
+            target = baseFile + ".html?page=" + pageParam; 
+        } 
+        else if (type.includes('.html')) {
+            target = type; 
+        } 
+        else if (type === 'trading' || type === 'convert') {
+            target = "trading.html";
+        } 
+        else if (type === 'refer_list' || type === 'refer-list') {
+            target = "refer_list.html";
+        }
+        else if (type === 'payment_history' || type === 'payment-history') {
+            target = "payment_history.html";
+        }
+        else if (type === 'dashboard') {
+            target = "dashboard.html";
+        }
+        else {
+            target = type + ".html";
+        }
 
-    // সঠিক পেজে পাঠিয়ে দেওয়া
-    window.location.href = target;
-      }  
+        window.location.href = target;
+    }  
     
-    // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
+    // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
         checkAndShowAd(); // অ্যাড চেক
         if (window.currentChannelLink) {
@@ -434,8 +432,4 @@ if(referStatusText) {
     }
 
     // ১২. অটো-রিফ্রেশ
-    window.onload = initDashboard;
-    setInterval(initDashboard, 10000); 
-                </script>
-</body>
-</html>
+    windo
