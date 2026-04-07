@@ -287,12 +287,13 @@
 
         // ৫. রেফার লিস্ট সেকশন (আপনার নির্দেশিত পরিবর্তন)
         if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = (user.refer_count || 0) + " REFERRED";
-        // 'my-profit' এর জায়গায় এখন রেফারেল সংখ্যা বা স্ট্যাটাস দেখাবে
-        const referStatus = document.getElementById('my-profit');
-        if(referStatus) {
-            referStatus.innerText = (user.refer_count || 0) + " Active Refs";
-            referStatus.style.color = "var(--gold)";
-        }
+        // এই কোডটি renderUI ফাংশনের ভেতর বসাবেন
+const referStatusText = document.getElementById('refer-count-status');
+if(referStatusText) {
+    let count = user.refer_count || 0;
+    referStatusText.innerText = count + " Active Members Found";
+    referStatusText.style.color = "var(--active-green)";
+}
 
         window.currentChannelLink = admin.channel_url;
         
