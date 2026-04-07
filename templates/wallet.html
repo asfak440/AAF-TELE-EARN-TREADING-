@@ -159,14 +159,14 @@
         </div>
     </div>
 
-    <div class="tab-menu">
+    <div class="nav-menu">
         <button class="tab-btn active" onclick="showPage(event, 'deposit')">DEPOSIT</button>
         <button class="tab-btn" onclick="showPage(event, 'transfer')">TRANSFER</button>
         <button class="tab-btn" onclick="showPage(event, 'withdraw')">WITHDRAW</button>
     </div>
 
     <div class="container">
-        <div id="deposit" class="wallet-page active">
+        <div id="deposit" class="deposit-page active">
             <div class="input-box">
                 <label>ADD FUNDS TO WALLET</label>
                 <div class="info-tile" id="admin-payment-info">Select method to see payment details.</div>
@@ -193,7 +193,7 @@
             </div>
         </div>
 
-        <div id="withdraw" class="wallet-page active">
+        <div id="withdraw" class="withdraw-page active">
             <div class="input-box">
                 <label>WITHDRAW CASH (NAGAD)</label>
                 <input type="number" id="wit-num" placeholder="Nagad Personal Number">
