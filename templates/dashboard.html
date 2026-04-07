@@ -352,15 +352,23 @@ if(referStatusText) {
     }
         
 //৮
-        
-    function handleAction(type) {
+      function handleAction(type) {
+    // ১. আপনার আগের এড শো ফাংশন (হুবহু রাখা হয়েছে)
     if (typeof checkAndShowAd === "function") {
         checkAndShowAd();
     }
 
     let target = "";
 
-    if (type.includes('.html')) {
+    // ২. নতুন লজিক: যদি '=' থাকে (যেমন: 'wallet=deposit')
+    if (type.includes('=')) {
+        let parts = type.split('='); // 'wallet' এবং 'deposit' আলাদা করবে
+        let baseFile = parts[0];    // wallet
+        let pageParam = parts[1];   // deposit
+        target = baseFile + ".html?page=" + pageParam; // রেজাল্ট: wallet.html?page=deposit
+    } 
+    // ৩. আপনার আগের বাকি সব লজিক (হুবহু রাখা হয়েছে)
+    else if (type.includes('.html')) {
         target = type; 
     } 
     else if (type === 'trading' || type === 'convert') {
@@ -379,8 +387,10 @@ if(referStatusText) {
         target = type + ".html";
     }
 
+    // সঠিক পেজে পাঠিয়ে দেওয়া
     window.location.href = target;
-    }
+      }  
+    
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
         checkAndShowAd(); // অ্যাড চেক
