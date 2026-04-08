@@ -127,23 +127,30 @@
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="action-btn btn-add" onclick="addNewAccount()">
+    <!-- Buttons -->
+    <!-- Action Buttons Section -->
+<div style="padding: 5px 0;">
+
+    <!-- Add Account Link -->
+    <a href="login.html" class="action-btn btn-add" style="display: block; text-decoration: none;">
         <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
-    </div>
+    </a>
 
-    <div class="action-btn btn-logout" onclick="logoutSession()">
+    <!-- Logout Link -->
+    <a href="login.html" class="action-btn btn-logout" style="display: block; text-decoration: none;" onclick="localStorage.removeItem('user_id');">
         <i class="fas fa-sign-out-alt"></i> &nbsp; LOGOUT CURRENT SESSION
-    </div>
+    </a>
 
+</div>
+    
     <!-- Navigation Bar -->
     <div class="bottom-nav-container">
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><i class="fas fa-home"></i>Home</a>
-            <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-            <a href="trade.html" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
-            <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
-            <a href="account.html" class="nav-item active"><i class="fas fa-user"></i>Account</a>
+            <a href="dashboard" class="nav-item"><i class="fas fa-home"></i>Home</a>
+            <a href="task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+            <a href="trading" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
+            <a href="wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+            <a href="account" class="nav-item active"><i class="fas fa-user"></i>Account</a>
         </nav>
     </div>
 
