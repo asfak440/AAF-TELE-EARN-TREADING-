@@ -181,41 +181,81 @@
     </nav>
 
     <script>
-        // --- কনফিগারেশন ---
-        const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const fb_db = firebase.database();
-        const API_BASE = window.location.origin; // Render API automatically detected
-        const MASTER_PIN = "Abdullah6790";
 
-        // --- অথেনটিকেশন ---
-        function checkAuth() {
-            if(document.getElementById('admin-pass').value === MASTER_PIN) {
-                document.getElementById('admin-login-overlay').style.display = 'none';
-                initPanel();
-            } else { alert("ভুল পিন!"); }
+        // --- কনফিগারেশন ও ইনিশিয়ালাইজেশন ---
+const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+firebase.initializeApp(firebaseConfig);
+const fb_db = firebase.database();
+const API_BASE = window.location.origin; 
+const MASTER_PIN = "Abdullah6790";
+
+// --- ১. অথেনটিকেশন ও প্যানেল শুরু ---
+function checkAuth() {
+    const enteredPin = document.getElementById('admin-pass').value;
+    if(enteredPin === MASTER_PIN) {
+        document.getElementById('admin-login-overlay').style.display = 'none';
+        initPanel(); // পিন সঠিক হলে প্যানেল লোড হবে
+    } else { 
+        alert("ভুল পিন! সঠিক পিন প্রদান করুন।"); 
+    }
+}
+
+function initPanel() {
+    loadSettings(); // ডাটাবেস থেকে ইনপুট বক্সের ডাটা লোড করবে
+    
+    // ফায়ারবেস থেকে লাইভ ট্রেডিং প্রাইস শোনা
+    fb_db.ref('trading/aaf_coin').on('value', snap => {
+        const val = snap.val();
+        if(val) document.getElementById('live-price-display').innerText = "৳ " + val.price;
+    });
+}
+
+// --- ২. ট্যাব ও নেভিগেশন লজিক ---
+function openTab(evt, tabName) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-links li, .bottom-nav i').forEach(l => l.classList.remove('active'));
+    
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+
+    // নির্দিষ্ট ট্যাব খুললে ডাটা লোড করা
+    if(tabName === 'task') loadAdminTasks();
+    if(tabName === 'account') loadUsers();
+}
+
+// --- ৩. সার্ভার সেটিংস (Load & Update) ---
+async function loadSettings() {
+    try {
+        const res = await fetch(`${API_BASE}/api/user/data`);
+        const data = await res.json();
+
+        if (data.admin) {
+            // বক্সে ডাটা বসানো
+            document.getElementById('admin_income').value = data.admin.server_income || '';
+            document.getElementById('admin_trading').value = data.admin.server_trading || '';
+            document.getElementById('admin_extra_users').value = data.admin.total_users || 0;
+            document.getElementById('admin_channel_url').value = data.admin.channel_url || '';
+            document.getElementById('admin_bot_token').value = data.admin.bot_token || '';
+            document.getElementById('admin_channel_id').value = data.admin.channel_id || '';
+            
+            // আইপি সিকিউরিটি চেক
+            if(data.admin.ip_security !== undefined) {
+                document.getElementById('ip_security_toggle').checked = data.admin.ip_security;
+            }
         }
+    } catch (e) {
+        console.error("ডাটা লোড করতে সমস্যা হয়েছে:", e);
+    }
+}
 
-        // --- ট্যাব লজিক ---
-        function openTab(evt, tabName) {
-            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-links li, .bottom-nav i').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            evt.currentTarget.classList.add('active');
-            if(tabName === 'task') loadAdminTasks();
-            if(tabName === 'account') loadUsers();
-        }
-
-        // --- সার্ভার কন্ট্রোল ---
-        // ফাংশন: নতুন সেটিংস সার্ভারে সেভ করা
 async function updateServerSettings() {
     const serverData = {
         income: document.getElementById('admin_income').value,
         trading: document.getElementById('admin_trading').value,
         extra_users: document.getElementById('admin_extra_users').value,
         channel_link: document.getElementById('admin_channel_url').value,
-        bot_token: document.getElementById('admin_bot_token')?.value || '',
-        channel_id: document.getElementById('admin_channel_id')?.value || '',
+        bot_token: document.getElementById('admin_bot_token').value,
+        channel_id: document.getElementById('admin_channel_id').value,
         ip_security: document.getElementById('ip_security_toggle').checked
     };
 
@@ -225,137 +265,130 @@ async function updateServerSettings() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(serverData)
         });
-        if(res.ok) {
-            alert("সাফল্যের সাথে সেভ হয়েছে!");
-        } else {
-            alert("সার্ভার এরর! সেভ হয়নি।");
-        }
+        if(res.ok) alert("সার্ভার সেটিংস সাফল্যের সাথে সেভ হয়েছে!");
+        else alert("সার্ভার এরর! সেভ হয়নি।");
     } catch(e) {
-        alert("কানেকশন এরর!");
+        alert("কানেকশন এরর! ইন্টারনেট চেক করুন।");
     }
 }
 
-        // ফাংশন: ডাটাবেস থেকে সেটিংস এনে বক্সে দেখানো
-async function loadSettings() {
+async function publishGlobalAd() {
+    const adMessage = document.getElementById('admin_ad_msg').value;
     try {
-        const res = await fetch(`${API_BASE}/api/user/data`);
-        const data = await res.json();
-
-        if (data.admin) {
-            document.getElementById('admin_income').value = data.admin.server_income || '';
-            document.getElementById('admin_trading').value = data.admin.server_trading || '';
-            document.getElementById('admin_extra_users').value = data.admin.total_users || 0;
-            document.getElementById('admin_channel_url').value = data.admin.channel_url || '';
-            
-            if(data.admin.ip_security !== undefined) {
-                document.getElementById('ip_security_toggle').checked = data.admin.ip_security;
-            }
-        }
-    } catch (e) {
-        console.error("ডাটা লোড করতে সমস্যা হয়েছে:", e);
-    }
+        const res = await fetch(`${API_BASE}/admin/update_ad`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: adMessage })
+        });
+        if(res.ok) alert("গ্লোবাল নোটিশ পাবলিশ হয়েছে!");
+    } catch(e) { alert("নোটিশ পাবলিশে সমস্যা হয়েছে!"); }
 }
-        async function publishGlobalAd() {
-            const adMessage = document.getElementById('admin_ad_msg').value;
-            try {
-                const res = await fetch(`${API_BASE}/admin/update_ad`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: adMessage })
-                });
-                if(res.ok) alert("নোটিশ পাবলিশ হয়েছে!");
-            } catch(e) { alert("ব্যর্থ হয়েছে!"); }
+
+// --- ৪. টাস্ক ম্যানেজমেন্ট ---
+async function loadAdminTasks() {
+    const listDiv = document.getElementById('admin-task-list');
+    try {
+        const res = await fetch(`${API_BASE}/api/user/tasks?user_id=admin`);
+        const data = await res.json();
+        listDiv.innerHTML = data.tasks.map(t => `
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
+                <span>${t.title} (${t.reward} ${t.currency})</span>
+                <button onclick="deleteTask('${t.id}')" style="color:var(--danger); background:none; border:none; cursor:pointer;">মুছুন</button>
+            </div>
+        `).join('');
+    } catch(e) { listDiv.innerHTML = "টাস্ক লোড করা যাচ্ছে না।"; }
+}
+
+async function saveTask() {
+    const task = {
+        title: document.getElementById('title').value,
+        link: document.getElementById('link').value,
+        reward: document.getElementById('reward').value,
+        currency: document.getElementById('currency').value,
+        timer: document.getElementById('timer').value,
+        type: document.getElementById('type').value
+    };
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/add-task`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(task)
+        });
+        if(res.ok) { 
+            alert("নতুন টাস্ক যোগ করা হয়েছে!"); 
+            loadAdminTasks(); 
         }
+    } catch(e) { alert("টাস্ক সেভ হয়নি!"); }
+}
 
-        // --- টাস্ক কন্ট্রোল ---
-        async function loadAdminTasks() {
-            const listDiv = document.getElementById('admin-task-list');
-            try {
-                const res = await fetch(`${API_BASE}/api/user/tasks?user_id=admin`);
-                const data = await res.json();
-                listDiv.innerHTML = data.tasks.map(t => `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
-                        <span>${t.title} (${t.reward} ${t.currency})</span>
-                        <button onclick="deleteTask('${t.id}')" style="color:red; background:none; border:none;">মুছুন</button>
-                    </div>
-                `).join('');
-            } catch(e) { listDiv.innerHTML = "টাস্ক লোড করা যাচ্ছে না।"; }
+// --- ৫. ট্রেডিং ইঞ্জিন কন্ট্রোল ---
+async function forceMarketPrice() {
+    const price = document.getElementById('inp-price').value;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/force-price`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ price: price })
+        });
+        if(res.ok) alert("মার্কেট প্রাইস আপডেট করা হয়েছে!");
+    } catch(e) { alert("প্রাইস আপডেট ব্যর্থ!"); }
+}
+
+async function setGlobalFee() {
+    const fee = document.getElementById('c-fee').value;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/set-fee`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ fee: fee })
+        });
+        if(res.ok) alert("ট্রেডিং ফি আপডেট হয়েছে!");
+    } catch(e) { alert("ফি আপডেট ব্যর্থ!"); }
+}
+
+// --- ৬. ইউজার ও ব্যালেন্স ম্যানেজমেন্ট ---
+async function loadUsers() {
+    const listBody = document.getElementById('member-list-body');
+    listBody.innerHTML = "ইউজার তালিকা লোড হচ্ছে...";
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/users?pin=${MASTER_PIN}`);
+        const data = await res.json();
+        if (data.success) {
+            listBody.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; color:#fff;">
+                    <tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
+                        <th style="padding:10px; text-align:left;">নাম ও ফোন</th>
+                        <th style="padding:10px; text-align:right;">ব্যালেন্স</th>
+                    </tr>
+                    ${data.users.map(u => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <td style="padding:10px;">${u.name}<br><small style="color:#666">${u.phone}</small></td>
+                            <td style="padding:10px; text-align:right; color:var(--accent)">৳${u.main_balance}</td>
+                        </tr>
+                    `).join('')}
+                </table>`;
+        } else {
+            listBody.innerHTML = "ইউজার ডাটা পাওয়া যায়নি।";
         }
+    } catch (e) { listBody.innerHTML = "সার্ভার এরর!"; }
+}
 
-        async function saveTask() {
-            const task = {
-                title: document.getElementById('title').value,
-                link: document.getElementById('link').value,
-                reward: document.getElementById('reward').value,
-                currency: document.getElementById('currency').value,
-                timer: document.getElementById('timer').value,
-                type: document.getElementById('type').value
-            };
-            const res = await fetch(`${API_BASE}/api/admin/add-task`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(task)
-            });
-            if(res.ok) { alert("সফল!"); loadAdminTasks(); }
-        }
-
-        // --- ট্রেডিং ইঞ্জিন ---
-        function initPanel() {
-    // পেজ লোড হওয়া মাত্রই সেটিংস লোড করবে
-    loadSettings(); 
-
-    fb_db.ref('trading/aaf_coin').on('value', snap => {
-        const val = snap.val();
-        if(val) document.getElementById('live-price-display').innerText = "৳ " + val.price;
-    });
+async function updateUserBalance() {
+    const data = {
+        user_id: document.getElementById('target-uid').value,
+        cash_balance: document.getElementById('user-bal').value,
+        aaf_balance: document.getElementById('user-coins').value
+    };
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/update-balance`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if(res.ok) alert("ইউজার ব্যালেন্স সফলভাবে আপডেট হয়েছে!");
+    } catch(e) { alert("ব্যালেন্স আপডেট ব্যর্থ!"); }
         }
         
-        async function forceMarketPrice() {
-            const price = document.getElementById('inp-price').value;
-            const res = await fetch(`${API_BASE}/api/admin/force-price`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ price: price })
-            });
-            if(res.ok) alert("মার্কেট প্রাইস ফিক্সড করা হয়েছে!");
-        }
-
-        async function setGlobalFee() {
-            const fee = document.getElementById('c-fee').value;
-            const res = await fetch(`${API_BASE}/api/admin/set-fee`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ fee: fee })
-            });
-            if(res.ok) alert("ফি আপডেট হয়েছে!");
-        }
-
-        // --- ইউজার ম্যানেজমেন্ট ---
-        async function updateUserBalance() {
-            const data = {
-                user_id: document.getElementById('target-uid').value,
-                cash_balance: document.getElementById('user-bal').value,
-                aaf_balance: document.getElementById('user-coins').value
-            };
-            const res = await fetch(`${API_BASE}/api/admin/update-balance`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            if(res.ok) alert("ব্যালেন্স আপডেট হয়েছে!");
-        }
-
-        async function loadUsers() {
-            const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('member-list-body').innerHTML = `
-                    <table style="width:100%; border-collapse:collapse;">
-                        <tr style="color:var(--cyan)"><th>নাম</th><th>ব্যালেন্স</th></tr>
-                        ${data.users.map(u => `<tr style="border-bottom:1px solid #222"><td style="padding:10px">${u.name}<br><small>${u.phone}</small></td><td>৳${u.main_balance}</td></tr>`).join('')}
-                    </table>`;
-            }
-        }
     </script>
 </body>
     </html>
