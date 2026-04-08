@@ -93,6 +93,14 @@
                 <label>চ্যানেল ইউজারনেম (ID)</label><input type="text" id="admin_channel_id">
                 <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
             </div>
+            
+            <div style="background: #1e293b; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+    <span>IP Anti-Cheat System</span>
+    <label class="switch">
+        <input type="checkbox" id="ip_security_toggle" onchange="toggleIPSecurity()">
+        <span class="slider round"></span>
+    </label>
+            </div>
 
             <div class="premium-card">
                 <div class="card-title"><i class="fas fa-bullhorn"></i> গ্লোবাল নোটিশ (Popup Ad)</div>
@@ -303,6 +311,21 @@
                 body: JSON.stringify(data)
             });
             if(res.ok) alert("ব্যালেন্স আপডেট হয়েছে!");
+        }
+
+        async function toggleIPSecurity() {
+    const isChecked = document.getElementById('ip_security_toggle').checked;
+    
+    const res = await fetch('/admin/update_server', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            ip_security: isChecked,
+            // আপনার আগের অন্যান্য সেটিংস ডাটা (যেমন ইনকাম, ট্রেডিং রেট) এখানে পাঠাতে পারেন
+        })
+    });
+    
+    if(res.ok) alert(isChecked ? "IP Lock চালু হয়েছে" : "IP Lock বন্ধ হয়েছে");
         }
 
         async function loadUsers() {
