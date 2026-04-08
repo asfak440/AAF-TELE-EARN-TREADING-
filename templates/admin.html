@@ -344,9 +344,6 @@ async function loadSettings() {
             });
             if(res.ok) alert("ব্যালেন্স আপডেট হয়েছে!");
         }
-    
-    if(res.ok) alert(isChecked ? "IP Lock চালু হয়েছে" : "IP Lock বন্ধ হয়েছে");
-        }
 
         async function loadUsers() {
             const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
