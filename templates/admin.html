@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF মাস্টার কন্ট্রোল প্যানেল v8.0</title>
+    <title>AAF মাস্টার কন্ট্রোল প্যানেল v9.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -16,37 +16,42 @@
             --cyan: #00f2fe; --purple: #7000ff; --accent: #00ff88;
             --danger: #ff0055; --gold: #ffaa00; --sidebar-width: 260px;
         }
-        body { background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; margin: 0; display: flex; }
+        body { background: var(--bg); color: #fff; font-family: 'Hind Siliguri', sans-serif; margin: 0; display: flex; overflow-x: hidden; }
         
         /* Sidebar Design */
-        .sidebar { width: var(--sidebar-width); background: var(--card); height: 100vh; position: fixed; border-right: 1px solid var(--border); z-index: 100; }
+        .sidebar { width: var(--sidebar-width); background: var(--card); height: 100vh; position: fixed; border-right: 1px solid var(--border); z-index: 100; transition: 0.3s; }
         .logo-area { padding: 30px 20px; text-align: center; font-size: 22px; font-weight: 800; color: var(--cyan); letter-spacing: 1px; border-bottom: 1px solid var(--border); }
         .nav-links { list-style: none; padding: 20px 15px; margin: 0; }
         .nav-links li { padding: 15px; cursor: pointer; transition: 0.3s; border-radius: 12px; margin-bottom: 10px; color: #94a3b8; display: flex; align-items: center; font-weight: 600; }
         .nav-links li i { margin-right: 15px; width: 20px; font-size: 18px; }
         .nav-links li:hover, .nav-links li.active { background: linear-gradient(135deg, rgba(0, 242, 254, 0.1), rgba(112, 0, 255, 0.1)); color: var(--cyan); border: 1px solid var(--border); }
 
-        /* Main Content area */
+        /* Main Content */
         .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); min-height: 100vh; padding: 30px; box-sizing: border-box; }
         .page-section { display: none; animation: fadeIn 0.4s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Cards & Components */
-        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 25px; border-radius: 24px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        /* UI Elements */
+        .premium-card { background: var(--card); border: 1px solid var(--border); padding: 25px; border-radius: 24px; margin-bottom: 25px; }
         .card-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--cyan); display: flex; align-items: center; gap: 10px; }
-        input, textarea, select { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 14px; color: #fff; margin-top: 10px; margin-bottom: 15px; font-size: 15px; }
-        .btn-main { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; transition: 0.3s; }
-        .btn-main:hover { opacity: 0.9; transform: scale(1.02); }
+        input, textarea, select { width: 100%; background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 14px; color: #fff; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; background: linear-gradient(90deg, var(--cyan), var(--purple)); color: #fff; margin-top: 10px; }
         
-        /* Mobile Responsive */
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Bottom Nav (Mobile Only) */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); border-top: 1px solid var(--border); z-index: 1000; justify-content: space-around; padding: 10px 0; }
+        .bottom-nav i { font-size: 20px; color: #94a3b8; cursor: pointer; }
+        .bottom-nav i.active { color: var(--cyan); }
+
         @media (max-width: 768px) {
-            .sidebar { width: 80px; } .nav-links span, .logo-area span { display: none; }
-            .main-content { margin-left: 80px; width: calc(100% - 80px); padding: 15px; }
-            .nav-links li i { margin-right: 0; }
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; padding-bottom: 80px; }
+            .bottom-nav { display: flex; }
+            .row { grid-template-columns: 1fr; }
         }
 
-        /* Login Overlay */
         #admin-login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -54,20 +59,20 @@
 
     <div id="admin-login-overlay">
         <div style="background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid var(--cyan); text-align: center; width: 320px;">
-            <h2 style="color:var(--cyan)">মাস্টার কন্ট্রোল</h2>
-            <input type="password" id="admin-pass" placeholder="গোপন পিন দিন" style="text-align: center; font-size: 24px;">
-            <button class="btn-main" onclick="checkAuth()">আনলক প্যানেল</button>
+            <h2 style="color:var(--cyan)">AAF MASTER CONTROL</h2>
+            <input type="password" id="admin-pass" placeholder="Enter PIN" style="text-align: center; font-size: 24px;">
+            <button class="btn-main" onclick="checkAuth()">UNLOCK</button>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="logo-area"><span>AAF</span> PANEL</div>
+        <div class="logo-area">AAF MASTER</div>
         <ul class="nav-links">
-            <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-th-large"></i> <span>ড্যাশবোর্ড</span></li>
-            <li onclick="openTab(event, 'task')"><i class="fas fa-tasks"></i> <span>টাস্ক কন্ট্রোল</span></li>
-            <li onclick="event, openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
-            <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট/পেমেন্ট</span></li>
-            <li onclick="openTab(event, 'account')"><i class="fas fa-users"></i> <span>ইউজার অ্যাকাউন্ট</span></li>
+            <li class="active" onclick="openTab(event, 'dashboard')"><i class="fas fa-home"></i> <span>সার্ভার কন্ট্রোল</span></li>
+            <li onclick="openTab(event, 'task')"><i class="fas fa-tasks"></i> <span>টাস্ক ম্যানেজমেন্ট</span></li>
+            <li onclick="openTab(event, 'trading')"><i class="fas fa-chart-line"></i> <span>ট্রেডিং ইঞ্জিন</span></li>
+            <li onclick="openTab(event, 'wallet')"><i class="fas fa-wallet"></i> <span>পেমেন্ট রিকোয়েস্ট</span></li>
+            <li onclick="openTab(event, 'account')"><i class="fas fa-user-cog"></i> <span>ইউজার অ্যাকাউন্ট</span></li>
         </ul>
     </div>
 
@@ -75,132 +80,242 @@
         
         <div id="dashboard" class="page-section active">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-bullhorn"></i> পপ-আপ নোটিশ ও ব্যানার</div>
-                <label>নোটিশ টাইটেল</label><input type="text" id="ad-title" placeholder="যেমন: নতুন অফার!">
-                <label>মেসেজ</label><textarea id="ad-msg" rows="3" placeholder="বিস্তারিত এখানে লিখুন..."></textarea>
-                <button class="btn-main" onclick="updateAds()">নোটিশ পাবলিশ করুন</button>
+                <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>
+                <div class="row">
+                    <div><label>সার্ভার ইনকাম</label><input type="text" id="admin_income"></div>
+                    <div><label>ট্রেডিং ভলিউম</label><input type="text" id="admin_trading"></div>
+                </div>
+                <div class="row">
+                    <div><label>ফেক ইউজার</label><input type="number" id="admin_extra_users"></div>
+                    <div><label>বট টোকেন</label><input type="text" id="admin_bot_token"></div>
+                </div>
+                <label>টেলিগ্রাম চ্যানেল লিংক</label><input type="text" id="admin_channel_url">
+                <label>চ্যানেল ইউজারনেম (ID)</label><input type="text" id="admin_channel_id">
+                <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
             </div>
+
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-link"></i> অফিসিয়াল চ্যানেল লিঙ্ক</div>
-                <input type="text" id="c-link" placeholder="টেলিগ্রাম লিঙ্ক দিন">
-                <button class="btn-main" onclick="updateConfig('full')">লিঙ্ক আপডেট</button>
+                <div class="card-title"><i class="fas fa-bullhorn"></i> গ্লোবাল নোটিশ (Popup Ad)</div>
+                <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>
+                <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>
             </div>
         </div>
 
         <div id="task" class="page-section">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
-                <input type="text" id="t-title" placeholder="টাস্কের নাম">
-                <input type="text" id="t-link" placeholder="ভিডিও বা কাজের লিঙ্ক">
-                <input type="number" id="t-reward" placeholder="পুরস্কারের টাকা (৳)">
-                <button class="btn-main" onclick="saveTask()">টাস্ক পাবলিশ</button>
+                <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>
+                <input type="text" id="title" placeholder="টাস্ক টাইটেল">
+                <input type="text" id="link" placeholder="টাস্ক লিংক">
+                <div class="row">
+                    <input type="number" id="reward" placeholder="পুরস্কার (Amount)">
+                    <select id="currency"><option value="bdt">BDT</option><option value="aaf">AAF</option></select>
+                </div>
+                <div class="row">
+                    <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">
+                    <select id="type"><option value="video">Video</option><option value="link">Link Join</option></select>
+                </div>
+                <button class="btn-main" onclick="saveTask()">সেভ টাস্ক</button>
             </div>
-            <div id="current-task-list"></div>
+            <div id="admin-task-list" class="premium-card">লুড হচ্ছে...</div>
         </div>
 
         <div id="trading" class="page-section">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-bolt"></i> লাইভ প্রাইস কন্ট্রোল (MongoDB)</div>
-                <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:40px;">৳ ০.০০</h1>
-                <input type="number" id="inp-price" step="0.01" placeholder="নতুন দাম লিখুন">
-                <button class="btn-main" onclick="pushTrading()">প্রাইস আপডেট করুন</button>
+                <div class="card-title"><i class="fas fa-coins"></i> মার্কেট প্রাইস কন্ট্রোল</div>
+                <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:45px; margin:10px 0;">৳ ০.০০</h1>
+                <input type="number" id="inp-price" step="0.01" placeholder="নতুন মার্কেট প্রাইস সেট করুন">
+                <button class="btn-main" onclick="forceMarketPrice()">প্রাইস ফিক্সড করুন</button>
             </div>
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-gears"></i> ট্রেডিং সিস্টেম সেটিংস</div>
-                <label>ট্রেডিং ফি (%)</label><input type="number" id="c-fee" step="0.1">
-                <button class="btn-main" style="background:var(--danger);" onclick="toggleTrading()" id="master-switch">ট্রেডিং বন্ধ করুন</button>
-                <button class="btn-main" style="background:var(--gold); margin-top:10px;" onclick="clearChart()">চার্ট ক্লিন করুন</button>
+                <div class="card-title"><i class="fas fa-percentage"></i> ট্রেডিং ফি সেটিংস</div>
+                <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">
+                <button class="btn-main" onclick="setGlobalFee()">ফি আপডেট</button>
             </div>
         </div>
 
         <div id="wallet" class="page-section">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</div>
-                <div id="payout-list" style="color:#94a3b8;">লোড হচ্ছে...</div>
+                <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>
+                <label>নগদ নম্বর</label><input type="text" id="admin_nagad">
+                <label>বিকাশ/বাইনান্স</label><input type="text" id="admin_bkash">
+                <button class="btn-main" onclick="updateWallets()">নম্বর সেভ করুন</button>
             </div>
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-user-edit"></i> ম্যানুয়াল ব্যালেন্স এডিট</div>
-                <input type="text" id="edit-user-id" placeholder="ইউজার ফোন নম্বর">
-                <input type="number" id="edit-amount" placeholder="কত টাকা যোগ/বিয়োগ করবেন">
-                <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>
+                <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>
+                <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div>
             </div>
         </div>
 
         <div id="account" class="page-section">
             <div class="premium-card">
-                <div class="card-title"><i class="fas fa-search"></i> ইউজার সেশন ম্যানেজমেন্ট</div>
-                <input type="text" id="userSearch" onkeyup="searchUser()" placeholder="নাম বা ফোন দিয়ে খুঁজুন...">
-                <div style="overflow-x:auto; margin-top:20px;">
-                    <table style="width:100%; text-align:left; border-collapse: collapse;">
-                        <thead><tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
-                            <th style="padding:10px;">ইউজার</th><th>ব্যালেন্স</th><th>সেশন</th>
-                        </tr></thead>
-                        <tbody id="member-list-body"></tbody>
-                    </table>
+                <div class="card-title"><i class="fas fa-user-edit"></i> ব্যালেন্স এডিট (ম্যানুয়াল)</div>
+                <input type="text" id="target-uid" placeholder="ইউজার UID বা ফোন">
+                <div class="row">
+                    <input type="number" id="user-bal" placeholder="নতুন ক্যাশ ব্যালেন্স">
+                    <input type="number" id="user-coins" placeholder="নতুন AAF কয়েন">
                 </div>
+                <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>
+            </div>
+            <div class="premium-card">
+                <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
+                <div id="member-list-body" style="overflow-x:auto;"></div>
             </div>
         </div>
 
     </div>
 
+    <nav class="bottom-nav">
+        <i class="fas fa-home active" onclick="openTab(event, 'dashboard')"></i>
+        <i class="fas fa-tasks" onclick="openTab(event, 'task')"></i>
+        <i class="fas fa-chart-line" onclick="openTab(event, 'trading')"></i>
+        <i class="fas fa-wallet" onclick="openTab(event, 'wallet')"></i>
+        <i class="fas fa-user-cog" onclick="openTab(event, 'account')"></i>
+    </nav>
+
     <script>
+        // --- কনফিগারেশন ---
         const firebaseConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const fb_db = firebase.database();
-        const API_BASE = window.location.origin;
+        const API_BASE = window.location.origin; // Render API automatically detected
         const MASTER_PIN = "Abdullah6790";
 
-        // ট্যাব সুইচ লজিক
-        function openTab(evt, tabName) {
-            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            evt.currentTarget.classList.add('active');
-            
-            if(tabName === 'account') loadUsers();
-            if(tabName === 'task') renderTaskList();
-            if(tabName === 'wallet') loadPayouts();
-        }
-
+        // --- অথেনটিকেশন ---
         function checkAuth() {
             if(document.getElementById('admin-pass').value === MASTER_PIN) {
                 document.getElementById('admin-login-overlay').style.display = 'none';
-                initDashboard();
+                initPanel();
             } else { alert("ভুল পিন!"); }
         }
 
-        function initDashboard() {
+        // --- ট্যাব লজিক ---
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links li, .bottom-nav i').forEach(l => l.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+            if(tabName === 'task') loadAdminTasks();
+            if(tabName === 'account') loadUsers();
+        }
+
+        // --- সার্ভার কন্ট্রোল ---
+        async function updateServerSettings() {
+            const serverData = {
+                income: document.getElementById('admin_income').value,
+                trading: document.getElementById('admin_trading').value,
+                extra_users: document.getElementById('admin_extra_users').value,
+                channel_link: document.getElementById('admin_channel_url').value,
+                bot_token: document.getElementById('admin_bot_token').value,
+                channel_id: document.getElementById('admin_channel_id').value
+            };
+            try {
+                const res = await fetch(`${API_BASE}/admin/update_server`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(serverData)
+                });
+                if(res.ok) alert("সার্ভার ডাটা আপডেট হয়েছে!");
+            } catch(e) { alert("কানেকশন এরর!"); }
+        }
+
+        async function publishGlobalAd() {
+            const adMessage = document.getElementById('admin_ad_msg').value;
+            try {
+                const res = await fetch(`${API_BASE}/admin/update_ad`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: adMessage })
+                });
+                if(res.ok) alert("নোটিশ পাবলিশ হয়েছে!");
+            } catch(e) { alert("ব্যর্থ হয়েছে!"); }
+        }
+
+        // --- টাস্ক কন্ট্রোল ---
+        async function loadAdminTasks() {
+            const listDiv = document.getElementById('admin-task-list');
+            try {
+                const res = await fetch(`${API_BASE}/api/user/tasks?user_id=admin`);
+                const data = await res.json();
+                listDiv.innerHTML = data.tasks.map(t => `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
+                        <span>${t.title} (${t.reward} ${t.currency})</span>
+                        <button onclick="deleteTask('${t.id}')" style="color:red; background:none; border:none;">মুছুন</button>
+                    </div>
+                `).join('');
+            } catch(e) { listDiv.innerHTML = "টাস্ক লোড করা যাচ্ছে না।"; }
+        }
+
+        async function saveTask() {
+            const task = {
+                title: document.getElementById('title').value,
+                link: document.getElementById('link').value,
+                reward: document.getElementById('reward').value,
+                currency: document.getElementById('currency').value,
+                timer: document.getElementById('timer').value,
+                type: document.getElementById('type').value
+            };
+            const res = await fetch(`${API_BASE}/api/admin/add-task`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(task)
+            });
+            if(res.ok) { alert("সফল!"); loadAdminTasks(); }
+        }
+
+        // --- ট্রেডিং ইঞ্জিন ---
+        function initPanel() {
             fb_db.ref('trading/aaf_coin').on('value', snap => {
                 const val = snap.val();
                 if(val) document.getElementById('live-price-display').innerText = "৳ " + val.price;
             });
-            loadConfig();
         }
 
-        // --- এখানে আপনার আগের ফাংশনগুলো (loadUsers, loadPayouts, pushTrading ইত্যাদি) অপরিবর্তিত থাকবে ---
-        // (উপরে আপনার দেওয়া আগের কোডের স্ক্রিপ্ট অংশটি এখানে যুক্ত হবে)
+        async function forceMarketPrice() {
+            const price = document.getElementById('inp-price').value;
+            const res = await fetch(`${API_BASE}/api/admin/force-price`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ price: price })
+            });
+            if(res.ok) alert("মার্কেট প্রাইস ফিক্সড করা হয়েছে!");
+        }
+
+        async function setGlobalFee() {
+            const fee = document.getElementById('c-fee').value;
+            const res = await fetch(`${API_BASE}/api/admin/set-fee`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ fee: fee })
+            });
+            if(res.ok) alert("ফি আপডেট হয়েছে!");
+        }
+
+        // --- ইউজার ম্যানেজমেন্ট ---
+        async function updateUserBalance() {
+            const data = {
+                user_id: document.getElementById('target-uid').value,
+                cash_balance: document.getElementById('user-bal').value,
+                aaf_balance: document.getElementById('user-coins').value
+            };
+            const res = await fetch(`${API_BASE}/api/admin/update-balance`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) alert("ব্যালেন্স আপডেট হয়েছে!");
+        }
 
         async function loadUsers() {
             const res = await fetch(`${API_BASE}/api/admin/get_users?pin=${MASTER_PIN}`);
             const data = await res.json();
             if (data.success) {
-                document.getElementById('member-list-body').innerHTML = data.users.map(u => `
-                    <tr style="border-bottom:1px solid var(--border);">
-                        <td style="padding:15px;">${u.name || 'User'}<br><small>${u.phone}</small></td>
-                        <td>৳${u.main_balance}</td>
-                        <td>${u.session_string ? 
-                            `<button onclick="copySession('${u.session_string}')" style="background:var(--cyan); border:none; padding:8px; border-radius:8px; cursor:pointer;">Copy Session</button>` : 
-                            '<span style="color:red;">No Session</span>'}</td>
-                    </tr>`).join('');
+                document.getElementById('member-list-body').innerHTML = `
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr style="color:var(--cyan)"><th>নাম</th><th>ব্যালেন্স</th></tr>
+                        ${data.users.map(u => `<tr style="border-bottom:1px solid #222"><td style="padding:10px">${u.name}<br><small>${u.phone}</small></td><td>৳${u.main_balance}</td></tr>`).join('')}
+                    </table>`;
             }
         }
-        
-        function copySession(str) {
-            navigator.clipboard.writeText(str);
-            alert("সেশন কপি হয়েছে!");
-        }
-
-        // বাকি ফাংশনগুলো (updateUserBalance, approvePayout, saveTask) আপনার আগের কোড থেকে এখানে থাকবে।
     </script>
 </body>
-                </html>
+    </html>
