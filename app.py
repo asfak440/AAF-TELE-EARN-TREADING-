@@ -195,6 +195,10 @@ def admin_all_data():
 
 
 # পেজ রেন্ডারিং
+@app.route('/login')
+@login_required
+def render_login(): return render_template('login.html')
+    
 @app.route('/refer_list')
 @login_required
 def render_refer_list(): return render_template('refer_list.html')
