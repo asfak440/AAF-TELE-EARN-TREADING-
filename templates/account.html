@@ -11,44 +11,49 @@
         :root {
             --bg: #030712; --card: #0d111c; --border: rgba(255, 255, 255, 0.1);
             --cyan: #00f2fe; --primary: #39d353; --gold: #ffaa00;
-            --text-dim: #8b949e; --glass: rgba(255, 255, 255, 0.05);
+            --danger: #ff4444; --text-dim: #8b949e; 
         }
 
-        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 120px; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 130px; overflow-x: hidden; }
 
         /* --- Sliding Cover Section --- */
         .profile-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #000; }
         .cover-slider { position: absolute; width: 200%; height: 100%; display: flex; transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1); }
         .slide { width: 50%; height: 100%; background-size: cover; background-position: center; }
-        
-        /* ডিফল্ট ব্র্যান্ড ইমেজ */
         .slide-default { background-image: url('cb5ab54f-d9c5-41f6-9a24-fe714060a2f6.jpeg'); }
-        /* অ্যাডমিন প্যানেল থেকে আসা অ্যাড ইমেজ */
         .slide-ad { background-color: #0d111c; background-size: cover; background-position: center; }
 
-        .profile-info-overlay {
-            position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 0;
-            background: linear-gradient(to top, var(--bg) 20%, transparent); z-index: 5; text-align: center;
+        .profile-info-overlay { 
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 0; 
+            background: linear-gradient(to top, var(--bg) 20%, transparent); z-index: 5; text-align: center; 
         }
 
+        /* --- Avatar --- */
         .avatar-wrapper { position: relative; width: 85px; height: 85px; margin: -45px auto 10px; z-index: 10; }
         .tg-avatar { 
             width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--cyan); 
             overflow: hidden; background: #1e293b; box-shadow: 0 0 20px rgba(0,242,254,0.4); 
-            display: flex; align-items: center; justify-content: center; font-size: 30px;
+            display: flex; align-items: center; justify-content: center; font-size: 30px; 
         }
         .tg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- Info Cards --- */
+        /* --- Info Grid --- */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px 20px; }
         .info-card { background: var(--card); border: 1px solid var(--border); padding: 15px 10px; border-radius: 18px; text-align: center; }
         .info-card span { font-size: 8px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 5px; }
         .info-card h4 { margin: 0; font-size: 15px; font-family: 'Syncopate'; letter-spacing: 1px; }
 
-        /* --- Buttons --- */
-        .action-btn { margin: 15px 20px; padding: 16px; border-radius: 15px; text-align: center; font-family: 'Syncopate'; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        /* --- Account List Styling --- */
+        .account-item { 
+            background: var(--card); border: 1px solid var(--border); padding: 12px; 
+            border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; 
+        }
+
+        /* --- Action Buttons --- */
+        .action-btn { margin: 12px 20px; padding: 16px; border-radius: 15px; text-align: center; font-family: 'Syncopate'; font-size: 11px; cursor: pointer; transition: 0.3s; }
         .btn-offer { background: linear-gradient(90deg, #00f2fe, #0088cc); color: #000; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); }
-        .btn-add { border: 1px dashed var(--cyan); color: var(--cyan); margin-top: 5px; }
+        .btn-add { border: 1px dashed var(--cyan); color: var(--cyan); }
+        .btn-logout { border: 1px solid var(--danger); color: var(--danger); }
 
         /* --- Ad Modal --- */
         #ad-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); }
@@ -65,6 +70,7 @@
 </head>
 <body>
 
+    <!-- Popup Modal -->
     <div id="ad-modal">
         <div class="modal-content">
             <img id="popup-img" src="" alt="Ad">
@@ -74,6 +80,7 @@
         </div>
     </div>
 
+    <!-- Top Banner Section -->
     <div class="profile-container">
         <div class="cover-slider" id="main-slider">
             <div class="slide slide-default"></div>
@@ -85,16 +92,19 @@
         </div>
     </div>
 
+    <!-- Avatar Section -->
     <div class="avatar-wrapper">
         <div class="tg-avatar" id="main-avatar">
             <i class="fas fa-user-circle"></i>
         </div>
     </div>
 
+    <!-- Offer Button -->
     <div class="action-btn btn-offer" onclick="showOfferPopup()">
         <i class="fas fa-bolt"></i> &nbsp; VIEW SPECIAL OFFER
     </div>
 
+    <!-- Wallets -->
     <div class="info-grid">
         <div class="info-card">
             <span>CASH WALLET</span>
@@ -106,25 +116,34 @@
         </div>
     </div>
 
-    <!-- কানেক্টেড অ্যাকাউন্ট লিস্ট -->
-<div id="account-list-container" style="padding: 0 20px; margin-top: 10px;">
-    <span style="font-size: 10px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 10px;">Connected Accounts</span>
-    <div id="accounts-display">
-        <!-- এখানে আগের অ্যাকাউন্টগুলো শো করবে -->
+    <!-- Connected Accounts List -->
+    <div style="padding: 10px 20px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 10px; font-family: 'Syncopate'; color: var(--text-dim);">SAVED ACCOUNTS</span>
+            <span onclick="clearAllData()" style="font-size: 9px; color: var(--danger); cursor: pointer; font-family: 'Syncopate';">REMOVE ALL</span>
+        </div>
+        <div id="accounts-display">
+            <!-- Accounts will be injected here -->
+        </div>
     </div>
-</div>
 
-<div class="action-btn btn-add" onclick="addNewAccount()">
-    <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
-</div>
+    <!-- Action Buttons -->
+    <div class="action-btn btn-add" onclick="addNewAccount()">
+        <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
+    </div>
 
+    <div class="action-btn btn-logout" onclick="logoutSession()">
+        <i class="fas fa-sign-out-alt"></i> &nbsp; LOGOUT CURRENT SESSION
+    </div>
+
+    <!-- Navigation Bar -->
     <div class="bottom-nav-container">
         <nav class="bottom-nav">
-            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i>Home</a>
-            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-            <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
-            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
-            <a href="/account" class="nav-item active"><i class="fas fa-user"></i>Account</a>
+            <a href="index.html" class="nav-item"><i class="fas fa-home"></i>Home</a>
+            <a href="task.html" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
+            <a href="trade.html" class="nav-item"><i class="fas fa-chart-line"></i>Trade</a>
+            <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
+            <a href="account.html" class="nav-item active"><i class="fas fa-user"></i>Account</a>
         </nav>
     </div>
 
@@ -132,62 +151,55 @@
         const API_URL = "https://aaf-tele-earn-treading.onrender.com";
         let popupData = null;
 
-        // --- স্লাইডার কন্ট্রোল (Auto Slide) ---
+        // --- 1. স্লাইডার কন্ট্রোল (Auto Slide) ---
         let currentSlide = 0;
         setInterval(() => {
             const slider = document.getElementById('main-slider');
-            currentSlide = (currentSlide === 0) ? 50 : 0;
-            slider.style.transform = `translateX(-${currentSlide}%)`;
-        }, 6000); // প্রতি ৬ সেকেন্ডে অটো স্লাইড হবে
+            if(slider) {
+                currentSlide = (currentSlide === 0) ? 50 : 0;
+                slider.style.transform = `translateX(-${currentSlide}%)`;
+            }
+        }, 6000);
 
-        // --- এপিআই থেকে ডাটা লোড ---
+        // --- 2. ডাটা ইনিশিয়ালাইজেশন ---
         async function initializeApp() {
             const userId = localStorage.getItem('user_id');
+            if(!userId) return;
             
             try {
-                // ইউজার ডাটা এবং অ্যাড ডাটা প্যারালাল ফেচ
                 const [userRes, adRes] = await Promise.all([
-                    userId ? fetch(`${API_URL}/api/user/data/${userId}`) : null,
+                    fetch(`${API_URL}/api/user/data/${userId}`),
                     fetch(`${API_URL}/api/ads/control`)
                 ]);
 
-                // ১. ইউজার ইনফো আপডেট
-                if (userRes) {
-                    const userData = await userRes.json();
-                    if (userData.status === "success") {
-                        document.getElementById('u-name').innerText = userData.name.toUpperCase();
-                        document.getElementById('u-id').innerText = "UID: " + userData.uid;
-                        document.getElementById('cash-bal').innerText = "৳ " + parseFloat(userData.balance).toFixed(2);
-                        document.getElementById('coin-bal').innerText = parseFloat(userData.aaf_coins || 0).toFixed(2);
-                        
-                        if (userData.photo) {
-                            document.getElementById('main-avatar').innerHTML = `<img src="${userData.photo}" alt="User">`;
-                        }
+                // ইউজার ইনফো আপডেট
+                const userData = await userRes.json();
+                if (userData.status === "success") {
+                    document.getElementById('u-name').innerText = userData.name.toUpperCase();
+                    document.getElementById('u-id').innerText = "UID: " + userData.uid;
+                    document.getElementById('cash-bal').innerText = "৳ " + parseFloat(userData.balance || 0).toFixed(2);
+                    document.getElementById('coin-bal').innerText = parseFloat(userData.aaf_coins || 0).toFixed(2);
+                    if (userData.photo) {
+                        document.getElementById('main-avatar').innerHTML = `<img src="${userData.photo}" alt="User">`;
                     }
                 }
 
-                // ২. অ্যাডমিন অ্যাড কন্ট্রোল আপডেট
+                // অ্যাডমিন অ্যাড কন্ট্রোল
                 const adData = await adRes.json();
-                
-                // ব্যানার অ্যাড স্লাইডারে সেট করা
                 if (adData.banner && adData.banner.enabled) {
                     document.getElementById('admin-banner-slide').style.backgroundImage = `url('${adData.banner.image}')`;
                 } else {
-                    // ব্যানার না থাকলে স্লাইডার বন্ধ রাখা
                     document.getElementById('main-slider').style.width = "100%";
-                    document.querySelectorAll('.slide').forEach(s => s.style.width = "100%");
                 }
-
-                // পপআপ ডাটা গ্লোবাল ভেরিয়েবলে রাখা
                 popupData = adData.popup;
 
             } catch (error) {
-                console.error("Initialization Error:", error);
-                document.getElementById('u-name').innerText = "CONNECTION ERROR";
+                console.error("Init Error:", error);
+                document.getElementById('u-name').innerText = "OFFLINE";
             }
         }
 
-        // --- পপআপ ফাংশন ---
+        // --- 3. পপআপ ফাংশন ---
         function showOfferPopup() {
             if (popupData && popupData.enabled) {
                 document.getElementById('popup-img').src = popupData.image;
@@ -195,7 +207,7 @@
                 document.getElementById('popup-desc').innerText = popupData.desc;
                 document.getElementById('ad-modal').style.display = 'block';
             } else {
-                alert("No active offers at this moment. Check back later!");
+                alert("No active offers at this moment!");
             }
         }
 
@@ -203,87 +215,89 @@
             document.getElementById('ad-modal').style.display = 'none';
         }
 
-        // ১. নতুন অ্যাকাউন্ট অ্যাড করার ফাংশন
-function addNewAccount() {
-    // বর্তমান আইডিটি 'saved_accounts' লিস্টে সেভ করে রাখা
-    const currentId = localStorage.getItem('user_id');
-    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+        // --- 4. মাল্টি-অ্যাকাউন্ট লজিক ---
+        async function loadSavedList() {
+            const displayArea = document.getElementById('accounts-display');
+            const currentId = localStorage.getItem('user_id');
+            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
 
-    if (currentId && !savedAccounts.includes(currentId)) {
-        savedAccounts.push(currentId);
-        localStorage.setItem('saved_accounts', JSON.stringify(savedAccounts));
-    }
-    
-    // লগইন পেজে পাঠিয়ে দেওয়া
-    window.location.href = 'login.html';
-}
+            displayArea.innerHTML = ''; 
 
-// ২. সেভ করা অ্যাকাউন্টগুলো ডিসপ্লে করা
-async function loadSavedAccounts() {
-    const displayArea = document.getElementById('accounts-display');
-    const currentId = localStorage.getItem('user_id');
-    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+            for (let accId of saved) {
+                if (accId === currentId) continue; 
 
-    displayArea.innerHTML = ''; // ক্লিয়ার করা
+                try {
+                    const res = await fetch(`${API_URL}/api/user/data/${accId}`);
+                    const data = await res.json();
 
-    for (let accId of savedAccounts) {
-        if (accId === currentId) continue; // বর্তমান অ্যাকাউন্ট লিস্টে দেখানোর দরকার নেই
-
-        try {
-            const res = await fetch(`${API_URL}/api/user/data/${accId}`);
-            const data = await res.json();
-
-            if (data.status === "success") {
-                const accDiv = document.createElement('div');
-                accDiv.className = 'info-card';
-                accDiv.style = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px; border-radius: 12px; cursor: pointer;";
-                accDiv.onclick = () => switchAccount(accId); // ক্লিক করলে সুইচ হবে
-
-                accDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <img src="${data.photo || 'https://via.placeholder.com/40'}" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--cyan);">
-                        <div style="text-align: left;">
-                            <h5 style="margin:0; font-size: 12px;">${data.name}</h5>
-                            <span style="font-size: 9px; color: var(--text-dim);">UID: ${data.uid}</span>
-                        </div>
-                    </div>
-                    <i class="fas fa-exchange-alt" style="color: var(--cyan); font-size: 12px;"></i>
-                `;
-                displayArea.appendChild(accDiv);
+                    if (data.status === "success") {
+                        displayArea.innerHTML += `
+                            <div class="account-item">
+                                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; flex:1;" onclick="switchAccount('${accId}')">
+                                    <img src="${data.photo || 'https://via.placeholder.com/40'}" style="width:35px; height:35px; border-radius:50%; border: 1px solid var(--cyan);">
+                                    <div style="text-align: left;">
+                                        <h5 style="margin:0; font-size:12px;">${data.name}</h5>
+                                        <span style="font-size:9px; color: var(--text-dim);">UID: ${data.uid}</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:15px; align-items:center;">
+                                    <i class="fas fa-exchange-alt" style="color: var(--cyan); font-size:12px; cursor:pointer;" onclick="switchAccount('${accId}')"></i>
+                                    <i class="fas fa-trash-alt" style="color: var(--danger); font-size:12px; cursor:pointer;" onclick="removeOne('${accId}')"></i>
+                                </div>
+                            </div>`;
+                    }
+                } catch (e) { console.error(e); }
             }
-        } catch (e) { console.error("Account Load Error", e); }
-    }
-}
+        }
 
-// ৩. অ্যাকাউন্ট সুইচ করার ফাংশন
-function switchAccount(targetId) {
-    const currentId = localStorage.getItem('user_id');
-    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+        function switchAccount(targetId) {
+            const currentId = localStorage.getItem('user_id');
+            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
 
-    // বর্তমান আইডিকে সেভ লিস্টে রাখা
-    if (!savedAccounts.includes(currentId)) {
-        savedAccounts.push(currentId);
-    }
-    
-    // নতুন আইডিকে বর্তমান আইডি হিসেবে সেট করা
-    localStorage.setItem('user_id', targetId);
-    
-    // সেভ লিস্ট থেকে নতুন আইডিটি রিমুভ করা (কারণ এটি এখন একটিভ)
-    const newSavedList = savedAccounts.filter(id => id !== targetId);
-    localStorage.setItem('saved_accounts', JSON.stringify(newSavedList));
+            if (currentId && !saved.includes(currentId)) saved.push(currentId);
+            
+            localStorage.setItem('user_id', targetId);
+            localStorage.setItem('saved_accounts', JSON.stringify(saved.filter(id => id !== targetId)));
+            location.reload();
+        }
 
-    // পেজ রিফ্রেশ করে নতুন ডাটা লোড করা
-    location.reload();
-}
+        function removeOne(id) {
+            if(confirm("Remove this account from saved list?")) {
+                let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+                localStorage.setItem('saved_accounts', JSON.stringify(saved.filter(i => i !== id)));
+                loadSavedList();
+            }
+        }
 
-// initializeApp এর শেষে loadSavedAccounts() কল করুন
-window.onload = async () => {
-    await initializeApp();
-    await loadSavedAccounts();
-};
+        function addNewAccount() {
+            const currentId = localStorage.getItem('user_id');
+            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+            if (currentId && !saved.includes(currentId)) {
+                saved.push(currentId);
+                localStorage.setItem('saved_accounts', JSON.stringify(saved));
+            }
+            localStorage.removeItem('user_id');
+            window.location.href = 'login.html';
+        }
 
-        // পেজ লোড হলে অ্যাপ রান হবে
-        window.onload = initializeApp;
+        function logoutSession() {
+            if(confirm("Logout from current session? It will be saved in your list.")) {
+                addNewAccount(); // একই কাজ করবে
+            }
+        }
+
+        function clearAllData() {
+            if(confirm("This will permanently remove ALL saved accounts from this device. Continue?")) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        // --- পেজ স্টার্ট ---
+        window.onload = async () => {
+            await initializeApp();
+            await loadSavedList();
+        };
     </script>
 </body>
-    </html>
+</html>
