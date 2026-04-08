@@ -207,25 +207,54 @@
         }
 
         // --- সার্ভার কন্ট্রোল ---
-        async function updateServerSettings() {
-            const serverData = {
-                income: document.getElementById('admin_income').value,
-                trading: document.getElementById('admin_trading').value,
-                extra_users: document.getElementById('admin_extra_users').value,
-                channel_link: document.getElementById('admin_channel_url').value,
-                bot_token: document.getElementById('admin_bot_token').value,
-                channel_id: document.getElementById('admin_channel_id').value
-            };
-            try {
-                const res = await fetch(`${API_BASE}/admin/update_server`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(serverData)
-                });
-                if(res.ok) alert("সার্ভার ডাটা আপডেট হয়েছে!");
-            } catch(e) { alert("কানেকশন এরর!"); }
-        }
+        // ফাংশন: নতুন সেটিংস সার্ভারে সেভ করা
+async function updateServerSettings() {
+    const serverData = {
+        income: document.getElementById('admin_income').value,
+        trading: document.getElementById('admin_trading').value,
+        extra_users: document.getElementById('admin_extra_users').value,
+        channel_link: document.getElementById('admin_channel_url').value,
+        bot_token: document.getElementById('admin_bot_token')?.value || '',
+        channel_id: document.getElementById('admin_channel_id')?.value || '',
+        ip_security: document.getElementById('ip_security_toggle').checked
+    };
 
+    try {
+        const res = await fetch(`${API_BASE}/admin/update_server`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(serverData)
+        });
+        if(res.ok) {
+            alert("সাফল্যের সাথে সেভ হয়েছে!");
+        } else {
+            alert("সার্ভার এরর! সেভ হয়নি।");
+        }
+    } catch(e) {
+        alert("কানেকশন এরর!");
+    }
+}
+
+        // ফাংশন: ডাটাবেস থেকে সেটিংস এনে বক্সে দেখানো
+async function loadSettings() {
+    try {
+        const res = await fetch(`${API_BASE}/api/user/data`);
+        const data = await res.json();
+
+        if (data.admin) {
+            document.getElementById('admin_income').value = data.admin.server_income || '';
+            document.getElementById('admin_trading').value = data.admin.server_trading || '';
+            document.getElementById('admin_extra_users').value = data.admin.total_users || 0;
+            document.getElementById('admin_channel_url').value = data.admin.channel_url || '';
+            
+            if(data.admin.ip_security !== undefined) {
+                document.getElementById('ip_security_toggle').checked = data.admin.ip_security;
+            }
+        }
+    } catch (e) {
+        console.error("ডাটা লোড করতে সমস্যা হয়েছে:", e);
+    }
+}
         async function publishGlobalAd() {
             const adMessage = document.getElementById('admin_ad_msg').value;
             try {
