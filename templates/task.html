@@ -254,24 +254,38 @@
             }, 1000);
         }
 
-        // ৪. ক্লেইম সাবমিট
-        async function submitClaim(taskId) {
-            try {
-                const res = await fetch(`${API_BASE}/api/user/tasks/claim`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: USER_ID, task_id: taskId })
-                });
-                const out = await res.json();
-                if(out.success) { 
-                    alert(out.message); 
-                    loadTasks(); 
-                } else { 
-                    alert("Claim Error: " + out.message); 
-                    loadTasks();
-                }
-            } catch (e) { alert("Server is busy. Try later."); }
+        // ৪. ক্লেইম সাবমিট ক্লেইম সাবমিট (সংশোধিত ও ডুপ্লিকেটমুক্ত)
+async function submitClaim(taskId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/user/tasks/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_id: USER_ID, 
+                task_id: taskId 
+            })
+        });
+
+        const out = await res.json();
+
+        if (out.success) {
+            // টাস্ক সফল হলে সাকসেস মেসেজ দেখাবে
+            alert("Success: " + out.message);
+            
+            // ডাটা আপডেট করার জন্য পেজ রিলোড বা টাস্ক লোড
+            window.location.reload(); 
+        } else {
+            // আইপি লক, আইডি এরর বা অন্য কোনো সমস্যা হলে এখানে দেখাবে
+            alert("Claim Error: " + out.message);
+            
+            // এরর হলেও লিস্টটি রিফ্রেশ করা ভালো
+            loadTasks();
         }
+    } catch (e) {
+        console.error("Error:", e);
+        alert("Server is busy. Please try again later.");
+    }
+                }
 
         // ৫. অটো-রিফ্রেশ ও গ্লোবাল অ্যাড কল
         window.onload = () => {
