@@ -154,38 +154,17 @@ def get_market_price():
 @app.route('/admin/update_server', methods=['POST'])
 def update_server():
     data = request.json
-    db.reference('admin_settings').update({
-        'server_income': data['income'],
-        'server_trading': data['trading'],
-        'extra_users': data['extra_users'],
-        'channel_link': data['channel_link'],
-        'bot_token': data.get('bot_token'),
-        'channel_id': data.get('channel_id')
-    })
-    return jsonify({"status": "success"})
-
-@app.route('/api/admin/add-task', methods=['POST'])
-def add_task():
-    data = request.json
-    new_task = {
-        "id": str(int(time.time())),
-        "title": data.get('title'),
-        "link": data.get('link'),
-        "reward": data.get('reward'),
-        "currency": data.get('currency'),
-        "active": True
-    }
-    tasks_col.insert_one(new_task)
-    return jsonify({"success": True})
-
-@app.route('/admin/update_server', methods=['POST'])
-def update_server():
-    data = request.json
     ref = db.reference('admin_settings')
-    # আগের ডাটার সাথে ip_security ফিল্ডটি যোগ করুন
+    
+    # সব ডাটা একবারে আপডেট হবে
     ref.update({
-        'ip_security': data.get('ip_security', True), # এই লাইনটি যোগ হবে
-        # আপনার বাকি কোড...
+        'server_income': data.get('income'),
+        'server_trading': data.get('trading'),
+        'extra_users': data.get('extra_users'),
+        'channel_link': data.get('channel_link'),
+        'bot_token': data.get('bot_token'),
+        'channel_id': data.get('channel_id'),
+        'ip_security': data.get('ip_security', True) # এটি নতুন যোগ হলো
     })
     return jsonify({"status": "success"})
 
