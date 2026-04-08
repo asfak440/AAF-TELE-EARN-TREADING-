@@ -235,6 +235,14 @@ def index():
 @login_required
 def render_dashboard(): return render_template('dashboard.html')
 
+@app.route('/refer_list')
+@login_required
+def render_refer_list(): return render_template('refer_list.html')
+
+@app.route('/payment_history')
+@login_required
+def render_payment_history(): return render_template('payment_history.html')
+
 @app.route('/task')
 @login_required
 def render_task(): return render_template('task.html')
