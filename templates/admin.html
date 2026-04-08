@@ -301,12 +301,15 @@ async function loadSettings() {
 
         // --- ট্রেডিং ইঞ্জিন ---
         function initPanel() {
-            fb_db.ref('trading/aaf_coin').on('value', snap => {
-                const val = snap.val();
-                if(val) document.getElementById('live-price-display').innerText = "৳ " + val.price;
-            });
-        }
+    // পেজ লোড হওয়া মাত্রই সেটিংস লোড করবে
+    loadSettings(); 
 
+    fb_db.ref('trading/aaf_coin').on('value', snap => {
+        const val = snap.val();
+        if(val) document.getElementById('live-price-display').innerText = "৳ " + val.price;
+    });
+        }
+        
         async function forceMarketPrice() {
             const price = document.getElementById('inp-price').value;
             const res = await fetch(`${API_BASE}/api/admin/force-price`, {
@@ -341,18 +344,6 @@ async function loadSettings() {
             });
             if(res.ok) alert("ব্যালেন্স আপডেট হয়েছে!");
         }
-
-        async function toggleIPSecurity() {
-    const isChecked = document.getElementById('ip_security_toggle').checked;
-    
-    const res = await fetch('/admin/update_server', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            ip_security: isChecked,
-            // আপনার আগের অন্যান্য সেটিংস ডাটা (যেমন ইনকাম, ট্রেডিং রেট) এখানে পাঠাতে পারেন
-        })
-    });
     
     if(res.ok) alert(isChecked ? "IP Lock চালু হয়েছে" : "IP Lock বন্ধ হয়েছে");
         }
