@@ -106,9 +106,17 @@
         </div>
     </div>
 
-    <div class="action-btn btn-add" onclick="window.location.href='login.html'">
-        <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
+    <!-- কানেক্টেড অ্যাকাউন্ট লিস্ট -->
+<div id="account-list-container" style="padding: 0 20px; margin-top: 10px;">
+    <span style="font-size: 10px; font-family: 'Syncopate'; color: var(--text-dim); display: block; margin-bottom: 10px;">Connected Accounts</span>
+    <div id="accounts-display">
+        <!-- এখানে আগের অ্যাকাউন্টগুলো শো করবে -->
     </div>
+</div>
+
+<div class="action-btn btn-add" onclick="addNewAccount()">
+    <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
+</div>
 
     <div class="bottom-nav-container">
         <nav class="bottom-nav">
@@ -194,6 +202,85 @@
         function closePopup() {
             document.getElementById('ad-modal').style.display = 'none';
         }
+
+        // ১. নতুন অ্যাকাউন্ট অ্যাড করার ফাংশন
+function addNewAccount() {
+    // বর্তমান আইডিটি 'saved_accounts' লিস্টে সেভ করে রাখা
+    const currentId = localStorage.getItem('user_id');
+    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+
+    if (currentId && !savedAccounts.includes(currentId)) {
+        savedAccounts.push(currentId);
+        localStorage.setItem('saved_accounts', JSON.stringify(savedAccounts));
+    }
+    
+    // লগইন পেজে পাঠিয়ে দেওয়া
+    window.location.href = 'login.html';
+}
+
+// ২. সেভ করা অ্যাকাউন্টগুলো ডিসপ্লে করা
+async function loadSavedAccounts() {
+    const displayArea = document.getElementById('accounts-display');
+    const currentId = localStorage.getItem('user_id');
+    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+
+    displayArea.innerHTML = ''; // ক্লিয়ার করা
+
+    for (let accId of savedAccounts) {
+        if (accId === currentId) continue; // বর্তমান অ্যাকাউন্ট লিস্টে দেখানোর দরকার নেই
+
+        try {
+            const res = await fetch(`${API_URL}/api/user/data/${accId}`);
+            const data = await res.json();
+
+            if (data.status === "success") {
+                const accDiv = document.createElement('div');
+                accDiv.className = 'info-card';
+                accDiv.style = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px; border-radius: 12px; cursor: pointer;";
+                accDiv.onclick = () => switchAccount(accId); // ক্লিক করলে সুইচ হবে
+
+                accDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img src="${data.photo || 'https://via.placeholder.com/40'}" style="width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--cyan);">
+                        <div style="text-align: left;">
+                            <h5 style="margin:0; font-size: 12px;">${data.name}</h5>
+                            <span style="font-size: 9px; color: var(--text-dim);">UID: ${data.uid}</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-exchange-alt" style="color: var(--cyan); font-size: 12px;"></i>
+                `;
+                displayArea.appendChild(accDiv);
+            }
+        } catch (e) { console.error("Account Load Error", e); }
+    }
+}
+
+// ৩. অ্যাকাউন্ট সুইচ করার ফাংশন
+function switchAccount(targetId) {
+    const currentId = localStorage.getItem('user_id');
+    let savedAccounts = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+
+    // বর্তমান আইডিকে সেভ লিস্টে রাখা
+    if (!savedAccounts.includes(currentId)) {
+        savedAccounts.push(currentId);
+    }
+    
+    // নতুন আইডিকে বর্তমান আইডি হিসেবে সেট করা
+    localStorage.setItem('user_id', targetId);
+    
+    // সেভ লিস্ট থেকে নতুন আইডিটি রিমুভ করা (কারণ এটি এখন একটিভ)
+    const newSavedList = savedAccounts.filter(id => id !== targetId);
+    localStorage.setItem('saved_accounts', JSON.stringify(newSavedList));
+
+    // পেজ রিফ্রেশ করে নতুন ডাটা লোড করা
+    location.reload();
+}
+
+// initializeApp এর শেষে loadSavedAccounts() কল করুন
+window.onload = async () => {
+    await initializeApp();
+    await loadSavedAccounts();
+};
 
         // পেজ লোড হলে অ্যাপ রান হবে
         window.onload = initializeApp;
