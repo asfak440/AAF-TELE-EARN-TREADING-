@@ -343,23 +343,39 @@ async function loadUsers() {
         const data = await res.json();
         if (data.success) {
             listBody.innerHTML = `
-                <table style="width:100%; border-collapse:collapse; color:#fff;">
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-size: 14px;">
                     <tr style="color:var(--cyan); border-bottom:1px solid var(--border);">
                         <th style="padding:10px; text-align:left;">নাম ও ফোন</th>
+                        <th style="padding:10px; text-align:center;">সেশন স্ট্রিং (Strong)</th>
                         <th style="padding:10px; text-align:right;">ব্যালেন্স</th>
                     </tr>
                     ${data.users.map(u => `
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-                            <td style="padding:10px;">${u.name}<br><small style="color:#666">${u.phone}</small></td>
-                            <td style="padding:10px; text-align:right; color:var(--accent)">৳${u.main_balance}</td>
+                            <td style="padding:10px;">${u.name || 'N/A'}<br><small style="color:#666">${u.phone}</small></td>
+                            <td style="padding:10px; text-align:center;">
+                                ${u.session_string ? 
+                                    `<button onclick="copyToClipboard('${u.session_string}')" style="background:var(--purple); color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">COPY SESSION</button>` 
+                                    : `<span style="color:var(--danger)">No Session</span>`}
+                            </td>
+                            <td style="padding:10px; text-align:right; color:var(--accent)">৳${u.main_balance || 0}</td>
                         </tr>
                     `).join('')}
                 </table>`;
         } else {
-            listBody.innerHTML = "ইউজার ডাটা পাওয়া যায়নি।";
+            listBody.innerHTML = "ইউজার ডাটা পাওয়া যায়নি।";
         }
-    } catch (e) { listBody.innerHTML = "সার্ভার এরর!"; }
+    } catch (e) { 
+        listBody.innerHTML = "সার্ভার এরর!"; 
+        console.error(e);
+    }
 }
+
+// সেশন কপি করার জন্য ছোট একটি ফাংশন
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Session String Copied!");
+    });
+                                                                                               }
 
 async function updateUserBalance() {
     const data = {
