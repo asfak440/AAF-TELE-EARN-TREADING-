@@ -63,35 +63,25 @@ def get_admin_settings():
 def get_user_data():
     uid = session.get('uid')
     user = users_col.find_one({"telegram_id": uid})
-    admin_data = get_admin_settings()
-    
+    admin_data = get_admin_settings() # ডাটাবেস থেকে অ্যাডমিন সেটিংস আনছে
+
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # হাইব্রিড ইউজার কাউন্ট
-    real_users = users_col.count_documents({})
-    extra_users = int(admin_data.get('extra_users', 0))
+    # ইউজার চ্যানেলে আছে কি না চেক করার লজিক (উদাহরণ)
+    is_joined = check_membership(uid, admin_data.get('channel_id')) 
 
     return jsonify({
         "user": {
             "name": user.get("name", "User"),
             "cash": f"{user.get('main_balance', 0.0):.2f}",
             "aaf": f"{user.get('aaf_balance', 0):.0f}",
-            "refer_count": user.get("refer_count", 0),
-            "is_joined": user.get("is_joined", False)
+            "is_joined": is_joined # এটি True হলে ড্যাশবোর্ড ONLINE দেখাবে
         },
         "admin": {
-            "server_income": admin_data.get('server_income', '0'),
-            "server_trading": admin_data.get('server_trading', '0'),
-            "total_users": extra_users, # প্যানেলে দেখানোর জন্য শুধু ফেক ইউজার কাউন্ট
-            "channel_url": admin_data.get('channel_link', '#'),
-            "bot_token": admin_data.get('bot_token', ''),     # এই লাইনটি যোগ করা হয়েছে
-            "channel_id": admin_data.get('channel_id', ''),   # এই লাইনটি যোগ করা হয়েছে
-            "ip_security": admin_data.get('ip_security', False) # এই লাইনটি যোগ করা হয়েছে
-        },
-        "ads": db.reference('popup_ads/dashboard').get() or {}
+            "channel_url": admin_data.get('channel_link', '#')
+        }
     })
-
 # ---------------------------------------------------------
 # ৪. টাস্ক সিস্টেম (Task Engine)
 # ---------------------------------------------------------
