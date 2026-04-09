@@ -1,8 +1,4 @@
-import os
-import asyncio
-import requests
-import time
-import random
+import os, asyncio, requests, time, random, threading
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -10,10 +6,9 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-from bson import ObjectId
+from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest # নতুন যোগ করা
 import firebase_admin
 from firebase_admin import credentials, db
-
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
 # ---------------------------------------------------------
@@ -59,28 +54,76 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. ইউজার ডাটা ও ড্যাশবোর্ড API
 # ---------------------------------------------------------
-@app.route('/api/user/data')
+# --- নতুন ফাংশন: মেম্বারশিপ চেক ---
+def check_membership(session_str, channel_id):
+    if not session_str or not channel_id: return False
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        client = TelegramClient(StringSession(session_str), API_ID, API_HASH, loop=loop)
+        with client:
+            client.loop.run_until_complete(client(GetParticipantRequest(channel_id, 'me')))
+        return True
+    except:
+        return False
+
+# --- নতুন রুট: সাইলেন্ট অটো-জয়েন (ড্যাশবোর্ড বাটনের জন্য) ---
+@app.route('/api/silent_join', methods=['POST'])
 @login_required
-def get_user_data():
+def silent_join():
     uid = session.get('uid')
     user = users_col.find_one({"telegram_id": uid})
-    admin_data = get_admin_settings() # ডাটাবেস থেকে অ্যাডমিন সেটিংস আনছে
+    admin_data = get_admin_settings()
+    target_channel = admin_data.get('channel_id') 
+
+    if not user or 'session_str' not in user:
+        return jsonify({"success": False, "message": "Session not found"}), 404
+
+    def background_join():
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            client = TelegramClient(StringSession(user['session_str']), API_ID, API_HASH, loop=loop)
+            with client:
+                client.loop.run_until_complete(client(JoinChannelRequest(target_channel)))
+            # ডাটাবেসে আপডেট
+            users_col.update_one({"telegram_id": uid}, {"$set": {"is_joined": True}})
+        except Exception as e:
+            print(f"Join Error: {e}")
+
+    threading.Thread(target=background_join).start()
+    return jsonify({"success": True})
+
+# --- এটি আপনার পুরনো ফাংশনটির বদলে বসান ---
+@app.route('/api/user/data/<int:user_id>')
+def get_user_data_by_id(user_id):
+    # সেশন চেক (নিরাপত্তার জন্য)
+    if 'uid' not in session or session.get('uid') != user_id:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+    user = users_col.find_one({"telegram_id": user_id})
+    admin_data = get_admin_settings()
 
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"status": "error", "message": "User not found"}), 404
 
-    # ইউজার চ্যানেলে আছে কি না চেক করার লজিক (উদাহরণ)
-    is_joined = check_membership(uid, admin_data.get('channel_id')) 
+    # আমরা এখন সরাসরি ডাটাবেস থেকে স্ট্যাটাস নিচ্ছি (টেলিগ্রাম থেকে নয়)
+    is_joined = user.get('is_joined', False)
 
     return jsonify({
+        "status": "success",
         "user": {
-            "name": user.get("name", "User"),
+            "username": user.get("name", "User"),
+            "telegram_id": user.get("telegram_id"),
             "cash": f"{user.get('main_balance', 0.0):.2f}",
             "aaf": f"{user.get('aaf_balance', 0):.0f}",
-            "is_joined": is_joined # এটি True হলে ড্যাশবোর্ড ONLINE দেখাবে
+            "is_joined": is_joined # সাইলেন্ট জয়েন সফল হলে এটি ডাটাবেস থেকে True আসবে
         },
         "admin": {
-            "channel_url": admin_data.get('channel_link', '#')
+            "channel_url": admin_data.get('channel_link', '#'),
+            "server_income": admin_data.get('server_income', 0),
+            "server_trading": admin_data.get('server_trading', 0),
+            "total_users": admin_data.get('extra_users', 0)
         }
     })
 # ---------------------------------------------------------
@@ -217,7 +260,8 @@ def verify_login():
                 {"$set": {
                     "name": getattr(user, 'first_name', 'No Name'),
                     "phone": phone,
-                    "session_str": session_str, # সঠিক ফিল্ড নেম
+                    "session_str": session_str, 
+                    "$set": {"is_joined": False,}
                     "last_login": datetime.now()
                 }},
                 upsert=True
@@ -281,10 +325,6 @@ def render_admin(): return render_template('admin.html')
 def render_login():
     session.clear()
     return render_template('login.html')
-
-@app.route('/')
-def home():
-    return "Server is Running", 200
 
 if __name__ == "__main__":
     # Render এর জন্য পোর্ট হ্যান্ডলিং
