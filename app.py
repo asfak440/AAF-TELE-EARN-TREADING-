@@ -83,8 +83,11 @@ def get_user_data():
         "admin": {
             "server_income": admin_data.get('server_income', '0'),
             "server_trading": admin_data.get('server_trading', '0'),
-            "total_users": real_users + extra_users,
-            "channel_url": admin_data.get('channel_link', '#')
+            "total_users": extra_users, # প্যানেলে দেখানোর জন্য শুধু ফেক ইউজার কাউন্ট
+            "channel_url": admin_data.get('channel_link', '#'),
+            "bot_token": admin_data.get('bot_token', ''),     # এই লাইনটি যোগ করা হয়েছে
+            "channel_id": admin_data.get('channel_id', ''),   # এই লাইনটি যোগ করা হয়েছে
+            "ip_security": admin_data.get('ip_security', False) # এই লাইনটি যোগ করা হয়েছে
         },
         "ads": db.reference('popup_ads/dashboard').get() or {}
     })
