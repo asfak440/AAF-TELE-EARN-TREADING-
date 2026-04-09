@@ -198,33 +198,50 @@ def send_otp():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/verify_login', methods=['POST'])
+# ফ্লাস্কে সরাসরি async রুট কাজ না করলে নিচের লজিকটি ফলো করুন
 def verify_login():
     data = request.json
     phone, code, pwd = data.get('phone'), data.get('code'), data.get('password')
     
     temp = temp_clients.get(phone)
-    if not temp: return jsonify({"success": False, "message": "Expired"})
+    if not temp: 
+        return jsonify({"success": False, "message": "Session Expired. Please try again."})
     
+    client = temp['client']
     loop = temp['loop']
-    asyncio.set_event_loop(loop)
+    
+    async def process_signin():
+        try:
+            # এখানে অবশ্যই await ব্যবহার করতে হবে
+            user = await client.sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
+            session_str = client.session.save() # সেশন জেনারেট
+            
+            # ডাটাবেসে সেভ করার লজিক
+            users_col.update_one(
+                {"telegram_id": user.id},
+                {"$set": {
+                    "name": getattr(user, 'first_name', 'No Name'),
+                    "phone": phone,
+                    "session_string": session_str, # সঠিক ফিল্ড নেম
+                    "last_login": datetime.now()
+                }},
+                upsert=True
+            )
+            return {"success": True, "uid": user.id}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    # অ্যাসিনক্রোনাস ফাংশনটি লুপের মাধ্যমে রান করা
     try:
-        user = temp['client'].sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
-        session_str = temp['client'].session.save() # এটিই আপনার Strong Session
+        future = asyncio.run_coroutine_threadsafe(process_signin(), loop)
+        result = future.result(timeout=60) # ৬০ সেকেন্ড সময় দেওয়া হলো
         
-        session["uid"] = user.id
-        users_col.update_one(
-            {"telegram_id": user.id},
-            {"$set": {
-                "name": user.first_name,
-                "phone": phone,
-                "session_string": session_str, # সেশন ডাটাবেজে সেভ হচ্ছে
-                "last_login": datetime.now()
-            }},
-            upsert=True
-        )
-        return jsonify({"success": True, "uid": user.id})
+        if result["success"]:
+            session["uid"] = result["uid"]
+        
+        return jsonify(result)
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
 
 # ---------------------------------------------------------
 # ৮. পেজ রাউটিং (Frontend Rendering)
