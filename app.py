@@ -279,8 +279,8 @@ def render_admin(): return render_template('admin.html')
 
 @app.route('/login')
 def render_login():
-    session.updeat
-    ()return render_template('login.html'))
+    session.clear()
+    return render_template('login.html')
 
 @app.route('/')
 def home():
