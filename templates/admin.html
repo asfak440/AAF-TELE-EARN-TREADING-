@@ -224,13 +224,14 @@ function openTab(evt, tabName) {
 }
 
 // --- ৩. সার্ভার সেটিংস (Load & Update) ---
+        // এই ফাংশনটি আপনার সব বক্সের ডাটা লোড করবে
 async function loadSettings() {
     try {
         const res = await fetch(`${API_BASE}/api/user/data`);
         const data = await res.json();
 
         if (data.admin) {
-            // বক্সে ডাটা বসানো
+            // আইডি অনুযায়ী ডাটা বসাচ্ছে
             document.getElementById('admin_income').value = data.admin.server_income || '';
             document.getElementById('admin_trading').value = data.admin.server_trading || '';
             document.getElementById('admin_extra_users').value = data.admin.total_users || 0;
@@ -238,7 +239,7 @@ async function loadSettings() {
             document.getElementById('admin_bot_token').value = data.admin.bot_token || '';
             document.getElementById('admin_channel_id').value = data.admin.channel_id || '';
             
-            // আইপি সিকিউরিটি চেক
+            // আইপি সিকিউরিটি চেক করা থাকলে টগল অন করবে
             if(data.admin.ip_security !== undefined) {
                 document.getElementById('ip_security_toggle').checked = data.admin.ip_security;
             }
@@ -248,6 +249,7 @@ async function loadSettings() {
     }
 }
 
+// এই ফাংশনটি সব ডাটা সেভ করবে
 async function updateServerSettings() {
     const serverData = {
         income: document.getElementById('admin_income').value,
@@ -265,12 +267,13 @@ async function updateServerSettings() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(serverData)
         });
-        if(res.ok) alert("সার্ভার সেটিংস সাফল্যের সাথে সেভ হয়েছে!");
-        else alert("সার্ভার এরর! সেভ হয়নি।");
+        if(res.ok) alert("সাফল্যের সাথে সেভ হয়েছে!");
     } catch(e) {
-        alert("কানেকশন এরর! ইন্টারনেট চেক করুন।");
+        alert("কানেকশন এরর!");
     }
 }
+
+
 
 async function publishGlobalAd() {
     const adMessage = document.getElementById('admin_ad_msg').value;
