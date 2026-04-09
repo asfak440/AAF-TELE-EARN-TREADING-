@@ -241,7 +241,8 @@
                 <b id="join-status" style="display:block; font-family:'Syncopate'; margin-top:5px; font-size: 14px; color: var(--danger);">OFFLINE</b>
                 <p id="join-info" style="font-size: 11px; margin: 5px 0; color: #ccc;">চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!</p>
             </div>
-            <button class="btn-join" id="join-btn" onclick="joinTelegram()">JOIN NOW</button>
+            <!-- এখন এটি সরাসরি ব্যাকএন্ডে রিকোয়েস্ট পাঠাবে -->
+            <button class="btn-join" id="join-btn" onclick="handleAutoJoin()">JOIN NOW</button>
             <button onclick="verifyJoin()" id="verify-btn" style="display:none; background:none; border:1px solid var(--primary); color:var(--primary); padding:10px; border-radius:10px; margin-top:10px; width:100%; cursor:pointer; font-weight:bold;">VERIFY MEMBERSHIP</button>
         </div>
 
@@ -402,14 +403,34 @@
     }  
     
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
-    function joinTelegram() {
-    checkAndShowAd(); // অ্যাড চেক
-    if (window.currentChannelLink) {
-        window.open(window.currentChannelLink, "_blank");
-        document.getElementById('verify-btn').style.display = "block";
-    } else {
-        // এই নতুন লাইনটি যোগ করুন
-        triggerPopup("চ্যানেল লিংক পাওয়া যায়নি!");
+    async function handleAutoJoin() {
+    const btn = document.getElementById('join-btn');
+    btn.innerText = "JOINING...";
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/silent_join', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+            triggerPopup("সফলভাবে জয়েন করা হয়েছে! ✅");
+            initDashboard(); 
+        } else {
+            // যদি সেশন কাজ না করে বা অন্য সমস্যা হয়
+            if(data.message === "session_expired") {
+                alert("আপনার সেশন শেষ হয়েছে। দয়া করে আবার লগইন করুন।");
+                window.location.href = "/login"; // লগইন পেজে পাঠিয়ে দেওয়া
+            } else {
+                // সেশন সমস্যা ছাড়া অন্য সমস্যা হলে তখন ব্যাকআপ হিসেবে লিঙ্কে পাঠাতে পারেন
+                triggerPopup("অটো-জয়েন কাজ করছে না, ম্যানুয়ালি জয়েন করুন।");
+                window.open(window.currentChannelLink, "_blank"); 
+                btn.disabled = false;
+                btn.innerText = "JOIN MANUALLY";
+            }
+        }
+    } catch (err) {
+        triggerPopup("সার্ভার এরর!");
+        btn.disabled = false;
     }
     }
 
