@@ -277,10 +277,10 @@ def render_account(): return render_template('account.html')
 @app.route('/admin_panel')
 def render_admin(): return render_template('admin.html')
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
+@app.route('/login')
+def render_login():
+    session.updeat
+    ()return render_template('login.html'))
 
 @app.route('/')
 def home():
