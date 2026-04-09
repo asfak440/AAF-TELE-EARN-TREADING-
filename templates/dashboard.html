@@ -265,23 +265,46 @@
 
     // ২. মেইন ইনিশিয়াল ফাংশন (ডাটা লোড)
     async function initDashboard() {
-        const userId = localStorage.getItem('user_id');
-        
-        if (!userId) {
-            console.warn("Active User ID পাওয়া যায়নি।");
-            return;
-        }
+    const userId = localStorage.getItem('user_id');
+    
+    if (!userId) {
+        console.warn("Active User ID পাওয়া যায়নি।");
+        return;
+    }
 
-        try {
-            const response = await fetch(`/api/user/data/${userId}`);
-            const data = await response.json();
+    try {
+        const response = await fetch(`/api/user/data/${userId}`);
+        const data = await response.json();
 
-            if (data.status === "success") {
-                renderUI(data.user, data.admin);
+        if (data.status === "success") {
+            // ১. UI রেন্ডার করা (নাম, ব্যালেন্স ইত্যাদি)
+            renderUI(data.user, data.admin);
+
+            // ২. জয়েন বাটন সচল করা
+            if (data.admin && data.admin.channel_url) {
+                // আপনার ড্যাশবোর্ডের ওই গোলাপী বাটনটি খুঁজে বের করা
+                const joinBtn = document.querySelector('.btn-join') || 
+                                document.querySelector('.community-status button') ||
+                                document.getElementById('join_now_btn');
+
+                if (joinBtn) {
+                    // বাটনে ক্লিক করলে লিঙ্কে নিয়ে যাবে
+                    joinBtn.onclick = function() {
+                        window.location.href = data.admin.channel_url;
+                    };
+                }
             }
-        } catch (err) {
-            console.error("Database Sync Error: ", err);
+
+            // ৩. অনলাইন/অফলাইন স্ট্যাটাস চেক (যদি থাকে)
+            const statusText = document.querySelector('.community-status h2'); // যেখানে OFFLINE লেখা থাকে
+            if (statusText && data.user.is_joined) {
+                statusText.innerText = "ONLINE";
+                statusText.style.color = "#00ff00"; // সবুজ রঙ
+            }
         }
+    } catch (err) {
+        console.error("Database Sync Error: ", err);
+    }
     }
 
     // ৩. UI রেন্ডারিং (রেফার লিস্ট ও স্ট্যাটাস)
