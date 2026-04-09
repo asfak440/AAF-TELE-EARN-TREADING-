@@ -97,8 +97,7 @@
             <div style="background: #1e293b; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
     <span>IP Anti-Cheat System</span>
     <label class="switch">
-        <input type="checkbox" id="ip_security_toggle" onchange="toggleIPSecurity()">
-        <span class="slider round"></span>
+        <input type="checkbox" id="ip_security_toggle"> <span class="slider round"></span>
     </label>
             </div>
 
@@ -223,8 +222,7 @@ function openTab(evt, tabName) {
     if(tabName === 'account') loadUsers();
 }
 
-// --- ৩. সার্ভার সেটিংস (Load & Update) ---
-        // এই ফাংশনটি আপনার সব বক্সের ডাটা লোড করবে
+// --- ৩. // এই ফাংশনটি আপনার সব বক্সের ডাটা লোড করবে
 async function loadSettings() {
     try {
         const res = await fetch(`${API_BASE}/api/user/data`);
@@ -272,21 +270,8 @@ async function updateServerSettings() {
         alert("কানেকশন এরর!");
     }
 }
-
-
-
-async function publishGlobalAd() {
-    const adMessage = document.getElementById('admin_ad_msg').value;
-    try {
-        const res = await fetch(`${API_BASE}/admin/update_ad`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: adMessage })
-        });
-        if(res.ok) alert("গ্লোবাল নোটিশ পাবলিশ হয়েছে!");
-    } catch(e) { alert("নোটিশ পাবলিশে সমস্যা হয়েছে!"); }
-}
-
+        
+        
 // --- ৪. টাস্ক ম্যানেজমেন্ট ---
 async function loadAdminTasks() {
     const listDiv = document.getElementById('admin-task-list');
