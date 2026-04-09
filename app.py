@@ -217,7 +217,7 @@ def verify_login():
                 {"$set": {
                     "name": getattr(user, 'first_name', 'No Name'),
                     "phone": phone,
-                    "session_string": session_str, # সঠিক ফিল্ড নেম
+                    "session_str": session_str, # সঠিক ফিল্ড নেম
                     "last_login": datetime.now()
                 }},
                 upsert=True
