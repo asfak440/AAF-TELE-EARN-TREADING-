@@ -277,32 +277,11 @@
         const data = await response.json();
 
         if (data.status === "success") {
-            // ১. UI রেন্ডার করা (নাম, ব্যালেন্স ইত্যাদি)
+            // শুধুমাত্র renderUI কল হবে, বাকি সব লজিক এখান থেকে মুছে ফেলা হয়েছে
             renderUI(data.user, data.admin);
-
-            // ২. জয়েন বাটন সচল করা
-            if (data.admin && data.admin.channel_url) {
-                // আপনার ড্যাশবোর্ডের ওই গোলাপী বাটনটি খুঁজে বের করা
-                const joinBtn = document.querySelector('.btn-join') || 
-                                document.querySelector('.community-status button') ||
-                                document.getElementById('join_now_btn');
-
-                if (joinBtn) {
-                    // বাটনে ক্লিক করলে লিঙ্কে নিয়ে যাবে
-                    joinBtn.onclick = function() {
-                        window.location.href = data.admin.channel_url;
-                    };
-                }
-            }
-
-            // ৩. অনলাইন/অফলাইন স্ট্যাটাস চেক (যদি থাকে)
-            const statusText = document.querySelector('.community-status h2'); // যেখানে OFFLINE লেখা থাকে
-            if (statusText && data.user.is_joined) {
-                statusText.innerText = "ONLINE";
-                statusText.style.color = "#00ff00"; // সবুজ রঙ
-            }
         }
     } catch (err) {
+        // এই অংশটুকু অবশ্যই থাকতে হবে, তাই এটি কাটা যাবে না
         console.error("Database Sync Error: ", err);
     }
     }
@@ -424,23 +403,31 @@
     
     // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
     function joinTelegram() {
-        checkAndShowAd(); // অ্যাড চেক
-        if (window.currentChannelLink) {
-            window.open(window.currentChannelLink, "_blank");
-            document.getElementById('verify-btn').style.display = "block";
-        }
+    checkAndShowAd(); // অ্যাড চেক
+    if (window.currentChannelLink) {
+        window.open(window.currentChannelLink, "_blank");
+        document.getElementById('verify-btn').style.display = "block";
+    } else {
+        // এই নতুন লাইনটি যোগ করুন
+        triggerPopup("চ্যানেল লিংক পাওয়া যায়নি!");
+    }
     }
 
     // ১০. রেফার লিংক কপি
     function copyReferLink() {
-        checkAndShowAd(); // অ্যাড চেক
-        const idText = document.getElementById('u-id').innerText;
-        const cleanId = idText.replace(': ', '').trim();
-        if(cleanId) {
-            const link = window.location.origin + "/register?ref=" + cleanId;
-            navigator.clipboard.writeText(link);
-            triggerPopup("REFER LINK COPIED!");
-        }
+    checkAndShowAd(); // অ্যাড চেক
+    const idText = document.getElementById('u-id').innerText;
+    const cleanId = idText.replace(': ', '').trim();
+    
+    // এই লাইনে && cleanId !== "000000" যোগ করুন
+    if(cleanId && cleanId !== "000000") {
+        const link = window.location.origin + "/register?ref=" + cleanId;
+        navigator.clipboard.writeText(link);
+        triggerPopup("REFER LINK COPIED!");
+    } else {
+        // এই নতুন লাইনগুলো যোগ করুন
+        triggerPopup("আইডি লোড হচ্ছে, অপেক্ষা করুন...");
+    }
     }
 
     // ১১. কাস্টম পপআপ নোটিফিকেশন
