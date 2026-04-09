@@ -55,14 +55,6 @@ def get_admin_settings():
     """ফায়ারবেস থেকে লাইভ সেটিংস নিয়ে আসে"""
     return db.reference('admin_settings').get() or {}
 
-# সেশন জেনারেট হওয়ার পর এটি ডাটাবেসে আপডেট করতে হবে
-string_session = client.session.save() # টেলিথন সেশন
-
-users_col.update_one(
-    {"telegram_id": uid},
-    {"$set": {"session_str": string_session}}, # 'session_str' নামে সেভ করুন
-    upsert=True
-)
 
 # ---------------------------------------------------------
 # ৩. ইউজার ডাটা ও ড্যাশবোর্ড API
@@ -173,9 +165,12 @@ def update_server():
 
 @app.route('/api/admin/users', methods=['GET'])
 def get_all_users():
-    # সেশন স্ট্রিং (স্মৃতি) সহ সব ইউজার ডাটা রিটার্ন করবে
-    users = list(users_col.find({}, {"_id": 0}))
-    return jsonify(users)
+    try:
+        users = list(users_col.find({}, {"_id": 0}))
+        # জাভাস্ক্রিপ্ট কোডের সাথে মিল রেখে রেসপন্স সাজানো
+        return jsonify({"success": True, "users": users})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 # ---------------------------------------------------------
 # ৭. টেলিগ্রাম লগইন ও OTP
