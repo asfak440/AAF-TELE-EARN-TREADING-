@@ -33,6 +33,9 @@ users_col = mdb['users']
 tasks_col = mdb['tasks']
 settings_col = mdb['settings']
 
+# ডাটাবেস সেটআপের নিচে এটি যোগ করুন
+temp_clients = {}
+
 # ---------------------------------------------------------
 # ২. হেল্পার ফাংশন
 # ---------------------------------------------------------
@@ -156,9 +159,9 @@ temp_clients = {}
 def send_otp():
     phone = request.json.get('phone')
     if not phone:
-        return jsonify({"success": False, "message": "নম্বর প্রয়োজন!"})
+        return jsonify({"success": False, "message": "নম্বর দিন!"})
 
-    # পুরনো সেশন থাকলে তা ডিসকানেক্ট করে র‍্যাম খালি করা
+    # পুরনো জ্যাম ক্লিয়ার করা (RAM বাঁচানোর জন্য)
     if phone in temp_clients:
         try:
             temp_clients[phone]['client'].disconnect()
@@ -171,11 +174,12 @@ def send_otp():
     try:
         client.connect()
         result = client.send_code_request(phone)
-        # সেশন ডাটা সেভ রাখা
+        # ডাটা সেভ রাখা
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
+
 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
