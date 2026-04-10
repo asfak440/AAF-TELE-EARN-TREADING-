@@ -27,9 +27,6 @@ def patched_handle_update(self, update):
 
 # বাগটি বাইপাস করা
 MTProtoSender._handle_update = patched_handle_update
-app = Flask(__name__)
-app.secret_key = "your_secret_key"
-
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
 # ---------------------------------------------------------
@@ -130,28 +127,30 @@ def verify_login_handler():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
-    password = data.get('password')
+    
+    # সমস্যা ২ সমাধান: পাসওয়ার্ড সঠিকভাবে ধরা
+    raw_password = data.get('password')
+    # যদি পাসওয়ার্ড খালি স্ট্রিং আসে তবে সেটাকে None করে দেবে
+    password = str(raw_password).strip() if raw_password else None
     
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired! Please try again."})
+        return jsonify({"success": False, "message": "Session Expired!"})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
     async def process_login():
-        # receive_updates=False এবং সেশন স্ট্যাবল করা হয়েছে
         client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, receive_updates=False)
         await client.connect()
-        await asyncio.sleep(1) 
+        await asyncio.sleep(1)
         
         try:
-            # যদি পাসওয়ার্ড থাকে, তবে password প্যারামিটার সহ কল হবে
-            # পাসওয়ার্ড না থাকলে None হিসেবে যাবে, যা ২-স্টেপ এরর ট্রিগার করবে (ঠিক এভাবেই কাজ করে)
+            # সরাসরি পাসওয়ার্ড প্যারামিটার পাঠানো
             user = await client.sign_in(
                 phone=phone, 
                 code=code, 
-                password=password if password else None, 
+                password=password, 
                 phone_code_hash=temp_data["phone_code_hash"]
             )
             
@@ -163,32 +162,31 @@ def verify_login_handler():
                 "auth_pending": False
             }}, upsert=True)
             
-            # সেশন লগইন সাকসেস হলে UID সেভ করা
-            session['uid'] = user.id
+            # সমস্যা ৩ সমাধান: এখান থেকে session['uid'] সরিয়ে বাইরে নেওয়া হয়েছে
             return True, user.id
         
         except SessionPasswordNeededError:
             return False, "PASSWORD_NEEDED"
         except Exception as e:
-            # এরর মেসেজ ক্লিন করে পাঠানো
-            err_msg = str(e)
-            if "password" in err_msg.lower(): return False, "INVALID_PASSWORD"
-            return False, err_msg
+            return False, str(e)
         finally:
             await client.disconnect()
 
     try:
         success, result = loop.run_until_complete(process_login())
         
+        # সমস্যা ৩ সমাধান: মেইন থ্রেডে সেশন সেভ করা
         if success:
+            session['uid'] = result 
+            session.permanent = True # সেশন যেন ব্রাউজারে টিকে থাকে
             return jsonify({"success": True, "uid": result})
         
         if result == "PASSWORD_NEEDED":
-            return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
+            return jsonify({
+                "success": False, 
+                "message": "Two-steps verification is enabled and a password is required"
+            })
         
-        if result == "INVALID_PASSWORD":
-            return jsonify({"success": False, "message": "Wrong 2-Step Password! Please try again."})
-
         return jsonify({"success": False, "message": result})
             
     except Exception as e:
