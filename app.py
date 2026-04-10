@@ -1,4 +1,4 @@
-import os,asyncio, requests, time, random, threading
+import os, requests, time, random, threading
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -10,6 +10,19 @@ from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantReq
 import firebase_admin
 from firebase_admin import credentials, db
 from telethon.errors import SessionPasswordNeededError
+import asyncio
+from telethon.network.mtprotosender import MTProtoSender
+
+def patched_handle_update(self, update):
+    try:
+        self._update_handlers[type(update)](update)
+    except Exception:
+        pass
+
+# বাগটি বাইপাস করা
+MTProtoSender._handle_update = patched_handle_update
+app = Flask(__name__)
+app.secret_key = "your_secret_key"
 
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
