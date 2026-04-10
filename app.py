@@ -112,6 +112,10 @@ def silent_join():
             client = TelegramClient(StringSession(user['session_str']), API_ID, API_HASH, loop=loop)
             with client:
                 client.loop.run_until_complete(client(JoinChannelRequest(target_channel)))
+        try:
+      asyncio.get_event_loop()
+        except RuntimeError:
+      asyncio.set_event_loop(asyncio.new_event_loop())
             users_col.update_one({"telegram_id": uid}, {"$set": {"is_joined": True}})
         except Exception as e:
             print(f"Join Error: {e}")
