@@ -220,7 +220,7 @@
                 if (data.success) {
                     window.location.replace("/dashboard");
                 } else {
-                    notify("Invalid 2-Step Password or Session Expired!");
+                    notify("data.message");
                 }
             } catch (e) { 
                 notify("Login Error!"); 
