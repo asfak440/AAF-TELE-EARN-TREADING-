@@ -69,10 +69,11 @@ def send_otp_handler():
 
     try:
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        client.connect()
+       
+        loop.run_until_complete(client.connect())
         
-        # ওটিপি পাঠানো
-        result = client.send_code_request(phone)
+        # ওটিপি পাঠানো (await/run_until_complete নিশ্চিত করুন)
+        result = loop.run_until_complete(client.send_code_request(phone))
         
         # ডাটাবেজে সেভ
         users_col.update_one(
