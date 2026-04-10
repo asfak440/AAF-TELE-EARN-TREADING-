@@ -56,23 +56,23 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
-
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     
+    # এখানে শুধু Phone আছে, তাই শুধু Phone প্রিন্ট করবেন
+    print(f"DEBUG SEND OTP: Phone: {phone}")
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
-    print(f"DEBUG: Phone: {phone}, Code: {code}, Password: {password}")
 
     try:
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
         result = client.send_code_request(phone)
         
-        # ডাটাবেজে সেভ (এখানেই আপনার ভুলটি হয়েছিল)
+        # ডাটাবেজে সেভ
         users_col.update_one(
             {"phone": phone},
             {"$set": {
@@ -86,6 +86,7 @@ def send_otp_handler():
         client.disconnect() 
         return jsonify({"success": True})
     except Exception as e:
+        print(f"Error in send_otp: {str(e)}") # এররটি লগে দেখতে পাবেন
         return jsonify({"success": False, "message": str(e)})
 
                 
