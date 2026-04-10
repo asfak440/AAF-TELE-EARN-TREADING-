@@ -160,6 +160,28 @@
         }
     } catch (e) { notify("Backend Connection Error!"); }
     finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
+
+        async function verifyPassword() {
+    const pass = document.getElementById('two-step-pass').value; // আপনার পাসওয়ার্ড ইনপুট ID
+    const otp = document.getElementById('otp-input').value; // আপনার ওটিপি ইনপুট ID
+
+    const response = await fetch('/api/verify_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            phone: finalPhone, // আপনার গ্লোবাল ফোন ভেরিয়েবল
+            code: otp,         // ওটিপি কোডটি এখানেও পাঠাতে হবে
+            password: pass     // ইউজারের দেওয়া পাসওয়ার্ড
+        })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+        window.location.href = "/dashboard";
+    } else {
+        alert(data.message);
+    }
+    }
     }
     
 
