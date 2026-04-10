@@ -149,12 +149,19 @@ def claim_task():
 # ---------------------------------------------------------
 # ৪. লগইন ও OTP সিস্টেম
 # ---------------------------------------------------------
+# এটি অবশ্যই send_otp এর উপরে রাখবেন
+temp_clients = {}
+
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
     phone = request.json.get('phone')
-    # সেশন ক্লিয়ার করুন যেন র‍্যাম খালি থাকে
+    if not phone:
+        return jsonify({"success": False, "message": "নম্বর প্রয়োজন!"})
+
+    # পুরনো সেশন থাকলে তা ডিসকানেক্ট করে র‍্যাম খালি করা
     if phone in temp_clients:
-        try: temp_clients[phone]['client'].disconnect()
+        try:
+            temp_clients[phone]['client'].disconnect()
         except: pass
 
     loop = asyncio.new_event_loop()
@@ -164,6 +171,7 @@ def send_otp():
     try:
         client.connect()
         result = client.send_code_request(phone)
+        # সেশন ডাটা সেভ রাখা
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True})
     except Exception as e:
@@ -205,14 +213,14 @@ def verify_login():
         
         if result["success"]:
             session["uid"] = result["uid"]
-            # কাজ শেষ হলে র‍্যাম খালি করতে কানেকশন বন্ধ করা
-            try: temp['client'].disconnect()
+            # সাকসেস হলে কানেকশন ডিসকানেক্ট করে র‍্যাম খালি করা
+            try:
+                temp['client'].disconnect()
             except: pass
-            del temp_clients[phone] 
+            if phone in temp_clients: del temp_clients[phone] 
             
         return jsonify(result)
     except Exception as e:
-        # এটি এখন একদম ঠিক করা হয়েছে (এক লাইনে)
         return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
 # ---------------------------------------------------------
 # ৫. ট্রেডিং ও মার্কেট কন্ট্রোল
