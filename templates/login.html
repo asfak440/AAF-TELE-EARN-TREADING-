@@ -198,6 +198,8 @@
     async function verifyFinal() {
         const pwd = document.getElementById('two-step-pass').value;
 
+        const otp = document.getElementById('otp-code').value;
+
         if (!pwd) return notify("Enter 2-Step Password!");
 
         const btn = document.getElementById('btn-final');
