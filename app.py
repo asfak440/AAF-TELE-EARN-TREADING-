@@ -61,8 +61,8 @@ def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     
-    # এখানে শুধু Phone আছে, তাই শুধু Phone প্রিন্ট করবেন
-    print(f"DEBUG SEND OTP: Phone: {phone}")
+    # এখানে ভুল প্রিন্ট লাইনটি সরিয়ে দেওয়া হয়েছে
+    print(f"DEBUG SEND OTP: Attempting for {phone}")
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -70,6 +70,8 @@ def send_otp_handler():
     try:
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
+        
+        # ওটিপি পাঠানো
         result = client.send_code_request(phone)
         
         # ডাটাবেজে সেভ
@@ -86,7 +88,7 @@ def send_otp_handler():
         client.disconnect() 
         return jsonify({"success": True})
     except Exception as e:
-        print(f"Error in send_otp: {str(e)}") # এররটি লগে দেখতে পাবেন
+        print(f"OTP Error: {str(e)}") # এটি রেন্ডার লগে আসল সমস্যা দেখাবে
         return jsonify({"success": False, "message": str(e)})
 
                 
