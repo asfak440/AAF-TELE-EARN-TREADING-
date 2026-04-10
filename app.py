@@ -56,6 +56,7 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
+
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
@@ -63,16 +64,18 @@ def send_otp_handler():
     
     print(f"DEBUG SEND OTP: Attempting for {phone}")
 
-    # একটি ইন্টারনাল এ্যাসিনক্রোনাস ফাংশন তৈরি করা
+    # নতুন একটি লুপ তৈরি করা (এটি আগের এররগুলো সমাধান করবে)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     async def main():
-        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        # এখানে auto_reconnect=False দিয়েছি যাতে Telethon নিজে লুপ খোঁজার চেষ্টা না করে
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop, auto_reconnect=False)
         await client.connect()
         
         try:
-            # ওটিপি রিকোয়েস্ট পাঠানো
             result = await client.send_code_request(phone)
             
-            # ডাটাবেজে সেভ
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
@@ -89,15 +92,17 @@ def send_otp_handler():
             await client.disconnect()
 
     try:
-        # এখানে asyncio.run ব্যবহার করা হয়েছে যা সব জটিলতা দূর করবে
-        success, message = asyncio.run(main())
+        # loop.run_until_complete ব্যবহার করাই এখন সবচেয়ে নিরাপদ
+        success, message = loop.run_until_complete(main())
         if success:
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "message": message})
     except Exception as fatal_e:
         print(f"Fatal Error: {str(fatal_e)}")
-        return jsonify({"success": False, "message": "Server Busy, try again!"})
+        return jsonify({"success": False, "message": "Connection Error, please retry."})
+    finally:
+        loop.close() # কাজ শেষে লুপটি পুরোপুরি বন্ধ করে দেওয়া
                 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
