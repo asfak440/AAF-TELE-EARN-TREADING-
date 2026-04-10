@@ -309,5 +309,5 @@ def render_login():
 
 if __name__ == "__main__":
     # Render এর জন্য পোর্ট হ্যান্ডলিং
-    port = int(os.environ.get("PORT", 5000)) 
+    port = int(os.environ.get("PORT", 10000)) 
     app.run(host="0.0.0.0", port=port)
