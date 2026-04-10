@@ -110,125 +110,130 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
     <script>
-        // Initialize International Phone Input
-        const phoneInput = document.querySelector("#phone");
-        const iti = window.intlTelInput(phoneInput, {
-            initialCountry: "bd",
-            separateDialCode: true,
-            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
-        });
+        // ১. ভেরিয়েবলগুলো মেমরিতে রাখার জন্য (যাতে পাসওয়ার্ড দেওয়ার সময় ফোন নম্বর না হারায়)
+    let userPhone = "";
+    let userOTP = "";
 
-        const API_URL = window.location.origin;
+    // ২. ইন্টারন্যাশনাল ফোন ইনপুট সেটআপ
+    const phoneInput = document.querySelector("#phone");
+    const iti = window.intlTelInput(phoneInput, {
+        initialCountry: "bd",
+        separateDialCode: true,
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
+    });
 
-        function goToStep(num) {
-            document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active-step'));
-            document.getElementById(`step-${num}`).classList.add('active-step');
-        }
+    const API_URL = window.location.origin;
 
-        function notify(msg) {
-            const box = document.getElementById('status-box');
-            box.innerText = msg;
-            box.style.display = 'block';
-            setTimeout(() => { box.style.display = 'none'; }, 4000);
-        }
-
-        async function sendOTP() {
-            const fullNumber = iti.getNumber();
-            if (!iti.isValidNumber()) return notify("Please enter a valid number!");
-
-            const btn = document.getElementById('btn-otp');
-            btn.disabled = true;
-            btn.innerText = "SENDING...";
-
-            try {
-                const res = await fetch(`${API_URL}/api/send_otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: fullNumber })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    goToStep(2);
-                } else {
-                    notify(data.message);
-                }
-            } catch (e) { notify("Connection Error!"); }
-            finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
-        }
-
-        async function verifyOTP() {
-            const otp = document.getElementById('otp-code').value;
-            const fullNumber = iti.getNumber();
-
-            if (!otp) return notify("Enter the code!");
-
-            const btn = document.getElementById('btn-verify');
-            btn.disabled = true;
-            btn.innerText = "VERIFYING..."; // লোডিং ইন্ডিকেটর যোগ করা হলো
-
-            try {
-                const res = await fetch(`${API_URL}/api/verify_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: fullNumber, 
-                        code: otp,
-                        password: null // পাসওয়ার্ড আপাতত নাল রাখুন
-                    })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    window.location.replace("/dashboard");
-                } else if (data.message.toLowerCase().includes("password") || data.message.toLowerCase().includes("sessionpasswordneeded")) {
-                    goToStep(3);
-                } else {
-                    notify(data.message);
-                }
-            } catch (e) { 
-                notify("Verification Failed! Check Server Log."); 
-            }
-            finally { 
-                btn.disabled = false; 
-                btn.innerText = "Verify Code";
-            }
-        }
-
-        async function verifyFinal() {
-    const pwd = document.getElementById('two-step-pass').value;
-    const otp = document.getElementById('otp-code').value; // নিশ্চিত করুন ওটিপি এখনো মেমোরিতে আছে
-    const fullNumber = iti.getNumber();
-
-    if (!pwd) return notify("Enter 2-Step Password!");
-
-    const btn = document.getElementById('btn-final');
-    btn.disabled = true;
-    btn.innerText = "ACCESSING...";
-
-    try {
-        const res = await fetch(`${API_URL}/api/verify_login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                phone: fullNumber, 
-                code: otp, 
-                password: pwd 
-            })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            window.location.replace("/dashboard");
-        } else {
-            // ভুলটা এখানে ছিল: উদ্ধৃতি চিহ্ন (Quotes) সরিয়ে দেওয়া হয়েছে
-            notify(data.message); 
-        }
-    } catch (e) { 
-        notify("Login Error! Check connection."); 
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Access Account";
+    // ৩. স্টেপ পরিবর্তনের ফাংশন
+    function goToStep(num) {
+        document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active-step'));
+        document.getElementById(`step-${num}`).classList.add('active-step');
     }
+
+    // ৪. নোটিফিকেশন ফাংশন
+    function notify(msg) {
+        const box = document.getElementById('status-box');
+        box.innerText = msg;
+        box.style.display = 'block';
+        setTimeout(() => { box.style.display = 'none'; }, 4000);
+    }
+
+    // ৫. ওটিপি পাঠানোর ফাংশন
+    async function sendOTP() {
+        userPhone = iti.getNumber(); // ফোন নম্বর মেমরিতে সেভ করলাম
+        if (!iti.isValidNumber()) return notify("Please enter a valid number!");
+
+        const btn = document.getElementById('btn-otp');
+        btn.disabled = true;
+        btn.innerText = "SENDING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/send_otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: userPhone })
+            });
+            const data = await res.json();
+            if (data.success) {
+                goToStep(2);
+            } else {
+                notify(data.message);
+            }
+        } catch (e) { notify("Connection Error!"); }
+        finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
+    }
+
+    // ৬. ওটিপি ভেরিফাই করার ফাংশন
+    async function verifyOTP() {
+        userOTP = document.getElementById('otp-code').value; // ওটিপি মেমরিতে সেভ করলাম
+
+        if (!userOTP) return notify("Enter the code!");
+
+        const btn = document.getElementById('btn-verify');
+        btn.disabled = true;
+        btn.innerText = "VERIFYING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/verify_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone: userPhone, 
+                    code: userOTP,
+                    password: null 
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.replace("/dashboard");
+            } else if (data.message.toLowerCase().includes("password") || data.message.toLowerCase().includes("sessionpasswordneeded")) {
+                goToStep(3); // পাসওয়ার্ড বক্সে নিয়ে যাবে
+            } else {
+                notify(data.message);
+            }
+        } catch (e) { 
+            notify("Verification Failed!"); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "Verify Code";
+        }
+    }
+
+    // ৭. টু-স্টেপ পাসওয়ার্ড ভেরিফাই করার ফাংশন
+    async function verifyFinal() {
+        const pwd = document.getElementById('two-step-pass').value;
+
+        if (!pwd) return notify("Enter 2-Step Password!");
+
+        const btn = document.getElementById('btn-final');
+        btn.disabled = true;
+        btn.innerText = "ACCESSING...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/verify_login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone: userPhone, // মেমরি থেকে নম্বর নিল
+                    code: userOTP,   // মেমরি থেকে ওটিপি নিল
+                    password: pwd 
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.replace("/dashboard");
+            } else {
+                // সার্ভার থেকে আসা আসল এরর মেসেজ দেখাবে
+                notify(data.message); 
+            }
+        } catch (e) { 
+            notify("Login Error!"); 
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Access Account";
+        }
         }
     </script>
 </body>
