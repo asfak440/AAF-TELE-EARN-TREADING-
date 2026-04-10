@@ -138,28 +138,30 @@
 
     // ধাপ ১: ওটিপি পাঠানো
     async function sendOTP() {
-        finalPhone = iti.getNumber();
-        if (!iti.isValidNumber()) return notify("Please enter a valid number!");
+    finalPhone = iti.getNumber();
+    // যদি ইনপুট ভ্যালিডেশন সমস্যা করে, তবে শুধু খালি কি না চেক করুন
+    if (!finalPhone) return notify("Please enter your phone number!");
 
-        const btn = document.getElementById('btn-otp');
-        btn.disabled = true;
-        btn.innerText = "SENDING...";
+    const btn = document.getElementById('btn-otp');
+    btn.disabled = true;
+    btn.innerText = "SENDING...";
 
-        try {
-            const res = await fetch(`${API_URL}/api/send_otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: finalPhone })
-            });
-            const data = await res.json();
-            if (data.success) {
-                goToStep(2);
-            } else {
-                notify(data.message);
-            }
-        } catch (e) { notify("Backend Connection Error!"); }
-        finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
+    try {
+        const res = await fetch(`${API_URL}/api/send_otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: finalPhone })
+        });
+        const data = await res.json();
+        if (data.success) {
+            goToStep(2);
+        } else {
+            notify(data.message); // ব্যাকএন্ড থেকে আসা এরর দেখাবে
+        }
+    } catch (e) { notify("Backend Connection Error!"); }
+    finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
     }
+    
 
     // ধাপ ২: ওটিপি ভেরিফাই
     async function verifyOTP() {
