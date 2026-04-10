@@ -1,7 +1,7 @@
 flask
 flask-cors
 pymongo[srv]
-telethon
+telethon==1.36.0
 firebase-admin
 gunicorn
 python-dotenv
