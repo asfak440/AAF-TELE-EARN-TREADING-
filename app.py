@@ -151,29 +151,28 @@ def claim_task():
 
 # ---------------------------------------------------------
 # ৪. লগইন ও OTP সিস্টেম
-# ---------------------------------------------------------
-# এটি অবশ্যই send_otp এর উপরে রাখবেন
-# ---------------------------------------------------------
-
-temp_clients = {}
+# --------------------------------------------------------
 
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
     phone = data.get('phone')
-    if not phone: return jsonify({"success": False, "message": "নম্বর দিন!"})
     
+    # এই ২ লাইন হলো আসল ম্যাজিক যা আপনার এরর ফিক্স করবে
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     try:
-        # এখানে কোনো লুপ বা জটিলতার দরকার নেই
-        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        # loop=loop যুক্ত করা হয়েছে যাতে মেইন থ্রেড এরর না দেয়
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
         result = client.send_code_request(phone)
         
-        # ক্লায়েন্ট এবং হ্যাশ সেভ রাখা
         temp_clients[phone] = {
-            "client": client, 
+            "session": client.session.save(), 
             "hash": result.phone_code_hash
         }
+        client.disconnect() 
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
@@ -181,44 +180,37 @@ def send_otp_handler():
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
-    phone = data.get('phone')
-    code = data.get('code')
-    password = data.get('password')
-
-    if phone not in temp_clients:
-        return jsonify({"success": False, "message": "সেশন এক্সপায়ার হয়েছে। আবার ওটিপি দিন।"})
+    phone, code, password = data.get('phone'), data.get('code'), data.get('password')
     
-    client = temp_clients[phone]["client"]
-    h = temp_clients[phone]["hash"]
+    if phone not in temp_clients: 
+        return jsonify({"success": False, "message": "Session Expired"})
 
+    # এখানেও লুপ সেট করতে হবে
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
     try:
-        # পাসওয়ার্ড থাকলে বা না থাকলে আলাদাভাবে চেক করা
+        client = TelegramClient(StringSession(temp_clients[phone]["session"]), API_ID, API_HASH, loop=loop)
+        client.connect()
+        
+        # পাসওয়ার্ড চেক
         if password:
-            user = client.sign_in(phone, code, password=password, phone_code_hash=h)
+            user = client.sign_in(phone, code, password=password, phone_code_hash=temp_clients[phone]["hash"])
         else:
-            user = client.sign_in(phone, code, phone_code_hash=h)
+            user = client.sign_in(phone, code, phone_code_hash=temp_clients[phone]["hash"])
             
         session["uid"] = user.id
-        session_str = client.session.save()
+        final_session = client.session.save()
         
-        # ডাটাবেসে ইউজার আপডেট
         users_col.update_one(
             {"telegram_id": user.id}, 
-            {"$set": {
-                "name": getattr(user, 'first_name', 'User'), 
-                "phone": phone,
-                "session_str": session_str
-            }}, 
+            {"$set": {"name": user.first_name, "phone": phone, "session_str": final_session}}, 
             upsert=True
         )
         
-        # কাজ শেষে ডিসকানেক্ট করে মেমোরি খালি করা
         client.disconnect()
-        del temp_clients[phone]
-        
         return jsonify({"success": True, "uid": user.id})
     except Exception as e:
-        # এখানে টু-স্টেপ ভেরিফিকেশনের এরর মেসেজ সরাসরি ফ্রন্টএন্ডে যাবে
         return jsonify({"success": False, "message": str(e)})
 
 
