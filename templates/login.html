@@ -195,40 +195,41 @@
         }
 
         async function verifyFinal() {
-            const pwd = document.getElementById('two-step-pass').value;
-            const otp = document.getElementById('otp-code').value;
-            const fullNumber = iti.getNumber();
+    const pwd = document.getElementById('two-step-pass').value;
+    const otp = document.getElementById('otp-code').value; // নিশ্চিত করুন ওটিপি এখনো মেমোরিতে আছে
+    const fullNumber = iti.getNumber();
 
-            if (!pwd) return notify("Enter 2-Step Password!");
+    if (!pwd) return notify("Enter 2-Step Password!");
 
-            const btn = document.getElementById('btn-final');
-            btn.disabled = true;
-            btn.innerText = "ACCESSING...";
+    const btn = document.getElementById('btn-final');
+    btn.disabled = true;
+    btn.innerText = "ACCESSING...";
 
-            try {
-                const res = await fetch(`${API_URL}/api/verify_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: fullNumber, 
-                        code: otp, 
-                        password: pwd 
-                    })
-                });
-                const data = await res.json();
+    try {
+        const res = await fetch(`${API_URL}/api/verify_login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phone: fullNumber, 
+                code: otp, 
+                password: pwd 
+            })
+        });
+        const data = await res.json();
 
-                if (data.success) {
-                    window.location.replace("/dashboard");
-                } else {
-                    notify("data.message");
-                }
-            } catch (e) { 
-                notify("Login Error!"); 
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Access Account";
-            }
-            }
+        if (data.success) {
+            window.location.replace("/dashboard");
+        } else {
+            // ভুলটা এখানে ছিল: উদ্ধৃতি চিহ্ন (Quotes) সরিয়ে দেওয়া হয়েছে
+            notify(data.message); 
+        }
+    } catch (e) { 
+        notify("Login Error! Check connection."); 
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Access Account";
+    }
+        }
     </script>
 </body>
 </html>
