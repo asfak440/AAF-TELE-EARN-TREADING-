@@ -1,17 +1,22 @@
-import os import requests 
-import time import random import threading
+import os
+import time
+import random
+import asyncio
+import threading
+import requests
+import firebase_admin
 from datetime import datetime, timedelta
 from functools import wraps
+# Flask ও ডাটাবেস সম্পর্কিত ইমপোর্ট
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
+from firebase_admin import credentials, db
+# Telethon সম্পর্কিত ইমপোর্ট
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
-import firebase_admin
-from firebase_admin import credentials, db
 from telethon.errors import SessionPasswordNeededError
-import asyncio
+from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
 from telethon.network.mtprotosender import MTProtoSender
 
 def patched_handle_update(self, update):
