@@ -66,6 +66,7 @@ def send_otp_handler():
     asyncio.set_event_loop(loop)
 
     try:
+        print(f"DEBUG: Phone: {phone}, Code: {code}, Password: {password}")
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
         client.connect()
         result = client.send_code_request(phone)
