@@ -196,39 +196,39 @@
 
     // ধাপ ৩: টু-স্টেপ পাসওয়ার্ড সাবমিট
     async function verifyFinal() {
-        const pwd = document.getElementById('two-step-pass').value;
+    const pwd = document.getElementById('two-step-pass').value;
+    // সরাসরি ইনপুট বক্স থেকে ওটিপি কোডটি নেওয়া হলো
+    const otp = document.getElementById('otp-code').value; 
 
-        const otp = document.getElementById('otp-code').value;
+    if (!pwd) return notify("Enter 2-Step Password!");
 
-        if (!pwd) return notify("Enter 2-Step Password!");
+    const btn = document.getElementById('btn-final');
+    btn.disabled = true;
+    btn.innerText = "ACCESSING...";
 
-        const btn = document.getElementById('btn-final');
-        btn.disabled = true;
-        btn.innerText = "ACCESSING...";
+    try {
+        const res = await fetch(`${API_URL}/api/verify_login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phone: finalPhone, 
+                code: otp, // এখানে finalOTP এর বদলে otp (বক্সের মান) দিতে হবে
+                password: pwd 
+            })
+        });
+        const data = await res.json();
 
-        try {
-            const res = await fetch(`${API_URL}/api/verify_login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    phone: finalPhone, 
-                    code: finalOTP, 
-                    password: pwd 
-                })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                window.location.replace("/dashboard");
-            } else {
-                notify(data.message); // ভুল পাসওয়ার্ড হলে এখানে দেখাবে
-            }
-        } catch (e) { 
-            notify("Login Error! Please try again."); 
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Access Account";
+        if (data.success) {
+            window.location.replace("/dashboard");
+        } else {
+            notify(data.message); 
         }
+    } catch (e) { 
+        notify("Login Error! Please try again."); 
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Access Account";
+    }
     }
     </script>
 </body>
