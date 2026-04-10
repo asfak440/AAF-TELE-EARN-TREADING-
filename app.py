@@ -152,13 +152,21 @@ def claim_task():
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
     phone = request.json.get('phone')
+    
+    # মেমোরি পরিষ্কার রাখা: আগের সেশন থাকলে ডিসকানেক্ট করা
+    if phone in temp_clients:
+        try:
+            temp_clients[phone]['client'].disconnect()
+        except: pass
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-    client.connect()
     
     try:
+        client.connect()
         result = client.send_code_request(phone)
+        # ডাটা সেভ রাখা যেন ভেরিফাই করার সময় পাওয়া যায়
         temp_clients[phone] = {"client": client, "hash": result.phone_code_hash, "loop": loop}
         return jsonify({"success": True})
     except Exception as e:
@@ -169,7 +177,7 @@ def verify_login():
     data = request.json
     phone, code, pwd = data.get('phone'), data.get('code'), data.get('password')
     
-    # সেশন চেক
+    # সেশন চেক করা
     temp = temp_clients.get(phone)
     if not temp: 
         return jsonify({"success": False, "message": "সেশন এক্সপায়ার হয়েছে। আবার ওটিপি পাঠান।"})
@@ -179,6 +187,7 @@ def verify_login():
     
     async def process_signin():
         try:
+            # await ব্যবহার করা বাধ্যতামূলক
             user = await client.sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
             session_str = client.session.save()
             
@@ -203,14 +212,16 @@ def verify_login():
         
         if result["success"]:
             session["uid"] = result["uid"]
-            # সাকসেস হলে টেম্পোরারি সেশন ক্লিন আপ (ঐচ্ছিক)
+            # সাকসেস হলে কানেকশন ডিসকানেক্ট করে মেমোরি খালি করা
+            try:
+                temp['client'].disconnect()
+            except: pass
             del temp_clients[phone] 
             
         return jsonify(result)
     except Exception as e:
-        # এখানে টাইপিং এরর ঠিক করা হয়েছে
+        # টাইপিং এররটি এখানে ঠিক করা হয়েছে (jsoni + fy এক করা হয়েছে)
         return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
-
 
 # ---------------------------------------------------------
 # ৫. ট্রেডিং ও মার্কেট কন্ট্রোল
