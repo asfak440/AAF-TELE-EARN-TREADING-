@@ -149,14 +149,19 @@ def claim_task():
 # ---------------------------------------------------------
 # ৪. লগইন ও OTP সিস্টেম
 # ---------------------------------------------------------
-temp_clients = {}
 
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
     phone = request.json.get('phone')
+    # সেশন ক্লিয়ার করুন যেন আগের কোনো জ্যাম না থাকে
+    if phone in temp_clients:
+        try: temp_clients[phone]['client'].disconnect()
+        except: pass
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
+    
     try:
         client.connect()
         result = client.send_code_request(phone)
@@ -164,7 +169,6 @@ def send_otp():
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
