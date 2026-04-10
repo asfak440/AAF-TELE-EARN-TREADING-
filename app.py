@@ -70,7 +70,7 @@ def send_otp_handler():
         client.connect()
         result = client.send_code_request(phone)
         
-        # ডাটাবেজে সেভ (রেন্ডার রিস্টার্ট হলেও হারাবে না)
+        # ডাটাবেজে সেভ (এখানেই আপনার ভুলটি হয়েছিল)
         users_col.update_one(
             {"phone": phone},
             {"$set": {
@@ -84,8 +84,8 @@ def send_otp_handler():
         client.disconnect() 
         return jsonify({"success": True})
     except Exception as e:
-        print(f"OTP Error: {e}")
         return jsonify({"success": False, "message": str(e)})
+
                 
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
