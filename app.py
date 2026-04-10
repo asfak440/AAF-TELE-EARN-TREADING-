@@ -1,4 +1,4 @@
-import os, requests, time, random, threading
+import os,asyncio, requests, time, random, threading
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -56,8 +56,6 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
-import asyncio # নিশ্চিত করুন ফাইলের একদম উপরে এটি আছে
-
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
