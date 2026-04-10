@@ -139,6 +139,8 @@ def verify_login_handler():
         # auto_reconnect=False দিলে Fatal Error আসার সম্ভাবনা কমে যায়
         client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, auto_reconnect=False)
         await client.connect()
+
+        await asyncio.sleep(1)
         
         try:
             if password:
