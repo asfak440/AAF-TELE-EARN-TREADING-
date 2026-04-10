@@ -165,12 +165,16 @@ def send_otp():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
     data = request.json
     phone, code, pwd = data.get('phone'), data.get('code'), data.get('password')
+    
+    # সেশন চেক
     temp = temp_clients.get(phone)
-    if not temp: return jsonify({"success": False, "message": "Session Expired"})
+    if not temp: 
+        return jsonify({"success": False, "message": "সেশন এক্সপায়ার হয়েছে। আবার ওটিপি পাঠান।"})
     
     client = temp['client']
     loop = temp['loop']
@@ -179,13 +183,14 @@ def verify_login():
         try:
             user = await client.sign_in(phone, code, phone_code_hash=temp['hash'], password=pwd)
             session_str = client.session.save()
+            
             users_col.update_one(
                 {"telegram_id": user.id},
                 {"$set": {
                     "name": getattr(user, 'first_name', 'User'),
                     "phone": phone,
                     "session_str": session_str,
-                    "is_joined": False, # নতুন লগইনে জয়েন রিসেট
+                    "is_joined": False,
                     "last_login": datetime.now()
                 }},
                 upsert=True
@@ -197,11 +202,16 @@ def verify_login():
     try:
         future = asyncio.run_coroutine_threadsafe(process_signin(), loop)
         result = future.result(timeout=60)
-        if result["success"]: session["uid"] = result["uid"]
+        
+        if result["success"]:
+            session["uid"] = result["uid"]
+            # সাকসেস হলে টেম্পোরারি সেশন ক্লিন আপ (ঐচ্ছিক)
+            del temp_clients[phone] 
+            
         return jsonify(result)
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
+        # এখানে টাইপিং এরর ঠিক করা হয়েছে
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
 
 
 # ---------------------------------------------------------
