@@ -146,26 +146,47 @@ def verify_login_handler():
         
         try:
             # পাসওয়ার্ড থাকুক বা না থাকুক, এক লাইনে হ্যান্ডেল করা হয়েছে
-            user = await client.sign_in(phone=phone, code=code, password=password, phone_code_hash=temp_data["phone_code_hash"])
+            user = await client.sign_in(
+                phone=phone, 
+                code=code, 
+                password=password, 
+                phone_code_hash=temp_data["phone_code_hash"])
             
+
+            # সাকসেস হলে পার্মানেন্ট সেশন সেভ
+            final_session = client.session.save()
             users_col.update_one({"phone": phone}, {"$set": {
                 "telegram_id": user.id, "name": user.first_name, 
-                "session_str": client.session.save(), "auth_pending": False
+                "session_str": final_session, "auth_pending": False
             }}, upsert=True)
             return True, user.id
         
-        except SessionPasswordNeededError: return False, "PASSWORD_NEEDED"
-        except Exception as e: return False, str(e)
-        finally: await client.disconnect()
+        except SessionPasswordNeededError: 
+            return False, "PASSWORD_NEEDED"
+        except Exception as e: 
+            return False, str(e)
+        finally: 
+            await client.disconnect()
 
     try:
         success, result = loop.run_until_complete(process_login())
-        if success: return jsonify({"success": True, "uid": result})
         
-        msg = "Two-steps verification is enabled and a password is required" if result == "PASSWORD_NEEDED" else result
-        return jsonify({"success": False, "message": msg})
-    except Exception as e: return jsonify({"success": False, "message": str(e)})
-    finally: loop.close()
+        if success:
+            return jsonify({"success": True, "uid": result})
+        
+        # পাসওয়ার্ড দরকার হলে সঠিক মেসেজ পাঠানো
+        if result == "PASSWORD_NEEDED":
+            return jsonify({
+                "success": False, 
+                "message": "Two-steps verification is enabled and a password is required"
+            })
+        
+        return jsonify({"success": False, "message": result})
+            
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
+    finally:
+        loop.close()
         
 
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
