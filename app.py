@@ -156,6 +156,11 @@ def claim_task():
 # ---------------------------------------------------------
 # ৪. লগইন ও OTP সিস্টেম
 # --------------------------------------------------------
+# ১৬০ নম্বর লাইনের উপরে এটি বসান
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
@@ -167,10 +172,16 @@ def send_otp_handler():
     asyncio.set_event_loop(loop)
 
     try:
-        # loop=loop যুক্ত করা হয়েছে যাতে মেইন থ্রেড এরর না দেয়
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        client.connect()
-        result = client.send_code_request(phone)
+        # মেমরিতে না রেখে ডাটাবেজে সেভ করুন
+    users_col.update_one(
+        {"phone": phone},
+        {"$set": {
+            "temp_session": client.session.save(),
+            "phone_code_hash": result.phone_code_hash,
+            "auth_pending": True
+        }},
+        upsert=True
+    )
         
         temp_clients[phone] = {
             "session": client.session.save(), 
@@ -186,9 +197,10 @@ def verify_login_handler():
     data = request.json
     phone, code, password = data.get('phone'), data.get('code'), data.get('password')
     
-    if phone not in temp_clients: 
-        return jsonify({"success": False, "message": "Session Expired"})
-
+    # ডাটাবেজ থেকে চেক করুন (temp_clients এর বদলে)
+    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
+    if not temp_data:
+        return jsonify({"success": False, "message": "Session Expired! Please try again."})
     # এখানেও লুপ সেট করতে হবে
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
