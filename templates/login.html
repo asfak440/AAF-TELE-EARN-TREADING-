@@ -143,52 +143,29 @@
 
     // ধাপ ২: ওটিপি ভেরিফাই (এখানেই আসল খেলা)
     async function verifyOTP() {
-        finalOTP = document.getElementById('otp-code').value; // ওটিপিটা সেভ করে রাখলাম
-        const btn = document.getElementById('btn-verify');
-        btn.innerText = "VERIFYING...";
+    finalOTP = document.getElementById('otp-code').value;
+    const btn = document.getElementById('btn-verify');
+    btn.innerText = "VERIFYING...";
 
-        const res = await fetch('/api/verify_login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: finalPhone, code: finalOTP })
-        });
-        const data = await res.json();
+    const res = await fetch('/api/verify_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: finalPhone, code: finalOTP })
+    });
+    
+    const data = await res.json();
 
-        if (data.success) {
-            window.location.href = "/dashboard";
-        } else if (data.message.includes("Two-steps")) {
-            // যদি ২-স্টেপ চায়, তবে ৩ নম্বর ধাপে যাবে
-            document.getElementById('step-2').classList.remove('active-step');
-            document.getElementById('step-3').classList.add('active-step');
-        } else {
-            alert(data.message);
-        }
-        btn.innerText = "Verify Code";
+    if (data.success) {
+        // যদি পাসওয়ার্ড না থাকে, সরাসরি এখানে চলে আসবে
+        window.location.replace("/dashboard");
+    } else if (data.message === "PASSWORD_REQUIRED") {
+        // শুধু পাসওয়ার্ড অন থাকলেই এই ধাপে যাবে
+        goToStep(3);
+    } else {
+        notify(data.message);
     }
-
-    // ধাপ ৩: ২-স্টেপ পাসওয়ার্ড সাবমিট
-    async function verifyFinal() {
-        const pwd = document.getElementById('two-step-pass').value;
-        const btn = document.getElementById('btn-final');
-        btn.innerText = "ACCESSING...";
-
-        const res = await fetch('/api/verify_login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                phone: finalPhone, 
-                code: finalOTP, // এই যে এখানে ওটিপি আবার পাঠাচ্ছি, এটাই মিস হচ্ছিল
-                password: pwd 
-            })
-        });
-        const data = await res.json();
-        if (data.success) {
-            window.location.href = "/dashboard";
-        } else {
-            alert(data.message);
-        }
-        btn.innerText = "Access Account";
-    }
-                </script>
+    btn.innerText = "Verify Code";
+               }
+</script>
 </body>
 </html>
