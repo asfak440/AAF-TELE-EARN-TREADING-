@@ -103,7 +103,10 @@ def send_otp_handler():
                 upsert=True
             )
             return True, "Success"
-        except Exce@app.route('/api/verify_login', methods=['POST'])
+        except Exce
+        
+        
+@app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
     phone = data.get('phone')
