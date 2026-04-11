@@ -140,12 +140,13 @@ def verify_login_handler():
         await client.connect()
         
         try:
-            # পাসওয়ার্ড হ্যান্ডলিং লজিক
+            # এখানে হ্যাশটি পাসওয়ার্ডের সাথেও যোগ করা হয়েছে
             if password:
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
-                    password=str(password).strip()
+                    password=str(password).strip(),
+                    phone_code_hash=temp_data["phone_code_hash"] # এই লাইনটি যোগ করা হলো
                 )
             else:
                 user = await client.sign_in(
