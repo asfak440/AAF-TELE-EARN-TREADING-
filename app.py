@@ -119,12 +119,14 @@ def send_otp_handler():
         
         
         
+
+################
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
-    password = data.get('password') # জাভাস্ক্রিপ্ট থেকে আসা পাসওয়ার্ড
+    password = data.get('password')
     
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
@@ -134,25 +136,18 @@ def verify_login_handler():
     asyncio.set_event_loop(loop)
     
     async def process_login():
-        client = TelegramClient(
-            StringSession(temp_data["temp_session"]), 
-            API_ID, API_HASH, 
-            loop=loop, 
-            receive_updates=False
-        )
+        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, receive_updates=False)
         await client.connect()
         
         try:
-            # খুব গুরুত্বপূর্ণ: পাসওয়ার্ড যদি থাকে তবেই পাঠানো হবে
+            # পাসওয়ার্ড হ্যান্ডলিং লজিক
             if password:
-                # ২-স্টেপ অন থাকলে সরাসরি এই মেথডটি বেশি কার্যকর
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
-                    password=str(password).strip() # স্পেস থাকলে রিমুভ করবে
+                    password=str(password).strip()
                 )
             else:
-                # পাসওয়ার্ড না থাকলে সাধারণ সাইন-ইন
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
@@ -183,33 +178,13 @@ def verify_login_handler():
             return jsonify({"success": True, "uid": result})
         
         if result == "PASSWORD_NEEDED":
-            # এই মেসেজটি দিলেই জাভাস্ক্রিপ্ট বুঝবে যে পাসওয়ার্ড বক্স দেখাতে হবে
             return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
         
         return jsonify({"success": False, "message": result})
     except Exception as e:
         return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
     finally:
-        loop.close()ption as e:
-            return False, str(e)
-        finally:
-            await client.disconnect()
-
-    try:
-        # loop.run_until_complete ব্যবহার করাই এখন সবচেয়ে নিরাপদ
-        success, message = loop.run_until_complete(main())
-        if success:
-            return jsonify({"success": True})
-        else:
-            return jsonify({"success": False, "message": message})
-    except Exception as fatal_e:
-        print(f"Fatal Error: {str(fatal_e)}")
-        return jsonify({"success": False, "message": "Connection Error, please retry."})
-    finally:
-        loop.close() # কাজ শেষে লুপটি পুরোপুরি বন্ধ করে দেওয়া
-
-################
-
+        loop.close()
 
 
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
