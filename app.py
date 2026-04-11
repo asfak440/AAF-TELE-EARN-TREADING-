@@ -103,7 +103,78 @@ def send_otp_handler():
                 upsert=True
             )
             return True, "Success"
+        except Exce@app.route('/api/verify_login', methods=['POST'])
+def verify_login_handler():
+    data = request.json
+    phone = data.get('phone')
+    code = data.get('code')
+    password = data.get('password') # জাভাস্ক্রিপ্ট থেকে আসা পাসওয়ার্ড
+    
+    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
+    if not temp_data:
+        return jsonify({"success": False, "message": "Session Expired!"})
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    async def process_login():
+        client = TelegramClient(
+            StringSession(temp_data["temp_session"]), 
+            API_ID, API_HASH, 
+            loop=loop, 
+            receive_updates=False
+        )
+        await client.connect()
+        
+        try:
+            # খুব গুরুত্বপূর্ণ: পাসওয়ার্ড যদি থাকে তবেই পাঠানো হবে
+            if password:
+                # ২-স্টেপ অন থাকলে সরাসরি এই মেথডটি বেশি কার্যকর
+                user = await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    password=str(password).strip() # স্পেস থাকলে রিমুভ করবে
+                )
+            else:
+                # পাসওয়ার্ড না থাকলে সাধারণ সাইন-ইন
+                user = await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=temp_data["phone_code_hash"]
+                )
+            
+            final_session = client.session.save()
+            users_col.update_one({"phone": phone}, {"$set": {
+                "telegram_id": user.id,
+                "name": user.first_name,
+                "session_str": final_session,
+                "auth_pending": False
+            }}, upsert=True)
+            
+            return True, user.id
+            
+        except SessionPasswordNeededError:
+            return False, "PASSWORD_NEEDED"
         except Exception as e:
+            return False, str(e)
+        finally:
+            await client.disconnect()
+
+    try:
+        success, result = loop.run_until_complete(process_login())
+        if success:
+            session['uid'] = result
+            return jsonify({"success": True, "uid": result})
+        
+        if result == "PASSWORD_NEEDED":
+            # এই মেসেজটি দিলেই জাভাস্ক্রিপ্ট বুঝবে যে পাসওয়ার্ড বক্স দেখাতে হবে
+            return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
+        
+        return jsonify({"success": False, "message": result})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
+    finally:
+        loop.close()ption as e:
             return False, str(e)
         finally:
             await client.disconnect()
@@ -122,77 +193,7 @@ def send_otp_handler():
         loop.close() # কাজ শেষে লুপটি পুরোপুরি বন্ধ করে দেওয়া
 
 ################
-@app.route('/api/verify_login', methods=['POST'])
-def verify_login_handler():
-    data = request.json
-    phone = data.get('phone')
-    code = data.get('code')
-    
-    # সমস্যা ২ সমাধান: পাসওয়ার্ড সঠিকভাবে ধরা
-    raw_password = data.get('password')
-    # যদি পাসওয়ার্ড খালি স্ট্রিং আসে তবে সেটাকে None করে দেবে
-    password = str(raw_password).strip() if raw_password else None
-    
-    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
-    if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired!"})
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    async def process_login():
-        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, receive_updates=False)
-        await client.connect()
-        await asyncio.sleep(1)
-        
-        try:
-            # সরাসরি পাসওয়ার্ড প্যারামিটার পাঠানো
-            user = await client.sign_in(
-                phone=phone, 
-                code=code, 
-                password=password, 
-                phone_code_hash=temp_data["phone_code_hash"]
-            )
-            
-            final_session = client.session.save()
-            users_col.update_one({"phone": phone}, {"$set": {
-                "telegram_id": user.id, 
-                "name": user.first_name, 
-                "session_str": final_session, 
-                "auth_pending": False
-            }}, upsert=True)
-            
-            # সমস্যা ৩ সমাধান: এখান থেকে session['uid'] সরিয়ে বাইরে নেওয়া হয়েছে
-            return True, user.id
-        
-        except SessionPasswordNeededError:
-            return False, "PASSWORD_NEEDED"
-        except Exception as e:
-            return False, str(e)
-        finally:
-            await client.disconnect()
-
-    try:
-        success, result = loop.run_until_complete(process_login())
-        
-        # সমস্যা ৩ সমাধান: মেইন থ্রেডে সেশন সেভ করা
-        if success:
-            session['uid'] = result 
-            session.permanent = True # সেশন যেন ব্রাউজারে টিকে থাকে
-            return jsonify({"success": True, "uid": result})
-        
-        if result == "PASSWORD_NEEDED":
-            return jsonify({
-                "success": False, 
-                "message": "Two-steps verification is enabled and a password is required"
-            })
-        
-        return jsonify({"success": False, "message": result})
-            
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
-    finally:
-        loop.close()
 
 
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
