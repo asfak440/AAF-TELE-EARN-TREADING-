@@ -81,18 +81,15 @@ def send_otp_handler():
     
     print(f"DEBUG SEND OTP: Attempting for {phone}")
 
-    # নতুন একটি লুপ তৈরি করা (এটি আগের এররগুলো সমাধান করবে)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     async def main():
-        # এখানে auto_reconnect=False দিয়েছি যাতে Telethon নিজে লুপ খোঁজার চেষ্টা না করে
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop, auto_reconnect=False)
         await client.connect()
         
         try:
             result = await client.send_code_request(phone)
-            
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
@@ -103,7 +100,23 @@ def send_otp_handler():
                 upsert=True
             )
             return True, "Success"
-        except Exce
+        except Exception as e:
+            return False, str(e)
+        finally:
+            await client.disconnect()
+
+    try:
+        success, message = loop.run_until_complete(main())
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": message})
+    except Exception as fatal_e:
+        print(f"Fatal Error: {str(fatal_e)}")
+        return jsonify({"success": False, "message": "Connection Error, please retry."})
+    finally:
+        loop.close()
+        
         
         
 @app.route('/api/verify_login', methods=['POST'])
