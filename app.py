@@ -73,7 +73,6 @@ def get_admin_settings():
 # ---------------------------------------------------------
 # ৩. API রুটস
 # ---------------------------------------------------------
-
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp_handler():
     data = request.json
@@ -90,6 +89,7 @@ def send_otp_handler():
         
         try:
             result = await client.send_code_request(phone)
+            # ডাটাবেসে ফোন কোড হ্যাশ সেভ করা হচ্ছে
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
@@ -116,11 +116,7 @@ def send_otp_handler():
         return jsonify({"success": False, "message": "Connection Error, please retry."})
     finally:
         loop.close()
-        
-        
-        
 
-################
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
@@ -130,7 +126,7 @@ def verify_login_handler():
     
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired! Please try again."})
+        return jsonify({"success": False, "message": "Session Expired!"})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -140,23 +136,21 @@ def verify_login_handler():
         await client.connect()
         
         try:
-            # যদি জাভাস্ক্রিপ্ট থেকে পাসওয়ার্ড আসে (২য় বার চেষ্টার সময়)
+            # এখানে হ্যাশটি পাসওয়ার্ডের সাথেও যোগ করা হয়েছে
             if password:
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
                     password=str(password).strip(),
-                    phone_code_hash=temp_data["phone_code_hash"]
+                    phone_code_hash=temp_data["phone_code_hash"] # এই লাইনটি যোগ করা হলো
                 )
             else:
-                # প্রথমবার ওটিপি দিয়ে ঢোকার চেষ্টা (পাসওয়ার্ড ছাড়া)
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
                     phone_code_hash=temp_data["phone_code_hash"]
                 )
             
-            # যদি এই পর্যন্ত কোড চলে আসে, তার মানে লগইন সফল!
             final_session = client.session.save()
             users_col.update_one({"phone": phone}, {"$set": {
                 "telegram_id": user.id,
@@ -168,7 +162,6 @@ def verify_login_handler():
             return True, user.id
             
         except SessionPasswordNeededError:
-            # যদি টেলিগ্রাম বলে পাসওয়ার্ড লাগবে, শুধু তখনই এরর দেবে
             return False, "PASSWORD_NEEDED"
         except Exception as e:
             return False, str(e)
@@ -177,15 +170,12 @@ def verify_login_handler():
 
     try:
         success, result = loop.run_until_complete(process_login())
-        
         if success:
             session['uid'] = result
-            # অটোমেটিক লগইন সফল! জাভাস্ক্রিপ্টকে বলবে Dashboard এ পাঠাতে
             return jsonify({"success": True, "uid": result})
         
         if result == "PASSWORD_NEEDED":
-            # পাসওয়ার্ড লাগলে জাভাস্ক্রিপ্টকে জানাবে ৩ নম্বর ধাপে যেতে
-            return jsonify({"success": False, "message": "PASSWORD_REQUIRED"})
+            return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
         
         return jsonify({"success": False, "message": result})
     except Exception as e:
