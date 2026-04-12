@@ -141,67 +141,49 @@ def verify_login_handler():
         )
         await client.connect()
         
-        try:
-            # ফোন কোড হ্যাশটি ডাটাবেজ থেকে নেওয়া
-            code_hash = temp_data.get("phone_code_hash")
-            
-            if password:
-                # ২-স্টেপ পাসওয়ার্ড সহ লগইন ট্রাই
-                user = await client.sign_in(
-                    phone=phone,
-                    code=code,
-                    password=str(password).strip(),
-                    phone_code_hash=code_hash
-                )
-            else:
-                # শুধু ওটিপি কোড দিয়ে লগইন ট্রাই
-                user = await client.sign_in(
-                    phone=phone,
-                    code=code,
-                    phone_code_hash=code_hash
-                )
-            
-            # লগইন সফল হলে স্ট্রং সেশন জেনারেট করা
-            final_session = client.session.save()
-            
-            # ডাটাবেজে সেশন এবং আইডি সেভ করা
-            users_col.update_one({"phone": phone}, {"$set": {
-                "telegram_id": user.id,
-                "name": getattr(user, 'first_name', 'User'),
-                "username": getattr(user, 'username', None),
-                "session_str": final_session, # এটিই আপনার স্ট্রং সেশন
-                "auth_pending": False
-            }}, upsert=True)
-            
-            return True, user.id
-            
-        except SessionPasswordNeededError:
-            return False, "SHOW_PWD_STEP"
-        except PasswordHashInvalidError:
-            return False, "Wrong 2-Step Password! Please try again."
-        except Exception as e:
-            return False, str(e)
-        finally:
-            await client.disconnect()
+        
+try:
+    code_hash = temp_data.get("phone_code_hash")
 
-    try:
-        success, result = loop.run_until_complete(process_login())
-        
-        if success:
-            session['uid'] = result
-            return jsonify({"success": True, "uid": result})
-        
-        # JS-এর সাথে মিল রেখে SHOW_PWD_STEP পাঠানো
-        if result == "SHOW_PWD_STEP":
-            return jsonify({"success": False, "message": "SHOW_PWD_STEP"})
-        
-        return jsonify({"success": False, "message": result})
-        
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
-    finally:
-        loop.close()
+    if password:
+        # ✅ FIXED (only password)
+        user = await client.sign_in(
+            password=str(password).strip()
+        )
+    else:
+        # ✅ OTP login
+        user = await client.sign_in(
+            phone=phone,
+            code=code,
+            phone_code_hash=code_hash
+        )
 
+    final_session = client.session.save()
+
+    users_col.update_one(
+        {"phone": phone},
+        {"$set": {
+            "telegram_id": user.id,
+            "name": getattr(user, 'first_name', 'User'),
+            "username": getattr(user, 'username', None),
+            "session_str": final_session,
+            "auth_pending": False
+        }},
+        upsert=True
+    )
+
+    return True, user.id
+
+except SessionPasswordNeededError:
+    return False, "SHOW_PWD_STEP"
+
+except PasswordHashInvalidError:
+    return False, "Wrong 2-Step Password!"
+
+except Exception as e:
+    return False, str(e)
+            
+            
 
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
 
