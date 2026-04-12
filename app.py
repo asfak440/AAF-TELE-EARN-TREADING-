@@ -170,14 +170,17 @@ def verify_login_handler():
 
     try:
         success, result = loop.run_until_complete(process_login())
+        
         if success:
             session['uid'] = result
             return jsonify({"success": True, "uid": result})
         
+        # শুধু এই একটি মেসেজ থাকবে, তাহলেই জাভাস্ক্রিপ্ট বুঝবে
         if result == "PASSWORD_NEEDED":
-            return jsonify({"success": False, "message": "Two-steps verification is enabled and a password is required"})
+            return jsonify({"success": False, "message": "PASSWORD_REQUIRED"})
         
         return jsonify({"success": False, "message": result})
+        
     except Exception as e:
         return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
     finally:
