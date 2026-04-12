@@ -177,6 +177,9 @@ def verify_login_handler():
         
         # শুধু এই একটি মেসেজ থাকবে, তাহলেই জাভাস্ক্রিপ্ট বুঝবে
         if result == "PASSWORD_NEEDED":
+            # আমরা শুধু এই ছোট কোডটা পাঠাবো
+            return jsonify({"success": False, "message": "SHOW_PWD_STEP"})
+        
             return jsonify({"success": False, "message": "PASSWORD_REQUIRED"})
         
         return jsonify({"success": False, "message": result})
