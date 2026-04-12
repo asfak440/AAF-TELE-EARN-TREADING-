@@ -5,6 +5,7 @@ import asyncio
 import threading
 import requests
 import firebase_admin
+from telethon.errors import PasswordHashInvalidError
 from datetime import datetime, timedelta
 from functools import wraps
 # Flask ও ডাটাবেস সম্পর্কিত ইমপোর্ট
@@ -15,7 +16,7 @@ from firebase_admin import credentials, db
 # Telethon সম্পর্কিত ইমপোর্ট
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError
+import SessionPasswordNeededError
 from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
 from telethon.network.mtprotosender import MTProtoSender
 
