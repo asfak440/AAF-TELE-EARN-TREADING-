@@ -5,8 +5,9 @@ import asyncio
 import threading
 import requests
 import firebase_admin
-from telethon.errors import PasswordHashInvalidError
 from datetime import datetime, timedelta
+from telethon.errors import PasswordHashInvalidError
+from telethon.errors import SessionPasswordNeededError
 from functools import wraps
 # Flask ও ডাটাবেস সম্পর্কিত ইমপোর্ট
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
