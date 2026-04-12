@@ -16,7 +16,6 @@ from firebase_admin import credentials, db
 # Telethon সম্পর্কিত ইমপোর্ট
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
-import SessionPasswordNeededError
 from telethon.tl.functions.channels import JoinChannelRequest, GetParticipantRequest
 from telethon.network.mtprotosender import MTProtoSender
 
@@ -118,74 +117,91 @@ def send_otp_handler():
     finally:
         loop.close()
 
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
     phone = data.get('phone')
     code = data.get('code')
     password = data.get('password')
-    
-    # ডাটাবেজ থেকে টেম্পোরারি ডাটা আনা
+
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
         return jsonify({"success": False, "message": "Session Expired! Please resend OTP."})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    
+
     async def process_login():
         client = TelegramClient(
-            StringSession(temp_data["temp_session"]), 
-            API_ID, 
-            API_HASH, 
+            StringSession(temp_data["temp_session"]),
+            API_ID,
+            API_HASH,
             loop=loop
         )
         await client.connect()
-        
-        
-try:
-    code_hash = temp_data.get("phone_code_hash")
 
-    if password:
-        # ✅ FIXED (only password)
-        user = await client.sign_in(
-            password=str(password).strip()
-        )
-    else:
-        # ✅ OTP login
-        user = await client.sign_in(
-            phone=phone,
-            code=code,
-            phone_code_hash=code_hash
-        )
+        try:
+            code_hash = temp_data.get("phone_code_hash")
 
-    final_session = client.session.save()
+            if password:
+                # ✅ FIXED (ONLY PASSWORD)
+                user = await client.sign_in(
+                    password=str(password).strip()
+                )
+            else:
+                # ✅ OTP LOGIN
+                user = await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=code_hash
+                )
 
-    users_col.update_one(
-        {"phone": phone},
-        {"$set": {
-            "telegram_id": user.id,
-            "name": getattr(user, 'first_name', 'User'),
-            "username": getattr(user, 'username', None),
-            "session_str": final_session,
-            "auth_pending": False
-        }},
-        upsert=True
-    )
+            final_session = client.session.save()
 
-    return True, user.id
+            users_col.update_one(
+                {"phone": phone},
+                {"$set": {
+                    "telegram_id": user.id,
+                    "name": getattr(user, 'first_name', 'User'),
+                    "username": getattr(user, 'username', None),
+                    "session_str": final_session,
+                    "auth_pending": False
+                }},
+                upsert=True
+            )
 
-except SessionPasswordNeededError:
-    return False, "SHOW_PWD_STEP"
+            return True, user.id
 
-except PasswordHashInvalidError:
-    return False, "Wrong 2-Step Password!"
+        except SessionPasswordNeededError:
+            return False, "SHOW_PWD_STEP"
 
-except Exception as e:
-    return False, str(e)
-            
-            
+        except PasswordHashInvalidError:
+            return False, "Wrong 2-Step Password!"
 
+        except Exception as e:
+            return False, str(e)
+
+        finally:
+            await client.disconnect()
+
+    try:
+        success, result = loop.run_until_complete(process_login())
+
+        if success:
+            session['uid'] = result
+            return jsonify({"success": True})
+
+        if result == "SHOW_PWD_STEP":
+            return jsonify({"success": False, "message": "SHOW_PWD_STEP"})
+
+        return jsonify({"success": False, "message": result})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+    finally:
+        loop.close()
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
 
 
