@@ -143,45 +143,41 @@
 
     // ধাপ ২: ওটিপি ভেরিফাই (এখানেই আসল খেলা)
     async function verifyOTP() {
-    // ১. ওটিপি ইনপুট বক্স থেকে কোড নেওয়া
     finalOTP = document.getElementById('otp-code').value;
 
-    if (!finalOTP) {
-        return notify("Please enter the 5-digit code!");
-    }
+    if (!finalOTP) return notify("Please enter the OTP code!");
 
     const btn = document.getElementById('btn-verify');
     btn.disabled = true;
     btn.innerText = "VERIFYING...";
 
     try {
-        // ২. পাইথন ব্যাকএন্ডে ওটিপি পাঠানো
-        const res = await fetch('/api/verify_login', {
+        const res = await fetch(`${API_URL}/api/verify_login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 phone: finalPhone, 
                 code: finalOTP,
-                password: null // প্রথমবার পাসওয়ার্ড পাঠানো হচ্ছে না
+                password: null // প্রথমবার পাসওয়ার্ড ছাড়াই ট্রাই করবে
             })
         });
         
         const data = await res.json();
 
-        // ৩. রেজাল্ট অনুযায়ী কাজ
         if (data.success) {
-            // টু-স্টেপ না থাকলে সরাসরি ড্যাশবোর্ড
+            // যদি টু-স্টেপ না থাকে, সরাসরি লগইন সফল হবে
             window.location.replace("/dashboard");
-        } else if (data.message === "PASSWORD_REQUIRED" || data.message.includes("PASSWORD_REQUIRED")) {
-            // টু-স্টেপ অন থাকলে সরাসরি ৩ নম্বর ধাপে (পাসওয়ার্ড বক্সে) চলে যাবে
+        } 
+        else if (data.message === "PASSWORD_REQUIRED" || data.message.includes("Two-steps")) {
+            // যদি সার্ভার বলে পাসওয়ার্ড লাগবে, তবেই বাটন কাজ করবে এবং পরের স্টেপে যাবে
             goToStep(3); 
-        } else {
-            // যদি কোড ভুল হয় বা অন্য কোনো সমস্যা থাকে, তাহলে স্ক্রিনে দেখাবে
+        } 
+        else {
+            // অন্য কোনো ভুল হলে (যেমন ওটিপি ভুল) সেটা দেখাবে
             notify(data.message);
         }
     } catch (e) { 
-        notify("Connection Error! Please check internet."); 
-        console.error(e);
+        notify("Server Connection Error!"); 
     } finally { 
         btn.disabled = false; 
         btn.innerText = "Verify Code"; 
