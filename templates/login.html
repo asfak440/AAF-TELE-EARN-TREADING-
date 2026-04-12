@@ -145,27 +145,37 @@
     async function verifyOTP() {
     finalOTP = document.getElementById('otp-code').value;
     const btn = document.getElementById('btn-verify');
+    btn.disabled = true;
     btn.innerText = "VERIFYING...";
 
-    const res = await fetch('/api/verify_login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: finalPhone, code: finalOTP })
-    });
-    
-    const data = await res.json();
+    try {
+        const res = await fetch(`${API_URL}/api/verify_login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phone: finalPhone, 
+                code: finalOTP,
+                password: null // প্রথমবার পাসওয়ার্ড ছাড়াই ট্রাই করবে
+            })
+        });
+        const data = await res.json();
 
-    if (data.success) {
-        // যদি পাসওয়ার্ড না থাকে, সরাসরি এখানে চলে আসবে
-        window.location.replace("/dashboard");
-    } else if (data.message === "PASSWORD_REQUIRED") {
-        // শুধু পাসওয়ার্ড অন থাকলেই এই ধাপে যাবে
-        goToStep(3);
-    } else {
-        notify(data.message);
+        if (data.success) {
+            // টু-স্টেপ না থাকলে সরাসরি ড্যাশবোর্ড
+            window.location.replace("/dashboard");
+        } else if (data.message.toLowerCase().includes("password") || data.message.includes("REQUIRED")) {
+            // যদি টু-স্টেপ অন থাকে, তবে ৩ নম্বর স্টেপ (পাসওয়ার্ড বক্স) ওপেন হবে
+            goToStep(3); 
+        } else {
+            notify(data.message);
+        }
+    } catch (e) { 
+        notify("Connection Error!"); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerText = "Verify Code"; 
     }
-    btn.innerText = "Verify Code";
-               }
+    }
 </script>
 </body>
 </html>
