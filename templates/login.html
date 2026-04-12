@@ -144,44 +144,34 @@
     // ধাপ ২: ওটিপি ভেরিফাই (এখানেই আসল খেলা)
     async function verifyOTP() {
     finalOTP = document.getElementById('otp-code').value;
-
-    if (!finalOTP) return notify("Please enter the OTP code!");
-
     const btn = document.getElementById('btn-verify');
-    btn.disabled = true;
+    
+    if (!finalOTP) return alert("Enter OTP!");
+
     btn.innerText = "VERIFYING...";
 
-    try {
-        const res = await fetch(`${API_URL}/api/verify_login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                phone: finalPhone, 
-                code: finalOTP,
-                password: null // প্রথমবার পাসওয়ার্ড ছাড়াই ট্রাই করবে
-            })
-        });
-        
-        const data = await res.json();
+    const res = await fetch('/api/verify_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            phone: finalPhone, 
+            code: finalOTP 
+        })
+    });
+    
+    const data = await res.json();
 
-        if (data.success) {
-            // যদি টু-স্টেপ না থাকে, সরাসরি লগইন সফল হবে
-            window.location.replace("/dashboard");
-        } 
-        else if (data.message === "PASSWORD_REQUIRED" || data.message.includes("Two-steps")) {
-            // যদি সার্ভার বলে পাসওয়ার্ড লাগবে, তবেই বাটন কাজ করবে এবং পরের স্টেপে যাবে
-            goToStep(3); 
-        } 
-        else {
-            // অন্য কোনো ভুল হলে (যেমন ওটিপি ভুল) সেটা দেখাবে
-            notify(data.message);
-        }
-    } catch (e) { 
-        notify("Server Connection Error!"); 
-    } finally { 
-        btn.disabled = false; 
-        btn.innerText = "Verify Code"; 
+    if (data.success) {
+        window.location.href = "/dashboard";
+    } 
+    // যদি পাইথন থেকে SHOW_PWD_STEP আসে, তবে ৩ নম্বর ধাপে যাবে
+    else if (data.message === "SHOW_PWD_STEP") {
+        document.getElementById('step-2').classList.remove('active-step');
+        document.getElementById('step-3').classList.add('active-step');
+    } else {
+        alert(data.message);
     }
+    btn.innerText = "Verify Code";
     }
 </script>
 </body>
