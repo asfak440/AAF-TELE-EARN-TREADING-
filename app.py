@@ -117,6 +117,8 @@ def send_otp_handler():
     finally:
         loop.close()
 
+
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login_handler():
     data = request.json
@@ -124,37 +126,46 @@ def verify_login_handler():
     code = data.get('code')
     password = data.get('password')
     
+    # ডাটাবেজ থেকে টেম্পোরারি ডাটা আনা
     temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
     if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired!"})
+        return jsonify({"success": False, "message": "Session Expired! Please resend OTP."})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
     async def process_login():
-        client = TelegramClient(StringSession(temp_data["temp_session"]), API_ID, API_HASH, loop=loop, receive_updates=False)
+        # StringSession ব্যবহার করে কানেক্ট করা
+        client = TelegramClient(
+            StringSession(temp_data["temp_session"]), 
+            API_ID, 
+            API_HASH, 
+            loop=loop
+        )
         await client.connect()
         
         try:
-            # এখানে হ্যাশটি পাসওয়ার্ডের সাথেও যোগ করা হয়েছে
+            # যদি পাসওয়ার্ড ইনপুটে থাকে তবে পাসওয়ার্ড দিয়ে ট্রাই করবে
             if password:
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
                     password=str(password).strip(),
-                    phone_code_hash=temp_data["phone_code_hash"] # এই লাইনটি যোগ করা হলো
+                    phone_code_hash=temp_data.get("phone_code_hash")
                 )
             else:
+                # প্রথমে শুধু ওটিপি দিয়ে ট্রাই করবে
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
-                    phone_code_hash=temp_data["phone_code_hash"]
+                    phone_code_hash=temp_data.get("phone_code_hash")
                 )
             
+            # সাকসেস হলে সেশন সেভ করা
             final_session = client.session.save()
             users_col.update_one({"phone": phone}, {"$set": {
                 "telegram_id": user.id,
-                "name": user.first_name,
+                "name": getattr(user, 'first_name', 'User'),
                 "session_str": final_session,
                 "auth_pending": False
             }}, upsert=True)
@@ -162,7 +173,7 @@ def verify_login_handler():
             return True, user.id
             
         except SessionPasswordNeededError:
-            return False, "PASSWORD_NEEDED"
+            return False, "SHOW_PWD_STEP" # জাভাস্ক্রিপ্ট এই নামেই খুঁজছে
         except Exception as e:
             return False, str(e)
         finally:
@@ -175,11 +186,9 @@ def verify_login_handler():
             session['uid'] = result
             return jsonify({"success": True, "uid": result})
         
-        # শুধু এই একটি মেসেজ থাকবে, তাহলেই জাভাস্ক্রিপ্ট বুঝবে
-        if result == "PASSWORD_NEEDED":
-            # আমরা শুধু এই ছোট কোডটা পাঠাবো
-            
-         return jsonify({"success": False, "message": "PASSWORD_REQUIRED"})
+        # পাসওয়ার্ড দরকার হলে সঠিক মেসেজ পাঠানো
+        if result == "SHOW_PWD_STEP":
+            return jsonify({"success": False, "message": "SHOW_PWD_STEP"})
         
         return jsonify({"success": False, "message": result})
         
@@ -187,6 +196,7 @@ def verify_login_handler():
         return jsonify({"success": False, "message": f"Server Error: {str(e)}"})
     finally:
         loop.close()
+
 
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
 
