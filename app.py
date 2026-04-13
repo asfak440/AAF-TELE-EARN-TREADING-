@@ -118,7 +118,83 @@ def send_otp_handler():
         return jsonify({"success": False, "message": "Connection Error, please retry."})
     finally:
         loop.close()
-        async def process_login():
+
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+# আপনার API ID এবং HASH এখানে দিন
+API_ID = 12345
+API_HASH = 'your_api_hash'
+
+@app.route('/api/send_otp', methods=['POST'])
+def send_otp_handler():
+    data = request.json
+    phone = data.get('phone')
+    
+    if not phone:
+        return jsonify({"success": False, "message": "Phone number is required"})
+
+    print(f"DEBUG SEND OTP: Attempting for {phone}")
+
+    # নতুন লুপ তৈরি
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    async def main():
+        # StringSession() ব্যবহার করে নতুন ক্লায়েন্ট
+        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
+        await client.connect()
+        
+        try:
+            result = await client.send_code_request(phone)
+            # ডাটাবেসে ফোন কোড হ্যাশ এবং বর্তমান সেশন সেভ করা
+            users_col.update_one(
+                {"phone": phone},
+                {"$set": {
+                    "temp_session": client.session.save(),
+                    "phone_code_hash": result.phone_code_hash,
+                    "auth_pending": True
+                }},
+                upsert=True
+            )
+            return True, "Success"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            await client.disconnect()
+
+    try:
+        success, message = loop.run_until_complete(main())
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": message})
+    except Exception as fatal_e:
+        return jsonify({"success": False, "message": str(fatal_e)})
+    finally:
+        loop.close()
+
+
+
+@app.route('/api/verify_login', methods=['POST'])
+def verify_login_handler():
+    data = request.json
+    phone = data.get('phone')
+    code = data.get('code')
+    password = data.get('password')
+
+    # ডাটাবেস থেকে ওই ফোনের টেম্পোরারি ডাটা আনা
+    temp_data = users_col.find_one({"phone": phone})
+    
+    if not temp_data or not temp_data.get("temp_session"):
+        return jsonify({"success": False, "message": "Session Expired or Not Found."})
+    
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    async def process_login():
+        # সেভ করা টেম্পোরারি সেশন দিয়ে ক্লায়েন্ট শুরু করা
         client = TelegramClient(
             StringSession(temp_data["temp_session"]),
             API_ID,
@@ -128,10 +204,11 @@ def send_otp_handler():
         await client.connect()
 
         try:
-            # ২-স্টেপ পাসওয়ার্ড থাকলে তা দিয়ে সাইন ইন, নাহলে কোড দিয়ে
             if password:
+                # ২-স্টেপ ভেরিফিকেশন থাকলে
                 user = await client.sign_in(password=str(password).strip())
             else:
+                # ওটিপি দিয়ে সাইন ইন
                 code_hash = temp_data.get("phone_code_hash")
                 user = await client.sign_in(phone=phone, code=code, phone_code_hash=code_hash)
 
@@ -143,7 +220,7 @@ def send_otp_handler():
             username = getattr(user, 'username', 'N/A')
             final_session = client.session.save()
 
-            # ডাটাবেসে আপডেট বা ইনসার্ট (মূল সংশোধন এখানে)
+            # ডাটাবেসে ফাইনাল আপডেট
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
@@ -152,29 +229,24 @@ def send_otp_handler():
                     "username": username,
                     "session_str": final_session,
                     "auth_pending": False,
-                    "last_login": datetime.now() # ট্রেকিং এর জন্য
-                }},
-                upsert=True
+                    "last_login": datetime.now()
+                }}
             )
-
-            return True, tg_id # সেশনে রাখার জন্য আইডি পাঠানো হচ্ছে
+            return True, tg_id
 
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
         except Exception as e:
-            print(f"Login Error: {str(e)}") # কনসোলে ভুল দেখার জন্য
+            print(f"Login Error: {str(e)}")
             return False, str(e)
         finally:
             await client.disconnect()
-
-
-
 
     try:
         success, result = loop.run_until_complete(process_login())
 
         if success:
-            session['uid'] = result
+            session['uid'] = result # ফ্ল্যাস্ক সেশনে ইউজার আইডি রাখা
             return jsonify({"success": True})
 
         if result == "SHOW_PWD_STEP":
@@ -184,9 +256,11 @@ def send_otp_handler():
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
     finally:
         loop.close()
+
+        
+        
 ############-----------------&&&&&&&&&&&&&&&&&&&&____________--------------
 
 
