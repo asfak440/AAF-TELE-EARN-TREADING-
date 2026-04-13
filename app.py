@@ -118,23 +118,7 @@ def send_otp_handler():
         return jsonify({"success": False, "message": "Connection Error, please retry."})
     finally:
         loop.close()
-
-
-@app.route('/api/verify_login', methods=['POST'])
-def verify_login_handler():
-    data = request.json
-    phone = data.get('phone')
-    code = data.get('code')
-    password = data.get('password')
-
-    temp_data = users_col.find_one({"phone": phone, "auth_pending": True})
-    if not temp_data:
-        return jsonify({"success": False, "message": "Session Expired! Please resend OTP."})
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    async def process_login():
+        async def process_login():
         client = TelegramClient(
             StringSession(temp_data["temp_session"]),
             API_ID,
@@ -144,48 +128,47 @@ def verify_login_handler():
         await client.connect()
 
         try:
-            code_hash = temp_data.get("phone_code_hash")
-
+            # ২-স্টেপ পাসওয়ার্ড থাকলে তা দিয়ে সাইন ইন, নাহলে কোড দিয়ে
             if password:
-                # ✅ FIXED (ONLY PASSWORD)
-                user = await client.sign_in(
-                    password=str(password).strip()
-                )
+                user = await client.sign_in(password=str(password).strip())
             else:
-                # ✅ OTP LOGIN
-                user = await client.sign_in(
-                    phone=phone,
-                    code=code,
-                    phone_code_hash=code_hash
-                )
+                code_hash = temp_data.get("phone_code_hash")
+                user = await client.sign_in(phone=phone, code=code, phone_code_hash=code_hash)
 
+            # ইউজার ডাটা এক্সট্রাক্ট করা
+            tg_id = user.id
+            first_name = getattr(user, 'first_name', 'No Name')
+            last_name = getattr(user, 'last_name', '')
+            full_name = f"{first_name} {last_name}".strip()
+            username = getattr(user, 'username', 'N/A')
             final_session = client.session.save()
 
+            # ডাটাবেসে আপডেট বা ইনসার্ট (মূল সংশোধন এখানে)
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
-                    "telegram_id": user.id,
-                    "name": getattr(user, 'first_name', 'User'),
-                    "username": getattr(user, 'username', None),
+                    "telegram_id": tg_id,
+                    "name": full_name,
+                    "username": username,
                     "session_str": final_session,
-                    "auth_pending": False
+                    "auth_pending": False,
+                    "last_login": datetime.now() # ট্রেকিং এর জন্য
                 }},
                 upsert=True
             )
 
-            return True, user.id
+            return True, tg_id # সেশনে রাখার জন্য আইডি পাঠানো হচ্ছে
 
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
-
-        except PasswordHashInvalidError:
-            return False, "Wrong 2-Step Password!"
-
         except Exception as e:
+            print(f"Login Error: {str(e)}") # কনসোলে ভুল দেখার জন্য
             return False, str(e)
-
         finally:
             await client.disconnect()
+
+
+
 
     try:
         success, result = loop.run_until_complete(process_login())
