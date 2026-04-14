@@ -3,13 +3,14 @@ import asyncio
 import threading
 from datetime import datetime, timedelta
 
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, render_template, session, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
+from functools import wraps
 
 # =========================
 # CONFIG
@@ -222,45 +223,7 @@ def silent_join():
 
     return jsonify({"success": True})
     
-# =========================
-# BASIC page Batton
-# =========================
 
-@app.route('/login')
-def render_login():
-    return render_template('login.html')
-
-@app.route('/dashboard')
-def render_dashboard():
-    return render_template('dashboard.html')
-
-@app.route('/refer_list')
-def render_refer_list():
-    return render_template('refer_list.html')
-
-@app.route('/payment')
-def render_login():
-    return render_template('login.html')
-
-@app.route('/task')
-def render_task():
-    return render_template('task.html')
-
-@app.route('/trading')
-def render_trading():
-    return render_template('trading.html')
-
-@app.route('/wallet')
-def render_wallet():
-    return render_template('wallet.html')
-
-@app.route('/account')
-def render_account():
-    return render_template('account.html')
-
-@app.route('/admin')
-def render_admin():
-    return render_template('admin.html')
     
 # =========================
 # BASIC USER DATA
@@ -284,6 +247,100 @@ def get_user():
         }
     })
 
+
+# =========================
+# LOGIN REQUIRED DECORATOR
+# =========================
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'uid' not in session:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# =========================
+# DASHBOARD
+# =========================
+@app.route('/dashboard')
+@login_required
+def render_dashboard_page():
+    try:
+        user = users_col.find_one({"telegram_id": int(session['uid'])})
+        admin = settings_col.find_one({"type": "global"}) or {}
+
+        return render_template(
+            'dashboard.html',
+            user=user,
+            admin=admin
+        )
+    except Exception as e:
+        print("Dashboard Error:", e)
+        return redirect(url_for('logout'))
+
+
+# =========================
+# TASK PAGE
+# =========================
+@app.route('/task')
+@login_required
+def render_task_page():
+    return render_template('task.html')
+
+
+# =========================
+# TRADING PAGE
+# =========================
+@app.route('/trading')
+@login_required
+def render_trading_page():
+    return render_template('trading.html')
+
+
+# =========================
+# WALLET
+# =========================
+@app.route('/wallet')
+@login_required
+def render_wallet_page():
+    return render_template('wallet.html')
+
+
+# =========================
+# ACCOUNT
+# =========================
+@app.route('/account')
+@login_required
+def render_account_page():
+    return render_template('account.html')
+
+
+# =========================
+# REFER LIST
+# =========================
+@app.route('/refer_list')
+@login_required
+def render_refer_page():
+    return render_template('refer_list.html')
+
+
+# =========================
+# PAYMENT HISTORY
+# =========================
+@app.route('/payment_history')
+@login_required
+def render_history_page():
+    return render_template('payment_history.html')
+
+
+# =========================
+# LOGOUT
+# =========================
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 
 # =========================
 # RUN SERVER
