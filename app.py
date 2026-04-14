@@ -89,6 +89,10 @@ def send_otp_handler():
         client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop, auto_reconnect=False)
         await client.connect()
         
+        if not await client.is_user_authorized():
+    
+    
+        
         try:
             result = await client.send_code_request(phone)
             # ডাটাবেসে ফোন কোড হ্যাশ সেভ করা হচ্ছে
