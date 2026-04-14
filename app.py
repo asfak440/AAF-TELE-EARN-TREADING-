@@ -188,7 +188,7 @@ def verify_login_handler():
             await client.disconnect()
 
     try:
-        success, message = loop.run_until_complete(main())
+        success, message = loop.run_until_complete(app())
         if success:
             return jsonify({"success": True})
         else:
