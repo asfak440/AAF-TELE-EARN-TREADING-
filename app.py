@@ -109,7 +109,7 @@ def send_otp_handler():
             await client.disconnect()
 
     try:
-        success, message = loop.run_until_complete(process_login())
+        success, message = loop.run_until_complete(main())
         if success:
             return jsonify({"success": True})
         else:
