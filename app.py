@@ -120,61 +120,6 @@ def send_otp_handler():
         loop.close()
 
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'
-
-# আপনার API ID এবং HASH এখানে দিন
-API_ID = 12345
-API_HASH = 'your_api_hash'
-
-@app.route('/api/send_otp', methods=['POST'])
-def send_otp_handler():
-    data = request.json
-    phone = data.get('phone')
-    
-    if not phone:
-        return jsonify({"success": False, "message": "Phone number is required"})
-
-    print(f"DEBUG SEND OTP: Attempting for {phone}")
-
-    # নতুন লুপ তৈরি
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    async def main():
-        # StringSession() ব্যবহার করে নতুন ক্লায়েন্ট
-        client = TelegramClient(StringSession(), API_ID, API_HASH, loop=loop)
-        await client.connect()
-        
-        try:
-            result = await client.send_code_request(phone)
-            # ডাটাবেসে ফোন কোড হ্যাশ এবং বর্তমান সেশন সেভ করা
-            users_col.update_one(
-                {"phone": phone},
-                {"$set": {
-                    "temp_session": client.session.save(),
-                    "phone_code_hash": result.phone_code_hash,
-                    "auth_pending": True
-                }},
-                upsert=True
-            )
-            return True, "Success"
-        except Exception as e:
-            return False, str(e)
-        finally:
-            await client.disconnect()
-
-    try:
-        success, message = loop.run_until_complete(main())
-        if success:
-            return jsonify({"success": True})
-        else:
-            return jsonify({"success": False, "message": message})
-    except Exception as fatal_e:
-        return jsonify({"success": False, "message": str(fatal_e)})
-    finally:
-        loop.close()
-
 
 
 @app.route('/api/verify_login', methods=['POST'])
@@ -243,6 +188,12 @@ def verify_login_handler():
             await client.disconnect()
 
     try:
+        success, message = loop.run_until_complete(main())
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": message})
+
         success, result = loop.run_until_complete(process_login())
 
         if success:
