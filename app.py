@@ -221,8 +221,47 @@ def silent_join():
     threading.Thread(target=task).start()
 
     return jsonify({"success": True})
+    
+# =========================
+# BASIC page Batton
+# =========================
 
+@app.route('/login')
+def render_login():
+    return render_template('login.html')
 
+@app.route('/dashboard')
+def render_dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/refer_list')
+def render_refer_list():
+    return render_template('refer_list.html')
+
+@app.route('/payment')
+def render_login():
+    return render_template('login.html')
+
+@app.route('/task')
+def render_task():
+    return render_template('task.html')
+
+@app.route('/trading')
+def render_trading():
+    return render_template('trading.html')
+
+@app.route('/wallet')
+def render_wallet():
+    return render_template('wallet.html')
+
+@app.route('/account')
+def render_account():
+    return render_template('account.html')
+
+@app.route('/admin')
+def render_admin():
+    return render_template('admin.html')
+    
 # =========================
 # BASIC USER DATA
 # =========================
