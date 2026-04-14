@@ -90,10 +90,7 @@ def send_otp_handler():
         await client.connect()
         
         if not await client.is_user_authorized():
-    
-    
-        
-        try:
+      try:
             result = await client.send_code_request(phone)
             # ডাটাবেসে ফোন কোড হ্যাশ সেভ করা হচ্ছে
             users_col.update_one(
