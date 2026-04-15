@@ -234,8 +234,8 @@ async function verifyOTP(){
         let data = await res.json();
 
         if(data.success){
-            // 🔥 TELEGRAM ID SAVE
-            localStorage.setItem("uid", data.user_id);
+            // ✅ TELEGRAM ID SAVE (MAIN KEY)
+            localStorage.setItem("telegram_id", data.telegram_id);
             window.location="/dashboard";
         }else if(data.message==="SHOW_PWD_STEP"){
             goStep("step3");
@@ -273,8 +273,8 @@ async function verifyPassword(){
         let data = await res.json();
 
         if(data.success){
-            // 🔥 TELEGRAM ID SAVE
-            localStorage.setItem("uid", data.user_id);
+            // ✅ TELEGRAM ID SAVE
+            localStorage.setItem("telegram_id", data.telegram_id);
             window.location="/dashboard";
         }else{
             showMsg(data.message);
@@ -286,6 +286,6 @@ async function verifyPassword(){
 
     btn.disabled=false;
 }
-        </script>
+</script>ষ
 </body>
 </html>
