@@ -82,7 +82,7 @@ def login_required(f):
         if not uid:
             return redirect(url_for("login"))
 
-        user = users_col.find_one({"telegram_id": uid})
+       user = users_col.find_one({"_id": ObjectId(uid)})
 
         if not user:
             session.clear()
@@ -168,7 +168,7 @@ def silent_join():
         return jsonify({"success": False, "message": "session_expired"})
 
     users_col.update_one(
-        {"telegram_id": uid},
+    {"_id": ObjectId(uid)},
         {"$set": {"is_joined": True}}
     )
 
@@ -182,8 +182,7 @@ def get_user():
     if not uid:
         return jsonify({"success": False, "message": "session_expired"})
 
-    user = users_col.find_one({"telegram_id": uid})
-
+    user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         return jsonify({"success": False, "message": "user_not_found"})
 
