@@ -258,188 +258,13 @@
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
     </div>
-    
+
     <script>
-    // ১. গ্লোবাল কনফিগারেশন
-    const API_URL = ""; 
-    window.currentChannelLink = ""; 
-
-    // ২. মেইন ইনিশিয়াল ফাংশন (ডাটা লোড)
-    async function initDashboard() {
-    const userId = localStorage.getItem('user_id');
-    
-    if (!userId) {
-        console.warn("Active User ID পাওয়া যায়নি।");
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/user/data/${userId}`);
-        const data = await response.json();
-
-        if (data.status === "success") {
-            // শুধুমাত্র renderUI কল হবে, বাকি সব লজিক এখান থেকে মুছে ফেলা হয়েছে
-            renderUI(data.user, data.admin);
-        }
-    } catch (err) {
-        // এই অংশটুকু অবশ্যই থাকতে হবে, তাই এটি কাটা যাবে না
-        console.error("Database Sync Error: ", err);
-    }
-    }
-
-    // ৩. UI রেন্ডারিং (রেফার লিস্ট ও স্ট্যাটাস)
-    function renderUI(user, admin) {
-        // প্রোফাইল ও আইডি
-        if(document.getElementById('u-name')) document.getElementById('u-name').innerText = user.username.toUpperCase();
-        if(document.getElementById('u-id')) document.getElementById('u-id').innerText = ": " + user.telegram_id;
-        
-        // ব্যালেন্স আপডেট
-        if(document.getElementById('h-cash')) document.getElementById('h-cash').innerText = ' ' + parseFloat(user.cash).toFixed(2);
-        if(document.getElementById('h-aaf')) document.getElementById('h-aaf').innerText = user.aaf;
-
-        // ৪. সার্ভার স্ট্যাটাস (এডমিন ডাটা)
-        if(document.getElementById('srv-income')) document.getElementById('srv-income').innerText = '৳ ' + admin.server_income;
-        if(document.getElementById('srv-trade')) document.getElementById('srv-trade').innerText = '৳ ' + admin.server_trading;
-        if(document.getElementById('srv-users')) document.getElementById('srv-users').innerText = admin.total_users;
-
-        // ৫. রেফার লিস্ট সেকশন
-        if(document.getElementById('my-refs')) document.getElementById('my-refs').innerText = (user.refer_count || 0) + " REFERRED";
-        
-        const referStatusText = document.getElementById('refer-count-status');
-        if(referStatusText) {
-            let count = user.refer_count || 0;
-            referStatusText.innerText = count + " Active Members Found";
-            referStatusText.style.color = "var(--active-green)";
-        }
-
-        window.currentChannelLink = admin.channel_url;
-        
-        // ৬. ইন্ডিকেটর ও জয়েন কার্ড লজিক (সবুজ/লাল)
-        const dot = document.getElementById('status-dot');
-        const joinCard = document.getElementById('join-container');
-        const joinStatusText = document.getElementById('join-status');
-
-        if (user.is_joined) {
-            if(dot) dot.className = 'dot-online'; // সবুজ বাতি
-            if(joinCard) joinCard.className = 'premium-card join-card connected';
-            if(joinStatusText) {
-                joinStatusText.innerText = "CONNECTED";
-                joinStatusText.style.color = "var(--active-green)";
-            }
-            document.getElementById('join-btn').style.display = "none"; 
-        } else {
-            if(dot) dot.className = 'dot-offline'; // লাল বাতি
-            if(joinCard) joinCard.className = 'premium-card join-card';
-            if(joinStatusText) {
-                joinStatusText.innerText = "DISCONNECTED";
-                joinStatusText.style.color = "var(--danger)";
-            }
-            document.getElementById('join-btn').style.display = "block";
-        }
-    }
-
-    // ৭. ৬ ঘণ্টার পপ-আপ অ্যাড লজিক
-    function checkAndShowAd() {
-        const userId = localStorage.getItem('user_id');
-        const storageKey = `last_ad_click_${userId}`;
-        const lastSeen = localStorage.getItem(storageKey);
-        const currentTime = Date.now();
-        const SIX_HOURS = 6 * 60 * 60 * 1000;
-
-        if (!lastSeen || (currentTime - lastSeen) > SIX_HOURS) {
-            // Firebase থেকে পপ-আপ মেসেজ আনা
-            if (typeof fb_db !== 'undefined') {
-                fb_db.ref('popup_ads/global').once('value', snap => {
-                    const data = snap.val();
-                    if (data && data.message) {
-                        alert("📢 AD: " + data.message);
-                        localStorage.setItem(storageKey, currentTime);
-                    }
-                });
-            } else {
-                // ফায়ারবেজ না থাকলে লোকাল পপআপ
-                triggerPopup("নতুন বোনাস অফার চেক করুন!");
-                localStorage.setItem(storageKey, currentTime);
-            }
-            return true; 
-        }
-        return false; 
-    }
-        
-    // ৮. অ্যাকশন হ্যান্ডলার (আপনার কথামতো কোনো লজিক কাটা হয়নি)
-    function handleAction(type) {
-        if (typeof checkAndShowAd === "function") {
-            checkAndShowAd();
-        }
-
-        let target = "";
-
-        if (type.includes('=')) {
-            let parts = type.split('='); 
-            let baseFile = parts[0];    
-            let pageParam = parts[1];   
-            target = baseFile + ".html?page=" + pageParam; 
-        } 
-        else if (type.includes('.html')) {
-            target = type; 
-        } 
-        else if (type === 'trading' || type === 'convert') {
-            target = "trading.html";
-        } 
-        else if (type === 'refer_list' || type === 'refer-list') {
-            target = "refer_list.html";
-        }
-        else if (type === 'payment_history' || type === 'payment-history') {
-            target = "payment_history.html";
-        }
-        else if (type === 'dashboard') {
-            target = "dashboard.html";
-        }
-        else {
-            target = type + ".html";
-        }
-
-        window.location.href = target;
-    }  
-    
-    // ৯. টেলিগ্রাম জয়েন ও ভেরিফাই
-    async function handleAutoJoin() {
-    const btn = document.getElementById('join-btn');
-    btn.innerText = "JOINING...";
-    btn.disabled = true;
-
-    try {
-        const response = await fetch('/api/silent_join', { method: 'POST' });
-        const data = await response.json();
-
-        if (data.success) {
-            triggerPopup("সফলভাবে জয়েন করা হয়েছে! ✅");
-            initDashboard(); 
-        } else {
-            // যদি সেশন কাজ না করে বা অন্য সমস্যা হয়
-            if(data.message === "session_expired") {
-                alert("আপনার সেশন শেষ হয়েছে। দয়া করে আবার লগইন করুন।");
-                window.location.href = "/login"; // লগইন পেজে পাঠিয়ে দেওয়া
-            } else {
-                // সেশন সমস্যা ছাড়া অন্য সমস্যা হলে তখন ব্যাকআপ হিসেবে লিঙ্কে পাঠাতে পারেন
-                triggerPopup("অটো-জয়েন কাজ করছে না, ম্যানুয়ালি জয়েন করুন।");
-                window.open(window.currentChannelLink, "_blank"); 
-                btn.disabled = false;
-                btn.innerText = "JOIN MANUALLY";
-            }
-        }
-    } catch (err) {
-        triggerPopup("সার্ভার এরর!");
-        btn.disabled = false;
-    }
-</body>
-        <script>
+// ================= GLOBAL =================
 const API_URL = "";
 window.currentChannelLink = "";
 
-/* =========================
-   SAFE INIT DASHBOARD
-========================= */
+// ================= INIT DASHBOARD =================
 async function initDashboard() {
     const userId = localStorage.getItem('user_id');
 
@@ -449,11 +274,11 @@ async function initDashboard() {
     }
 
     try {
-        const response = await fetch(`/api/user/data/${userId}`);
+        const response = await fetch(`/api/user/data/${userId}`, {
+            credentials: "include"
+        });
 
-        if (!response.ok) {
-            throw new Error("Network Error");
-        }
+        if (!response.ok) throw new Error("Network Error");
 
         const data = await response.json();
 
@@ -465,26 +290,22 @@ async function initDashboard() {
         }
 
     } catch (err) {
-        console.error("Dashboard Load Error:", err);
+        console.error("Database Sync Error:", err);
         triggerPopup("Server Connection Error");
     }
 }
 
-/* =========================
-   RENDER UI SAFE
-========================= */
+// ================= UI RENDER =================
 function renderUI(user, admin) {
-
     if (!user || !admin) return;
 
-    const setText = (id, value) => {
+    const setText = (id, val) => {
         const el = document.getElementById(id);
-        if (el) el.innerText = value;
+        if (el) el.innerText = val;
     };
 
     setText('u-name', (user.username || "USER").toUpperCase());
     setText('u-id', ": " + (user.telegram_id || "000000"));
-
     setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
     setText('h-aaf', user.aaf || 0);
 
@@ -527,9 +348,59 @@ function renderUI(user, admin) {
     }
 }
 
-/* =========================
-   SILENT JOIN (SAFE)
-========================= */
+// ================= 6 HOUR AD =================
+function checkAndShowAd() {
+    const userId = localStorage.getItem('user_id');
+    const key = `last_ad_click_${userId}`;
+    const lastSeen = localStorage.getItem(key);
+    const now = Date.now();
+    const SIX_HOURS = 21600000;
+
+    if (!lastSeen || (now - lastSeen) > SIX_HOURS) {
+        if (typeof fb_db !== 'undefined') {
+            fb_db.ref('popup_ads/global').once('value', snap => {
+                const data = snap.val();
+                if (data?.message) {
+                    alert("📢 AD: " + data.message);
+                    localStorage.setItem(key, now);
+                }
+            });
+        } else {
+            triggerPopup("নতুন বোনাস অফার চেক করুন!");
+            localStorage.setItem(key, now);
+        }
+        return true;
+    }
+    return false;
+}
+
+// ================= ACTION HANDLER =================
+function handleAction(type) {
+    checkAndShowAd();
+
+    let target = "";
+
+    if (type.includes('=')) {
+        let parts = type.split('=');
+        target = parts[0] + ".html?page=" + parts[1];
+    } else if (type.includes('.html')) {
+        target = type;
+    } else if (['trading','convert'].includes(type)) {
+        target = "trading.html";
+    } else if (['refer_list','refer-list'].includes(type)) {
+        target = "refer_list.html";
+    } else if (['payment_history','payment-history'].includes(type)) {
+        target = "payment_history.html";
+    } else if (type === 'dashboard') {
+        target = "dashboard.html";
+    } else {
+        target = type + ".html";
+    }
+
+    window.location.href = target;
+}
+
+// ================= SILENT JOIN =================
 async function handleAutoJoin() {
     const btn = document.getElementById('join-btn');
     if (!btn) return;
@@ -540,9 +411,7 @@ async function handleAutoJoin() {
     try {
         const res = await fetch('/api/silent_join', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            credentials: "include"
         });
 
         const data = await res.json();
@@ -558,13 +427,10 @@ async function handleAutoJoin() {
             }
 
             triggerPopup("Manual Join Required");
-            if (window.currentChannelLink) {
-                window.open(window.currentChannelLink, "_blank");
-            }
+            window.open(window.currentChannelLink, "_blank");
         }
 
     } catch (err) {
-        console.error(err);
         triggerPopup("Server Error");
     }
 
@@ -572,53 +438,34 @@ async function handleAutoJoin() {
     btn.disabled = false;
 }
 
-/* =========================
-   COPY REFER LINK SAFE
-========================= */
+// ================= COPY REFER =================
 function copyReferLink() {
     const idText = document.getElementById('u-id')?.innerText || "";
     const cleanId = idText.replace(':', '').trim();
-
-    if (!cleanId || cleanId === "000000") {
-        triggerPopup("ID Loading...");
-        return;
-    }
-
     const link = `${window.location.origin}/register?ref=${cleanId}`;
     navigator.clipboard.writeText(link);
     triggerPopup("REFER LINK COPIED!");
 }
 
-/* =========================
-   VERIFY JOIN (FIXED MISSING)
-========================= */
+// ================= VERIFY JOIN =================
 function verifyJoin() {
     triggerPopup("Verifying...");
     initDashboard();
 }
 
-/* =========================
-   POPUP
-========================= */
+// ================= POPUP =================
 function triggerPopup(msg) {
     const bar = document.getElementById('active-user-bar');
     const text = document.getElementById('popup-text');
-
     if (!bar || !text) return;
 
     text.innerText = msg;
     bar.style.display = "flex";
-
-    setTimeout(() => {
-        bar.style.display = "none";
-    }, 3000);
+    setTimeout(()=> bar.style.display="none", 3000);
 }
 
-/* =========================
-   AUTO INIT
-========================= */
+// ================= AUTO START =================
 window.onload = initDashboard;
 setInterval(initDashboard, 15000);
-
-</script>
+    </script>
 </html>
