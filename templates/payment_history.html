@@ -66,51 +66,54 @@
         <div id="loader"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>
     </div>
 
-    <script>
-        async function fetchPayments() {
-            try {
-                // আপনার Flask API থেকে ডাটা কল করা
-                const res = await fetch('/get_payment_data');
-                const data = await res.json();
-                const listContainer = document.getElementById('payment-list');
-                
-                listContainer.innerHTML = ''; // লোডার সরিয়ে ফেলা
+<script>
+async function fetchPayments() {
+    try {
+        const res = await fetch('/api/user/payments', {
+            credentials: "include"
+        });
 
-                if (!data.payments || data.payments.length === 0) {
-                    listContainer.innerHTML = '<p style="text-align:center; color:gray; margin-top:50px;">No transaction history found.</p>';
-                    return;
-                }
+        const data = await res.json();
+        const listContainer = document.getElementById('payment-list');
 
-                // ডাটাবেজ থেকে আসা ডাটা দিয়ে লুপ চালানো
-                data.payments.forEach(p => {
-                    // স্ট্যাটাস অনুযায়ী ক্লাস নির্ধারণ
-                    let statusClass = 'status-pending';
-                    if(p.status.toLowerCase() === 'success' || p.status.toLowerCase() === 'completed') statusClass = 'status-success';
-                    if(p.status.toLowerCase() === 'rejected') statusClass = 'status-rejected';
+        listContainer.innerHTML = '';
 
-                    const card = `
-                        <div class="history-card">
-                            <div class="pay-info">
-                                <b>৳ ${p.amount}</b>
-                                <small>${p.method} | ${p.date}</small>
-                            </div>
-                            <div class="pay-status">
-                                <div class="st-badge ${statusClass}">${p.status}</div>
-                                ${p.id ? `<span class="trx-id">TrxID: ${p.id}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                    listContainer.innerHTML += card;
-                });
-
-            } catch(e) {
-                document.getElementById('payment-list').innerHTML = '<p style="text-align:center; color:red;">Failed to load data.</p>';
-                console.error("Fetch Error:", e);
-            }
+        if (!data.payments || data.payments.length === 0) {
+            listContainer.innerHTML =
+                '<p style="text-align:center; color:gray; margin-top:50px;">No transaction history found.</p>';
+            return;
         }
 
-        // পেজ লোড হওয়ার সাথে সাথে ফাংশনটি চালু হবে
-        window.onload = fetchPayments;
-    </script>
+        data.payments.forEach(p => {
+            let statusClass = 'status-pending';
+            const st = (p.status || '').toLowerCase();
+
+            if (st === 'success' || st === 'completed') statusClass = 'status-success';
+            if (st === 'rejected') statusClass = 'status-rejected';
+
+            const card = `
+                <div class="history-card">
+                    <div class="pay-info">
+                        <b>৳ ${p.amount}</b>
+                        <small>${p.method} | ${p.date}</small>
+                    </div>
+                    <div class="pay-status">
+                        <div class="st-badge ${statusClass}">${p.status}</div>
+                        ${p.id ? `<span class="trx-id">TrxID: ${p.id}</span>` : ''}
+                    </div>
+                </div>
+            `;
+            listContainer.innerHTML += card;
+        });
+
+    } catch (e) {
+        document.getElementById('payment-list').innerHTML =
+            '<p style="text-align:center; color:red;">Failed to load data.</p>';
+        console.error("Fetch Error:", e);
+    }
+}
+
+window.onload = fetchPayments;
+</script>
 </body>
 </html>
