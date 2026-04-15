@@ -62,45 +62,47 @@
     </div>
 
     <script>
-        async function loadReferrals() {
-            const userId = localStorage.getItem('user_id');
-            if (!userId) return;
+    async function loadReferrals() {
+    try {
+        const response = await fetch(`/api/user/referrals`, {
+            credentials: "include"
+        });
 
-            try {
-                const response = await fetch(`/api/user/referrals/${userId}`);
-                const data = await response.json();
-                
-                const container = document.getElementById('referral-container');
-                const countDisplay = document.getElementById('total-ref-count');
-                
-                if (data.status === "success") {
-                    countDisplay.innerText = data.referrals.length;
-                    container.innerHTML = ""; 
+        const data = await response.json();
 
-                    if (data.referrals.length > 0) {
-                        data.referrals.forEach(ref => {
-                            container.innerHTML += `
-                                <div class="refer-card">
-                                    <div>
-                                        <b style="font-size: 14px;">${ref.name}</b><br>
-                                        <small>ID: ${ref.telegram_id}</small>
-                                    </div>
-                                    <div class="status-active">Verified</div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        container.innerHTML = "<p style='text-align:center; color:gray; margin-top:50px;'>No referrals found yet.</p>";
-                    }
-                }
-            } catch (err) {
-                console.error("Referral Sync Error:", err);
+        const container = document.getElementById('referral-container');
+        const countDisplay = document.getElementById('total-ref-count');
+
+        if (data.status === "success") {
+            countDisplay.innerText = data.referrals.length;
+            container.innerHTML = "";
+
+            if (data.referrals.length > 0) {
+                data.referrals.forEach(ref => {
+                    container.innerHTML += `
+                        <div class="refer-card">
+                            <div>
+                                <b style="font-size: 14px;">${ref.name || "USER"}</b><br>
+                                <small>ID: ${ref.telegram_id}</small>
+                            </div>
+                            <div class="status-active">Verified</div>
+                        </div>
+                    `;
+                });
+            } else {
+                container.innerHTML =
+                    "<p style='text-align:center; color:gray; margin-top:50px;'>No referrals found yet.</p>";
             }
         }
 
-        // ১০ সেকেন্ড পর পর অটো-আপডেট হবে
-        window.onload = loadReferrals;
-        setInterval(loadReferrals, 10000); 
-    </script>
+    } catch (err) {
+        console.error("Referral Sync Error:", err);
+    }
+}
+
+window.onload = loadReferrals;
+setInterval(loadReferrals, 10000);
+    
+</script>
 </body>
 </html>
