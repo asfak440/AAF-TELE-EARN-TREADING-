@@ -266,7 +266,7 @@ window.currentChannelLink = "";
 
 // ================= INIT DASHBOARD =================
 async function initDashboard() {
-    const userId = localStorage.getItem('user_id');
+    const userId = localStorage.getItem('uid');
 
     if (!userId) {
         window.location.href = "/login";
@@ -274,7 +274,7 @@ async function initDashboard() {
     }
 
     try {
-        const response = await fetch(`/api/user/data/${userId}`, {
+        const response = await fetch(`/api/user/data/${uId}`, {
             credentials: "include"
         });
 
@@ -350,7 +350,7 @@ function renderUI(user, admin) {
 
 // ================= 6 HOUR AD =================
 function checkAndShowAd() {
-    const userId = localStorage.getItem('user_id');
+    const userId = localStorage.getItem('uid');
     const key = `last_ad_click_${userId}`;
     const lastSeen = localStorage.getItem(key);
     const now = Date.now();
