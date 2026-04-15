@@ -263,18 +263,17 @@
 // ================= GLOBAL =================
 const API_URL = "";
 window.currentChannelLink = "";
-
 // ================= INIT DASHBOARD =================
 async function initDashboard() {
-    const userId = localStorage.getItem('uid');
+    const telegramId = localStorage.getItem('telegram_id');
 
-    if (!userId) {
+    if (!telegramId) {
         window.location.href = "/login";
         return;
     }
 
     try {
-        const response = await fetch(`/api/user/data/${uId}`, {
+        const response = await fetch(`/api/user/data/${telegramId}`, {
             credentials: "include"
         });
 
@@ -285,12 +284,12 @@ async function initDashboard() {
         if (data.status === "success") {
             renderUI(data.user, data.admin);
         } else if (data.message === "session_expired") {
-            localStorage.removeItem("user_id");
+            localStorage.removeItem("telegram_id");
             window.location.href = "/login";
         }
 
     } catch (err) {
-        console.error("Database Sync Error:", err);
+        console.error("Dashboard Sync Error:", err);
         triggerPopup("Server Connection Error");
     }
 }
