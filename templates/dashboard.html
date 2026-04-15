@@ -432,39 +432,193 @@
         triggerPopup("সার্ভার এরর!");
         btn.disabled = false;
     }
-    }
-
-    // ১০. রেফার লিংক কপি
-    function copyReferLink() {
-    checkAndShowAd(); // অ্যাড চেক
-    const idText = document.getElementById('u-id').innerText;
-    const cleanId = idText.replace(': ', '').trim();
-    
-    // এই লাইনে && cleanId !== "000000" যোগ করুন
-    if(cleanId && cleanId !== "000000") {
-        const link = window.location.origin + "/register?ref=" + cleanId;
-        navigator.clipboard.writeText(link);
-        triggerPopup("REFER LINK COPIED!");
-    } else {
-        // এই নতুন লাইনগুলো যোগ করুন
-        triggerPopup("আইডি লোড হচ্ছে, অপেক্ষা করুন...");
-    }
-    }
-
-    // ১১. কাস্টম পপআপ নোটিফিকেশন
-    function triggerPopup(msg) {
-        const bar = document.getElementById('active-user-bar');
-        const text = document.getElementById('popup-text');
-        if(bar && text) {
-            text.innerText = msg;
-            bar.style.display = "flex";
-            setTimeout(() => { bar.style.display = "none"; }, 3000);
-        }
-    }
-
-    // ১২. অটো-রিফ্রেশ
-    window.onload = initDashboard;
-    setInterval(initDashboard, 15000); 
-    </script>
 </body>
+        <script>
+const API_URL = "";
+window.currentChannelLink = "";
+
+/* =========================
+   SAFE INIT DASHBOARD
+========================= */
+async function initDashboard() {
+    const userId = localStorage.getItem('user_id');
+
+    if (!userId) {
+        window.location.href = "/login";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/user/data/${userId}`);
+
+        if (!response.ok) {
+            throw new Error("Network Error");
+        }
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            renderUI(data.user, data.admin);
+        } else if (data.message === "session_expired") {
+            localStorage.removeItem("user_id");
+            window.location.href = "/login";
+        }
+
+    } catch (err) {
+        console.error("Dashboard Load Error:", err);
+        triggerPopup("Server Connection Error");
+    }
+}
+
+/* =========================
+   RENDER UI SAFE
+========================= */
+function renderUI(user, admin) {
+
+    if (!user || !admin) return;
+
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
+    };
+
+    setText('u-name', (user.username || "USER").toUpperCase());
+    setText('u-id', ": " + (user.telegram_id || "000000"));
+
+    setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
+    setText('h-aaf', user.aaf || 0);
+
+    setText('srv-income', '৳ ' + (admin.server_income || 0));
+    setText('srv-trade', '৳ ' + (admin.server_trading || 0));
+    setText('srv-users', admin.total_users || 0);
+
+    setText('my-refs', (user.refer_count || 0) + " REFERRED");
+
+    const referStatusText = document.getElementById('refer-count-status');
+    if (referStatusText) {
+        referStatusText.innerText = (user.refer_count || 0) + " Active Members Found";
+        referStatusText.style.color = "var(--active-green)";
+    }
+
+    window.currentChannelLink = admin.channel_url || "";
+
+    // JOIN STATUS
+    const dot = document.getElementById('status-dot');
+    const joinCard = document.getElementById('join-container');
+    const joinStatusText = document.getElementById('join-status');
+    const joinBtn = document.getElementById('join-btn');
+
+    if (user.is_joined) {
+        if (dot) dot.className = 'dot-online';
+        if (joinCard) joinCard.classList.add('connected');
+        if (joinStatusText) {
+            joinStatusText.innerText = "CONNECTED";
+            joinStatusText.style.color = "var(--active-green)";
+        }
+        if (joinBtn) joinBtn.style.display = "none";
+    } else {
+        if (dot) dot.className = 'dot-offline';
+        if (joinCard) joinCard.classList.remove('connected');
+        if (joinStatusText) {
+            joinStatusText.innerText = "DISCONNECTED";
+            joinStatusText.style.color = "var(--danger)";
+        }
+        if (joinBtn) joinBtn.style.display = "block";
+    }
+}
+
+/* =========================
+   SILENT JOIN (SAFE)
+========================= */
+async function handleAutoJoin() {
+    const btn = document.getElementById('join-btn');
+    if (!btn) return;
+
+    btn.innerText = "JOINING...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/silent_join', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            triggerPopup("JOIN SUCCESS ✅");
+            initDashboard();
+        } else {
+            if (data.message === "session_expired") {
+                localStorage.removeItem('user_id');
+                window.location.href = "/login";
+                return;
+            }
+
+            triggerPopup("Manual Join Required");
+            if (window.currentChannelLink) {
+                window.open(window.currentChannelLink, "_blank");
+            }
+        }
+
+    } catch (err) {
+        console.error(err);
+        triggerPopup("Server Error");
+    }
+
+    btn.innerText = "JOIN NOW";
+    btn.disabled = false;
+}
+
+/* =========================
+   COPY REFER LINK SAFE
+========================= */
+function copyReferLink() {
+    const idText = document.getElementById('u-id')?.innerText || "";
+    const cleanId = idText.replace(':', '').trim();
+
+    if (!cleanId || cleanId === "000000") {
+        triggerPopup("ID Loading...");
+        return;
+    }
+
+    const link = `${window.location.origin}/register?ref=${cleanId}`;
+    navigator.clipboard.writeText(link);
+    triggerPopup("REFER LINK COPIED!");
+}
+
+/* =========================
+   VERIFY JOIN (FIXED MISSING)
+========================= */
+function verifyJoin() {
+    triggerPopup("Verifying...");
+    initDashboard();
+}
+
+/* =========================
+   POPUP
+========================= */
+function triggerPopup(msg) {
+    const bar = document.getElementById('active-user-bar');
+    const text = document.getElementById('popup-text');
+
+    if (!bar || !text) return;
+
+    text.innerText = msg;
+    bar.style.display = "flex";
+
+    setTimeout(() => {
+        bar.style.display = "none";
+    }, 3000);
+}
+
+/* =========================
+   AUTO INIT
+========================= */
+window.onload = initDashboard;
+setInterval(initDashboard, 15000);
+
+</script>
 </html>
