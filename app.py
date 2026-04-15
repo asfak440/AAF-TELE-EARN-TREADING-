@@ -24,9 +24,10 @@ app.config.update(
 CORS(app)
 
 # ================= CONFIG =================
-API_ID = int(os.environ.get("API_ID", "123456"))
-API_HASH = os.environ.get("API_HASH", "your_api_hash")
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+API_ID = int(os.environ.get("API_ID", "36466824"))
+API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
+MONGO_URI = os.environ.get("mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?appName=Cluster0
+")
 
 # ================= DB =================
 client = MongoClient(MONGO_URI)
