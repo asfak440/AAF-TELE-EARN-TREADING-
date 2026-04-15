@@ -142,6 +142,57 @@ def refer_list():
 def payment_history():
     return render_template("payment_history.html")
 
+    #=================রেফার=================
+
+    @app.route("/api/user/referrals")
+def user_referrals():
+    telegram_id = session.get("telegram_id")
+    if not telegram_id:
+        return {"status": "error", "message": "session_expired"}
+
+    # যে user লগইন করেছে তার রেফার কোড = তার telegram_id
+    refs = users_collection.find(
+        {"referred_by": telegram_id},
+        {"username": 1, "telegram_id": 1}
+    )
+
+    referrals = []
+    for r in refs:
+        referrals.append({
+            "name": r.get("username", "USER"),
+            "telegram_id": r.get("telegram_id")
+        })
+
+    return {
+        "status": "success",
+        "referrals": referrals
+    }
+    #=====================পেমেন্ট=============
+    @app.route("/api/user/payments")
+def user_payments():
+    telegram_id = session.get("telegram_id")
+    if not telegram_id:
+        return {"status": "error", "message": "session_expired"}
+
+    payments_cursor = transactions_collection.find(
+        {"telegram_id": telegram_id}
+    ).sort("created_at", -1)
+
+    payments = []
+    for p in payments_cursor:
+        payments.append({
+            "amount": p.get("amount", 0),
+            "method": p.get("method", "N/A"),
+            "status": p.get("status", "Pending"),
+            "date": p.get("created_at", ""),
+            "id": p.get("trx_id", "")
+        })
+
+    return {
+        "status": "success",
+        "payments": payments
+    }
+
 # ================= CORE API =================
 @app.route("/api/user/data/<user_id>")
 def user_data(user_id):
