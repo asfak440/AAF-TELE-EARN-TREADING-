@@ -1,9 +1,10 @@
 flask
 flask-cors
 pymongo[srv]
-telethon==1.36.0
+telethon
 firebase-admin
 gunicorn
 python-dotenv
 cryptography
 requests
+nest_asyncio
