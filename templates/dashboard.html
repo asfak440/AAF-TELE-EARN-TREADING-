@@ -263,6 +263,7 @@
 // ================= GLOBAL =================
 const API_URL = "";
 window.currentChannelLink = "";
+
 // ================= INIT DASHBOARD =================
 async function initDashboard() {
     const telegramId = localStorage.getItem('telegram_id');
@@ -293,6 +294,9 @@ async function initDashboard() {
         triggerPopup("Server Connection Error");
     }
 }
+
+window.onload = initDashboard;
+
 
 // ================= UI RENDER =================
 function renderUI(user, admin) {
@@ -349,7 +353,7 @@ function renderUI(user, admin) {
 
 // ================= 6 HOUR AD =================
 function checkAndShowAd() {
-    const userId = localStorage.getItem('uid');
+    const userId = localStorage.getItem('telegram_id');
     const key = `last_ad_click_${userId}`;
     const lastSeen = localStorage.getItem(key);
     const now = Date.now();
@@ -420,7 +424,7 @@ async function handleAutoJoin() {
             initDashboard();
         } else {
             if (data.message === "session_expired") {
-                localStorage.removeItem('user_id');
+                localStorage.removeItem('telegram_id');
                 window.location.href = "/login";
                 return;
             }
