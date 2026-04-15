@@ -122,9 +122,7 @@ input {
 
 <!-- LOGO (GitHub compatible) -->
 <div class="logo-wrapper">
-<img src="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/logo.png"
-     class="brand-logo"
-     onerror="this.src='https://via.placeholder.com/80'">
+<img src="{{ url_for('static', filename='logo.png') }}" class="brand-logo" alt="Logo" onerror="this.src='https://via.placeholder.com/100'">
 </div>
 
 <div class="header-title">AAF TELE-EARN TRADE</div>
