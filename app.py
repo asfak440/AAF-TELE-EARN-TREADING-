@@ -2,6 +2,7 @@ import os
 import asyncio
 from datetime import datetime, timedelta
 from functools import wraps
+from bson import ObjectId
 
 from flask import Flask, request, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
@@ -171,16 +172,24 @@ def silent_join():
 
     return jsonify({"success": True})
 
+
+
+
 @app.route("/api/user")
 def get_user():
     uid = session.get("uid")
-    user = users_col.find_one({"telegram_id": uid})
+
+    if not uid:
+        return jsonify({"success": False, "message": "No session"})
+
+    user = users_col.find_one({"_id": ObjectId(uid)})
 
     if not user:
-        return jsonify({"success": False})
+        return jsonify({"success": False, "message": "User not found"})
 
     user["_id"] = str(user["_id"])
     return jsonify({"success": True, "user": user})
+
 
 # ================= ADMIN =================
 @app.route("/admin/update", methods=["POST"])
