@@ -98,8 +98,15 @@ def verify_login():
     data = request.json
     phone = data.get("phone")
     code = data.get("code")
+    password = data.get("password")
+
+    if not phone:
+        return jsonify({"success": False, "message": "Phone required"})
 
     temp = users_col.find_one({"phone": phone})
+
+    if not temp or "temp_session" not in temp:
+        return jsonify({"success": False, "message": "Session expired, resend OTP"})
 
     async def main():
         client = TelegramClient(
@@ -111,27 +118,44 @@ def verify_login():
         try:
             await client.connect()
 
-            user = await client.sign_in(
-                phone=phone,
-                code=code,
-                phone_code_hash=temp["phone_code_hash"]
-            )
+            # STEP 1: LOGIN WITH PASSWORD (2FA)
+            if password:
+                user = await client.sign_in(password=password.strip())
+            else:
+                # STEP 2: OTP LOGIN
+                if not code:
+                    return False, "Code required"
+
+                user = await client.sign_in(
+                    phone=phone,
+                    code=code.strip(),
+                    phone_code_hash=temp.get("phone_code_hash")
+                )
+
+            # SAVE FINAL SESSION
+            session_str = client.session.save()
 
             users_col.update_one(
                 {"phone": phone},
                 {"$set": {
                     "telegram_id": user.id,
-                    "name": f"{user.first_name or ''}",
+                    "name": f"{user.first_name or ''} {user.last_name or ''}".strip(),
                     "username": user.username,
-                    "session_str": client.session.save(),
-                    "last_login": datetime.now()
+                    "session_str": session_str,
+                    "last_login": datetime.now(),
+                    "auth_pending": False
                 }}
             )
 
             return True, user.id
 
         except SessionPasswordNeededError:
-            return False, "NEED_PASSWORD"
+            return False, "SHOW_PWD_STEP"
+
+        except Exception as e:
+            print("LOGIN ERROR:", e)
+            return False, str(e)
+
         finally:
             await client.disconnect()
 
