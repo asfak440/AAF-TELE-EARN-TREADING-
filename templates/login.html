@@ -161,8 +161,9 @@ input {
 let loginData = { phone:"", otp:"" };
 
 const iti = window.intlTelInput(document.querySelector("#phone"), {
-    initialCountry:"bd",
-    separateDialCode:false
+    initialCountry: "bd",
+    separateDialCode: false,
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js"
 });
 
 function showMsg(msg){
