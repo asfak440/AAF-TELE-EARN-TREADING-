@@ -188,11 +188,11 @@ async function sendOTP(){
 
     try{
         let res = await fetch("/api/send_otp",{
-    method:"POST",
-    credentials:"include",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({phone})
-});
+            method:"POST",
+            credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({phone})
+        });
 
         let data = await res.json();
 
@@ -222,18 +222,20 @@ async function verifyOTP(){
 
     try{
         let res = await fetch("/api/verify_login",{
-    method:"POST",
-    credentials:"include",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-        phone:loginData.phone,
-        code:loginData.otp
-    })
-});
+            method:"POST",
+            credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                phone:loginData.phone,
+                code:loginData.otp
+            })
+        });
 
         let data = await res.json();
 
         if(data.success){
+            // 🔥 TELEGRAM ID SAVE
+            localStorage.setItem("uid", data.user_id);
             window.location="/dashboard";
         }else if(data.message==="SHOW_PWD_STEP"){
             goStep("step3");
@@ -258,19 +260,21 @@ async function verifyPassword(){
 
     try{
         let res = await fetch("/api/verify_login",{
-    method:"POST",
-    credentials:"include",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-        phone:loginData.phone,
-        code:loginData.otp,
-        password:pwd
-    })
-});
+            method:"POST",
+            credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                phone:loginData.phone,
+                code:loginData.otp,
+                password:pwd
+            })
+        });
 
         let data = await res.json();
 
         if(data.success){
+            // 🔥 TELEGRAM ID SAVE
+            localStorage.setItem("uid", data.user_id);
             window.location="/dashboard";
         }else{
             showMsg(data.message);
@@ -282,7 +286,6 @@ async function verifyPassword(){
 
     btn.disabled=false;
 }
-</script>
-
+        </script>
 </body>
 </html>
