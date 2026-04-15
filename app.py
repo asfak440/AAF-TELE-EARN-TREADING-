@@ -143,7 +143,7 @@ def payment_history():
     return render_template("payment_history.html")
 
 # ================= CORE API =================
-     @app.route("/api/user/data/<user_id>")
+@app.route("/api/user/data/<user_id>")
 def user_data(user_id):
     # session check
     if session.get("uid") != user_id:
