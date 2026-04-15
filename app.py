@@ -82,7 +82,7 @@ def login_required(f):
         if not uid:
             return redirect(url_for("login"))
 
-       user = users_col.find_one({"_id": ObjectId(uid)})
+        user = users_col.find_one({"_id": ObjectId(uid)})
 
         if not user:
             session.clear()
@@ -143,11 +143,13 @@ def payment_history():
     return render_template("payment_history.html")
 
 # ================= CORE API =================
-
-    @app.route("/api/user/data/<int:user_id>")
+     @app.route("/api/user/data/<user_id>")
 def user_data(user_id):
+    # session check
     if session.get("uid") != user_id:
+        return jsonify({"status": "error", "message": "unauthorized"})
 
+    user = users_col.find_one({"_id": ObjectId(user_id)})
     if not user:
         return jsonify({"status": "error", "message": "user_not_found"})
 
@@ -159,6 +161,7 @@ def user_data(user_id):
         "user": user,
         "admin": admin
     })
+    
 
 @app.route("/api/silent_join", methods=["POST"])
 def silent_join():
