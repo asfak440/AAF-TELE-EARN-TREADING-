@@ -21,7 +21,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=3)
 )
 
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # ================= CONFIG =================
 API_ID = int(os.environ["API_ID"])
