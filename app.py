@@ -2,6 +2,7 @@ import os
 import asyncio
 import threading
 from datetime import datetime, timedelta
+from telethon.tl.functions.channels import JoinChannelRequest
 
 from flask import Flask, request, jsonify, session, render_template, session, redirect, url_for
 from flask_cors import CORS
@@ -290,18 +291,6 @@ def get_user():
         }
     })
 
-
-# =========================
-# LOGIN REQUIRED DECORATOR
-# =========================
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'uid' not in session:
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return wrapper
-
 # =========================
 # admin DECORATOR
 # =========================
@@ -316,9 +305,13 @@ def admin_update():
     )
     return jsonify({"success": True})
 
-# =========================
-# DASHBOARD
-# =========================
+# ========login=================
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+# DASHBOARD=====================
 @app.route('/dashboard')
 @login_required
 def render_dashboard_page():
@@ -335,72 +328,50 @@ def render_dashboard_page():
         print("Dashboard Error:", e)
         return redirect(url_for('logout'))
 
-
-# =========================
-# TASK PAGE
-# =========================
+# TASK PAGE================
 @app.route('/task')
 @login_required
 def render_task_page():
     return render_template('task.html')
 
-
-# =========================
-# TRADING PAGE
-# =========================
+# TRADING PAGE=============
 @app.route('/trading')
 @login_required
 def render_trading_page():
     return render_template('trading.html')
 
-
-# =========================
-# WALLET
-# =========================
+# WALLET=========================
 @app.route('/wallet')
 @login_required
 def render_wallet_page():
     return render_template('wallet.html')
 
-
-# =========================
-# ACCOUNT
-# =========================
+# ACCOUNT==================
 @app.route('/account')
 @login_required
 def render_account_page():
     return render_template('account.html')
 
-
-# =========================
-# REFER LIST
-# =========================
+# REFER LIST===============
 @app.route('/refer_list')
 @login_required
 def render_refer_page():
     return render_template('refer_list.html')
 
-
-# =========================
-# PAYMENT HISTORY
-# =========================
+# PAYMENT HISTORY==========
 @app.route('/payment_history')
 @login_required
 def render_history_page():
     return render_template('payment_history.html')
 
-
-# =========================
-# LOGOUT
-# =========================
+# LOGOUT===================
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
-
-# =========================
-# RUN SERVER
-# =========================
+    
+# RUN SERVER===============
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, threaded=True)
+    app.run(host="0.0.0.0", port=port, debug=True)
+    
