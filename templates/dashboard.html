@@ -467,6 +467,53 @@ function triggerPopup(msg) {
     setTimeout(()=> bar.style.display="none", 3000);
 }
 
+        // ================== AD ENGINE (DASHBOARD) ==================
+
+const AD_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+
+function getAdKey(){
+    const uid = localStorage.getItem('telegram_id') || 'guest';
+    return `last_interstitial_ad_${uid}`;
+}
+
+// 🔹 6 hour interstitial trigger
+function checkTimedInterstitial(){
+    const last = localStorage.getItem(getAdKey());
+    const now = Date.now();
+
+    if(!last || (now - parseInt(last)) > AD_INTERVAL){
+        showInterstitialAd();
+        localStorage.setItem(getAdKey(), now.toString());
+    }
+}
+
+// 🔹 This will be replaced by AdMob later
+function showInterstitialAd(){
+    triggerPopup("📢 Special bonus offer চলছে!");
+    console.log("Interstitial Ad Triggered");
+}
+
+// 🔹 Banner loader (future AdMob)
+function loadBannerAd(){
+    const banner = document.getElementById('banner-ad');
+    if(!banner) return;
+
+    banner.innerHTML = `
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;font-size:12px;">
+            Banner Ad Ready
+        </div>
+    `;
+}
+
+// ================== HOOK INTO DASHBOARD ==================
+
+const originalInit = initDashboard;
+
+initDashboard = async function(){
+    await originalInit();
+    loadBannerAd();
+    checkTimedInterstitial();
+};
 // ================= AUTO START =================
 window.onload = initDashboard;
 setInterval(initDashboard, 15000);
