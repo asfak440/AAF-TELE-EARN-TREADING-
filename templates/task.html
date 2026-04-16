@@ -150,145 +150,173 @@
     </div>
 
     <script>
-const API_BASE = window.location.origin;
-const TELEGRAM_ID = localStorage.getItem('telegram_id');
-let isUserJoined = false;
+const API = window.location.origin;
+const TG_ID = localStorage.getItem('telegram_id');
 
-// ১. ৬ ঘণ্টার গ্লোবাল নোটিস
-function checkGlobalAd() {
-    if (!TELEGRAM_ID) return;
+let USER_JOINED = false;
+let AFTER_TASK_AD = true;
 
-    const storageKey = `last_global_notice_${TELEGRAM_ID}`;
-    const lastSeen = localStorage.getItem(storageKey);
-    const SIX_HOURS = 6 * 60 * 60 * 1000;
+// ================= GLOBAL 6H AD =================
+function globalAdCheck() {
+    const key = `ad_seen_${TG_ID}`;
+    const last = localStorage.getItem(key);
+    const SIX_HOURS = 21600000;
 
-    if (!lastSeen || (Date.now() - lastSeen) > SIX_HOURS) {
-        alert("🚀 নতুন মাইলস্টোন বোনাস চালু হয়েছে! ১০টি টাস্ক শেষ করে বোনাস নিন।");
-        localStorage.setItem(storageKey, Date.now());
+    if (!last || Date.now() - last > SIX_HOURS) {
+        fetch(`${API}/api/ads/popup`)
+        .then(r=>r.json())
+        .then(ad=>{
+            if(ad?.message){
+                alert("📢 " + ad.message);
+                localStorage.setItem(key, Date.now());
+            }
+        });
     }
 }
 
-// ২. টাস্ক লোড
+// ================= BANNER AD =================
+function loadBannerAd(){
+    fetch(`${API}/api/ads/banner`)
+    .then(r=>r.json())
+    .then(ad=>{
+        if(ad?.html){
+            document.getElementById('banner-ad').innerHTML = ad.html;
+        }
+    });
+}
+
+// ================= LOAD TASKS =================
 async function loadTasks() {
-    if (!TELEGRAM_ID) return;
+    if (!TG_ID) return;
 
     try {
-        const res = await fetch(`${API_BASE}/api/user/tasks?telegram_id=${TELEGRAM_ID}`, {
-            credentials: "include"
+        const res = await fetch(`${API}/api/user/tasks?telegram_id=${TG_ID}`,{
+            credentials:"include"
         });
-
         const data = await res.json();
 
-        if (data.status === "success") {
-            document.getElementById('u-bal').innerText = data.balance;
-            document.getElementById('u-coin').innerText = data.coin_balance;
+        if(data.status !== "success") return;
 
-            isUserJoined = data.is_joined;
-            document.getElementById('join-warning').style.display =
-                isUserJoined ? 'none' : 'flex';
+        // Balance
+        uBal(data.balance, data.coin_balance);
 
-            const target = data.bonus_target || 10;
-            const done = data.tasks_done % target;
+        USER_JOINED = data.is_joined;
+        document.getElementById('join-warning').style.display =
+            USER_JOINED ? 'none':'flex';
 
-            document.getElementById('t-done').innerText = done;
-            document.getElementById('t-target').innerText = target;
-            document.getElementById('t-progress').style.width =
-                `${(done / target) * 100}%`;
+        milestone(data.tasks_done, data.bonus_target);
 
-            const list = document.getElementById('main-task-list');
-            list.innerHTML = "";
+        renderTasks(data.tasks);
 
-            data.tasks.forEach(t => {
-                const locked = t.is_ip_used;
-                const rewardText = t.currency === 'aaf'
-                    ? `AAF ${t.reward}`
-                    : `৳${t.reward}`;
-
-                const timer = t.timer || 15;
-
-                list.innerHTML += `
-                    <div class="task-card ${locked ? 'locked' : ''}">
-                        <div class="task-top">
-                            <div class="task-icon">
-                                <i class="fas ${t.type === 'video' ? 'fa-play' : 'fa-link'}"></i>
-                            </div>
-                            <div class="task-info">
-                                <h4>${t.title}</h4>
-                                <p>${locked ? 'IP ALREADY USED' : `Required Time: ${timer}s`}</p>
-                            </div>
-                            <div class="reward-tag">${rewardText}</div>
-                        </div>
-                        <button class="btn-claim"
-                            id="btn-${t.id}"
-                            onclick="startTask('${t.id}','${t.link}',${timer})"
-                            ${locked ? 'disabled' : ''}>
-                            ${locked ? 'ALREADY CLAIMED' : 'START EARNING'}
-                        </button>
-                    </div>
-                `;
-            });
-        }
-    } catch (e) {
-        console.log("Task Load Error:", e);
+    } catch (err){
+        console.log(err);
     }
 }
 
-// ৩. টাস্ক টাইমার
-function startTask(id, url, seconds) {
-    if (!isUserJoined) {
-        if (!confirm("চ্যানেল জয়েন না করলে বোনাস পাবেন না। চালাবেন?")) return;
+// ================= UI HELPERS =================
+function uBal(cash, coin){
+    document.getElementById('u-bal').innerText = cash;
+    document.getElementById('u-coin').innerText = coin;
+}
+
+function milestone(done, target){
+    const d = done % target;
+    document.getElementById('t-done').innerText = d;
+    document.getElementById('t-target').innerText = target;
+    document.getElementById('t-progress').style.width =
+        `${(d/target)*100}%`;
+}
+
+// ================= RENDER TASK =================
+function renderTasks(tasks){
+    const list = document.getElementById('main-task-list');
+    list.innerHTML = "";
+
+    tasks.forEach(t=>{
+        const locked = t.is_ip_used;
+        const reward = t.currency === 'aaf'
+            ? `AAF ${t.reward}`
+            : `৳${t.reward}`;
+
+        list.innerHTML += `
+        <div class="task-card ${locked?'locked':''}">
+            <div class="task-top">
+                <div class="task-icon">
+                    <i class="fas ${t.type==='video'?'fa-play':'fa-link'}"></i>
+                </div>
+                <div class="task-info">
+                    <h4>${t.title}</h4>
+                    <p>${locked?'IP ALREADY USED':`Required Time: ${t.timer}s`}</p>
+                </div>
+                <div class="reward-tag">${reward}</div>
+            </div>
+            <button class="btn-claim"
+                id="btn-${t.id}"
+                ${locked?'disabled':''}
+                onclick="startTask('${t.id}','${t.link}',${t.timer})">
+                ${locked?'ALREADY CLAIMED':'START EARNING'}
+            </button>
+        </div>`;
+    });
+}
+
+// ================= START TASK =================
+function startTask(id, url, sec){
+    if(!USER_JOINED){
+        if(!confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
     }
 
-    window.open(url, '_blank');
+    window.open(url,'_blank');
     const btn = document.getElementById(`btn-${id}`);
     btn.disabled = true;
 
-    let timeLeft = seconds;
-
-    const timer = setInterval(() => {
-        btn.innerText = `WAITING: ${timeLeft}s`;
-
-        if (timeLeft <= 0) {
+    let t = sec;
+    const timer = setInterval(()=>{
+        btn.innerText = `WAIT ${t}s`;
+        if(t<=0){
             clearInterval(timer);
-            btn.innerText = "VERIFYING CLAIM...";
-            submitClaim(id);
+            btn.innerText="VERIFYING...";
+            claimTask(id);
         }
-
-        timeLeft--;
-    }, 1000);
+        t--;
+    },1000);
 }
 
-// ৪. ক্লেইম
-async function submitClaim(taskId) {
-    try {
-        const res = await fetch(`${API_BASE}/api/user/tasks/claim`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                telegram_id: TELEGRAM_ID,
-                task_id: taskId
-            })
+// ================= CLAIM =================
+async function claimTask(id){
+    try{
+        const r = await fetch(`${API}/api/user/tasks/claim`,{
+            method:"POST",
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({telegram_id:TG_ID, task_id:id})
         });
+        const d = await r.json();
 
-        const out = await res.json();
+        if(AFTER_TASK_AD) afterTaskAd();
 
-        if (out.success) {
-            alert(out.message);
-            window.location.reload();
-        } else {
-            alert(out.message);
-            loadTasks();
-        }
-    } catch (e) {
-        alert("Server busy. Try again.");
+        alert(d.message);
+        loadTasks();
+
+    }catch{
+        alert("Server Busy");
     }
 }
 
-// ৫. ইনিট
-window.onload = () => {
-    checkGlobalAd();
+// ================= AFTER TASK AD =================
+function afterTaskAd(){
+    fetch(`${API}/api/ads/task`)
+    .then(r=>r.json())
+    .then(ad=>{
+        if(ad?.message) alert("📢 "+ad.message);
+    });
+}
+
+// ================= INIT =================
+window.onload = ()=>{
+    globalAdCheck();
+    loadBannerAd();
     loadTasks();
-    setInterval(loadTasks, 15000);
+    setInterval(loadTasks,15000);
 };
     </script>
 </body>
