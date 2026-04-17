@@ -207,7 +207,7 @@ window.adminWallet = { nagad:"", binance:"" };
 
 // Popup Ad
 function loadPopupAd(){
-  fb_db.ref('popup_ads/wallet').on('value',s=>{
+  fb_db.ref('popup_ads/wallet').once('value').then(s=>{
     const ad=s.val();
     if(ad && ad.active && ad.message){
       alert("📢 "+ad.message);
@@ -263,12 +263,17 @@ async function submitDeposit(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         user_id:USER_ID,
-        amount, trx,
+        tg_id: document.getElementById('u-tg-val').innerText.replace('ID: ',''),
+        user_name: document.getElementById('u-name').innerText,
+        amount,
+        trx,
         method:document.getElementById('dep-method').value
       })
     });
+
     alert("Deposit request sent");
     syncData();
+
   }catch(e){ alert("Network error"); }
 }
 
@@ -285,11 +290,16 @@ async function processWithdraw(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         user_id:USER_ID,
-        amount, number
+        tg_id: document.getElementById('u-tg-val').innerText.replace('ID: ',''),
+        user_name: document.getElementById('u-name').innerText,
+        amount,
+        number
       })
     });
-    alert("Withdraw request sent (Pending)");
+
+    alert("Withdraw request sent (Pending Admin Approval)");
     syncData();
+
   }catch(e){ alert("Network error"); }
 }
 
@@ -306,13 +316,16 @@ async function processTransfer(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         from:USER_ID,
+        from_name: document.getElementById('u-name').innerText,
         to,
         amount,
         type:document.getElementById('trans-type').value
       })
     });
+
     alert("Transfer request sent");
     syncData();
+
   }catch(e){ alert("Network error"); }
 }
 
@@ -336,6 +349,7 @@ window.onload = ()=>{
 
   const methodEl = document.getElementById('dep-method');
   if(methodEl) methodEl.addEventListener('change', updateAdminInfo);
+    document.getElementById('tab-deposit').classList.add('active');
 
   const urlParams = new URLSearchParams(window.location.search);
   showPage(null, urlParams.get('page') || 'deposit');
