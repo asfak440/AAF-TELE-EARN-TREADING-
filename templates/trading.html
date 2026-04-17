@@ -177,186 +177,139 @@
         <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i><span>Wallet</span></a>
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
     </nav>
-    
     <script>
-        // ১. প্রাথমিক কনফিগারেশন
-        const MONGO_API = "https://aaf-tele-earn-treading.onrender.com";
-        const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(fbConfig);
-        const fb_db = firebase.database();
+const MONGO_API = "https://aaf-tele-earn-treading.onrender.com";
+const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+firebase.initializeApp(fbConfig);
+const fb_db = firebase.database();
 
-        let chart, candleSeries, lastPrice = 1.0000, currentFee = 0.5;
-        let userCash = 0, userAAF = 0;
-        const USER_ID = localStorage.getItem('user_id') || "user_123";
+let chart, candleSeries, lastPrice = 1.0000, currentFee = 0.5;
+let userCash = 0, userAAF = 0;
+let lastCandleMinute = null;
 
-        // ২. চার্ট সেটআপ (স্থির রাখার জন্য rightOffset যোগ করা হয়েছে)
-        function initChart() {
-            const chartElement = document.getElementById('chart-container');
-            chart = LightweightCharts.createChart(chartElement, {
-                layout: { backgroundColor: '#000000', textColor: '#94a3b8', fontSize: 10 },
-                grid: { vertLines: { visible: false }, horzLines: { color: '#121926' } },
-                timeScale: { 
-                    borderVisible: false, 
-                    timeVisible: true, 
-                    rightOffset: 15, 
-                    barSpacing: 8 
-                },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-            });
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
-                wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
-            });
+const USER_ID = localStorage.getItem('user_id');
+if(!USER_ID){ alert("Login required"); location.href="/login"; }
 
-            // Firebase থেকে হিস্টোরি লোড
-            fb_db.ref('trading/history').limitToLast(500).once('value', snap => {
-                const history = [];
-                snap.forEach(c => history.push(c.val()));
-                if(history.length > 0) {
-                    candleSeries.setData(history);
-                    chart.timeScale().fitContent();
-                }
-            });
-        }
+// ✅ Chart Init
+function initChart() {
+    chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+        layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
+        timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+    });
+    candleSeries = chart.addCandlestickSeries();
+}
 
-        // ৩. মার্কেট ইঞ্জিন: MongoDB থেকে লাইভ প্রাইস আনা
-        function startMarketEngine() {
-            setInterval(async () => {
-                try {
-                    const res = await fetch(`${MONGO_API}/api/market/current-price`);
-                    const data = await res.json();
-                    
-                    if(data && data.price) {
-                        lastPrice = parseFloat(data.price);
-                        document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-                        
-                        const candle = {
-                            time: Math.floor(Date.now() / 1000),
-                            open: parseFloat(data.open || lastPrice),
-                            high: parseFloat(data.high || lastPrice),
-                            low: parseFloat(data.low || lastPrice),
-                            close: lastPrice
-                        };
+// ✅ Real market engine (no fake candle)
+async function startMarketEngine() {
+    setInterval(async () => {
+        try{
+            const r = await fetch(`${MONGO_API}/api/market/candle-live`);
+            const d = await r.json();
 
-                        candleSeries.update(candle);
-                        
-                        // প্রতি এক মিনিটে একবার ফায়ারবেসে হিস্টোরি সেভ হবে
-                        if(new Date().getSeconds() === 0) {
-                            fb_db.ref('trading/history').push(candle);
-                        }
-                        calculateLogic(); 
-                    }
-                } catch (e) { console.error("Market Engine Offline"); }
-            }, 2000); 
-        }
+            lastPrice = d.close;
+            document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
 
-        // ৪. ইউজার ডাটা: MongoDB থেকে ব্যালেন্স ও লক স্ট্যাটাস
-        async function syncUserData() {
-            try {
-                const res = await fetch(`${MONGO_API}/api/user/profile/${USER_ID}`); 
-                const data = await res.json();
-                
-                userCash = parseFloat(data.cash_balance || 0);
-                userAAF = parseFloat(data.aaf_balance || 0);
-                currentFee = parseFloat(data.trading_fee || 0.5);
+            candleSeries.update(d);
 
-                document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
-                document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-                document.getElementById('fee-perc').innerText = currentFee;
-
-                // অ্যাডমিন চ্যানেল লক চেক
-                document.getElementById('lock-overlay').style.display = data.is_channel_joined ? 'none' : 'flex';
-            } catch (e) { console.log("User Sync Error"); }
-        }
-
-        // ৫. টাইমার বাটন ফাংশনালিটি
-        const tfButtons = document.querySelectorAll('.tf-btn');
-        tfButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelector('.tf-btn.active').classList.remove('active');
-                btn.classList.add('active');
-                const tf = btn.innerText;
-                console.log("টাইমফ্রেম পরিবর্তিত: " + tf);
-                // এখানে আপনি সার্ভার থেকে আলাদা ডাটা কল করতে পারেন
-            });
-        });
-
-        // ৬. ইনপুট ও ট্রেড ক্যালকুলেশন
-        const tkIn = document.getElementById('taka-input');
-        const coIn = document.getElementById('coin-input');
-
-        tkIn.addEventListener('input', () => {
-            coIn.value = (parseFloat(tkIn.value || 0) / lastPrice).toFixed(4);
-            calculateLogic();
-        });
-
-        coIn.addEventListener('input', () => {
-            tkIn.value = (parseFloat(coIn.value || 0) * lastPrice).toFixed(2);
-            calculateLogic();
-        });
-
-        function calculateLogic() {
-            let tk = parseFloat(tkIn.value) || 0;
-            let fee = (tk * currentFee) / 100;
-            let total = tk + fee;
-
-            document.getElementById('fee-amount').innerText = '৳ ' + fee.toFixed(2);
-            document.getElementById('total-cost').innerText = '৳ ' + total.toFixed(2);
-
-            const warn = document.getElementById('balance-warning');
-            const bBtn = document.getElementById('buy-btn');
-            const sBtn = document.getElementById('sell-btn');
-
-            if (tk > 0 && (total > userCash || tk < 10)) {
-                warn.style.display = 'block';
-                bBtn.disabled = true;
-            } else {
-                warn.style.display = 'none';
-                bBtn.disabled = (tk <= 0);
+            const minute = new Date().getMinutes();
+            if(minute !== lastCandleMinute){
+                lastCandleMinute = minute;
+                fb_db.ref('trading/history').push(d);
             }
-            sBtn.disabled = (parseFloat(coIn.value) > userAAF || tk <= 0);
-        }
 
-        // ৭. ট্রেড এক্সিকিউশন ও অ্যাডস
-        async function executeTrade(type) {
-            const amount = parseFloat(tkIn.value);
-            const res = await fetch(`${MONGO_API}/api/trade/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: USER_ID, type, amount, price: lastPrice })
-            });
-            const result = await res.json();
-            if(result.status === "success") {
-                alert(type + " সফল হয়েছে!");
-                syncUserData();
-            }
-        }
+            calculateLogic();
+        }catch(e){ console.log("engine offline"); }
+    }, 2000);
+}
 
-        function checkAds() {
-            fb_db.ref('popup_ads/trading').once('value', snap => {
-                const ad = snap.val();
-                if (ad && ad.active) alert("📢 ঘোষণা: " + ad.message);
-            });
-        }
+// ✅ User Sync
+async function syncUserData(){
+    const r = await fetch(`${MONGO_API}/api/user/profile/${USER_ID}`);
+    const d = await r.json();
 
-        // ৮. স্টার্টআপ
-        window.onload = () => {
-            initChart();
-            startMarketEngine();
-            syncUserData();
-            setInterval(syncUserData, 15000); // প্রতি ১৫ সেকেন্ডে ব্যালেন্স আপডেট
-            checkAds();
-        };
+    userCash = d.cash_balance;
+    userAAF  = d.aaf_balance;
+    currentFee = d.trading_fee;
 
-        function loadAdminAd() {
-    fb_db.ref('trading/top_banner_ad').on('value', snap => {
-        const ad = snap.val();
-        if (ad) {
-            document.getElementById('admin-ad-text').innerText = ad.text || "";
-            document.getElementById('admin-ad-box').style.display = ad.active ? 'flex' : 'none';
+    userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
+    userAafEl.innerText = userAAF.toFixed(2);
+    feePercEl.innerText = currentFee;
+
+    lockOverlay.style.display = d.is_channel_joined ? 'none':'flex';
+}
+
+// cache dom
+const tkIn = document.getElementById('taka-input');
+const coIn = document.getElementById('coin-input');
+const userCashEl = document.getElementById('user-cash');
+const userAafEl = document.getElementById('user-aaf');
+const feePercEl = document.getElementById('fee-perc');
+const lockOverlay = document.getElementById('lock-overlay');
+
+// ✅ Input calc
+tkIn.oninput = ()=>{
+    coIn.value = (tkIn.value/lastPrice).toFixed(4);
+    calculateLogic();
+}
+coIn.oninput = ()=>{
+    tkIn.value = (coIn.value*lastPrice).toFixed(2);
+    calculateLogic();
+}
+
+function calculateLogic(){
+    let tk = parseFloat(tkIn.value)||0;
+    let fee = tk * currentFee/100;
+    let total = tk + fee;
+
+    document.getElementById('fee-amount').innerText = '৳ '+fee.toFixed(2);
+    document.getElementById('total-cost').innerText = '৳ '+total.toFixed(2);
+
+    buyBtn.disabled = !(tk>=10 && total<=userCash);
+    sellBtn.disabled = !(parseFloat(coIn.value)<=userAAF);
+}
+
+// buttons
+const buyBtn = document.getElementById('buy-btn');
+const sellBtn = document.getElementById('sell-btn');
+
+async function executeTrade(type){
+    const r = await fetch(`${MONGO_API}/api/trade/execute`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            user_id:USER_ID,
+            type,
+            taka:parseFloat(tkIn.value),
+            coin:parseFloat(coIn.value),
+            price:lastPrice
+        })
+    });
+    const d = await r.json();
+    alert(d.message);
+    syncUserData();
+}
+
+// ✅ Admin Ad (real-time)
+function loadAdminAd(){
+    fb_db.ref('trading/top_banner_ad').on('value',s=>{
+        const ad=s.val();
+        if(ad){
+            adminAdText.innerText = ad.text;
+            adminAdBox.style.display = ad.active?'flex':'none';
         }
     });
-        }
-    </script>
+}
+const adminAdText = document.getElementById('admin-ad-text');
+const adminAdBox = document.getElementById('admin-ad-box');
+
+// start
+window.onload = ()=>{
+    initChart();
+    startMarketEngine();
+    syncUserData();
+    setInterval(syncUserData,15000);
+    loadAdminAd();
+}
+</script>
 </body>
     </html>
