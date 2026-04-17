@@ -189,76 +189,123 @@
             <a href="account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
         </nav>
     </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    <script>
-    const API_URL = "https://aaf-tele-earn-treading.onrender.com";
-    const USER_ID = localStorage.getItem('user_id') || "12345";
-    window.adminWallet = {nagad: "01XXXXXXXXX", binance: "T-Address-XYZ"};
+<script>
+const API_URL = "https://aaf-tele-earn-treading.onrender.com";
+const USER_ID = localStorage.getItem('user_id');
 
-    // ১. ডেটা সিঙ্ক ফাংশন
-    async function syncData() {
-        try {
-            const res = await fetch(`${API_URL}/api/user/data/${USER_ID}`);
-            const data = await res.json();
-            if (data.status === "success") {
-                document.getElementById('u-name').innerText = data.user_name || "USER";
-                document.getElementById('u-tg-val').innerText = "ID: " + (data.tg_id || USER_ID);
-                document.getElementById('wallet-bal').innerText = "৳ " + (data.balance || 0).toFixed(2);
-                document.getElementById('coin-bal').innerText = (data.coins || 0).toFixed(2);
-                window.adminWallet = data.admin_wallet || window.adminWallet;
-                updateAdminInfo();
-            }
-        } catch (e) { console.error("Sync Error:", e); }
+if(!USER_ID){ alert("Login required"); location.href="/login"; }
+
+// Firebase (Popup Ad)
+const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+firebase.initializeApp(fbConfig);
+const fb_db = firebase.database();
+
+function loadPopupAd(){
+  fb_db.ref('popup_ads/wallet').on('value',s=>{
+    const ad=s.val();
+    if(ad && ad.active){
+      alert("📢 "+ad.message);
     }
+  });
+}
 
-    // ২. এডমিন ইনফো আপডেট
-    function updateAdminInfo() {
-        const method = document.getElementById('dep-method').value;
-        const infoBox = document.getElementById('admin-payment-info');
-        if(window.adminWallet) {
-            if(method === "Nagad") infoBox.innerHTML = `Send Money to: <b>${window.adminWallet.nagad}</b>`;
-            else infoBox.innerHTML = `Send Money to: <b>${window.adminWallet.binance}</b>`;
-        }
-    }
+// ✅ Live User Sync (Dashboard/Trading same)
+async function syncData() {
+  try{
+    const res = await fetch(`${API_URL}/api/user/profile/${USER_ID}`);
+    const d = await res.json();
 
-    // ৩. স্মার্ট ট্যাব চেঞ্জার (আলাদা পেজ হিসেবে কাজ করবে)
-    function showPage(event, pageId) {
-        document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
-        const target = document.getElementById(pageId);
-        if(target) target.classList.add('active');
-        
-        if(event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        } else {
-            const tabBtn = document.getElementById('tab-' + pageId);
-            if(tabBtn) tabBtn.classList.add('active');
-        }
-    }
+    document.getElementById('u-name').innerText = d.user_name;
+    document.getElementById('u-tg-val').innerText = "ID: " + d.tg_id;
+    document.getElementById('wallet-bal').innerText = "৳ " + d.cash_balance.toFixed(2);
+    document.getElementById('coin-bal').innerText = d.aaf_balance.toFixed(2);
 
-    function handleAction(type) {
-        window.location.href = type.includes('.html') ? type : type + ".html";
-    }
+    window.adminWallet = d.admin_wallet;
+    updateAdminInfo();
 
-    // ৪. সাবমিট ফাংশন (আগের মতোই রাখা হয়েছে)
-    function submitDeposit() { alert("Deposit Request Sent!"); }
-    function processTransfer() { alert("Transfer Processing..."); }
-    function processWithdraw() { alert("Withdraw Request Sent!"); }
+  }catch(e){ console.log(e); }
+}
 
-    // ৫. স্মার্ট উইন্ডো লোডার (URL প্যারামিটার চেক করবে)
-    window.onload = () => {
-        syncData(); 
+// ✅ Admin Wallet Info
+function updateAdminInfo(){
+  const method = document.getElementById('dep-method').value;
+  const box = document.getElementById('admin-payment-info');
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = urlParams.get('page');
+  if(window.adminWallet){
+    if(method==="Nagad")
+      box.innerHTML = `Send Money to: <b>${window.adminWallet.nagad}</b>`;
+    else
+      box.innerHTML = `Send Money to: <b>${window.adminWallet.binance}</b>`;
+  }
+}
 
-        if (page && ['deposit', 'transfer', 'withdraw'].includes(page)) {
-            showPage(null, page);
-        } else {
-            showPage(null, 'deposit'); // ডিফল্ট ডিপোজিট
-        }
-    };
-    </script>
-</body>
+// ✅ Deposit API
+async function submitDeposit(){
+  await fetch(`${API_URL}/api/wallet/deposit`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      user_id:USER_ID,
+      amount:document.getElementById('dep-amount').value,
+      trx:document.getElementById('dep-trx').value,
+      method:document.getElementById('dep-method').value
+    })
+  });
+  alert("Deposit request sent");
+}
+
+// ✅ Withdraw API
+async function processWithdraw(){
+  await fetch(`${API_URL}/api/wallet/withdraw`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      user_id:USER_ID,
+      amount:document.getElementById('wit-amt').value,
+      number:document.getElementById('wit-num').value
+    })
+  });
+  alert("Withdraw request sent");
+}
+
+// ✅ Transfer API
+async function processTransfer(){
+  await fetch(`${API_URL}/api/wallet/transfer`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      from:USER_ID,
+      to:document.getElementById('trans-id').value,
+      amount:document.getElementById('trans-amount').value,
+      type:document.getElementById('trans-type').value
+    })
+  });
+  alert("Transfer done");
+}
+
+// ✅ Tab System
+function showPage(event, pageId) {
+  document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById(pageId).classList.add('active');
+  const btn = document.getElementById('tab-'+pageId);
+  if(btn) btn.classList.add('active');
+}
+
+// ✅ Load
+window.onload = ()=>{
+  syncData();
+  loadPopupAd();
+  setInterval(syncData,15000);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  showPage(null, urlParams.get('page') || 'deposit');
+}
+</script>
+    
+    </body>
     </html>
