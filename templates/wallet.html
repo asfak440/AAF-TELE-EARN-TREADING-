@@ -148,7 +148,7 @@
                 <div id="admin-payment-info" style="font-size: 13px; text-align: center; margin-bottom: 10px; color: var(--cyan);">Select method...</div>
                 <select id="dep-method" onchange="updateAdminInfo()">
                     <option value="Nagad">Nagad (Send Money)</option>
-                    <option value="Binance">Bkash (Send Money)</option>
+                    <option value="Binance">Binance (Send)</option>
                 </select>
                 <input type="number" id="dep-amount" placeholder="Amount">
                 <input type="text" id="dep-trx" placeholder="Sender Number">
@@ -198,12 +198,10 @@ const USER_ID = localStorage.getItem('user_id');
 
 if(!USER_ID){ alert("Login required"); location.href="/login"; }
 
-// Firebase (Popup Ad) — safe init
+// Firebase (Popup Ad)
 const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
 if (!firebase.apps.length) firebase.initializeApp(fbConfig);
 const fb_db = firebase.database();
-
-window.adminWallet = { nagad:"", binance:"" };
 
 // Popup Ad
 function loadPopupAd(){
@@ -215,12 +213,11 @@ function loadPopupAd(){
   });
 }
 
-// Live User Sync
+// Live User Sync (NO tg_id/name usage in requests)
 async function syncData() {
   try{
     const res = await fetch(`${API_URL}/api/user/profile/${USER_ID}`);
     const d = await res.json();
-
     if(!d) return;
 
     document.getElementById('u-name').innerText = d.user_name || "USER";
@@ -228,29 +225,20 @@ async function syncData() {
     document.getElementById('wallet-bal').innerText = "৳ " + (d.cash_balance || 0).toFixed(2);
     document.getElementById('coin-bal').innerText = (d.aaf_balance || 0).toFixed(2);
 
-    window.adminWallet = d.admin_wallet || window.adminWallet;
-    updateAdminInfo();
+    // Show only Nagad number
+    const box = document.getElementById('admin-payment-info');
+    if (box && d.admin_wallet?.nagad) {
+      box.innerHTML = `
+        Send Money (Nagad) to:<br>
+        <b style="font-size:16px">${d.admin_wallet.nagad}</b><br>
+        <small style="color:orange">Bkash / Binance — Upcoming</small>
+      `;
+    }
 
   }catch(e){ console.log("Sync error", e); }
 }
 
-// Admin Wallet Info
-function updateAdminInfo(){
-  const methodEl = document.getElementById('dep-method');
-  const box = document.getElementById('admin-payment-info');
-  if(!methodEl || !box) return;
-
-  const method = methodEl.value;
-
-  if(window.adminWallet){
-    if(method==="Nagad")
-      box.innerHTML = `Send Money to: <b>${window.adminWallet.nagad}</b>`;
-    else
-      box.innerHTML = `Send Money to: <b>${window.adminWallet.binance}</b>`;
-  }
-}
-
-// Deposit API
+// Deposit API (Nagad Only)
 async function submitDeposit(){
   const amount = parseFloat(document.getElementById('dep-amount').value);
   const trx = document.getElementById('dep-trx').value;
@@ -262,12 +250,10 @@ async function submitDeposit(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        user_id:USER_ID,
-        tg_id: document.getElementById('u-tg-val').innerText.replace('ID: ',''),
-        user_name: document.getElementById('u-name').innerText,
+        user_id: USER_ID,
         amount,
         trx,
-        method:document.getElementById('dep-method').value
+        method: "Nagad"
       })
     });
 
@@ -277,7 +263,7 @@ async function submitDeposit(){
   }catch(e){ alert("Network error"); }
 }
 
-// Withdraw API (pending request)
+// Withdraw API
 async function processWithdraw(){
   const amount = parseFloat(document.getElementById('wit-amt').value);
   const number = document.getElementById('wit-num').value;
@@ -289,9 +275,7 @@ async function processWithdraw(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        user_id:USER_ID,
-        tg_id: document.getElementById('u-tg-val').innerText.replace('ID: ',''),
-        user_name: document.getElementById('u-name').innerText,
+        user_id: USER_ID,
         amount,
         number
       })
@@ -315,11 +299,10 @@ async function processTransfer(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        from:USER_ID,
-        from_name: document.getElementById('u-name').innerText,
+        from: USER_ID,
         to,
         amount,
-        type:document.getElementById('trans-type').value
+        type: document.getElementById('trans-type').value
       })
     });
 
@@ -347,14 +330,11 @@ window.onload = ()=>{
   loadPopupAd();
   setInterval(syncData,15000);
 
-  const methodEl = document.getElementById('dep-method');
-  if(methodEl) methodEl.addEventListener('change', updateAdminInfo);
-    document.getElementById('tab-deposit').classList.add('active');
-
+  document.getElementById('tab-deposit').classList.add('active');
   const urlParams = new URLSearchParams(window.location.search);
   showPage(null, urlParams.get('page') || 'deposit');
 }
-    </script>
+     </script>
     
     </body>
     </html>
