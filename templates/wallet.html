@@ -193,17 +193,20 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-const API_URL = "https://aaf-tele-earn-treading.onrender.com";
-const USER_ID = localStorage.getItem('user_id');
+const API = window.location.origin;
+const TG_ID = localStorage.getItem('telegram_id');
 
-if(!USER_ID){ alert("Login required"); location.href="/login"; }
+if(!TG_ID){
+  alert("Login required");
+  location.href="/login";
+}
 
-// Firebase (Popup Ad)
+// 🔥 Firebase (Popup Ad)
 const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
 if (!firebase.apps.length) firebase.initializeApp(fbConfig);
 const fb_db = firebase.database();
 
-// Popup Ad
+// ================= POPUP AD =================
 function loadPopupAd(){
   fb_db.ref('popup_ads/wallet').once('value').then(s=>{
     const ad=s.val();
@@ -213,32 +216,47 @@ function loadPopupAd(){
   });
 }
 
-// Live User Sync (NO tg_id/name usage in requests)
+// ================= USER + ADMIN SYNC (Dashboard style) =================
 async function syncData() {
   try{
-    const res = await fetch(`${API_URL}/api/user/profile/${USER_ID}`);
-    const d = await res.json();
-    if(!d) return;
+    const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
+      credentials:"include"
+    });
+    const data = await res.json();
 
-    document.getElementById('u-name').innerText = d.user_name || "USER";
-    document.getElementById('u-tg-val').innerText = "ID: " + (d.tg_id || USER_ID);
-    document.getElementById('wallet-bal').innerText = "৳ " + (d.cash_balance || 0).toFixed(2);
-    document.getElementById('coin-bal').innerText = (d.aaf_balance || 0).toFixed(2);
+    if(data.status !== "success") return;
 
-    // Show only Nagad number
+    const user = data.user;
+    const admin = data.admin;
+
+    document.getElementById('u-name').innerText =
+      (user.username || "USER").toUpperCase();
+
+    document.getElementById('u-tg-val').innerText =
+      "ID: " + (user.telegram_id || TG_ID);
+
+    document.getElementById('wallet-bal').innerText =
+      "৳ " + parseFloat(user.cash || 0).toFixed(2);
+
+    document.getElementById('coin-bal').innerText =
+      parseFloat(user.aaf || 0).toFixed(2);
+
+    // Admin payment info (Nagad)
     const box = document.getElementById('admin-payment-info');
-    if (box && d.admin_wallet?.nagad) {
+    if (box && admin.wallet?.nagad) {
       box.innerHTML = `
         Send Money (Nagad) to:<br>
-        <b style="font-size:16px">${d.admin_wallet.nagad}</b><br>
+        <b style="font-size:16px">${admin.wallet.nagad}</b><br>
         <small style="color:orange">Bkash / Binance — Upcoming</small>
       `;
     }
 
-  }catch(e){ console.log("Sync error", e); }
+  }catch(e){
+    console.log("Sync error", e);
+  }
 }
 
-// Deposit API (Nagad Only)
+// ================= DEPOSIT =================
 async function submitDeposit(){
   const amount = parseFloat(document.getElementById('dep-amount').value);
   const trx = document.getElementById('dep-trx').value;
@@ -246,11 +264,11 @@ async function submitDeposit(){
   if(!amount || !trx) return alert("Enter amount & TRX");
 
   try{
-    await fetch(`${API_URL}/api/wallet/deposit`,{
+    await fetch(`${API}/api/wallet/deposit`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        user_id: USER_ID,
+        telegram_id: TG_ID,
         amount,
         trx,
         method: "Nagad"
@@ -260,10 +278,12 @@ async function submitDeposit(){
     alert("Deposit request sent");
     syncData();
 
-  }catch(e){ alert("Network error"); }
+  }catch{
+    alert("Network error");
+  }
 }
 
-// Withdraw API
+// ================= WITHDRAW =================
 async function processWithdraw(){
   const amount = parseFloat(document.getElementById('wit-amt').value);
   const number = document.getElementById('wit-num').value;
@@ -271,11 +291,11 @@ async function processWithdraw(){
   if(!amount || !number) return alert("Enter amount & number");
 
   try{
-    await fetch(`${API_URL}/api/wallet/withdraw`,{
+    await fetch(`${API}/api/wallet/withdraw`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        user_id: USER_ID,
+        telegram_id: TG_ID,
         amount,
         number
       })
@@ -284,10 +304,12 @@ async function processWithdraw(){
     alert("Withdraw request sent (Pending Admin Approval)");
     syncData();
 
-  }catch(e){ alert("Network error"); }
+  }catch{
+    alert("Network error");
+  }
 }
 
-// Transfer API
+// ================= TRANSFER =================
 async function processTransfer(){
   const to = document.getElementById('trans-id').value;
   const amount = parseFloat(document.getElementById('trans-amount').value);
@@ -295,11 +317,11 @@ async function processTransfer(){
   if(!to || !amount) return alert("Enter receiver & amount");
 
   try{
-    await fetch(`${API_URL}/api/wallet/transfer`,{
+    await fetch(`${API}/api/wallet/transfer`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        from: USER_ID,
+        from: TG_ID,
         to,
         amount,
         type: document.getElementById('trans-type').value
@@ -309,10 +331,12 @@ async function processTransfer(){
     alert("Transfer request sent");
     syncData();
 
-  }catch(e){ alert("Network error"); }
+  }catch{
+    alert("Network error");
+  }
 }
 
-// Tab System
+// ================= TAB SYSTEM =================
 function showPage(event, pageId) {
   document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -324,7 +348,7 @@ function showPage(event, pageId) {
   if(btn) btn.classList.add('active');
 }
 
-// Load
+// ================= INIT =================
 window.onload = ()=>{
   syncData();
   loadPopupAd();
@@ -334,7 +358,7 @@ window.onload = ()=>{
   const urlParams = new URLSearchParams(window.location.search);
   showPage(null, urlParams.get('page') || 'deposit');
 }
-     </script>
     
+    </script>
     </body>
     </html>
