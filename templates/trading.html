@@ -178,24 +178,36 @@
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
     </nav>
     <script>
-const API = "";
+const API = window.location.origin;
+const TG_ID = localStorage.getItem('telegram_id');
 
-let chart, candleSeries, lastPrice = 1.0000, currentFee = 0.5;
-let userCash = 0, userAAF = 0;
+if(!TG_ID){
+    alert("Login required");
+    location.href="/login";
+}
 
-const USER_ID = localStorage.getItem('user_id');
-if(!USER_ID){ alert("Login required"); location.href="/login"; }
+// 🔥 Firebase init (for candle history)
+const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
+if (!firebase.apps.length) firebase.initializeApp(fbConfig);
+const fb_db = firebase.database();
 
-// ✅ Chart Init
+let chart, candleSeries, lastPrice = 1.0000;
+let currentFee = 0.5, userCash = 0, userAAF = 0;
+let lastCandleMinute = null;
+
+// ================= CHART =================
 function initChart() {
-    chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
-        layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
-        timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-    });
+    chart = LightweightCharts.createChart(
+        document.getElementById('chart-container'),
+        {
+            layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
+            timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+        }
+    );
     candleSeries = chart.addCandlestickSeries();
 }
 
-// ✅ Market Engine (Flask)
+// ================= MARKET ENGINE =================
 async function startMarketEngine() {
     setInterval(async () => {
         try{
@@ -203,17 +215,56 @@ async function startMarketEngine() {
             const d = await r.json();
 
             lastPrice = d.close;
-            document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+            document.getElementById('live-price').innerText =
+                `৳ ${lastPrice.toFixed(4)}`;
+
             candleSeries.update(d);
 
+            // ✅ Save 1 candle per minute to Firebase
+            const minute = new Date().getMinutes();
+            if(minute !== lastCandleMinute){
+                lastCandleMinute = minute;
+
+                fb_db.ref('trading/history').push({
+                    ...d,
+                    ts: Date.now()
+                });
+
+                cleanOldCandles(); // auto cleanup
+            }
+
             calculateLogic();
-        }catch(e){ console.log("engine offline"); }
+        }catch(e){
+            console.log("engine offline");
+        }
     }, 2000);
 }
 
-// ✅ User Sync from Flask
+// 🧹 AUTO CLEAN — keep only last 30 days candle history
+function cleanOldCandles(){
+    const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - MONTH_MS;
+
+    fb_db.ref('trading/history')
+        .orderByChild('ts')
+        .endAt(cutoff)
+        .once('value', snap => {
+
+            if(!snap.exists()) return;
+
+            snap.forEach(child => {
+                child.ref.remove();
+            });
+
+            console.log("Old candles cleaned (30+ days)");
+        });
+}
+
+// ================= USER + ADMIN SYNC =================
 async function syncUserData(){
-    const r = await fetch(`/api/user/data/${USER_ID}`);
+    const r = await fetch(`/api/user/data/${TG_ID}`,{
+        credentials:"include"
+    });
     const res = await r.json();
 
     if(res.status !== "success") return;
@@ -221,22 +272,20 @@ async function syncUserData(){
     const user = res.user;
     const admin = res.admin;
 
-    userCash = user.cash;
-    userAAF  = user.aaf;
-    currentFee = admin.trading_fee;
+    userCash = user.cash || 0;
+    userAAF  = user.aaf || 0;
+    currentFee = admin.trading_fee || 0.5;
 
     userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
     userAafEl.innerText = userAAF.toFixed(2);
     feePercEl.innerText = currentFee;
 
-    // Join lock
     lockOverlay.style.display = user.is_joined ? 'none':'flex';
-
-    // Admin ad text
-    adminAdText.innerText = admin.trading_ad_text || "Welcome to Trading";
+    adminAdText.innerText =
+        admin.trading_ad_text || "Welcome to Trading";
 }
 
-// cache dom
+// ================= INPUT CALC =================
 const tkIn = document.getElementById('taka-input');
 const coIn = document.getElementById('coin-input');
 const userCashEl = document.getElementById('user-cash');
@@ -245,7 +294,6 @@ const feePercEl = document.getElementById('fee-perc');
 const lockOverlay = document.getElementById('lock-overlay');
 const adminAdText = document.getElementById('admin-ad-text');
 
-// ✅ Input calc
 tkIn.oninput = ()=>{
     coIn.value = (tkIn.value/lastPrice).toFixed(4);
     calculateLogic();
@@ -260,24 +308,25 @@ function calculateLogic(){
     let fee = tk * currentFee/100;
     let total = tk + fee;
 
-    document.getElementById('fee-amount').innerText = '৳ '+fee.toFixed(2);
-    document.getElementById('total-cost').innerText = '৳ '+total.toFixed(2);
+    document.getElementById('fee-amount').innerText =
+        '৳ '+fee.toFixed(2);
+    document.getElementById('total-cost').innerText =
+        '৳ '+total.toFixed(2);
 
     buyBtn.disabled = !(tk>=10 && total<=userCash);
     sellBtn.disabled = !(parseFloat(coIn.value)<=userAAF);
 }
 
-// buttons
+// ================= TRADE =================
 const buyBtn = document.getElementById('buy-btn');
 const sellBtn = document.getElementById('sell-btn');
 
-// ✅ Trade Execute (Flask)
 async function executeTrade(type){
     const r = await fetch(`/api/trade/execute`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-            user_id:USER_ID,
+            telegram_id: TG_ID,
             type,
             taka:parseFloat(tkIn.value),
             coin:parseFloat(coIn.value),
@@ -289,13 +338,13 @@ async function executeTrade(type){
     syncUserData();
 }
 
-// start
+// ================= START =================
 window.onload = ()=>{
     initChart();
     startMarketEngine();
     syncUserData();
     setInterval(syncUserData,15000);
 }
-</script>
+    </script>
 </body>
     </html>
