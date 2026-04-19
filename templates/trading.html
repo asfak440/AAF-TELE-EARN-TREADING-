@@ -178,14 +178,10 @@
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
     </nav>
     <script>
-const MONGO_API = "https://aaf-tele-earn-treading.onrender.com";
-const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
-firebase.initializeApp(fbConfig);
-const fb_db = firebase.database();
+const API = "";
 
 let chart, candleSeries, lastPrice = 1.0000, currentFee = 0.5;
 let userCash = 0, userAAF = 0;
-let lastCandleMinute = null;
 
 const USER_ID = localStorage.getItem('user_id');
 if(!USER_ID){ alert("Login required"); location.href="/login"; }
@@ -199,43 +195,45 @@ function initChart() {
     candleSeries = chart.addCandlestickSeries();
 }
 
-// ✅ Real market engine (no fake candle)
+// ✅ Market Engine (Flask)
 async function startMarketEngine() {
     setInterval(async () => {
         try{
-            const r = await fetch(`${MONGO_API}/api/market/candle-live`);
+            const r = await fetch(`/api/market/candle-live`);
             const d = await r.json();
 
             lastPrice = d.close;
             document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-
             candleSeries.update(d);
-
-            const minute = new Date().getMinutes();
-            if(minute !== lastCandleMinute){
-                lastCandleMinute = minute;
-                fb_db.ref('trading/history').push(d);
-            }
 
             calculateLogic();
         }catch(e){ console.log("engine offline"); }
     }, 2000);
 }
 
-// ✅ User Sync
+// ✅ User Sync from Flask
 async function syncUserData(){
-    const r = await fetch(`${MONGO_API}/api/user/profile/${USER_ID}`);
-    const d = await r.json();
+    const r = await fetch(`/api/user/data/${USER_ID}`);
+    const res = await r.json();
 
-    userCash = d.cash_balance;
-    userAAF  = d.aaf_balance;
-    currentFee = d.trading_fee;
+    if(res.status !== "success") return;
+
+    const user = res.user;
+    const admin = res.admin;
+
+    userCash = user.cash;
+    userAAF  = user.aaf;
+    currentFee = admin.trading_fee;
 
     userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
     userAafEl.innerText = userAAF.toFixed(2);
     feePercEl.innerText = currentFee;
 
-    lockOverlay.style.display = d.is_channel_joined ? 'none':'flex';
+    // Join lock
+    lockOverlay.style.display = user.is_joined ? 'none':'flex';
+
+    // Admin ad text
+    adminAdText.innerText = admin.trading_ad_text || "Welcome to Trading";
 }
 
 // cache dom
@@ -245,6 +243,7 @@ const userCashEl = document.getElementById('user-cash');
 const userAafEl = document.getElementById('user-aaf');
 const feePercEl = document.getElementById('fee-perc');
 const lockOverlay = document.getElementById('lock-overlay');
+const adminAdText = document.getElementById('admin-ad-text');
 
 // ✅ Input calc
 tkIn.oninput = ()=>{
@@ -272,8 +271,9 @@ function calculateLogic(){
 const buyBtn = document.getElementById('buy-btn');
 const sellBtn = document.getElementById('sell-btn');
 
+// ✅ Trade Execute (Flask)
 async function executeTrade(type){
-    const r = await fetch(`${MONGO_API}/api/trade/execute`,{
+    const r = await fetch(`/api/trade/execute`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -289,26 +289,12 @@ async function executeTrade(type){
     syncUserData();
 }
 
-// ✅ Admin Ad (real-time)
-function loadAdminAd(){
-    fb_db.ref('trading/top_banner_ad').on('value',s=>{
-        const ad=s.val();
-        if(ad){
-            adminAdText.innerText = ad.text;
-            adminAdBox.style.display = ad.active?'flex':'none';
-        }
-    });
-}
-const adminAdText = document.getElementById('admin-ad-text');
-const adminAdBox = document.getElementById('admin-ad-box');
-
 // start
 window.onload = ()=>{
     initChart();
     startMarketEngine();
     syncUserData();
     setInterval(syncUserData,15000);
-    loadAdminAd();
 }
 </script>
 </body>
