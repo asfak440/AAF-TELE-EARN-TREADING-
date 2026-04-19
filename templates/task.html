@@ -148,77 +148,73 @@
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
         </nav>
     </div>
-
-    <script>
+<script>
 const API = window.location.origin;
 const TG_ID = localStorage.getItem('telegram_id');
 
 let USER_JOINED = false;
-let AFTER_TASK_AD = true;
 
-// ================= GLOBAL 6H AD =================
-function globalAdCheck() {
-    const key = `ad_seen_${TG_ID}`;
-    const last = localStorage.getItem(key);
-    const SIX_HOURS = 21600000;
-
-    if (!last || Date.now() - last > SIX_HOURS) {
-        fetch(`${API}/api/ads/popup`)
-        .then(r=>r.json())
-        .then(ad=>{
-            if(ad?.message){
-                alert("📢 " + ad.message);
-                localStorage.setItem(key, Date.now());
-            }
-        });
+// ================= INIT =================
+async function initTaskPage(){
+    if(!TG_ID){
+        location.href="/login";
+        return;
     }
-}
 
-// ================= BANNER AD =================
-function loadBannerAd(){
-    fetch(`${API}/api/ads/banner`)
-    .then(r=>r.json())
-    .then(ad=>{
-        if(ad?.html){
-            document.getElementById('banner-ad').innerHTML = ad.html;
-        }
-    });
-}
-
-// ================= LOAD TASKS =================
-async function loadTasks() {
-    if (!TG_ID) return;
-
-    try {
-        const res = await fetch(`${API}/api/user/tasks?telegram_id=${TG_ID}`,{
+    try{
+        const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
             credentials:"include"
         });
-        const data = await res.json();
 
+        const data = await res.json();
         if(data.status !== "success") return;
 
-        // Balance
-        uBal(data.balance, data.coin_balance);
+        renderTaskUI(data.user, data.admin);
 
-        USER_JOINED = data.is_joined;
-        document.getElementById('join-warning').style.display =
-            USER_JOINED ? 'none':'flex';
-
-        milestone(data.tasks_done, data.bonus_target);
-
-        renderTasks(data.tasks);
-
-    } catch (err){
-        console.log(err);
+    }catch(err){
+        console.log("Task Init Error", err);
     }
 }
 
-// ================= UI HELPERS =================
+window.onload = initTaskPage;
+setInterval(initTaskPage,15000);
+
+
+// ================= UI RENDER =================
+function renderTaskUI(user, admin){
+
+    // Balance
+    uBal(user.cash, user.aaf);
+
+    USER_JOINED = user.is_joined;
+    document.getElementById('join-warning').style.display =
+        USER_JOINED ? 'none':'flex';
+
+    // Milestone (admin control)
+    milestone(user.tasks_done, admin.bonus_target);
+
+    // Tasks from admin panel
+    renderTasks(admin.tasks || []);
+
+    // Banner Ad from admin
+    if(admin.task_banner_ad){
+        document.getElementById('banner-ad').innerHTML =
+            admin.task_banner_ad;
+    }
+
+    // 6H Popup Ad from admin
+    showTimedAd(admin.task_popup_ad);
+}
+
+
+// ================= BALANCE =================
 function uBal(cash, coin){
     document.getElementById('u-bal').innerText = cash;
     document.getElementById('u-coin').innerText = coin;
 }
 
+
+// ================= MILESTONE =================
 function milestone(done, target){
     const d = done % target;
     document.getElementById('t-done').innerText = d;
@@ -226,6 +222,7 @@ function milestone(done, target){
     document.getElementById('t-progress').style.width =
         `${(d/target)*100}%`;
 }
+
 
 // ================= RENDER TASK =================
 function renderTasks(tasks){
@@ -260,6 +257,7 @@ function renderTasks(tasks){
     });
 }
 
+
 // ================= START TASK =================
 function startTask(id, url, sec){
     if(!USER_JOINED){
@@ -282,6 +280,7 @@ function startTask(id, url, sec){
     },1000);
 }
 
+
 // ================= CLAIM =================
 async function claimTask(id){
     try{
@@ -292,32 +291,27 @@ async function claimTask(id){
         });
         const d = await r.json();
 
-        if(AFTER_TASK_AD) afterTaskAd();
-
         alert(d.message);
-        loadTasks();
+        initTaskPage();
 
     }catch{
         alert("Server Busy");
     }
 }
 
-// ================= AFTER TASK AD =================
-function afterTaskAd(){
-    fetch(`${API}/api/ads/task`)
-    .then(r=>r.json())
-    .then(ad=>{
-        if(ad?.message) alert("📢 "+ad.message);
-    });
-}
 
-// ================= INIT =================
-window.onload = ()=>{
-    globalAdCheck();
-    loadBannerAd();
-    loadTasks();
-    setInterval(loadTasks,15000);
-};
-    </script>
+// ================= 6H POPUP AD =================
+function showTimedAd(adText){
+    const key = `task_ad_seen_${TG_ID}`;
+    const last = localStorage.getItem(key);
+    const SIX_HOURS = 21600000;
+
+    if(adText && (!last || Date.now()-last > SIX_HOURS)){
+        alert("📢 "+adText);
+        localStorage.setItem(key, Date.now());
+    }
+}
+</script>
+
 </body>
 </html>
