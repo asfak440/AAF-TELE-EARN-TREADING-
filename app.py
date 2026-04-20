@@ -227,13 +227,8 @@ def send_otp():
         return jsonify({"success": False, "message": "invalid_phone"})
 
     async def _send():
-        client = TelegramClient(StringSession(), API_ID, API_HASH)
-        await client.connect()
-        result = await client.send_code_request(phone)
-        temp_clients[phone] = {
-            "client": client,
-            "phone_code_hash": result.phone_code_hash
-        }
+        result = await _telegram_client.send_code_request(phone)
+        temp_clients[phone] = {"phone_code_hash": result.phone_code_hash}
         return True, "OTP Sent"
 
     try:
@@ -252,20 +247,18 @@ def verify_login():
     if not phone or phone not in temp_clients:
         return jsonify({"success": False, "message": "session_expired"})
 
-    client_data = temp_clients[phone]
-    client = client_data["client"]
-    phone_code_hash = client_data["phone_code_hash"]
+    phone_code_hash = temp_clients[phone]["phone_code_hash"]
 
     async def _verify():
         try:
             if password:
-                await client.sign_in(password=password)
+                await _telegram_client.sign_in(password=password)
             else:
                 if not code:
                     return False, "Code required"
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
-            me = await client.get_me()
-            session_str = client.session.save()
+                await _telegram_client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+            me = await _telegram_client.get_me()
+            session_str = _telegram_client.session.save()
             return True, me, session_str
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
@@ -276,7 +269,7 @@ def verify_login():
         result = run_async(_verify())
         if result[0] is True and len(result) == 3:
             me, session_str = result[1], result[2]
-            # Update or create user
+            # ইউজার সেভ/আপডেট (আপনার বিদ্যমান কোড)
             user = users_col.find_one({"telegram_id": str(me.id)})
             if not user:
                 user_data = {
@@ -305,7 +298,6 @@ def verify_login():
             session["uid"] = str(result_id)
             session.permanent = True
             update_total_users()
-            # Clean temp
             del temp_clients[phone]
             return jsonify({"success": True, "telegram_id": str(me.id)})
         else:
@@ -316,6 +308,7 @@ def verify_login():
                 return jsonify({"success": False, "message": msg})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
+
 
 @app.route("/api/user/data/<telegram_id>")
 def user_data(telegram_id):
