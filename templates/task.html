@@ -179,7 +179,7 @@ window.addEventListener('load', async () => {
 });
 
 // ===== LOAD DATA =====
-async function initTaskPage(){
+function initTaskPage(){
   const TG_ID = getTG();
 
   try{
@@ -289,7 +289,7 @@ function startTask(id, url, sec){
 }
 
 // ===== CLAIM TASK =====
-async function claimTask(id){
+function claimTask(id){
   const TG_ID = getTG();
 
   try{
