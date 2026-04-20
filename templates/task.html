@@ -156,22 +156,27 @@ const TG_ID = localStorage.getItem('telegram_id');
 let USER_JOINED = false;
 let DEVICE_ID = "";
 
-// ================= FINGERPRINT =================
-async function initFingerprint(){
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    DEVICE_ID = result.visitorId;
-}
-
-// ================= INIT PAGE =================
-async function initTaskPage(){
+// ===== LOAD ONCE =====
+window.onload = async () => {
     if(!TG_ID){
         location.href="/login";
         return;
     }
 
-    await initFingerprint(); // fingerprint আগে
+    // fingerprint একবার
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    DEVICE_ID = result.visitorId;
 
+    // first load
+    initTaskPage();
+
+    // only data refresh (fingerprint না)
+    setInterval(initTaskPage,15000);
+};
+
+// ===== LOAD DATA =====
+async function initTaskPage(){
     try{
         const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
             credentials:"include"
@@ -186,9 +191,6 @@ async function initTaskPage(){
         console.log("Task Init Error", err);
     }
 }
-
-window.onload = initTaskPage;
-setInterval(initTaskPage,15000);
 
 // ================= UI RENDER =================
 function renderTaskUI(user, admin){
