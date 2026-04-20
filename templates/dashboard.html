@@ -286,7 +286,7 @@ function smartInterval(fn, time){
 }
 
 // ================= INIT DASHBOARD =================
-async function initDashboard() {
+function initDashboard() {
   const telegramId = getTG();
 
   try {
@@ -370,7 +370,7 @@ function handleAction(type) {
 }
 
 // ================= JOIN =================
-async function handleAutoJoin() {
+function handleAutoJoin() {
   const btn = document.getElementById('join-btn');
   if (!btn) return;
 
