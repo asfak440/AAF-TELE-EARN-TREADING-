@@ -25,6 +25,50 @@ withdraws = db.withdraws
 settings = db.settings
 otp = db.otp
 
+#=============
+
+
+@app.route('/')
+def index():
+    if 'uid' in session: return redirect(url_for('render_dashboard_page'))
+    return render_template('login.html')
+
+@app.route('/dashboard')
+@login_required
+def render_dashboard_page(): 
+    user = users_col.find_one({"telegram_id": int(session['uid'])})
+    admin = settings_col.find_one({"type": "global"}) or {}
+    return render_template('dashboard.html', user=user, admin=admin)
+
+@app.route('/task')
+@login_required
+def render_task_page(): return render_template('task.html')
+
+@app.route('/trading')
+@login_required
+def render_treading_page(): return render_template('trading.html')
+
+@app.route('/wallet')
+@login_required
+def render_wallet_page(): return render_template('wallet.html')
+
+@app.route('/account')
+@login_required
+def render_account_page(): return render_template('account.html')
+
+@app.route('/refer_list')
+@login_required
+def render_refer_page(): return render_template('refer_list.html')
+
+@app.route('/payment_history')
+@login_required
+def render_history_page(): return render_template('payment_history.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+    
 # ================= HELPERS =================
 def ok(data=None):
     return jsonify({"success": True, "data": data})
