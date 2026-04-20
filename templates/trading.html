@@ -266,7 +266,7 @@ function cleanOldCandles(){
 }
 
 // ================= USER + ADMIN SYNC =================
-async function syncUserData(){
+function syncUserData(){
   const TG_ID = getTG();
 
   const r = await fetch(`/api/user/data/${TG_ID}`,{
@@ -326,7 +326,7 @@ function calculateLogic(){
 }
 
 // ================= TRADE =================
-async function executeTrade(type){
+function executeTrade(type){
   const TG_ID = getTG();
 
   const r = await fetch(`/api/trade/execute`,{
