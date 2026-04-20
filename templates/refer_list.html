@@ -62,46 +62,29 @@
     </div>
 
     <script>
-    async function loadReferrals() {
-    try {
-        const response = await fetch(`/api/user/referrals`, {
-            credentials: "include"
-        });
+    const API = window.location.origin;
+const TG_KEY = "telegram_id";
 
-        const data = await response.json();
-
-        const container = document.getElementById('referral-container');
-        const countDisplay = document.getElementById('total-ref-count');
-
-        if (data.status === "success") {
-            countDisplay.innerText = data.referrals.length;
-            container.innerHTML = "";
-
-            if (data.referrals.length > 0) {
-                data.referrals.forEach(ref => {
-                    container.innerHTML += `
-                        <div class="refer-card">
-                            <div>
-                                <b style="font-size: 14px;">${ref.name || "USER"}</b><br>
-                                <small>ID: ${ref.telegram_id}</small>
-                            </div>
-                            <div class="status-active">Verified</div>
-                        </div>
-                    `;
-                });
-            } else {
-                container.innerHTML =
-                    "<p style='text-align:center; color:gray; margin-top:50px;'>No referrals found yet.</p>";
-            }
-        }
-
-    } catch (err) {
-        console.error("Referral Sync Error:", err);
-    }
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id) location.href = "/login";
+  return id;
 }
 
-window.onload = loadReferrals;
-setInterval(loadReferrals, 10000);
+async function loadReferList(){
+  const tg = getTG();
+  try{
+    const res = await fetch(`${API}/api/user/referrals/${tg}`, { credentials:"include" });
+    const data = await res.json();
+    const container = document.getElementById('refer-list');
+    if(data.referrals && data.referrals.length){
+      container.innerHTML = data.referrals.map(r => `<div>${r.username} (${r.telegram_id}) - Joined: ${r.joined_at}</div>`).join('');
+    } else {
+      container.innerHTML = "<div>No referrals yet.</div>";
+    }
+  } catch(e){ console.log(e); }
+}
+window.addEventListener('load', loadReferList);
     
 </script>
 </body>
