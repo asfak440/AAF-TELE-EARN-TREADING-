@@ -55,10 +55,28 @@ if not firebase_admin._apps:
 fb_ref = db.reference() if firebase_admin._apps else None
 
 # ================= HELPERS =================
+# ================= PERSISTENT TELEGRAM CLIENT =================
+_loop = None
+_telegram_client = None
+
 def run_async(coro):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
+    """Persistent loop এ coroutine চালায় (কখনো নতুন লুপ তৈরি করে না)"""
+    global _loop
+    if _loop is None:
+        raise RuntimeError("Telegram client not initialized")
+    future = asyncio.run_coroutine_threadsafe(coro, _loop)
+    return future.result()
+
+def start_telegram_thread():
+    global _loop, _telegram_client
+    _loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(_loop)
+    _telegram_client = TelegramClient(StringSession(), API_ID, API_HASH)
+    _loop.run_until_complete(_telegram_client.connect())
+    _loop.run_forever()
+
+# ব্যাকগ্রাউন্ড থ্রেড চালু করুন
+threading.Thread(target=start_telegram_thread, daemon=True).start()
 
 def normalize_phone(phone):
     if not phone:
