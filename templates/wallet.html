@@ -221,14 +221,12 @@ function smartInterval(fn, time){
 }
 
 // ===== POPUP AD =====
-function loadPopupAd(){
-  initFirebase();
-  fb_db.ref('ads/wallet_popup').once('value').then(s=>{
-    const ad = s.val();
-    if(ad){
-      alert("📢 " + ad);
-    }
-  });
+async function loadPopupAd(){
+  try{
+    const res = await fetch(`${API}/api/wallet/ad`);
+    const data = await res.json();
+    if(data.message) alert("📢 " + data.message);
+  } catch(e){ console.log("Ad error", e); }
 }
 
 // ===== USER + ADMIN SYNC =====
