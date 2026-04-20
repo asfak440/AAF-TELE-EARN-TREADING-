@@ -179,43 +179,41 @@ window.addEventListener('load', async () => {
 });
 
 // ===== LOAD DATA =====
+    // initTaskPage - এখানে টাস্ক API যোগ করুন
 async function initTaskPage(){
   const TG_ID = getTG();
-
   try{
     const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
       headers:{ 'x-device-id': DEVICE_ID },
       credentials:"include"
     });
-
     const data = await res.json();
     if(data.status !== "success") return;
 
-    renderTaskUI(data.user, data.admin);
+    // নতুন: টাস্ক লিস্ট API থেকে আনুন
+    const tasksRes = await fetch(`${API}/api/tasks`);
+    const tasksData = await tasksRes.json();
+    const tasks = tasksData.tasks || [];
 
-  }catch(err){
-    console.log("Task Init Error", err);
-  }
+    renderTaskUI(data.user, data.admin, tasks);  // tasks প্যারামিটার যোগ
+  } catch(err){ console.log("Task Init Error", err); }
 }
 
-// ===== UI RENDER =====
-function renderTaskUI(user, admin){
+// renderTaskUI - tasks প্যারামিটার নিবে
+function renderTaskUI(user, admin, tasks){
   updateBalance(user.cash, user.aaf);
-
   USER_JOINED = user.is_joined;
-  document.getElementById('join-warning').style.display =
-    USER_JOINED ? 'none':'flex';
-
+  document.getElementById('join-warning').style.display = USER_JOINED ? 'none':'flex';
   updateMilestone(user.tasks_done, admin.bonus_target);
-  renderTasks(admin.tasks || []);
-
+  renderTasks(tasks);   // tasks ব্যবহার করুন, admin.tasks না
   if(admin.task_banner_ad){
-    document.getElementById('banner-ad').innerHTML =
-      admin.task_banner_ad;
+    document.getElementById('banner-ad').innerHTML = admin.task_banner_ad;
   }
-
   showTimedAd(admin.task_popup_ad);
 }
+
+// renderTasks আগের মতোই থাকবে (কোনো পরিবর্তন নেই)
+// claimTask আগের মতোই থাকবে (এটি ইতিমধ্যে API ব্যবহার করে)
 
 // ===== BALANCE =====
 function updateBalance(cash, coin){
