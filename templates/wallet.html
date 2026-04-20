@@ -232,7 +232,7 @@ function loadPopupAd(){
 }
 
 // ===== USER + ADMIN SYNC =====
-async function syncData() {
+function syncData() {
   const TG_ID = localStorage.getItem(TG_KEY);
   if(!TG_ID){
     location.href="/login";
@@ -277,7 +277,7 @@ async function syncData() {
 }
 
 // ===== DEPOSIT =====
-async function submitDeposit(){
+function submitDeposit(){
   const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('dep-amount').value);
   const trx = document.getElementById('dep-trx').value;
@@ -300,7 +300,7 @@ async function submitDeposit(){
 }
 
 // ===== WITHDRAW =====
-async function processWithdraw(){
+function processWithdraw(){
   const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('wit-amt').value);
   const number = document.getElementById('wit-num').value;
@@ -322,7 +322,7 @@ async function processWithdraw(){
 }
 
 // ===== TRANSFER =====
-async function processTransfer(){
+function processTransfer(){
   const TG_ID = localStorage.getItem(TG_KEY);
   const to = document.getElementById('trans-id').value;
   const amount = parseFloat(document.getElementById('trans-amount').value);
