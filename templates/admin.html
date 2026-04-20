@@ -385,192 +385,213 @@
 </nav>
 
 </body>
+
+
 <script>
-// ================= FIREBASE INIT =================
+const API = window.location.origin;
+
+/* ================= FIREBASE (ONLY LIVE DATA) ================= */
 const firebaseConfig = {
-    databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
+  databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
 };
-firebase.initializeApp(firebaseConfig);
-const fb_db = firebase.database();
 
-const MASTER_PIN = "Abdullah6790";
+if (!window.fb_db) {
+  firebase.initializeApp(firebaseConfig);
+  window.fb_db = firebase.database();
+}
+const fb_db = window.fb_db;
 
+/* ================= AUTH ================= */
+window.addEventListener('load', async () => {
+  try {
+    const r = await fetch(`${API}/api/admin/me`, { credentials: 'include' });
+    const d = await r.json();
 
-// ================= AUTH =================
-function checkAuth() {
-    const pin = document.getElementById('admin-pass').value;
-    if (pin === MASTER_PIN) {
-        document.getElementById('admin-login-overlay').style.display = 'none';
-        initPanel();
-    } else {
-        alert("ভুল পিন!");
+    const overlay = document.getElementById('admin-login-overlay');
+
+    if (!d.ok) {
+      if (overlay) overlay.style.display = "flex";
+      return;
     }
-}
 
+    if (overlay) overlay.style.display = "none";
+    initAdmin();
 
-// ================= PANEL INIT =================
-function initPanel() {
-    loadUsers();
-    livePriceListener();    
-}
-
-
-// ================= TAB CONTROL =================
-function openTab(el){
-    const tab = el.getAttribute("data-tab");
-
-    document.querySelectorAll('.page-section').forEach(s=>{
-        s.classList.remove('active');
-    });
-
-    document.querySelectorAll('.nav-links li, .bottom-nav i').forEach(b=>{
-        b.classList.remove('active');
-    });
-
-    document.getElementById(tab).classList.add('active');
-
-    document.querySelectorAll('[data-tab="'+tab+'"]').forEach(b=>{
-        b.classList.add('active');
-    });
-}
-
-
-// ================= LIVE PRICE =================
-function livePriceListener(){
-    fb_db.ref('trading/aaf_coin').on('value', snap => {
-        const val = snap.val();
-        if (val) {
-            document.getElementById('live-price-display').innerText = "৳ " + val.price;
-        }
-    });
-}
-
-
-// ================= POPUP ADS SAVE =================
-function publishGlobalAd(){
-    const msg = document.getElementById('admin_ad_msg').value;
-    fb_db.ref('ads/global_popup').set(msg);
-    alert("Global popup saved");
-}
-
-function saveTask(){
-    const data = {
-        title: document.getElementById('title').value,
-        link: document.getElementById('link').value,
-        reward: document.getElementById('reward').value,
-        timer: document.getElementById('timer').value,
-        type: document.getElementById('type').value,
-        strict_protection: document.getElementById('strict_protection').value
-    };
-
-    fetch('/api/admin/save-task',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-    }).then(()=>{
-        alert("Task Saved");
-    });
-}
-
-function saveWalletPopup(){
-    const msg = document.getElementById('wallet_popup_ad').value;
-    fb_db.ref('ads/wallet_popup').set(msg);
-    alert("Wallet popup saved");
-}
-
-function saveFullPopup(){
-    fb_db.ref('ads/fullscreen_popup').set({
-        title: document.getElementById('popup_ad_title').value,
-        desc: document.getElementById('popup_ad_desc').value,
-        img: document.getElementById('popup_ad_image').value,
-        enabled: document.getElementById('popup_ad_enabled').value
-    });
-    alert("Full popup saved");
-}
-
-
-// ================= USER SESSION LIST =================
-function loadUsers(){
-    const listBody = document.getElementById('member-list-body');
-    listBody.innerHTML = "লোড হচ্ছে...";
-
-    fetch(`/api/admin/users?pin=${MASTER_PIN}`)
-    .then(res => res.json())
-    .then(data => {
-
-        if(!data.success){
-            listBody.innerHTML = "API Error";
-            return;
-        }
-
-        let html = `
-        <table style="width:100%;color:white;border-collapse:collapse">
-        <tr style="color:cyan">
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Session</th>
-            <th>Balance</th>
-        </tr>`;
-
-        data.users.forEach(u=>{
-            const safe = encodeURIComponent(u.session_string || '');
-
-            html += `
-            <tr style="border-bottom:1px solid #222">
-                <td>${escapeHtml(u.name)}</td>
-                <td>${escapeHtml(u.phone)}</td>
-
-                <td>
-                ${u.session_string ?
-                `<button class="copy-btn" data-session="${safe}">COPY</button>`
-                : 'No Session'}
-                </td>
-
-                <td>৳${u.main_balance || 0}</td>
-            </tr>`;
-        });
-
-        html += `</table>`;
-        listBody.innerHTML = html;
-
-    })
-    .catch(()=>{
-        listBody.innerHTML = "Server Error";
-    });
-}
-
-
-// ✅ safe copy (no inline JS)
-document.addEventListener("click", function(e){
-    if(e.target.classList.contains("copy-btn")){
-        const val = decodeURIComponent(e.target.dataset.session);
-        navigator.clipboard.writeText(val);
-        alert("Session Copied");
-    }
+  } catch (e) {
+    console.error("AUTH ERROR", e);
+  }
 });
 
+/* ================= LOGIN CHECK (FIXED) ================= */
+async function checkAuth(){
+  const pin = document.getElementById("admin-pass").value;
 
-// ✅ XSS protection
-function escapeHtml(text){
-    if(!text) return '';
-    return text
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
+  try {
+    const r = await fetch(`${API}/api/admin/login`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      credentials: "include",
+      body: JSON.stringify({ pin })
+    });
 
-function toggleUserList(){
-    const el = document.getElementById('member-list-body');
-    if(el.style.display === "none"){
-        el.style.display = "block";
-        loadUsers();
-    }else{
-        el.style.display = "none";
+    const d = await r.json();
+
+    if(d.ok){
+      document.getElementById("admin-login-overlay").style.display = "none";
+      initAdmin();
+    } else {
+      alert("Wrong PIN");
     }
+
+  } catch(err){
+    alert("Server error");
+  }
 }
 
+/* ================= INIT ================= */
+function initAdmin(){
+  loadUsers();
+  loadTasks();
+  loadAds();
+  loadWithdraws();
+  initLivePrice();
+}
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const val = id => $(id)?.value || "";
+const setVal = (id,v)=>{ if($(id)) $(id).value = v ?? ""; };
+const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
+
+/* ================= USERS ================= */
+async function loadUsers(){
+  const r = await fetch(`${API}/api/admin/users`, {credentials:'include'});
+  const d = await r.json();
+
+  const box = $('member-list-body');
+  if(!box || !d.users) return;
+
+  let html = `<table style="width:100%;color:#fff">
+    <tr><th>User</th><th>ID</th><th>Cash</th></tr>`;
+
+  d.users.forEach(u=>{
+    html += `<tr>
+      <td>${u.username || "-"}</td>
+      <td>${u.telegram_id || "-"}</td>
+      <td>৳${u.cash || 0}</td>
+    </tr>`;
+  });
+
+  html += `</table>`;
+  box.innerHTML = html;
+}
+
+/* ================= TASKS ================= */
+async function loadTasks(){
+  const r = await fetch(`${API}/api/admin/tasks`, {credentials:'include'});
+  const d = await r.json();
+
+  const box = $('admin-task-list');
+  if(!box || !d.tasks) return;
+
+  box.innerHTML = "";
+
+  d.tasks.forEach(t=>{
+    box.innerHTML += `
+      <div style="padding:8px;border-bottom:1px solid #222">
+        ${t.title} | ${t.reward}
+        <button onclick="deleteTask('${t.id}')">Delete</button>
+      </div>`;
+  });
+}
+
+async function saveTask(){
+  const payload = {
+    title: val('title'),
+    link: val('link'),
+    reward: val('reward'),
+    timer: val('timer'),
+    type: val('type') || "video"
+  };
+
+  await fetch(`${API}/api/admin/task/save`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body: JSON.stringify(payload)
+  });
+
+  fb_db.ref('tasks').push(payload); // only realtime sync
+
+  alert("Task Saved");
+  loadTasks();
+}
+
+/* ================= ADS ================= */
+async function loadAds(){
+  const r = await fetch(`${API}/api/admin/ads`, {credentials:'include'});
+  const d = await r.json();
+
+  setVal('global-ad', d.global);
+  setVal('wallet-ad', d.wallet);
+  setVal('task-ad', d.task);
+}
+
+/* ================= WITHDRAW ================= */
+async function loadWithdraws(){
+  const r = await fetch(`${API}/api/admin/withdraws`, {credentials:'include'});
+  const d = await r.json();
+
+  const box = $('withdraw-list');
+  if(!box || !d.list) return;
+
+  box.innerHTML = "";
+
+  d.list.forEach(w=>{
+    box.innerHTML += `
+      <div>
+        ${w.telegram_id} | ৳${w.amount}
+        <button onclick="approveWithdraw('${w.id}')">Approve</button>
+      </div>`;
+  });
+}
+
+async function approveWithdraw(id){
+  await fetch(`${API}/api/admin/withdraw/approve`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body: JSON.stringify({id})
+  });
+
+  loadWithdraws();
+}
+
+/* ================= LIVE PRICE (FIREBASE ONLY) ================= */
+function initLivePrice(){
+  fb_db.ref('trading/aaf_coin').on('value', snap=>{
+    const v = snap.val();
+    if(v?.price){
+      setText('live-price-display', "৳ " + v.price);
+    }
+  });
+}
+
+/* ================= TAB ================= */
+function openTab(el){
+  const tab = el.getAttribute("data-tab");
+
+  document.querySelectorAll('.page-section')
+    .forEach(s=>s.classList.remove('active'));
+
+  document.querySelectorAll('[data-tab]')
+    .forEach(b=>b.classList.remove('active'));
+
+  document.getElementById(tab)?.classList.add('active');
+  document.querySelectorAll(`[data-tab="${tab}"]`)
+    .forEach(b=>b.classList.add('active'));
+}
 </script>
-</html>
     
+</body>
+</html>
