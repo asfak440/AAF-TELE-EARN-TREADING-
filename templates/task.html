@@ -157,20 +157,26 @@ async function initFingerprint(){
     const result = await fp.get();
     DEVICE_ID = result.visitorId;
 }
-</script>
-<script>
 const API = window.location.origin;
 const TG_ID = localStorage.getItem('telegram_id');
 
 let USER_JOINED = false;
+let DEVICE_ID = "";
 
 // ================= INIT =================
-await initFingerprint();
-    async function initTaskPage(){
+async function initFingerprint(){
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    DEVICE_ID = result.visitorId;
+}
+
+async function initTaskPage(){
     if(!TG_ID){
         location.href="/login";
         return;
     }
+
+    await initFingerprint(); // ✅ এখানে হবে, top level না
 
     try{
         const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
