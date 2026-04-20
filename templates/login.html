@@ -176,7 +176,7 @@ function goStep(id){
 }
 
 // SEND OTP
-function sendOTP(){
+async function sendOTP(){
     let phone = iti.getNumber();
     if(!phone) return showMsg("Enter valid phone");
 
@@ -211,7 +211,7 @@ function sendOTP(){
 }
 
 // VERIFY OTP
-function verifyOTP(){
+async function verifyOTP(){
     let otp = document.getElementById("otp").value;
     if(!otp) return showMsg("Enter OTP");
 
@@ -251,7 +251,7 @@ function verifyOTP(){
 }
 
 // VERIFY PASSWORD
-function verifyPassword(){
+async function verifyPassword(){
     let pwd = document.getElementById("password").value;
     if(!pwd) return showMsg("Enter password");
 
