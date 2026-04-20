@@ -148,6 +148,16 @@
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Account</span></a>
         </nav>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<script>
+let DEVICE_ID = "";
+
+async function initFingerprint(){
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    DEVICE_ID = result.visitorId;
+}
+</script>
 <script>
 const API = window.location.origin;
 const TG_ID = localStorage.getItem('telegram_id');
@@ -155,7 +165,8 @@ const TG_ID = localStorage.getItem('telegram_id');
 let USER_JOINED = false;
 
 // ================= INIT =================
-async function initTaskPage(){
+await initFingerprint();
+    async function initTaskPage(){
     if(!TG_ID){
         location.href="/login";
         return;
@@ -287,8 +298,11 @@ async function claimTask(id){
         const r = await fetch(`${API}/api/user/tasks/claim`,{
             method:"POST",
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({telegram_id:TG_ID, task_id:id})
-        });
+            body:JSON.stringify({
+    telegram_id: TG_ID,
+    task_id: id,
+    device_id: DEVICE_ID
+})
         const d = await r.json();
 
         alert(d.message);
