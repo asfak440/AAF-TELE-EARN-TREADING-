@@ -155,156 +155,169 @@
     </div>
 
     <script>
-        const API_URL = "https://aaf-tele-earn-treading.onrender.com";
-        let popupData = null;
+const API = window.location.origin;
+const TG_KEY = "telegram_id";
+let popupData = null;
 
-        // --- 1. স্লাইডার কন্ট্রোল (Auto Slide) ---
-        let currentSlide = 0;
-        setInterval(() => {
-            const slider = document.getElementById('main-slider');
-            if(slider) {
-                currentSlide = (currentSlide === 0) ? 50 : 0;
-                slider.style.transform = `translateX(-${currentSlide}%)`;
-            }
-        }, 6000);
+// ===== SLIDER =====
+let currentSlide = 0;
+setInterval(() => {
+    const slider = document.getElementById('main-slider');
+    if (slider) {
+        currentSlide = (currentSlide === 0) ? 50 : 0;
+        slider.style.transform = `translateX(-${currentSlide}%)`;
+    }
+}, 6000);
 
-        // --- 2. ডাটা ইনিশিয়ালাইজেশন ---
-        async function initializeApp() {
-            const userId = localStorage.getItem('user_id');
-            if(!userId) return;
-            
-            try {
-                const [userRes, adRes] = await Promise.all([
-                    fetch(`${API_URL}/api/user/data/${userId}`),
-                    fetch(`${API_URL}/api/ads/control`)
-                ]);
+// ===== INIT =====
+window.addEventListener('load', async () => {
+    const tg = localStorage.getItem(TG_KEY);
+    if (!tg) {
+        location.href = "/login";
+        return;
+    }
 
-                // ইউজার ইনফো আপডেট
-                const userData = await userRes.json();
-                if (userData.status === "success") {
-                    document.getElementById('u-name').innerText = userData.name.toUpperCase();
-                    document.getElementById('u-id').innerText = "UID: " + userData.uid;
-                    document.getElementById('cash-bal').innerText = "৳ " + parseFloat(userData.balance || 0).toFixed(2);
-                    document.getElementById('coin-bal').innerText = parseFloat(userData.aaf_coins || 0).toFixed(2);
-                    if (userData.photo) {
-                        document.getElementById('main-avatar').innerHTML = `<img src="${userData.photo}" alt="User">`;
-                    }
-                }
+    await initializeApp();
+    await loadSavedList();
+});
 
-                // অ্যাডমিন অ্যাড কন্ট্রোল
-                const adData = await adRes.json();
-                if (adData.banner && adData.banner.enabled) {
-                    document.getElementById('admin-banner-slide').style.backgroundImage = `url('${adData.banner.image}')`;
-                } else {
-                    document.getElementById('main-slider').style.width = "100%";
-                }
-                popupData = adData.popup;
+// ===== LOAD USER + ADS =====
+async function initializeApp() {
+    const tg = localStorage.getItem(TG_KEY);
 
-            } catch (error) {
-                console.error("Init Error:", error);
-                document.getElementById('u-name').innerText = "OFFLINE";
-            }
+    try {
+        const res = await fetch(`${API}/api/user/data/${tg}`, {
+            credentials: "include"
+        });
+
+        const data = await res.json();
+        if (data.status !== "success") return;
+
+        const user = data.user;
+        const admin = data.admin;
+
+        // USER INFO
+        document.getElementById('u-name').innerText =
+            (user.username || "USER").toUpperCase();
+
+        document.getElementById('u-id').innerText =
+            "ID: " + user.telegram_id;
+
+        document.getElementById('cash-bal').innerText =
+            "৳ " + parseFloat(user.cash || 0).toFixed(2);
+
+        document.getElementById('coin-bal').innerText =
+            parseFloat(user.aaf || 0).toFixed(2);
+
+        if (user.photo) {
+            document.getElementById('main-avatar').innerHTML =
+                `<img src="${user.photo}" alt="User">`;
         }
 
-        // --- 3. পপআপ ফাংশন ---
-        function showOfferPopup() {
-            if (popupData && popupData.enabled) {
-                document.getElementById('popup-img').src = popupData.image;
-                document.getElementById('popup-title').innerText = popupData.title;
-                document.getElementById('popup-desc').innerText = popupData.desc;
-                document.getElementById('ad-modal').style.display = 'block';
-            } else {
-                alert("No active offers at this moment!");
-            }
+        // ADMIN BANNER
+        if (admin.banner_image) {
+            document.getElementById('admin-banner-slide')
+                .style.backgroundImage = `url('${admin.banner_image}')`;
         }
 
-        function closePopup() {
-            document.getElementById('ad-modal').style.display = 'none';
-        }
+        popupData = admin.popup_ad || null;
 
-        // --- 4. মাল্টি-অ্যাকাউন্ট লজিক ---
-        async function loadSavedList() {
-            const displayArea = document.getElementById('accounts-display');
-            const currentId = localStorage.getItem('user_id');
-            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+    } catch (err) {
+        console.error("Init Error:", err);
+        document.getElementById('u-name').innerText = "OFFLINE";
+    }
+}
 
-            displayArea.innerHTML = ''; 
+// ===== POPUP =====
+function showOfferPopup() {
+    if (popupData && popupData.enabled) {
+        document.getElementById('popup-img').src = popupData.image;
+        document.getElementById('popup-title').innerText = popupData.title;
+        document.getElementById('popup-desc').innerText = popupData.desc;
+        document.getElementById('ad-modal').style.display = 'block';
+    } else {
+        alert("No active offers!");
+    }
+}
 
-            for (let accId of saved) {
-                if (accId === currentId) continue; 
+function closePopup() {
+    document.getElementById('ad-modal').style.display = 'none';
+}
 
-                try {
-                    const res = await fetch(`${API_URL}/api/user/data/${accId}`);
-                    const data = await res.json();
+// ===== MULTI ACCOUNT =====
+async function loadSavedList() {
+    const box = document.getElementById('accounts-display');
+    const current = localStorage.getItem(TG_KEY);
+    const saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
 
-                    if (data.status === "success") {
-                        displayArea.innerHTML += `
-                            <div class="account-item">
-                                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; flex:1;" onclick="switchAccount('${accId}')">
-                                    <img src="${data.photo || 'https://via.placeholder.com/40'}" style="width:35px; height:35px; border-radius:50%; border: 1px solid var(--cyan);">
-                                    <div style="text-align: left;">
-                                        <h5 style="margin:0; font-size:12px;">${data.name}</h5>
-                                        <span style="font-size:9px; color: var(--text-dim);">UID: ${data.uid}</span>
-                                    </div>
-                                </div>
-                                <div style="display:flex; gap:15px; align-items:center;">
-                                    <i class="fas fa-exchange-alt" style="color: var(--cyan); font-size:12px; cursor:pointer;" onclick="switchAccount('${accId}')"></i>
-                                    <i class="fas fa-trash-alt" style="color: var(--danger); font-size:12px; cursor:pointer;" onclick="removeOne('${accId}')"></i>
-                                </div>
-                            </div>`;
-                    }
-                } catch (e) { console.error(e); }
-            }
-        }
+    box.innerHTML = '';
 
-        function switchAccount(targetId) {
-            const currentId = localStorage.getItem('user_id');
-            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+    for (let id of saved) {
+        if (id === current) continue;
 
-            if (currentId && !saved.includes(currentId)) saved.push(currentId);
-            
-            localStorage.setItem('user_id', targetId);
-            localStorage.setItem('saved_accounts', JSON.stringify(saved.filter(id => id !== targetId)));
-            location.reload();
-        }
+        try {
+            const r = await fetch(`${API}/api/user/data/${id}`);
+            const d = await r.json();
+            if (d.status !== "success") continue;
 
-        function removeOne(id) {
-            if(confirm("Remove this account from saved list?")) {
-                let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
-                localStorage.setItem('saved_accounts', JSON.stringify(saved.filter(i => i !== id)));
-                loadSavedList();
-            }
-        }
+            const u = d.user;
 
-        function addNewAccount() {
-            const currentId = localStorage.getItem('user_id');
-            let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
-            if (currentId && !saved.includes(currentId)) {
-                saved.push(currentId);
-                localStorage.setItem('saved_accounts', JSON.stringify(saved));
-            }
-            localStorage.removeItem('user_id');
-            window.location.href = 'login.html';
-        }
+            box.innerHTML += `
+            <div class="account-item">
+                <div style="flex:1;cursor:pointer"
+                     onclick="switchAccount('${u.telegram_id}')">
+                    <b>${u.username}</b><br>
+                    <small>ID: ${u.telegram_id}</small>
+                </div>
+                <button onclick="removeOne('${u.telegram_id}')">❌</button>
+            </div>`;
+        } catch {}
+    }
+}
 
-        function logoutSession() {
-            if(confirm("Logout from current session? It will be saved in your list.")) {
-                addNewAccount(); // একই কাজ করবে
-            }
-        }
+function switchAccount(id) {
+    const current = localStorage.getItem(TG_KEY);
+    let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
 
-        function clearAllData() {
-            if(confirm("This will permanently remove ALL saved accounts from this device. Continue?")) {
-                localStorage.clear();
-                window.location.href = 'login.html';
-            }
-        }
+    if (current && !saved.includes(current))
+        saved.push(current);
 
-        // --- পেজ স্টার্ট ---
-        window.onload = async () => {
-            await initializeApp();
-            await loadSavedList();
-        };
-    </script>
+    localStorage.setItem(TG_KEY, id);
+    localStorage.setItem('saved_accounts',
+        JSON.stringify(saved.filter(x => x !== id)));
+
+    location.reload();
+}
+
+function removeOne(id) {
+    let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+    localStorage.setItem('saved_accounts',
+        JSON.stringify(saved.filter(x => x !== id)));
+    loadSavedList();
+}
+
+function addNewAccount() {
+    const current = localStorage.getItem(TG_KEY);
+    let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
+
+    if (current && !saved.includes(current))
+        saved.push(current);
+
+    localStorage.setItem('saved_accounts', JSON.stringify(saved));
+    localStorage.removeItem(TG_KEY);
+    location.href = "/login";
+}
+
+function logoutSession() {
+    addNewAccount();
+}
+
+function clearAllData() {
+    if (confirm("সব অ্যাকাউন্ট মুছে ফেলতে চান?")) {
+        localStorage.clear();
+        location.href = "/login";
+    }
+}
+</script>
 </body>
 </html>
