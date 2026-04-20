@@ -29,7 +29,7 @@ app.config.update(
 
 # ================= APP =================
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "aaf_strong_secure_786)
+app.secret_key = os.getenv("SECRET_KEY", "aaf_strong_secure_786")
 
 CORS(app, supports_credentials=True)
 
