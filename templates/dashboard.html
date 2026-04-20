@@ -261,261 +261,160 @@
 
     <script>
 // ================= GLOBAL =================
-const API_URL = "";
-window.currentChannelLink = "";
+const TG_KEY = "telegram_id";
+const API = window.location.origin;
+
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id){
+    location.href="/login";
+  }
+  return id;
+}
+
+// ================= SAFE INTERVAL =================
+function smartInterval(fn, time){
+  let t;
+  function start(){ t = setInterval(fn, time); }
+  function stop(){ clearInterval(t); }
+
+  document.addEventListener("visibilitychange", ()=>{
+    document.hidden ? stop() : start();
+  });
+
+  start();
+}
 
 // ================= INIT DASHBOARD =================
 async function initDashboard() {
-    const telegramId = localStorage.getItem('telegram_id');
+  const telegramId = getTG();
 
-    if (!telegramId) {
-        window.location.href = "/login";
-        return;
+  try {
+    const response = await fetch(`/api/user/data/${telegramId}`, {
+      credentials: "include"
+    });
+
+    if (!response.ok) throw new Error("Network Error");
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+      renderUI(data.user, data.admin);
+    } else if (data.message === "session_expired") {
+      localStorage.removeItem(TG_KEY);
+      location.href = "/login";
     }
 
-    try {
-        const response = await fetch(`/api/user/data/${telegramId}`, {
-            credentials: "include"
-        });
-
-        if (!response.ok) throw new Error("Network Error");
-
-        const data = await response.json();
-
-        if (data.status === "success") {
-            renderUI(data.user, data.admin);
-        } else if (data.message === "session_expired") {
-            localStorage.removeItem("telegram_id");
-            window.location.href = "/login";
-        }
-
-    } catch (err) {
-        console.error("Dashboard Sync Error:", err);
-        triggerPopup("Server Connection Error");
-    }
+  } catch (err) {
+    triggerPopup("Server Connection Error");
+  }
 }
-
-window.onload = initDashboard;
-
 
 // ================= UI RENDER =================
 function renderUI(user, admin) {
-    if (!user || !admin) return;
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = val;
+  };
 
-    const setText = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
-    };
+  setText('u-name', (user.username || "USER").toUpperCase());
+  setText('u-id', ": " + user.telegram_id);
+  setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
+  setText('h-aaf', user.aaf || 0);
 
-    setText('u-name', (user.username || "USER").toUpperCase());
-    setText('u-id', ": " + (user.telegram_id || "000000"));
-    setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
-    setText('h-aaf', user.aaf || 0);
+  setText('srv-income', '৳ ' + (admin.server_income || 0));
+  setText('srv-trade', '৳ ' + (admin.server_trading || 0));
+  setText('srv-users', admin.total_users || 0);
 
-    setText('srv-income', '৳ ' + (admin.server_income || 0));
-    setText('srv-trade', '৳ ' + (admin.server_trading || 0));
-    setText('srv-users', admin.total_users || 0);
+  setText('my-refs', (user.refer_count || 0) + " REFERRED");
 
-    setText('my-refs', (user.refer_count || 0) + " REFERRED");
+  // JOIN STATUS
+  const joined = user.is_joined;
+  const dot = document.getElementById('status-dot');
+  const joinBtn = document.getElementById('join-btn');
 
-    const referStatusText = document.getElementById('refer-count-status');
-    if (referStatusText) {
-        referStatusText.innerText = (user.refer_count || 0) + " Active Members Found";
-        referStatusText.style.color = "var(--active-green)";
-    }
-
-    window.currentChannelLink = admin.channel_url || "";
-
-    // JOIN STATUS
-    const dot = document.getElementById('status-dot');
-    const joinCard = document.getElementById('join-container');
-    const joinStatusText = document.getElementById('join-status');
-    const joinBtn = document.getElementById('join-btn');
-
-    if (user.is_joined) {
-        if (dot) dot.className = 'dot-online';
-        if (joinCard) joinCard.classList.add('connected');
-        if (joinStatusText) {
-            joinStatusText.innerText = "CONNECTED";
-            joinStatusText.style.color = "var(--active-green)";
-        }
-        if (joinBtn) joinBtn.style.display = "none";
-    } else {
-        if (dot) dot.className = 'dot-offline';
-        if (joinCard) joinCard.classList.remove('connected');
-        if (joinStatusText) {
-            joinStatusText.innerText = "DISCONNECTED";
-            joinStatusText.style.color = "var(--danger)";
-        }
-        if (joinBtn) joinBtn.style.display = "block";
-    }
+  if (dot) dot.className = joined ? 'dot-online':'dot-offline';
+  if (joinBtn) joinBtn.style.display = joined ? 'none':'block';
 }
 
-// ================= 6 HOUR AD =================
-function checkAndShowAd() {
-    const userId = localStorage.getItem('telegram_id');
-    const key = `last_ad_click_${userId}`;
-    const lastSeen = localStorage.getItem(key);
-    const now = Date.now();
-    const SIX_HOURS = 21600000;
+// ================= AD ENGINE =================
+const AD_INTERVAL = 6 * 60 * 60 * 1000;
 
-    if (!lastSeen || (now - lastSeen) > SIX_HOURS) {
-        if (typeof fb_db !== 'undefined') {
-            fb_db.ref('popup_ads/global').once('value', snap => {
-                const data = snap.val();
-                if (data?.message) {
-                    alert("📢 AD: " + data.message);
-                    localStorage.setItem(key, now);
-                }
-            });
-        } else {
-            triggerPopup("নতুন বোনাস অফার চেক করুন!");
-            localStorage.setItem(key, now);
-        }
-        return true;
-    }
-    return false;
+function getAdKey(){
+  return `last_interstitial_ad_${getTG()}`;
+}
+
+function checkTimedInterstitial(){
+  const last = localStorage.getItem(getAdKey());
+  const now = Date.now();
+
+  if(!last || (now - parseInt(last)) > AD_INTERVAL){
+    triggerPopup("📢 Special bonus offer চলছে!");
+    localStorage.setItem(getAdKey(), now.toString());
+  }
 }
 
 // ================= ACTION HANDLER =================
 function handleAction(type) {
-    checkAndShowAd();
+  checkTimedInterstitial();
 
-    let target = "";
+  let target = "";
+  if (type.includes('=')) {
+    let parts = type.split('=');
+    target = parts[0] + ".html?page=" + parts[1];
+  } else {
+    target = type + ".html";
+  }
 
-    if (type.includes('=')) {
-        let parts = type.split('=');
-        target = parts[0] + ".html?page=" + parts[1];
-    } else if (type.includes('.html')) {
-        target = type;
-    } else if (['trading','convert'].includes(type)) {
-        target = "trading.html";
-    } else if (['refer_list','refer-list'].includes(type)) {
-        target = "refer_list.html";
-    } else if (['payment_history','payment-history'].includes(type)) {
-        target = "payment_history.html";
-    } else if (type === 'dashboard') {
-        target = "dashboard.html";
-    } else {
-        target = type + ".html";
-    }
-
-    window.location.href = target;
+  location.href = target;
 }
 
-// ================= SILENT JOIN =================
+// ================= JOIN =================
 async function handleAutoJoin() {
-    const btn = document.getElementById('join-btn');
-    if (!btn) return;
+  const btn = document.getElementById('join-btn');
+  if (!btn) return;
 
-    btn.innerText = "JOINING...";
-    btn.disabled = true;
+  btn.innerText = "JOINING...";
+  btn.disabled = true;
 
-    try {
-        const res = await fetch('/api/silent_join', {
-            method: 'POST',
-            credentials: "include"
-        });
+  try {
+    const res = await fetch('/api/silent_join', {
+      method: 'POST',
+      credentials: "include"
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (data.success) {
-            triggerPopup("JOIN SUCCESS ✅");
-            initDashboard();
-        } else {
-            if (data.message === "session_expired") {
-                localStorage.removeItem('telegram_id');
-                window.location.href = "/login";
-                return;
-            }
-
-            triggerPopup("Manual Join Required");
-            window.open(window.currentChannelLink, "_blank");
-        }
-
-    } catch (err) {
-        triggerPopup("Server Error");
+    if (data.success) {
+      triggerPopup("JOIN SUCCESS ✅");
+      initDashboard();
+    } else {
+      window.open(data.channel || "#", "_blank");
     }
 
-    btn.innerText = "JOIN NOW";
-    btn.disabled = false;
-}
+  } catch {
+    triggerPopup("Server Error");
+  }
 
-// ================= COPY REFER =================
-function copyReferLink() {
-    const idText = document.getElementById('u-id')?.innerText || "";
-    const cleanId = idText.replace(':', '').trim();
-    const link = `${window.location.origin}/register?ref=${cleanId}`;
-    navigator.clipboard.writeText(link);
-    triggerPopup("REFER LINK COPIED!");
-}
-
-// ================= VERIFY JOIN =================
-function verifyJoin() {
-    triggerPopup("Verifying...");
-    initDashboard();
+  btn.innerText = "JOIN NOW";
+  btn.disabled = false;
 }
 
 // ================= POPUP =================
 function triggerPopup(msg) {
-    const bar = document.getElementById('active-user-bar');
-    const text = document.getElementById('popup-text');
-    if (!bar || !text) return;
+  const bar = document.getElementById('active-user-bar');
+  const text = document.getElementById('popup-text');
+  if (!bar || !text) return;
 
-    text.innerText = msg;
-    bar.style.display = "flex";
-    setTimeout(()=> bar.style.display="none", 3000);
+  text.innerText = msg;
+  bar.style.display = "flex";
+  setTimeout(()=> bar.style.display="none", 3000);
 }
 
-        // ================== AD ENGINE (DASHBOARD) ==================
-
-const AD_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-
-function getAdKey(){
-    const uid = localStorage.getItem('telegram_id') || 'guest';
-    return `last_interstitial_ad_${uid}`;
-}
-
-// 🔹 6 hour interstitial trigger
-function checkTimedInterstitial(){
-    const last = localStorage.getItem(getAdKey());
-    const now = Date.now();
-
-    if(!last || (now - parseInt(last)) > AD_INTERVAL){
-        showInterstitialAd();
-        localStorage.setItem(getAdKey(), now.toString());
-    }
-}
-
-// 🔹 This will be replaced by AdMob later
-function showInterstitialAd(){
-    triggerPopup("📢 Special bonus offer চলছে!");
-    console.log("Interstitial Ad Triggered");
-}
-
-// 🔹 Banner loader (future AdMob)
-function loadBannerAd(){
-    const banner = document.getElementById('banner-ad');
-    if(!banner) return;
-
-    banner.innerHTML = `
-        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;font-size:12px;">
-            Banner Ad Ready
-        </div>
-    `;
-}
-
-// ================== HOOK INTO DASHBOARD ==================
-
-const originalInit = initDashboard;
-
-initDashboard = async function(){
-    await originalInit();
-    loadBannerAd();
-    checkTimedInterstitial();
-};
-// ================= AUTO START =================
-window.onload = initDashboard;
-setInterval(initDashboard, 15000);
-    </script>
+// ================= INIT =================
+window.addEventListener('load', ()=>{
+  initDashboard();
+  smartInterval(initDashboard,15000);
+});
+</script>
 </html>
