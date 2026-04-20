@@ -17,6 +17,11 @@ from firebase_admin import credentials, db
 # ---------------------------------------------------------
 # ১. কনফিগারেশন ও ডাটাবেস সেটআপ
 # ---------------------------------------------------------
+# ================= APP =================
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "aaf_strong_secure_786")
+
+CORS(app, supports_credentials=True)
 
 # সেশন সিকিউরিটি
 app.config.update(
@@ -24,12 +29,6 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     PERMANENT_SESSION_LIFETIME=timedelta(days=10)
-
-# ================= APP =================
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "aaf_strong_secure_786")
-
-CORS(app, supports_credentials=True)
 
 # ================= DB =================
 db = MongoClient(os.getenv("MONGO_URL"))["aaf_tele_earn_db"]
@@ -44,7 +43,15 @@ settings = db.settings
 otp = db.otp
 
 #=============
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'uid' not in session:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
 
+#============
 
 @app.route('/')
 def index():
