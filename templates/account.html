@@ -182,7 +182,7 @@ window.addEventListener('load', async () => {
 });
 
 // ===== LOAD USER + ADS =====
-async function initializeApp() {
+function initializeApp() {
     const tg = localStorage.getItem(TG_KEY);
 
     try {
@@ -245,7 +245,7 @@ function closePopup() {
 }
 
 // ===== MULTI ACCOUNT =====
-async function loadSavedList() {
+function loadSavedList() {
     const box = document.getElementById('accounts-display');
     const current = localStorage.getItem(TG_KEY);
     const saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
