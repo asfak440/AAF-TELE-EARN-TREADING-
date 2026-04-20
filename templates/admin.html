@@ -487,45 +487,37 @@ async function loadUsers(){
 }
 
 /* ================= TASKS ================= */
+
+// টাস্ক লোড API থেকে
 async function loadTasks(){
-  const r = await fetch(`${API}/api/admin/tasks`, {credentials:'include'});
-  const d = await r.json();
-
-  const box = $('admin-task-list');
-  if(!box || !d.tasks) return;
-
+  const res = await fetch(`${API}/api/admin/tasks`, { credentials:'include' });
+  const d = await res.json();
+  const box = document.getElementById('admin-task-list');
+  if(!box) return;
   box.innerHTML = "";
-
-  d.tasks.forEach(t=>{
-    box.innerHTML += `
-      <div style="padding:8px;border-bottom:1px solid #222">
-        ${t.title} | ${t.reward}
-        <button onclick="deleteTask('${t.id}')">Delete</button>
-      </div>`;
+  (d.tasks || []).forEach(t=>{
+    box.innerHTML += `<div>${t.title} | ${t.reward} <button onclick="deleteTask('${t.id}')">Delete</button></div>`;
   });
 }
 
+// টাস্ক সেভ API তে
 async function saveTask(){
   const payload = {
-    title: val('title'),
-    link: val('link'),
-    reward: val('reward'),
-    timer: val('timer'),
-    type: val('type') || "video"
+    title: document.getElementById('title').value,
+    link: document.getElementById('link').value,
+    reward: parseFloat(document.getElementById('reward').value),
+    timer: parseInt(document.getElementById('timer').value),
+    type: document.getElementById('type').value
   };
-
   await fetch(`${API}/api/admin/task/save`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
+    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
     body: JSON.stringify(payload)
   });
-
-  fb_db.ref('tasks').push(payload); // only realtime sync
-
-  alert("Task Saved");
   loadTasks();
 }
+
+// বাকি ফাংশন (loadUsers, loadWithdraws, approveWithdraw, initAdmin, openTab) আগের মতোই থাকবে
+
 
 /* ================= ADS ================= */
 async function loadAds(){
@@ -567,16 +559,17 @@ async function approveWithdraw(id){
   loadWithdraws();
 }
 
-/* ================= LIVE PRICE (FIREBASE ONLY) ================= */
-function initLivePrice(){
-  fb_db.ref('trading/aaf_coin').on('value', snap=>{
-    const v = snap.val();
-    if(v?.price){
-      setText('live-price-display', "৳ " + v.price);
-    }
-  });
+/* ================= LIVE PRICE (MongoDB থেকে ONLY) ================= */
+// লাইভ প্রাইস দেখানো (MongoDB থেকে)
+async function loadLivePrice(){
+  try{
+    const res = await fetch(`${API}/api/market/price`);
+    const d = await res.json();
+    document.getElementById('live-price-display').innerText = "৳ " + d.price;
+  } catch(e){}
 }
-
+setInterval(loadLivePrice, 2000);
+    
 /* ================= TAB ================= */
 function openTab(el){
   const tab = el.getAttribute("data-tab");
