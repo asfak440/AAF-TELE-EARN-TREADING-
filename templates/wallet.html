@@ -194,36 +194,56 @@
 
 <script>
 const API = window.location.origin;
-const TG_ID = localStorage.getItem('telegram_id');
+const TG_KEY = "telegram_id";
 
-if(!TG_ID){
-  alert("Login required");
-  location.href="/login";
+// ===== FIREBASE SAFE INIT =====
+function initFirebase(){
+  if(!window.fb_db){
+    const fbConfig = {
+      databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(fbConfig);
+    window.fb_db = firebase.database();
+  }
 }
 
-// 🔥 Firebase (Popup Ad)
-const fbConfig = { databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com" };
-if (!firebase.apps.length) firebase.initializeApp(fbConfig);
-const fb_db = firebase.database();
+// ===== SMART INTERVAL =====
+function smartInterval(fn, time){
+  let t;
+  function start(){ t = setInterval(fn, time); }
+  function stop(){ clearInterval(t); }
 
-// ================= POPUP AD =================
+  document.addEventListener("visibilitychange", ()=>{
+    document.hidden ? stop() : start();
+  });
+
+  start();
+}
+
+// ===== POPUP AD (ADMIN SYNC PATH) =====
 function loadPopupAd(){
-  fb_db.ref('popup_ads/wallet').once('value').then(s=>{
-    const ad=s.val();
-    if(ad && ad.active && ad.message){
-      alert("📢 "+ad.message);
+  initFirebase();
+  fb_db.ref('ads/wallet_popup').once('value').then(s=>{
+    const ad = s.val();
+    if(ad && ad.message){
+      alert("📢 " + ad.message);
     }
   });
 }
 
-// ================= USER + ADMIN SYNC (Dashboard style) =================
+// ===== USER + ADMIN SYNC =====
 async function syncData() {
+  const TG_ID = localStorage.getItem(TG_KEY);
+  if(!TG_ID){
+    location.href="/login";
+    return;
+  }
+
   try{
     const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
       credentials:"include"
     });
     const data = await res.json();
-
     if(data.status !== "success") return;
 
     const user = data.user;
@@ -233,7 +253,7 @@ async function syncData() {
       (user.username || "USER").toUpperCase();
 
     document.getElementById('u-tg-val').innerText =
-      "ID: " + (user.telegram_id || TG_ID);
+      "ID: " + user.telegram_id;
 
     document.getElementById('wallet-bal').innerText =
       "৳ " + parseFloat(user.cash || 0).toFixed(2);
@@ -241,7 +261,7 @@ async function syncData() {
     document.getElementById('coin-bal').innerText =
       parseFloat(user.aaf || 0).toFixed(2);
 
-    // Admin payment info (Nagad)
+    // Admin payment info
     const box = document.getElementById('admin-payment-info');
     if (box && admin.wallet?.nagad) {
       box.innerHTML = `
@@ -256,87 +276,75 @@ async function syncData() {
   }
 }
 
-// ================= DEPOSIT =================
+// ===== DEPOSIT =====
 async function submitDeposit(){
+  const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('dep-amount').value);
   const trx = document.getElementById('dep-trx').value;
 
   if(!amount || !trx) return alert("Enter amount & TRX");
 
-  try{
-    await fetch(`${API}/api/wallet/deposit`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        telegram_id: TG_ID,
-        amount,
-        trx,
-        method: "Nagad"
-      })
-    });
+  await fetch(`${API}/api/wallet/deposit`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      telegram_id: TG_ID,
+      amount,
+      trx,
+      method: "Nagad"
+    })
+  });
 
-    alert("Deposit request sent");
-    syncData();
-
-  }catch{
-    alert("Network error");
-  }
+  alert("Deposit request sent");
+  syncData();
 }
 
-// ================= WITHDRAW =================
+// ===== WITHDRAW =====
 async function processWithdraw(){
+  const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('wit-amt').value);
   const number = document.getElementById('wit-num').value;
 
   if(!amount || !number) return alert("Enter amount & number");
 
-  try{
-    await fetch(`${API}/api/wallet/withdraw`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        telegram_id: TG_ID,
-        amount,
-        number
-      })
-    });
+  await fetch(`${API}/api/wallet/withdraw`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      telegram_id: TG_ID,
+      amount,
+      number
+    })
+  });
 
-    alert("Withdraw request sent (Pending Admin Approval)");
-    syncData();
-
-  }catch{
-    alert("Network error");
-  }
+  alert("Withdraw request sent");
+  syncData();
 }
 
-// ================= TRANSFER =================
+// ===== TRANSFER =====
 async function processTransfer(){
+  const TG_ID = localStorage.getItem(TG_KEY);
   const to = document.getElementById('trans-id').value;
   const amount = parseFloat(document.getElementById('trans-amount').value);
 
   if(!to || !amount) return alert("Enter receiver & amount");
 
-  try{
-    await fetch(`${API}/api/wallet/transfer`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        from: TG_ID,
-        to,
-        amount,
-        type: document.getElementById('trans-type').value
-      })
-    });
+  await fetch(`${API}/api/wallet/transfer`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      from: TG_ID,
+      to,
+      amount,
+      type: document.getElementById('trans-type').value
+    })
+  });
 
-    alert("Transfer request sent");
-    syncData();
-
-  }catch{
-    alert("Network error");
-  }
+  alert("Transfer request sent");
+  syncData();
 }
 
-// ================= TAB SYSTEM =================
+// ===== TAB SYSTEM =====
 function showPage(event, pageId) {
   document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -348,17 +356,16 @@ function showPage(event, pageId) {
   if(btn) btn.classList.add('active');
 }
 
-// ================= INIT =================
-window.onload = ()=>{
+// ===== INIT =====
+window.addEventListener('load', ()=>{
   syncData();
   loadPopupAd();
-  setInterval(syncData,15000);
+  smartInterval(syncData,15000);
 
   document.getElementById('tab-deposit').classList.add('active');
   const urlParams = new URLSearchParams(window.location.search);
   showPage(null, urlParams.get('page') || 'deposit');
-}
-    
-    </script>
-    </body>
-    </html>
+});
+</script>
+</body>
+</html>
