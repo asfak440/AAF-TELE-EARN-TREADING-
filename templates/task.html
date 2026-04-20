@@ -153,32 +153,30 @@
 const API = window.location.origin;
 const TG_ID = localStorage.getItem('telegram_id');
 
-let USER_JOINED = false;
 let DEVICE_ID = "";
+let USER_JOINED = false;
 
-// ===== LOAD ONCE =====
-window.onload = async () => {
+// ===== INIT (RUN ONCE) =====
+window.addEventListener('load', async () => {
     if(!TG_ID){
         location.href="/login";
         return;
     }
 
-    // fingerprint একবার
+    // Fingerprint load একবার
     const fp = await FingerprintJS.load();
     const result = await fp.get();
     DEVICE_ID = result.visitorId;
 
-    // first load
-    initTaskPage();
-
-    // only data refresh (fingerprint না)
+    await initTaskPage();
     setInterval(initTaskPage,15000);
-};
+});
 
 // ===== LOAD DATA =====
 async function initTaskPage(){
     try{
         const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
+            headers:{ 'x-device-id': DEVICE_ID },
             credentials:"include"
         });
 
@@ -192,15 +190,15 @@ async function initTaskPage(){
     }
 }
 
-// ================= UI RENDER =================
+// ===== UI RENDER =====
 function renderTaskUI(user, admin){
-    uBal(user.cash, user.aaf);
+    updateBalance(user.cash, user.aaf);
 
     USER_JOINED = user.is_joined;
     document.getElementById('join-warning').style.display =
         USER_JOINED ? 'none':'flex';
 
-    milestone(user.tasks_done, admin.bonus_target);
+    updateMilestone(user.tasks_done, admin.bonus_target);
     renderTasks(admin.tasks || []);
 
     if(admin.task_banner_ad){
@@ -211,14 +209,14 @@ function renderTaskUI(user, admin){
     showTimedAd(admin.task_popup_ad);
 }
 
-// ================= BALANCE =================
-function uBal(cash, coin){
+// ===== BALANCE =====
+function updateBalance(cash, coin){
     document.getElementById('u-bal').innerText = cash;
     document.getElementById('u-coin').innerText = coin;
 }
 
-// ================= MILESTONE =================
-function milestone(done, target){
+// ===== MILESTONE =====
+function updateMilestone(done, target){
     const d = done % target;
     document.getElementById('t-done').innerText = d;
     document.getElementById('t-target').innerText = target;
@@ -226,13 +224,13 @@ function milestone(done, target){
         `${(d/target)*100}%`;
 }
 
-// ================= RENDER TASK =================
+// ===== RENDER TASKS =====
 function renderTasks(tasks){
     const list = document.getElementById('main-task-list');
     list.innerHTML = "";
 
     tasks.forEach(t=>{
-        const locked = t.is_ip_used;
+        const locked = t.is_device_used; // backend lock
         const reward = t.currency === 'aaf'
             ? `AAF ${t.reward}`
             : `৳${t.reward}`;
@@ -245,7 +243,7 @@ function renderTasks(tasks){
                 </div>
                 <div class="task-info">
                     <h4>${t.title}</h4>
-                    <p>${locked?'IP ALREADY USED':`Required Time: ${t.timer}s`}</p>
+                    <p>${locked?'DEVICE ALREADY USED':`Required Time: ${t.timer}s`}</p>
                 </div>
                 <div class="reward-tag">${reward}</div>
             </div>
@@ -259,13 +257,14 @@ function renderTasks(tasks){
     });
 }
 
-// ================= START TASK =================
+// ===== START TASK =====
 function startTask(id, url, sec){
     if(!USER_JOINED){
         if(!confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
     }
 
     window.open(url,'_blank');
+
     const btn = document.getElementById(`btn-${id}`);
     btn.disabled = true;
 
@@ -281,7 +280,7 @@ function startTask(id, url, sec){
     },1000);
 }
 
-// ================= CLAIM =================
+// ===== CLAIM TASK =====
 async function claimTask(id){
     try{
         const r = await fetch(`${API}/api/user/tasks/claim`,{
@@ -295,6 +294,12 @@ async function claimTask(id){
         });
 
         const d = await r.json();
+
+        if(d.blocked){
+            alert("⚠️ এই ডিভাইস বা নেটওয়ার্ক থেকে এই টাস্ক ইতিমধ্যে করা হয়েছে।");
+            return;
+        }
+
         alert(d.message);
         initTaskPage();
 
@@ -303,7 +308,7 @@ async function claimTask(id){
     }
 }
 
-// ================= 6H POPUP AD =================
+// ===== 6H POPUP AD =====
 function showTimedAd(adText){
     const key = `task_ad_seen_${TG_ID}`;
     const last = localStorage.getItem(key);
@@ -314,6 +319,6 @@ function showTimedAd(adText){
         localStorage.setItem(key, Date.now());
     }
 }
-        </script>
+</script>
 </body>
 </html>
