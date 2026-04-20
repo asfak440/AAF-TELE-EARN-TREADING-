@@ -149,34 +149,29 @@
         </nav>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 <script>
-let DEVICE_ID = "";
-
-async function initFingerprint(){
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    DEVICE_ID = result.visitorId;
-}
 const API = window.location.origin;
 const TG_ID = localStorage.getItem('telegram_id');
 
 let USER_JOINED = false;
 let DEVICE_ID = "";
 
-// ================= INIT =================
+// ================= FINGERPRINT =================
 async function initFingerprint(){
     const fp = await FingerprintJS.load();
     const result = await fp.get();
     DEVICE_ID = result.visitorId;
 }
 
+// ================= INIT PAGE =================
 async function initTaskPage(){
     if(!TG_ID){
         location.href="/login";
         return;
     }
 
-    await initFingerprint(); // ✅ এখানে হবে, top level না
+    await initFingerprint(); // fingerprint আগে
 
     try{
         const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
@@ -196,40 +191,30 @@ async function initTaskPage(){
 window.onload = initTaskPage;
 setInterval(initTaskPage,15000);
 
-
 // ================= UI RENDER =================
 function renderTaskUI(user, admin){
-
-    // Balance
     uBal(user.cash, user.aaf);
 
     USER_JOINED = user.is_joined;
     document.getElementById('join-warning').style.display =
         USER_JOINED ? 'none':'flex';
 
-    // Milestone (admin control)
     milestone(user.tasks_done, admin.bonus_target);
-
-    // Tasks from admin panel
     renderTasks(admin.tasks || []);
 
-    // Banner Ad from admin
     if(admin.task_banner_ad){
         document.getElementById('banner-ad').innerHTML =
             admin.task_banner_ad;
     }
 
-    // 6H Popup Ad from admin
     showTimedAd(admin.task_popup_ad);
 }
-
 
 // ================= BALANCE =================
 function uBal(cash, coin){
     document.getElementById('u-bal').innerText = cash;
     document.getElementById('u-coin').innerText = coin;
 }
-
 
 // ================= MILESTONE =================
 function milestone(done, target){
@@ -239,7 +224,6 @@ function milestone(done, target){
     document.getElementById('t-progress').style.width =
         `${(d/target)*100}%`;
 }
-
 
 // ================= RENDER TASK =================
 function renderTasks(tasks){
@@ -274,7 +258,6 @@ function renderTasks(tasks){
     });
 }
 
-
 // ================= START TASK =================
 function startTask(id, url, sec){
     if(!USER_JOINED){
@@ -297,20 +280,20 @@ function startTask(id, url, sec){
     },1000);
 }
 
-
 // ================= CLAIM =================
 async function claimTask(id){
     try{
         const r = await fetch(`${API}/api/user/tasks/claim`,{
             method:"POST",
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-    telegram_id: TG_ID,
-    task_id: id,
-    device_id: DEVICE_ID
-})
-        const d = await r.json();
+            body: JSON.stringify({
+                telegram_id: TG_ID,
+                task_id: id,
+                device_id: DEVICE_ID
+            })
+        });
 
+        const d = await r.json();
         alert(d.message);
         initTaskPage();
 
@@ -318,7 +301,6 @@ async function claimTask(id){
         alert("Server Busy");
     }
 }
-
 
 // ================= 6H POPUP AD =================
 function showTimedAd(adText){
@@ -331,7 +313,6 @@ function showTimedAd(adText){
         localStorage.setItem(key, Date.now());
     }
 }
-</script>
-
+        </script>
 </body>
 </html>
