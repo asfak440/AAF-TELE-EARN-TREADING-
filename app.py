@@ -1,0 +1,184 @@
+import os, time, random
+from datetime import datetime, timedelta
+from functools import wraps
+
+from flask import Flask, request, jsonify, session
+from flask_cors import CORS
+from pymongo import MongoClient
+from bson import ObjectId
+
+# ================= APP =================
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "AAF_CORE")
+
+CORS(app, supports_credentials=True)
+
+# ================= DB =================
+db = MongoClient(os.getenv("MONGO_URL"))["aaf_tele_earn_db"]
+
+users = db.users
+tasks = db.tasks
+wallet = db.wallet
+ledger = db.ledger
+ref_log = db.referrals
+withdraws = db.withdraws
+settings = db.settings
+otp = db.otp
+
+# ================= HELPERS =================
+def ok(data=None):
+    return jsonify({"success": True, "data": data})
+
+def err(msg):
+    return jsonify({"success": False, "message": msg})
+
+def get_user(uid):
+    if not ObjectId.is_valid(uid):
+        return None
+    return users.find_one({"_id": ObjectId(uid)})
+
+# ================= REF BONUS =================
+def give_ref_bonus(ref_id):
+    users.update_one(
+        {"_id": ObjectId(ref_id)},
+        {"$inc": {"cash": 10, "refer_count": 1}}
+    )
+
+# ================= LOGIN =================
+@app.route("/api/send_otp", methods=["POST"])
+def send_otp():
+    phone = request.json.get("phone")
+    code = str(random.randint(1000,9999))
+
+    otp.insert_one({"phone": phone, "code": code, "time": time.time()})
+    return ok({"otp": code})
+
+@app.route("/api/verify_login", methods=["POST"])
+def verify_login():
+    data = request.json
+    phone = data.get("phone")
+    code = data.get("code")
+    ref = data.get("ref")
+
+    if not otp.find_one({"phone": phone, "code": code}):
+        return err("invalid_otp")
+
+    user = users.find_one({"phone": phone})
+
+    if not user:
+        res = users.insert_one({
+            "phone": phone,
+            "cash": 0,
+            "aaf": 0,
+            "refer_count": 0,
+            "ref_by": ref,
+            "is_joined": False,
+            "created_at": datetime.now(),
+            "ip": request.remote_addr
+        })
+
+        uid = res.inserted_id
+
+        if ref:
+            give_ref_bonus(ref)
+    else:
+        uid = user["_id"]
+
+    session["uid"] = str(uid)
+
+    return ok({"user_id": str(uid)})
+
+# ================= USER =================
+@app.route("/api/user/data/<uid>")
+def user_data(uid):
+    user = get_user(uid)
+    if not user:
+        return err("not_found")
+
+    user["_id"] = str(user["_id"])
+    admin = settings.find_one({"type":"global"}) or {}
+
+    return jsonify({"success": True, "user": user, "admin": admin})
+
+# ================= JOIN =================
+@app.route("/api/silent_join", methods=["POST"])
+def join():
+    uid = session.get("uid")
+    users.update_one({"_id": ObjectId(uid)}, {"$set":{"is_joined":True}})
+    return ok()
+
+# ================= TASK =================
+@app.route("/api/task/claim", methods=["POST"])
+def claim():
+    uid = session.get("uid")
+    data = request.json
+
+    task = tasks.find_one({"_id": ObjectId(data["task_id"])})
+    if not task:
+        return err("invalid")
+
+    # repeat prevention
+    if tasks.find_one({"_id": task["_id"], "claimed_by": uid}):
+        return err("already_done")
+
+    reward = task["reward"]
+
+    users.update_one(
+        {"_id": ObjectId(uid)},
+        {"$inc":{"cash": reward}}
+    )
+
+    tasks.update_one(
+        {"_id": task["_id"]},
+        {"$push":{"claimed_by": uid}}
+    )
+
+    return ok("done")
+
+# ================= WALLET LEDGER =================
+@app.route("/api/wallet/deposit", methods=["POST"])
+def deposit():
+    data = request.json
+    ledger.insert_one({
+        "uid": data["telegram_id"],
+        "type": "deposit",
+        "amount": data["amount"],
+        "status": "pending",
+        "time": datetime.now()
+    })
+    return ok()
+
+@app.route("/api/wallet/withdraw", methods=["POST"])
+def withdraw():
+    data = request.json
+    ledger.insert_one({
+        "uid": data["telegram_id"],
+        "type": "withdraw",
+        "amount": data["amount"],
+        "status": "pending",
+        "time": datetime.now()
+    })
+    return ok()
+
+# ================= ADMIN =================
+@app.route("/api/admin/login", methods=["POST"])
+def admin_login():
+    if request.json.get("pin") == os.getenv("ADMIN_PIN","1234"):
+        session["admin"] = True
+        return ok()
+    return err("no")
+
+@app.route("/api/admin/withdraw/approve", methods=["POST"])
+def approve():
+    wid = request.json.get("id")
+
+    ledger.update_one(
+        {"_id": ObjectId(wid)},
+        {"$set":{"status":"approved"}}
+    )
+
+    return ok()
+
+# ================= RUN =================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT",10000)))
