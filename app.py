@@ -1,15 +1,35 @@
-import os, time, random
+import os
+import asyncio
+import random
+import time
+import uuid
 from datetime import datetime, timedelta
+from threading import Thread
 from functools import wraps
-
-from flask import Flask, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError
 from bson import ObjectId
+import firebase_admin
+from firebase_admin import credentials, db
+
+# ---------------------------------------------------------
+# ১. কনফিগারেশন ও ডাটাবেস সেটআপ
+# ---------------------------------------------------------
+
+# সেশন সিকিউরিটি
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=10)
 
 # ================= APP =================
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "AAF_CORE")
+app.secret_key = os.getenv("SECRET_KEY", "aaf_strong_secure_786)
 
 CORS(app, supports_credentials=True)
 
