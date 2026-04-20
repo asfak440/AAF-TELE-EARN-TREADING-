@@ -67,53 +67,31 @@
     </div>
 
 <script>
-async function fetchPayments() {
-    try {
-        const res = await fetch('/api/user/payments', {
-            credentials: "include"
-        });
+const API = window.location.origin;
+const TG_KEY = "telegram_id";
 
-        const data = await res.json();
-        const listContainer = document.getElementById('payment-list');
-
-        listContainer.innerHTML = '';
-
-        if (!data.payments || data.payments.length === 0) {
-            listContainer.innerHTML =
-                '<p style="text-align:center; color:gray; margin-top:50px;">No transaction history found.</p>';
-            return;
-        }
-
-        data.payments.forEach(p => {
-            let statusClass = 'status-pending';
-            const st = (p.status || '').toLowerCase();
-
-            if (st === 'success' || st === 'completed') statusClass = 'status-success';
-            if (st === 'rejected') statusClass = 'status-rejected';
-
-            const card = `
-                <div class="history-card">
-                    <div class="pay-info">
-                        <b>৳ ${p.amount}</b>
-                        <small>${p.method} | ${p.date}</small>
-                    </div>
-                    <div class="pay-status">
-                        <div class="st-badge ${statusClass}">${p.status}</div>
-                        ${p.id ? `<span class="trx-id">TrxID: ${p.id}</span>` : ''}
-                    </div>
-                </div>
-            `;
-            listContainer.innerHTML += card;
-        });
-
-    } catch (e) {
-        document.getElementById('payment-list').innerHTML =
-            '<p style="text-align:center; color:red;">Failed to load data.</p>';
-        console.error("Fetch Error:", e);
-    }
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id) location.href = "/login";
+  return id;
 }
 
-window.onload = fetchPayments;
+async function loadPaymentHistory(){
+  const tg = getTG();
+  try{
+    const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
+    const data = await res.json();
+    const container = document.getElementById('history-list');
+    let html = "<h3>Deposit History</h3>";
+    if(data.deposits.length === 0) html += "<div>No deposits</div>";
+    else data.deposits.forEach(d => html += `<div>${d.amount} Taka - ${d.status} (${d.created_at})</div>`);
+    html += "<h3>Withdrawal History</h3>";
+    if(data.withdraws.length === 0) html += "<div>No withdrawals</div>";
+    else data.withdraws.forEach(w => html += `<div>${w.amount} Taka to ${w.number} - ${w.status} (${w.created_at})</div>`);
+    container.innerHTML = html;
+  } catch(e){ console.log(e); }
+}
+window.addEventListener('load', loadPaymentHistory);
 </script>
 </body>
 </html>
