@@ -258,8 +258,7 @@
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
     </div>
-
-    <script>
+<script>
 // ================= GLOBAL =================
 const TG_KEY = "telegram_id";
 const API = window.location.origin;
@@ -286,7 +285,7 @@ function smartInterval(fn, time){
 }
 
 // ================= INIT DASHBOARD =================
-function initDashboard() {
+async function initDashboard() {
   const telegramId = getTG();
 
   try {
@@ -370,7 +369,7 @@ function handleAction(type) {
 }
 
 // ================= JOIN =================
-function handleAutoJoin() {
+async function handleAutoJoin() {
   const btn = document.getElementById('join-btn');
   if (!btn) return;
 
@@ -417,4 +416,5 @@ window.addEventListener('load', ()=>{
   smartInterval(initDashboard,15000);
 });
 </script>
+    
 </html>
