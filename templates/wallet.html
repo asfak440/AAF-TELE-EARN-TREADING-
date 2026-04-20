@@ -220,19 +220,19 @@ function smartInterval(fn, time){
   start();
 }
 
-// ===== POPUP AD (ADMIN SYNC PATH) =====
+// ===== POPUP AD =====
 function loadPopupAd(){
   initFirebase();
   fb_db.ref('ads/wallet_popup').once('value').then(s=>{
     const ad = s.val();
-    if(ad && ad.message){
-      alert("📢 " + ad.message);
+    if(ad){
+      alert("📢 " + ad);
     }
   });
 }
 
 // ===== USER + ADMIN SYNC =====
-function syncData() {
+async function syncData() {
   const TG_ID = localStorage.getItem(TG_KEY);
   if(!TG_ID){
     location.href="/login";
@@ -261,13 +261,11 @@ function syncData() {
     document.getElementById('coin-bal').innerText =
       parseFloat(user.aaf || 0).toFixed(2);
 
-    // Admin payment info
     const box = document.getElementById('admin-payment-info');
     if (box && admin.wallet?.nagad) {
       box.innerHTML = `
         Send Money (Nagad) to:<br>
-        <b style="font-size:16px">${admin.wallet.nagad}</b><br>
-        <small style="color:orange">Bkash / Binance — Upcoming</small>
+        <b style="font-size:16px">${admin.wallet.nagad}</b>
       `;
     }
 
@@ -277,7 +275,7 @@ function syncData() {
 }
 
 // ===== DEPOSIT =====
-function submitDeposit(){
+async function submitDeposit(){
   const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('dep-amount').value);
   const trx = document.getElementById('dep-trx').value;
@@ -300,7 +298,7 @@ function submitDeposit(){
 }
 
 // ===== WITHDRAW =====
-function processWithdraw(){
+async function processWithdraw(){
   const TG_ID = localStorage.getItem(TG_KEY);
   const amount = parseFloat(document.getElementById('wit-amt').value);
   const number = document.getElementById('wit-num').value;
@@ -321,50 +319,11 @@ function processWithdraw(){
   syncData();
 }
 
-// ===== TRANSFER =====
-function processTransfer(){
-  const TG_ID = localStorage.getItem(TG_KEY);
-  const to = document.getElementById('trans-id').value;
-  const amount = parseFloat(document.getElementById('trans-amount').value);
-
-  if(!to || !amount) return alert("Enter receiver & amount");
-
-  await fetch(`${API}/api/wallet/transfer`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      from: TG_ID,
-      to,
-      amount,
-      type: document.getElementById('trans-type').value
-    })
-  });
-
-  alert("Transfer request sent");
-  syncData();
-}
-
-// ===== TAB SYSTEM =====
-function showPage(event, pageId) {
-  document.querySelectorAll('.wallet-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-  const page = document.getElementById(pageId);
-  if(page) page.classList.add('active');
-
-  const btn = document.getElementById('tab-'+pageId);
-  if(btn) btn.classList.add('active');
-}
-
 // ===== INIT =====
 window.addEventListener('load', ()=>{
   syncData();
   loadPopupAd();
   smartInterval(syncData,15000);
-
-  document.getElementById('tab-deposit').classList.add('active');
-  const urlParams = new URLSearchParams(window.location.search);
-  showPage(null, urlParams.get('page') || 'deposit');
 });
 </script>
 </body>
