@@ -181,117 +181,97 @@
 const API = window.location.origin;
 const TG_KEY = "telegram_id";
 
-// ===== GET LIVE TG ID =====
-function getTG(){
-  const id = localStorage.getItem(TG_KEY);
-  if(!id){
-    alert("Login required");
-    location.href="/login";
-  }
-  return id;
-}
-
-// ===== FIREBASE SAFE INIT =====
-function initFirebase(){
-  if(!window.fb_db){
-    const fbConfig = {
-      databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
-    };
-    firebase.initializeApp(fbConfig);
-    window.fb_db = firebase.database();
-  }
-}
-
-initFirebase();
-
 let chart, candleSeries, lastPrice = 1.0000;
 let currentFee = 0.5, userCash = 0, userAAF = 0;
 let lastCandleMinute = null;
 
-// ================= CHART =================
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id){ alert("Login required"); location.href="/login"; }
+  return id;
+}
+
 function initChart() {
-  chart = LightweightCharts.createChart(
-    document.getElementById('chart-container'),
-    {
-      layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
-      timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-    }
-  );
+  chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+    layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
+    timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+  });
   candleSeries = chart.addCandlestickSeries();
 }
 
-// ================= MARKET ENGINE =================
-function startMarketEngine() {
-  setInterval(async () => {
-    try{
-      const r = await fetch(`/api/market/candle-live`);
-      const d = await r.json();
-
-      lastPrice = d.close;
-      document.getElementById('live-price').innerText =
-        `৳ ${lastPrice.toFixed(4)}`;
-
-      candleSeries.update(d);
-
-      // Save 1 candle per minute
-      const minute = new Date().getMinutes();
-      if(minute !== lastCandleMinute){
-        lastCandleMinute = minute;
-
-        fb_db.ref('trading/history').push({
-          ...d,
-          ts: Date.now()
-        });
-
-        cleanOldCandles();
-      }
-
-      calculateLogic();
-    }catch(e){
-      console.log("engine offline");
-    }
-  }, 2000);
+// লাইভ প্রাইস ও ক্যান্ডেল API থেকে আনা
+async function fetchMarketData() {
+  try{
+    // লাইভ প্রাইস
+    const priceRes = await fetch(`${API}/api/market/price`);
+    const priceData = await priceRes.json();
+    lastPrice = priceData.price;
+    document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+    
+    // ক্যান্ডেল আপডেট (ব্যাকএন্ড থেকে সর্বশেষ ক্যান্ডেল)
+    const candleRes = await fetch(`${API}/api/market/live-candle`);
+    const candle = await candleRes.json();
+    candleSeries.update(candle);
+    
+    // প্রতি মিনিটে নতুন ক্যান্ডেল সেভ করার দরকার নেই, ব্যাকএন্ড নিজেই করবে
+    calculateLogic();
+  } catch(e){ console.log("market error", e); }
 }
 
-// ================= CLEAN OLD CANDLES =================
-function cleanOldCandles(){
-  const cutoff = Date.now() - (30*24*60*60*1000);
-
-  fb_db.ref('trading/history')
-    .orderByChild('ts')
-    .endAt(cutoff)
-    .once('value', snap => {
-      snap.forEach(child => child.ref.remove());
-    });
-}
-
-// ================= USER + ADMIN SYNC =================
+// ইউজার ডাটা ও অ্যাডমিন কনফিগ আনা
 async function syncUserData(){
   const TG_ID = getTG();
-
-  const r = await fetch(`/api/user/data/${TG_ID}`,{
-    credentials:"include"
-  });
-  const res = await r.json();
-  if(res.status !== "success") return;
-
-  const user = res.user;
-  const admin = res.admin;
-
-  userCash = user.cash || 0;
-  userAAF  = user.aaf || 0;
-  currentFee = admin.trading_fee || 0.5;
-
-  userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
-  userAafEl.innerText = userAAF.toFixed(2);
-  feePercEl.innerText = currentFee;
-
-  lockOverlay.style.display = user.is_joined ? 'none':'flex';
-  adminAdText.innerText =
-    admin.trading_ad_text || "Welcome to Trading";
+  try{
+    const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials:"include" });
+    const data = await res.json();
+    if(data.status !== "success") return;
+    const user = data.user;
+    const admin = data.admin;
+    userCash = user.cash || 0;
+    userAAF = user.aaf || 0;
+    currentFee = admin.trading_fee || 0.5;
+    userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
+    userAafEl.innerText = userAAF.toFixed(2);
+    feePercEl.innerText = currentFee;
+    lockOverlay.style.display = user.is_joined ? 'none':'flex';
+    adminAdText.innerText = admin.trading_ad_text || "Welcome to Trading";
+    calculateLogic();
+  } catch(e){ console.log(e); }
 }
 
-// ================= INPUT CALC =================
+// ক্যালকুলেশন ফাংশন আগের মতোই
+function calculateLogic(){
+  let tk = parseFloat(tkIn.value)||0;
+  let fee = tk * currentFee/100;
+  let total = tk + fee;
+  document.getElementById('fee-amount').innerText = '৳ '+fee.toFixed(2);
+  document.getElementById('total-cost').innerText = '৳ '+total.toFixed(2);
+  buyBtn.disabled = !(tk>=10 && total<=userCash);
+  sellBtn.disabled = !(parseFloat(coIn.value)<=userAAF);
+}
+
+// ট্রেড এক্সিকিউট API কল
+async function executeTrade(type){
+  const TG_ID = getTG();
+  try{
+    const res = await fetch(`${API}/api/trade/execute`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        telegram_id: TG_ID,
+        type,
+        taka: parseFloat(tkIn.value),
+        coin: parseFloat(coIn.value),
+        price: lastPrice
+      })
+    });
+    const d = await res.json();
+    alert(d.message);
+    syncUserData();
+  } catch(e){ alert("Trade error"); }
+}
+
+// DOM elements
 const tkIn = document.getElementById('taka-input');
 const coIn = document.getElementById('coin-input');
 const userCashEl = document.getElementById('user-cash');
@@ -311,46 +291,12 @@ coIn.oninput = ()=>{
   calculateLogic();
 }
 
-function calculateLogic(){
-  let tk = parseFloat(tkIn.value)||0;
-  let fee = tk * currentFee/100;
-  let total = tk + fee;
-
-  document.getElementById('fee-amount').innerText =
-    '৳ '+fee.toFixed(2);
-  document.getElementById('total-cost').innerText =
-    '৳ '+total.toFixed(2);
-
-  buyBtn.disabled = !(tk>=10 && total<=userCash);
-  sellBtn.disabled = !(parseFloat(coIn.value)<=userAAF);
-}
-
-// ================= TRADE =================
-async function executeTrade(type){
-  const TG_ID = getTG();
-
-  const r = await fetch(`/api/trade/execute`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      telegram_id: TG_ID,
-      type,
-      taka:parseFloat(tkIn.value),
-      coin:parseFloat(coIn.value),
-      price:lastPrice
-    })
-  });
-  const d = await r.json();
-  alert(d.message);
-  syncUserData();
-}
-
-// ================= INIT =================
 window.addEventListener('load', ()=>{
   initChart();
-  startMarketEngine();
   syncUserData();
-  setInterval(syncUserData,15000);
+  fetchMarketData();
+  setInterval(fetchMarketData, 2000);
+  setInterval(syncUserData, 15000);
 });
 </script>
 </body>
