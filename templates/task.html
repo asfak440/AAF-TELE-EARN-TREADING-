@@ -151,173 +151,184 @@
 <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 <script>
 const API = window.location.origin;
-const TG_ID = localStorage.getItem('telegram_id');
+const TG_KEY = "telegram_id";
 
 let DEVICE_ID = "";
 let USER_JOINED = false;
 
+// ===== GET LIVE TG ID =====
+function getTG(){
+  const id = localStorage.getItem(TG_KEY);
+  if(!id){
+    location.href="/login";
+  }
+  return id;
+}
+
 // ===== INIT (RUN ONCE) =====
 window.addEventListener('load', async () => {
-    if(!TG_ID){
-        location.href="/login";
-        return;
-    }
+  const TG_ID = getTG();
 
-    // Fingerprint load একবার
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    DEVICE_ID = result.visitorId;
+  // Fingerprint load একবার
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+  DEVICE_ID = result.visitorId;
 
-    await initTaskPage();
-    setInterval(initTaskPage,15000);
+  await initTaskPage();
+  setInterval(initTaskPage,15000);
 });
 
 // ===== LOAD DATA =====
 async function initTaskPage(){
-    try{
-        const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
-            headers:{ 'x-device-id': DEVICE_ID },
-            credentials:"include"
-        });
+  const TG_ID = getTG();
 
-        const data = await res.json();
-        if(data.status !== "success") return;
+  try{
+    const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
+      headers:{ 'x-device-id': DEVICE_ID },
+      credentials:"include"
+    });
 
-        renderTaskUI(data.user, data.admin);
+    const data = await res.json();
+    if(data.status !== "success") return;
 
-    }catch(err){
-        console.log("Task Init Error", err);
-    }
+    renderTaskUI(data.user, data.admin);
+
+  }catch(err){
+    console.log("Task Init Error", err);
+  }
 }
 
 // ===== UI RENDER =====
 function renderTaskUI(user, admin){
-    updateBalance(user.cash, user.aaf);
+  updateBalance(user.cash, user.aaf);
 
-    USER_JOINED = user.is_joined;
-    document.getElementById('join-warning').style.display =
-        USER_JOINED ? 'none':'flex';
+  USER_JOINED = user.is_joined;
+  document.getElementById('join-warning').style.display =
+    USER_JOINED ? 'none':'flex';
 
-    updateMilestone(user.tasks_done, admin.bonus_target);
-    renderTasks(admin.tasks || []);
+  updateMilestone(user.tasks_done, admin.bonus_target);
+  renderTasks(admin.tasks || []);
 
-    if(admin.task_banner_ad){
-        document.getElementById('banner-ad').innerHTML =
-            admin.task_banner_ad;
-    }
+  if(admin.task_banner_ad){
+    document.getElementById('banner-ad').innerHTML =
+      admin.task_banner_ad;
+  }
 
-    showTimedAd(admin.task_popup_ad);
+  showTimedAd(admin.task_popup_ad);
 }
 
 // ===== BALANCE =====
 function updateBalance(cash, coin){
-    document.getElementById('u-bal').innerText = cash;
-    document.getElementById('u-coin').innerText = coin;
+  document.getElementById('u-bal').innerText = cash;
+  document.getElementById('u-coin').innerText = coin;
 }
 
 // ===== MILESTONE =====
 function updateMilestone(done, target){
-    const d = done % target;
-    document.getElementById('t-done').innerText = d;
-    document.getElementById('t-target').innerText = target;
-    document.getElementById('t-progress').style.width =
-        `${(d/target)*100}%`;
+  const d = done % target;
+  document.getElementById('t-done').innerText = d;
+  document.getElementById('t-target').innerText = target;
+  document.getElementById('t-progress').style.width =
+    `${(d/target)*100}%`;
 }
 
 // ===== RENDER TASKS =====
 function renderTasks(tasks){
-    const list = document.getElementById('main-task-list');
-    list.innerHTML = "";
+  const list = document.getElementById('main-task-list');
+  list.innerHTML = "";
 
-    tasks.forEach(t=>{
-        const locked = t.is_device_used; // backend lock
-        const reward = t.currency === 'aaf'
-            ? `AAF ${t.reward}`
-            : `৳${t.reward}`;
+  tasks.forEach(t=>{
+    const locked = t.is_device_used;
+    const reward = t.currency === 'aaf'
+      ? `AAF ${t.reward}`
+      : `৳${t.reward}`;
 
-        list.innerHTML += `
-        <div class="task-card ${locked?'locked':''}">
-            <div class="task-top">
-                <div class="task-icon">
-                    <i class="fas ${t.type==='video'?'fa-play':'fa-link'}"></i>
-                </div>
-                <div class="task-info">
-                    <h4>${t.title}</h4>
-                    <p>${locked?'DEVICE ALREADY USED':`Required Time: ${t.timer}s`}</p>
-                </div>
-                <div class="reward-tag">${reward}</div>
-            </div>
-            <button class="btn-claim"
-                id="btn-${t.id}"
-                ${locked?'disabled':''}
-                onclick="startTask('${t.id}','${t.link}',${t.timer})">
-                ${locked?'ALREADY CLAIMED':'START EARNING'}
-            </button>
-        </div>`;
-    });
+    list.innerHTML += `
+      <div class="task-card ${locked?'locked':''}">
+        <div class="task-top">
+          <div class="task-icon">
+            <i class="fas ${t.type==='video'?'fa-play':'fa-link'}"></i>
+          </div>
+          <div class="task-info">
+            <h4>${t.title}</h4>
+            <p>${locked?'DEVICE ALREADY USED':`Required Time: ${t.timer}s`}</p>
+          </div>
+          <div class="reward-tag">${reward}</div>
+        </div>
+        <button class="btn-claim"
+          id="btn-${t.id}"
+          ${locked?'disabled':''}
+          onclick="startTask('${t.id}','${t.link}',${t.timer})">
+          ${locked?'ALREADY CLAIMED':'START EARNING'}
+        </button>
+      </div>`;
+  });
 }
 
 // ===== START TASK =====
 function startTask(id, url, sec){
-    if(!USER_JOINED){
-        if(!confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
+  if(!USER_JOINED){
+    if(!confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
+  }
+
+  window.open(url,'_blank');
+
+  const btn = document.getElementById(`btn-${id}`);
+  btn.disabled = true;
+
+  let t = sec;
+  const timer = setInterval(()=>{
+    btn.innerText = `WAIT ${t}s`;
+    if(t<=0){
+      clearInterval(timer);
+      btn.innerText="VERIFYING...";
+      claimTask(id);
     }
-
-    window.open(url,'_blank');
-
-    const btn = document.getElementById(`btn-${id}`);
-    btn.disabled = true;
-
-    let t = sec;
-    const timer = setInterval(()=>{
-        btn.innerText = `WAIT ${t}s`;
-        if(t<=0){
-            clearInterval(timer);
-            btn.innerText="VERIFYING...";
-            claimTask(id);
-        }
-        t--;
-    },1000);
+    t--;
+  },1000);
 }
 
 // ===== CLAIM TASK =====
 async function claimTask(id){
-    try{
-        const r = await fetch(`${API}/api/user/tasks/claim`,{
-            method:"POST",
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-                telegram_id: TG_ID,
-                task_id: id,
-                device_id: DEVICE_ID
-            })
-        });
+  const TG_ID = getTG();
 
-        const d = await r.json();
+  try{
+    const r = await fetch(`${API}/api/user/tasks/claim`,{
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        telegram_id: TG_ID,
+        task_id: id,
+        device_id: DEVICE_ID
+      })
+    });
 
-        if(d.blocked){
-            alert("⚠️ এই ডিভাইস বা নেটওয়ার্ক থেকে এই টাস্ক ইতিমধ্যে করা হয়েছে।");
-            return;
-        }
+    const d = await r.json();
 
-        alert(d.message);
-        initTaskPage();
-
-    }catch{
-        alert("Server Busy");
+    if(d.blocked){
+      alert("⚠️ এই ডিভাইস বা নেটওয়ার্ক থেকে এই টাস্ক ইতিমধ্যে করা হয়েছে।");
+      return;
     }
+
+    alert(d.message);
+    initTaskPage();
+
+  }catch{
+    alert("Server Busy");
+  }
 }
 
 // ===== 6H POPUP AD =====
 function showTimedAd(adText){
-    const key = `task_ad_seen_${TG_ID}`;
-    const last = localStorage.getItem(key);
-    const SIX_HOURS = 21600000;
+  const TG_ID = getTG();
+  const key = `task_ad_seen_${TG_ID}`;
+  const last = localStorage.getItem(key);
+  const SIX_HOURS = 21600000;
 
-    if(adText && (!last || Date.now()-last > SIX_HOURS)){
-        alert("📢 "+adText);
-        localStorage.setItem(key, Date.now());
-    }
+  if(adText && (!last || Date.now()-last > SIX_HOURS)){
+    alert("📢 "+adText);
+    localStorage.setItem(key, Date.now());
+  }
 }
 </script>
 </body>
