@@ -189,14 +189,19 @@
             </a>
         </div>
 
-        <!-- ৪. ইউজার পার্সোনাল স্ট্যাটাস -->
-        <div class="premium-card" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
-                <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
-                <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
-            </div>
-            <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">COPY LINK</button>
+        <!-- ৪.রেফার লিংক -->
+        <div class="premium-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+            <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
+            <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
+            <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
+        </div>
+        <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">📋 COPY LINK</button>
+    </div>
+    <input type="text" id="referLinkInput" readonly 
+           style="width:100%; background:#000; border:1px solid var(--border); padding:10px; border-radius:10px; color:#fff; font-size:12px;" 
+           placeholder="আপনার রেফার লিংক এখানে দেখাবে">
         </div>
 
         <!-- রেফারেল লিস্ট বাটন (আপডেট করা হয়েছে) -->
