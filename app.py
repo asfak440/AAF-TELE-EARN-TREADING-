@@ -322,9 +322,32 @@ def user_data(telegram_id):
 @login_required
 def silent_join():
     uid = session.get("uid")
-    users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
+    user = users_col.find_one({"_id": ObjectId(uid)})
     admin = get_admin_config()
-    return jsonify({"success": True, "channel": admin.get("channel_url", "#")})
+    channel_url = admin.get("channel_url", "")
+
+    if not user or "session_string" not in user:
+        return jsonify({"success": False, "channel": channel_url})
+    
+    async def check_join():
+        client = TelegramClient(StringSession(user["session_string"]), API_ID, API_HASH)
+        await client.connect()
+        try:
+            entity = await client.get_entity(channel_url)
+            participants = await client.get_participants(entity, search=user.get("telegram_id"))
+            return len(participants) > 0
+        except Exception as e:
+            print(f"Telegram check error: {e}")
+            return False
+        finally:
+            await client.disconnect()
+    
+    is_member = run_async(check_join())
+    if is_member:
+        users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "channel": channel_url})
 
 @app.route("/api/logout")
 def logout():
