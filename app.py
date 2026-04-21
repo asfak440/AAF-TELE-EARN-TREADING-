@@ -61,18 +61,26 @@ _telegram_client = None
 
 def run_async(coro):
     """Persistent loop এ coroutine চালায় (কখনো নতুন লুপ তৈরি করে না)"""
-    global _loop
+    global _loop, _client_ready
+    if not _client_ready.wait(timeout=15):
+        raise RuntimeError("Telegram client not ready after 15 seconds")
     if _loop is None:
         raise RuntimeError("Telegram client not initialized")
     future = asyncio.run_coroutine_threadsafe(coro, _loop)
     return future.result()
 
 def start_telegram_thread():
-    global _loop, _telegram_client
+    global _loop, _telegram_client, _client_ready
     _loop = asyncio.new_event_loop()
     asyncio.set_event_loop(_loop)
     _telegram_client = TelegramClient(StringSession(), API_ID, API_HASH)
-    _loop.run_until_complete(_telegram_client.connect())
+    try:
+        _loop.run_until_complete(_telegram_client.connect())
+        _client_ready.set()   # সংযোগ প্রস্তুত
+        print("✅ Persistent Telegram client connected")
+    except Exception as e:
+        print(f"❌ Telegram client connection failed: {e}")
+        _client_ready.clear()
     _loop.run_forever()
 
 # ব্যাকগ্রাউন্ড থ্রেড চালু করুন
@@ -227,14 +235,19 @@ def send_otp():
         return jsonify({"success": False, "message": "invalid_phone"})
 
     async def _send():
-        result = await _telegram_client.send_code_request(phone)
-        temp_clients[phone] = {"phone_code_hash": result.phone_code_hash}
-        return True, "OTP Sent"
+        try:
+            result = await _telegram_client.send_code_request(phone)
+            temp_clients[phone] = {"phone_code_hash": result.phone_code_hash}
+            return True, "OTP Sent"
+        except Exception as e:
+            print(f"send_code_request error for {phone}: {e}")
+            return False, str(e)
 
     try:
         success, msg = run_async(_send())
         return jsonify({"success": success, "message": msg})
     except Exception as e:
+        print(f"send_otp outer error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 @app.route("/api/verify_login", methods=["POST"])
