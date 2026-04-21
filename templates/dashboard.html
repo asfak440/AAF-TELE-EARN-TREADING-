@@ -378,18 +378,49 @@ function handleAction(type) {
 async function handleAutoJoin() {
     const btn = document.getElementById('join-btn');
     if (!btn) return;
-    btn.innerText = "REDIRECTING...";
+    btn.innerText = "JOINING...";
     btn.disabled = true;
     try {
         const res = await fetch('/api/silent_join', { method: 'POST', credentials: "include" });
         const data = await res.json();
-        window.open(data.channel || "https://t.me/your_channel", "_blank");
+        if (data.success) {
+            triggerPopup("JOIN SUCCESS ✅");
+            initDashboard(); // UI রিফ্রেশ (জয়েন স্ট্যাটাস আপডেট)
+        } else {
+            window.open(data.channel || "https://t.me/your_channel", "_blank");
+            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার চেষ্টা করুন");
+        }
     } catch {
         triggerPopup("Server Error");
     }
     btn.innerText = "JOIN NOW";
     btn.disabled = false;
 }
+
+// ============ verifyjoin =====================
+
+    async function verifyJoin() {
+    const btn = document.getElementById('verify-btn');
+    if (!btn) return;
+    btn.innerText = "VERIFYING...";
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/verify_join', { method: 'POST', credentials: "include" });
+        const data = await res.json();
+        if (data.success) {
+            triggerPopup("✅ চ্যানেল ভেরিফাইড!");
+            initDashboard();
+        } else {
+            window.open(data.channel, "_blank");
+            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার ভেরিফাই করুন");
+        }
+    } catch {
+        triggerPopup("Server Error");
+    }
+    btn.innerText = "VERIFY MEMBERSHIP";
+    btn.disabled = false;
+    }
+    
 // ================= POPUP =================
 function triggerPopup(msg) {
   const bar = document.getElementById('active-user-bar');
