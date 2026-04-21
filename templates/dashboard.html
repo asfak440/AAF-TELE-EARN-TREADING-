@@ -395,15 +395,19 @@ function triggerPopup(msg) {
   setTimeout(()=> bar.style.display="none", 3000);
 }
 
-    // রেফার লিংক তৈরি ও কপি করার ফাংশন
 function copyReferLink() {
     const tg = localStorage.getItem(TG_KEY);
     if (!tg) {
         triggerPopup("আপনি লগইন নাই!");
         return;
     }
-    // আপনার ডোমেইন ও রেফার প্যারামিটার অনুযায়ী লিংক তৈরি করুন
     const referLink = `${window.location.origin}/login?ref=${tg}`;
+    
+    // ইনপুট ফিল্ডে দেখান
+    const input = document.getElementById('referLinkInput');
+    if (input) input.value = referLink;
+    
+    // কপি করুন
     navigator.clipboard.writeText(referLink).then(() => {
         triggerPopup("✅ রেফার লিংক কপি হয়েছে!");
     }).catch(() => {
