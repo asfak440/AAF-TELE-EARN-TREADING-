@@ -1,6 +1,6 @@
 import os
 import asyncio
-import random
+import random 
 import secrets
 import threading
 from datetime import datetime, timedelta
@@ -56,10 +56,11 @@ if not firebase_admin._apps:
         print("⚠️ firebase-key.json not found. Firebase features will not work.")
 fb_ref = db.reference() if firebase_admin._apps else None
 
-# ================= HELPERS =================
+
 # ================= PERSISTENT TELEGRAM CLIENT =================
 _loop = None
 _telegram_client = None
+_client_ready = threading.Event()   # ← এই লাইনটি আগে ছিল না, এখন যোগ করলাম
 
 def run_async(coro):
     """Persistent loop এ coroutine চালায় (কখনো নতুন লুপ তৈরি করে না)"""
@@ -87,7 +88,6 @@ def start_telegram_thread():
 
 # ব্যাকগ্রাউন্ড থ্রেড চালু করুন
 threading.Thread(target=start_telegram_thread, daemon=True).start()
-
 def normalize_phone(phone):
     if not phone:
         return None
