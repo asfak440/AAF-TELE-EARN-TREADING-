@@ -305,7 +305,6 @@ async function initDashboard() {
     if (data.status === "success") {
       renderUI(data.user, data.admin);
 
-      // ✅ লিংক ইনপুট আপডেট (এখানে রাখুন)
       const linkInput = document.getElementById('referLinkInput');
       if (linkInput && telegramId) {
         linkInput.value = `${window.location.origin}/login?ref=${telegramId}`;
@@ -318,51 +317,7 @@ async function initDashboard() {
   } catch (err) {
     triggerPopup("Server Connection Error");
   }
-    }
-
-// ================= UI RENDER =================
-function renderUI(user, admin) {
-  const setText = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = val;
-  };
-
-  setText('u-name', (user.username || "USER").toUpperCase());
-  setText('u-id', ": " + user.telegram_id);
-  setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
-  setText('h-aaf', user.aaf || 0);
-
-  setText('srv-income', '৳ ' + (admin.server_income || 0));
-  setText('srv-trade', '৳ ' + (admin.server_trading || 0));
-  setText('srv-users', admin.total_users || 0);
-
-  setText('my-refs', (user.refer_count || 0) + " REFERRED");
-
-  // JOIN STATUS
-  const joined = user.is_joined;
-  const dot = document.getElementById('status-dot');
-  const joinBtn = document.getElementById('join-btn');
-
-  if (dot) dot.className = joined ? 'dot-online':'dot-offline';
-  if (joinBtn) joinBtn.style.display = joined ? 'none':'block';
-}
-
-// ================= AD ENGINE =================
-const AD_INTERVAL = 6 * 60 * 60 * 1000;
-
-function getAdKey(){
-  return `last_interstitial_ad_${getTG()}`;
-}
-
-function checkTimedInterstitial(){
-  const last = localStorage.getItem(getAdKey());
-  const now = Date.now();
-
-  if(!last || (now - parseInt(last)) > AD_INTERVAL){
-    triggerPopup("📢 Special bonus offer চলছে!");
-    localStorage.setItem(getAdKey(), now.toString());
-  }
-}
+}   
 
 // ================= ACTION HANDLER =================
 function handleAction(type) {
