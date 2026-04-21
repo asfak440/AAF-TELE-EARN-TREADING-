@@ -466,20 +466,17 @@ const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
 /* ================= USERS ================= */
 async function loadUsers(){
   try {
-    console.log("Calling /api/admin/users...");
+    console.log("Fetching /api/admin/users...");
     const r = await fetch(`${API}/api/admin/users`, { credentials:'include' });
     console.log("Status:", r.status);
     const d = await r.json();
-    console.log("Response:", d);
+    console.log("Data:", d);
     
-    const box = $('member-list-body');
-    if(!box) {
-      console.error("member-list-body element not found");
-      return;
-    }
+    const box = document.getElementById('member-list-body');
+    if (!box) return;
     
     if (r.status === 401) {
-      box.innerHTML = `<div style="color:red">Please login as admin first.</div>`;
+      box.innerHTML = `<div style="color:red;">Please login as admin first.</div>`;
       return;
     }
     
@@ -490,10 +487,10 @@ async function loadUsers(){
     
     let html = `<table style="width:100%;color:#fff">
       <tr><th>User</th><th>ID</th><th>Cash</th></tr>`;
-    d.users.forEach(u=>{
+    d.users.forEach(u => {
       html += `<tr>
-        <td>${u.username || "-"}</td>
-        <td>${u.telegram_id || "-"} Non
+        <td>${u.username || "N/A"}</td>
+        <td>${u.telegram_id || "N/A"}</td>
         <td>৳${u.cash || 0}</td>
       </tr>`;
     });
@@ -501,10 +498,10 @@ async function loadUsers(){
     box.innerHTML = html;
   } catch(e) {
     console.error("loadUsers error:", e);
-    const box = $('member-list-body');
-    if(box) box.innerHTML = `<div>Error loading users: ${e.message}</div>`;
+    const box = document.getElementById('member-list-body');
+    if(box) box.innerHTML = `<div>Error: ${e.message}</div>`;
   }
-}
+        }
 
 /* ================= TASKS ================= */
 
@@ -604,6 +601,16 @@ function openTab(el){
   document.querySelectorAll(`[data-tab="${tab}"]`)
     .forEach(b=>b.classList.add('active'));
 }
+
+    function toggleUserList() {
+    const box = document.getElementById('member-list-body');
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+        loadUsers();   // ← এই লাইনটি গুরুত্বপূর্ণ
+    } else {
+        box.style.display = 'none';
+    }
+    }
 </script>
     
 </body>
