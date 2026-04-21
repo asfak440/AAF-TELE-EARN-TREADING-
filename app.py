@@ -30,10 +30,12 @@ CORS(app, supports_credentials=True)
 # ================= CONFIG =================
 API_ID = int(os.environ.get("API_ID", 36466824))
 API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://abdullahasfakfarvezbd_db_user:Abdullah6790@cluster0.rmulyqq.mongodb.net/?retryWrites=true&w=majority")
 FIREBASE_DB_URL = "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
 FIREBASE_KEY_PATH = os.path.join(os.path.dirname(__file__), "firebase-key.json")
-
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable not set")
+    
 # ================= DB =================
 client = MongoClient(MONGO_URI)
 db_mongo = client["aaf_tele_earn_db"]
