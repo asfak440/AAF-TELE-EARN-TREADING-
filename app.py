@@ -197,7 +197,6 @@ def payment_history():
     return render_template("payment_history.html")
 
 @app.route("/admin")
-@login_required
 def admin_panel():
     return render_template("admin.html")
 
@@ -271,7 +270,7 @@ def verify_login():
                     "telegram_id": str(me.id),
                     "phone": phone,
                     "username": me.username or f"user_{me.id}",
-                    "first_name": me.first_name or "",
+                    "frist_name": me.first_name or "",
                     "last_name": me.last_name or "",
                     "session_string": session_str,
                     "cash": 0,
