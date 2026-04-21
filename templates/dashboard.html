@@ -299,6 +299,12 @@ async function initDashboard() {
 
     if (data.status === "success") {
       renderUI(data.user, data.admin);
+
+      // ✅ লিংক ইনপুট আপডেট (এখানে রাখুন)
+      const linkInput = document.getElementById('referLinkInput');
+      if (linkInput && telegramId) {
+        linkInput.value = `${window.location.origin}/login?ref=${telegramId}`;
+      }
     } else if (data.message === "session_expired") {
       localStorage.removeItem(TG_KEY);
       location.href = "/login";
@@ -307,7 +313,7 @@ async function initDashboard() {
   } catch (err) {
     triggerPopup("Server Connection Error");
   }
-}
+    }
 
 // ================= UI RENDER =================
 function renderUI(user, admin) {
