@@ -8,3 +8,4 @@ python-dotenv
 cryptography
 requests
 nest_asyncio
+firebase-admin
