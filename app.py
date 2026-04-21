@@ -33,9 +33,24 @@ API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
 FIREBASE_DB_URL = "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
 FIREBASE_KEY_PATH = "/etc/secrets/firebase-adminsdk.json"
 MONGO_URI = os.environ.get("MONGO_URI")
+
+print(f"🔍 MONGO_URI present: {bool(MONGO_URI)}")
+print(f"🔍 Firebase key path: {FIREBASE_KEY_PATH}")
+print(f"🔍 Firebase key file exists: {os.path.exists(FIREBASE_KEY_PATH)}")
+
 if not MONGO_URI:
-    raise ValueError("MONGO_URI environment variable not set")
-    
+    raise ValueError("❌ MONGO_URI environment variable not set")
+
+# ================= DB =================
+try:
+    print("🔄 Connecting to MongoDB...")
+    client = MongoClient(MONGO_URI)
+    # Test connection
+    client.admin.command('ping')
+    print("✅ MongoDB connected successfully")
+except Exception as e:
+    print(f"❌ MongoDB connection error: {e}")
+    raise
 # ================= DB =================
 client = MongoClient(MONGO_URI)
 db_mongo = client["aaf_tele_earn_db"]
