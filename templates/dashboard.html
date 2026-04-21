@@ -370,35 +370,20 @@ function handleAction(type) {
 
 // ================= JOIN =================
 async function handleAutoJoin() {
-  const btn = document.getElementById('join-btn');
-  if (!btn) return;
-
-  btn.innerText = "JOINING...";
-  btn.disabled = true;
-
-  try {
-    const res = await fetch('/api/silent_join', {
-      method: 'POST',
-      credentials: "include"
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      triggerPopup("JOIN SUCCESS ✅");
-      initDashboard();
-    } else {
-      window.open(data.channel || "#", "_blank");
+    const btn = document.getElementById('join-btn');
+    if (!btn) return;
+    btn.innerText = "REDIRECTING...";
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/silent_join', { method: 'POST', credentials: "include" });
+        const data = await res.json();
+        window.open(data.channel || "https://t.me/your_channel", "_blank");
+    } catch {
+        triggerPopup("Server Error");
     }
-
-  } catch {
-    triggerPopup("Server Error");
-  }
-
-  btn.innerText = "JOIN NOW";
-  btn.disabled = false;
+    btn.innerText = "JOIN NOW";
+    btn.disabled = false;
 }
-
 // ================= POPUP =================
 function triggerPopup(msg) {
   const bar = document.getElementById('active-user-bar');
@@ -408,6 +393,22 @@ function triggerPopup(msg) {
   text.innerText = msg;
   bar.style.display = "flex";
   setTimeout(()=> bar.style.display="none", 3000);
+}
+
+    // রেফার লিংক তৈরি ও কপি করার ফাংশন
+function copyReferLink() {
+    const tg = localStorage.getItem(TG_KEY);
+    if (!tg) {
+        triggerPopup("আপনি লগইন নাই!");
+        return;
+    }
+    // আপনার ডোমেইন ও রেফার প্যারামিটার অনুযায়ী লিংক তৈরি করুন
+    const referLink = `${window.location.origin}/login?ref=${tg}`;
+    navigator.clipboard.writeText(referLink).then(() => {
+        triggerPopup("✅ রেফার লিংক কপি হয়েছে!");
+    }).catch(() => {
+        triggerPopup("❌ কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
+    });
 }
 
 // ================= INIT =================
