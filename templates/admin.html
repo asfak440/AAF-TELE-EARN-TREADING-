@@ -465,25 +465,45 @@ const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
 
 /* ================= USERS ================= */
 async function loadUsers(){
-  const r = await fetch(`${API}/api/admin/users`, {credentials:'include'});
-  const d = await r.json();
-
-  const box = $('member-list-body');
-  if(!box || !d.users) return;
-
-  let html = `<table style="width:100%;color:#fff">
-    <tr><th>User</th><th>ID</th><th>Cash</th></tr>`;
-
-  d.users.forEach(u=>{
-    html += `<tr>
-      <td>${u.username || "-"}</td>
-      <td>${u.telegram_id || "-"}</td>
-      <td>৳${u.cash || 0}</td>
-    </tr>`;
-  });
-
-  html += `</table>`;
-  box.innerHTML = html;
+  try {
+    console.log("Calling /api/admin/users...");
+    const r = await fetch(`${API}/api/admin/users`, { credentials:'include' });
+    console.log("Status:", r.status);
+    const d = await r.json();
+    console.log("Response:", d);
+    
+    const box = $('member-list-body');
+    if(!box) {
+      console.error("member-list-body element not found");
+      return;
+    }
+    
+    if (r.status === 401) {
+      box.innerHTML = `<div style="color:red">Please login as admin first.</div>`;
+      return;
+    }
+    
+    if (!d.users || d.users.length === 0) {
+      box.innerHTML = `<div>No users found in database.</div>`;
+      return;
+    }
+    
+    let html = `<table style="width:100%;color:#fff">
+      <tr><th>User</th><th>ID</th><th>Cash</th></tr>`;
+    d.users.forEach(u=>{
+      html += `<tr>
+        <td>${u.username || "-"}</td>
+        <td>${u.telegram_id || "-"} Non
+        <td>৳${u.cash || 0}</td>
+      </tr>`;
+    });
+    html += `</table>`;
+    box.innerHTML = html;
+  } catch(e) {
+    console.error("loadUsers error:", e);
+    const box = $('member-list-body');
+    if(box) box.innerHTML = `<div>Error loading users: ${e.message}</div>`;
+  }
 }
 
 /* ================= TASKS ================= */
