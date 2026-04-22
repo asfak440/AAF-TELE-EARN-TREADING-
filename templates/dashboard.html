@@ -344,14 +344,16 @@ async function handleAutoJoin() {
         const res = await fetch('/api/silent_join', { method: 'POST', credentials: "include" });
         const data = await res.json();
         if (data.success) {
-            triggerPopup("JOIN SUCCESS ✅");
-            initDashboard(); // UI রিফ্রেশ (জয়েন স্ট্যাটাস আপডেট)
+            triggerPopup("✅ চ্যানেল জয়েন সফল!");
+            initDashboard(); // UI রিফ্রেশ (বাটন লুকাবে, স্ট্যাটাস অনলাইন হবে)
         } else {
-            window.open(data.channel || "https://t.me/your_channel", "_blank");
-            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার চেষ্টা করুন");
+            // ব্যাকএন্ড যদি কখনো false দেয়, তখন চ্যানেল লিংক খোলার চেষ্টা
+            if (data.channel) window.open(data.channel, "_blank");
+            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার চেষ্টা করুন");
         }
-    } catch {
-        triggerPopup("Server Error");
+    } catch (error) {
+        console.error(error);
+        triggerPopup("সার্ভার এরর");
     }
     btn.innerText = "JOIN NOW";
     btn.disabled = false;
