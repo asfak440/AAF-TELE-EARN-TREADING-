@@ -308,14 +308,16 @@ def verify_login():
 @app.route("/api/user/data/<telegram_id>")
 def user_data(telegram_id):
     uid = session.get("uid")
-    user = users_col.find_one({"telegram_id": telegram_id})
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"})
+    user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
+        session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
-    if uid and str(user["_id"]) != uid:
-        return jsonify({"status": "error", "message": "unauthorized"})
     admin = get_admin_config()
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
+    
 
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
