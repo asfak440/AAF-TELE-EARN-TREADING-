@@ -294,7 +294,7 @@ async function initDashboard() {
   const telegramId = getTG();
 
   try {
-    const response = await fetch(`/api/user/data/${telegramId}`, {
+    const response = await fetch(`/api/user/me`, {
       credentials: "include"
     });
 
