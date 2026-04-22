@@ -417,6 +417,33 @@ window.addEventListener('load', ()=>{
   initDashboard();
   smartInterval(initDashboard,15000);
 });
+
+    // ================= UI RENDER =================
+function renderUI(user, admin) {
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = val;
+  };
+
+  setText('u-name', (user.username || "USER").toUpperCase());
+  setText('u-id', ": " + user.telegram_id);
+  setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
+  setText('h-aaf', user.aaf || 0);
+
+  setText('srv-income', '৳ ' + (admin.server_income || 0));
+  setText('srv-trade', '৳ ' + (admin.server_trading || 0));
+  setText('srv-users', admin.total_users || 0);
+
+  setText('my-refs', (user.refer_count || 0) + " REFERRED");
+
+  // JOIN STATUS
+  const joined = user.is_joined;
+  const dot = document.getElementById('status-dot');
+  const joinBtn = document.getElementById('join-btn');
+
+  if (dot) dot.className = joined ? 'dot-online' : 'dot-offline';
+  if (joinBtn) joinBtn.style.display = joined ? 'none' : 'block';
+}
 </script>
     
 </html>
