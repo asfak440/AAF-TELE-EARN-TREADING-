@@ -317,7 +317,7 @@ def user_data(telegram_id):
     admin = get_admin_config()
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
-    
+
 
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
