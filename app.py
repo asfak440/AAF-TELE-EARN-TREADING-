@@ -282,6 +282,9 @@ def verify_login():
                     "created_at": datetime.utcnow(),
                     "last_login": datetime.utcnow()
                 }
+                if ref:
+                user_data["refer_by"] = ref
+                users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
                 result_id = users_col.insert_one(user_data).inserted_id
             else:
                 users_col.update_one(
