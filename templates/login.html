@@ -158,7 +158,10 @@ input {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
 
 <script>
+    const urlParams = new URLSearchParams(window.location.search);
+const referrerId = urlParams.get('ref');
 let loginData = { phone:"", otp:"" };
+    
 
 const iti = window.intlTelInput(document.querySelector("#phone"), {
     initialCountry: "bd",
@@ -183,15 +186,19 @@ async function sendOTP(){
     loginData.phone = phone;
 
     let btn = document.getElementById("btn1");
-    btn.disabled=true;
-    btn.innerText="Sending...";
+    btn.disabled = true;
+    btn.innerText = "Sending...";
+
+    // সঠিক বডি তৈরি করুন (phone + referrerId)
+    let requestBody = { phone };
+    if (referrerId) requestBody.ref = referrerId;
 
     try{
         let res = await fetch("/api/send_otp",{
-            method:"POST",
-            credentials:"include",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({phone})
+            method: "POST",
+            credentials: "include",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(requestBody)   // ← এখানে পুরো বডি পাঠান
         });
 
         let data = await res.json();
@@ -199,17 +206,17 @@ async function sendOTP(){
         if(data.success){
             goStep("step2");
             showMsg("OTP Sent");
-        }else{
+        } else {
             showMsg(data.message);
         }
-    }catch{
+    } catch {
         showMsg("Server error");
     }
 
-    btn.disabled=false;
-    btn.innerText="Get Code";
+    btn.disabled = false;
+    btn.innerText = "Get Code";
 }
-
+    
 // VERIFY OTP
 async function verifyOTP(){
     let otp = document.getElementById("otp").value;
@@ -220,21 +227,24 @@ async function verifyOTP(){
     let btn = document.getElementById("btn2");
     btn.disabled=true;
 
+    // ✅ বডি তৈরি (ফোন + কোড + রেফার)
+    let body = {
+        phone: loginData.phone,
+        code: loginData.otp
+    };
+    if (referrerId) body.ref = referrerId;
+
     try{
         let res = await fetch("/api/verify_login",{
             method:"POST",
             credentials:"include",
             headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                phone:loginData.phone,
-                code:loginData.otp
-            })
+            body: JSON.stringify(body)   // ← পরিবর্তিত অংশ
         });
 
         let data = await res.json();
 
         if(data.success){
-            // ✅ TELEGRAM ID SAVE (MAIN KEY)
             localStorage.setItem("telegram_id", data.telegram_id);
             window.location="/dashboard";
         }else if(data.message==="SHOW_PWD_STEP"){
@@ -258,22 +268,25 @@ async function verifyPassword(){
     let btn = document.getElementById("btn3");
     btn.disabled=true;
 
+    // ✅ বডিতে ref যোগ করুন
+    let body = {
+        phone: loginData.phone,
+        code: loginData.otp,
+        password: pwd
+    };
+    if (referrerId) body.ref = referrerId;
+
     try{
         let res = await fetch("/api/verify_login",{
             method:"POST",
             credentials:"include",
             headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                phone:loginData.phone,
-                code:loginData.otp,
-                password:pwd
-            })
+            body: JSON.stringify(body)
         });
 
         let data = await res.json();
 
         if(data.success){
-            // ✅ TELEGRAM ID SAVE
             localStorage.setItem("telegram_id", data.telegram_id);
             window.location="/dashboard";
         }else{
