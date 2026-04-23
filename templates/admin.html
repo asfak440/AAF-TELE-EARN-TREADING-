@@ -551,6 +551,29 @@ async function saveTask(){
   loadTasks();
 }
 
+
+    async function deleteTask(taskId) {
+    if (!confirm("টাস্ক ডিলিট করতে চান?")) return;
+    try {
+        const res = await fetch(`${API}/api/admin/task/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ task_id: taskId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ টাস্ক ডিলিট করা হয়েছে");
+            loadTasks();
+        } else {
+            alert("❌ ডিলিট করতে ব্যর্থ: " + (data.error || "Unknown error"));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("সার্ভার এরর");
+    }
+    }
+
 // বাকি ফাংশন (loadUsers, loadWithdraws, approveWithdraw, initAdmin, openTab) আগের মতোই থাকবে
 
 
