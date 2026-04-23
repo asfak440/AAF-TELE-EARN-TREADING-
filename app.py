@@ -408,6 +408,21 @@ def claim_task():
 
     return jsonify({"blocked": False, "message": msg})
 
+
+@app.route("/api/admin/task/delete", methods=["POST"])
+@login_required
+def admin_delete_task():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    task_id = data.get("task_id")
+    if not task_id:
+        return jsonify({"error": "Task ID required"}), 400
+    if fb_ref:
+        fb_ref.child(f"tasks/{task_id}").delete()
+        return jsonify({"success": True})
+    return jsonify({"error": "Firebase not configured"}), 500
+
 # ================= API: TRADING =================
 @app.route("/api/market/price")
 def market_price():
