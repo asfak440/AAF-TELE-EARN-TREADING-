@@ -227,8 +227,6 @@ def send_otp():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route("/api/verify_login", methods=["POST"])
-
-@app.route("/api/verify_login", methods=["POST"])
 def verify_login():
     import traceback
     data = request.json
