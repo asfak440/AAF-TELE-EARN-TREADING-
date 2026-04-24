@@ -223,14 +223,28 @@ function showOfferPopup() {
 function closePopup() { document.getElementById('ad-modal').style.display = 'none'; }
 
 // ===== MULTI ACCOUNT (শুধু localStorage, কোনো API কল নেই) =====
-function loadSavedList() {
+async function loadSavedList() {
     const box = document.getElementById('accounts-display');
     const current = localStorage.getItem(TG_KEY);
     const saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
     box.innerHTML = '';
     for (let id of saved) {
         if (id === current) continue;
-        const username = localStorage.getItem(`user_${id}_name`) || "User";
+        let username = localStorage.getItem(`user_${id}_name`);
+        if (!username) {
+            try {
+                const res = await fetch(`${API}/api/user/data/${id}`);
+                const data = await res.json();
+                if (data.status === "success") {
+                    username = data.user.username || "User";
+                    localStorage.setItem(`user_${id}_name`, username);
+                } else {
+                    username = "User";
+                }
+            } catch (e) {
+                username = "User";
+            }
+        }
         box.innerHTML += `
             <div class="account-item">
                 <div class="info" onclick="switchAccount('${id}')">
@@ -241,8 +255,11 @@ function loadSavedList() {
             </div>
         `;
     }
+    if (box.innerHTML === '') {
+        box.innerHTML = '<div style="text-align:center; opacity:0.5; padding:20px;">No saved accounts</div>';
+    }
 }
-
+        
 function switchAccount(id) {
     const current = localStorage.getItem(TG_KEY);
     let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
@@ -271,12 +288,15 @@ function addNewAccount() {
 
 function logoutSession() { addNewAccount(); }
 
-function clearAllData() {
-    if (confirm("সব অ্যাকাউন্ট মুছে ফেলতে চান?")) {
-        localStorage.clear();
+window.addEventListener('load', async () => {
+    const tg = localStorage.getItem(TG_KEY);
+    if (!tg) {
         location.href = "/login";
+        return;
     }
-}
+    await initializeApp();
+    await loadSavedList();   // ← await যোগ করুন
+});
 
 function escapeHtml(str) {
     return str.replace(/[&<>]/g, function(m) {
