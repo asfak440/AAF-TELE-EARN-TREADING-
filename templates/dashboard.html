@@ -432,14 +432,11 @@ function renderUI(user, admin) {
   setText('u-id', ": " + user.telegram_id);
   setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
   setText('h-aaf', user.aaf || 0);
-
   setText('srv-income', '৳ ' + (admin.server_income || 0));
   setText('srv-trade', '৳ ' + (admin.server_trading || 0));
   setText('srv-users', admin.total_users || 0);
-
   setText('my-refs', (user.refer_count || 0) + " REFERRED");
 
-  // JOIN STATUS (সম্পূর্ণ আপডেট)
   const joined = user.is_joined;
   const dot = document.getElementById('status-dot');
   const joinBtn = document.getElementById('join-btn');
@@ -452,7 +449,7 @@ function renderUI(user, admin) {
   if (joinStatus) joinStatus.innerText = joined ? 'ONLINE' : 'OFFLINE';
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
-}
+    }
 </script>
     
 </html>
