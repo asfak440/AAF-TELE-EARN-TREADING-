@@ -457,12 +457,25 @@ async function checkAuth(){
 
 /* ================= INIT ================= */
 function initAdmin(){
-  loadUsers();
-  loadTasks();
-  loadAds();
-  loadWithdraws();
-  initLivePrice();
+    loadUsers();
+    loadTasks();
+    loadAds();
+    loadWithdraws();
+    initLivePrice();
+    loadAdminStats(); // ← এই লাইন যোগ করুন
 }
+    
+    async function loadAdminStats() {
+    try {
+        const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.server_income !== undefined) {
+            document.getElementById('admin_income').value = data.server_income;
+            document.getElementById('admin_trading').value = data.server_trading;
+        }
+    } catch(e) { console.error("Failed to load admin stats", e); }
+}
+    
 
 /* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
@@ -667,14 +680,16 @@ function openTab(el){
     }
 
     // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
-
 async function updateServerSettings() {
     const data = {
         channel_url: document.getElementById('admin_channel_url').value,
         min_trades: document.getElementById('admin_min_trades')?.value,
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bot_token: document.getElementById('admin_bot_token').value,
-        channel_id: document.getElementById('admin_channel_id').value
+        channel_id: document.getElementById('admin_channel_id').value,
+        // নিচের দুটি লাইন যোগ করুন
+        server_income: parseFloat(document.getElementById('admin_income').value) || 0,
+        server_trading: parseFloat(document.getElementById('admin_trading').value) || 0
     };
     const res = await fetch('/api/admin/update_settings', {
         method: 'POST',
@@ -685,6 +700,7 @@ async function updateServerSettings() {
     if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
     else alert('❌ আপডেট ব্যর্থ');
 }
+
 
 async function publishGlobalAd() {
     const msg = document.getElementById('admin_ad_msg').value;
