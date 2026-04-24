@@ -732,14 +732,18 @@ def admin_update_settings():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
-    # উদাহরণ: channel_url, min_trades, ip_limit ইত্যাদি
-    admin_config_col.update_one({"_id": "global"}, {"$set": {
+    update_data = {
         "channel_url": data.get("channel_url", ""),
-        "min_trades": data.get("min_trades", 5),
-        "ip_limit": data.get("ip_limit", "off")
-    }}, upsert=True)
+        "min_trades": int(data.get("min_trades", 5)),
+        "ip_limit": data.get("ip_limit", "off"),
+        "bot_token": data.get("bot_token", ""),
+        "channel_id": data.get("channel_id", ""),
+        "server_income": float(data.get("server_income", 0)),   # ← গুরুত্বপূর্ণ
+        "server_trading": float(data.get("server_trading", 0))  # ← গুরুত্বপূর্ণ
+    }
+    admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
-
+    
 @app.route("/api/admin/set_price", methods=["POST"])
 @login_required
 def admin_set_price():
@@ -788,6 +792,18 @@ def admin_update_balance():
     if aaf is not None:
         users_col.update_one({"_id": user["_id"]}, {"$set": {"aaf": float(aaf)}})
     return jsonify({"success": True})
+
+@app.route("/api/admin/config")
+@login_required
+def admin_config():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    admin = get_admin_config()
+    return jsonify({
+        "server_income": admin.get("server_income", 0),
+        "server_trading": admin.get("server_trading", 0),
+        # প্রয়োজনে অন্য কনফিগ ফিল্ডও পাঠাতে পারেন
+    })
 
 # ================= RUN =================
 if __name__ == "__main__":
