@@ -48,6 +48,8 @@
             background: var(--card); border: 1px solid var(--border); padding: 12px; 
             border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; 
         }
+        .account-item .info { flex: 1; cursor: pointer; }
+        .account-item button { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; }
 
         /* --- Action Buttons --- */
         .action-btn { margin: 12px 20px; padding: 16px; border-radius: 15px; text-align: center; font-family: 'Syncopate'; font-size: 11px; cursor: pointer; transition: 0.3s; }
@@ -127,21 +129,15 @@
         </div>
     </div>
 
-    <!-- Buttons -->
     <!-- Action Buttons Section -->
-<div style="padding: 5px 0;">
-
-    <!-- Add Account Link -->
-    <a href="login" class="action-btn btn-add" style="display: block; text-decoration: none;">
-        <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
-    </a>
-
-    <!-- Logout Link -->
-    <a href="login" class="action-btn btn-logout" style="display: block; text-decoration: none;" onclick="localStorage.removeItem('user_id');">
-        <i class="fas fa-sign-out-alt"></i> &nbsp; LOGOUT CURRENT SESSION
-    </a>
-
-</div>
+    <div style="padding: 5px 0;">
+        <a href="login" class="action-btn btn-add" style="display: block; text-decoration: none;">
+            <i class="fas fa-plus-circle"></i> &nbsp; ADD TELEGRAM ACCOUNT
+        </a>
+        <a href="#" class="action-btn btn-logout" style="display: block; text-decoration: none;" onclick="event.preventDefault(); logoutSession();">
+            <i class="fas fa-sign-out-alt"></i> &nbsp; LOGOUT CURRENT SESSION
+        </a>
+    </div>
     
     <!-- Navigation Bar -->
     <div class="bottom-nav-container">
@@ -178,7 +174,7 @@ window.addEventListener('load', async () => {
     }
 
     await initializeApp();
-    await loadSavedList();
+    await loadSavedList(); // now properly async
 });
 
 // ===== LOAD USER + ADS =====
@@ -196,28 +192,17 @@ async function initializeApp() {
         const user = data.user;
         const admin = data.admin;
 
-        // USER INFO
-        document.getElementById('u-name').innerText =
-            (user.username || "USER").toUpperCase();
-
-        document.getElementById('u-id').innerText =
-            "ID: " + user.telegram_id;
-
-        document.getElementById('cash-bal').innerText =
-            "৳ " + parseFloat(user.cash || 0).toFixed(2);
-
-        document.getElementById('coin-bal').innerText =
-            parseFloat(user.aaf || 0).toFixed(2);
+        document.getElementById('u-name').innerText = (user.username || "USER").toUpperCase();
+        document.getElementById('u-id').innerText = "ID: " + user.telegram_id;
+        document.getElementById('cash-bal').innerText = "৳ " + parseFloat(user.cash || 0).toFixed(2);
+        document.getElementById('coin-bal').innerText = parseFloat(user.aaf || 0).toFixed(2);
 
         if (user.photo) {
-            document.getElementById('main-avatar').innerHTML =
-                `<img src="${user.photo}" alt="User">`;
+            document.getElementById('main-avatar').innerHTML = `<img src="${user.photo}" alt="User">`;
         }
 
-        // ADMIN BANNER
         if (admin.banner_image) {
-            document.getElementById('admin-banner-slide')
-                .style.backgroundImage = `url('${admin.banner_image}')`;
+            document.getElementById('admin-banner-slide').style.backgroundImage = `url('${admin.banner_image}')`;
         }
 
         popupData = admin.popup_ad || null;
@@ -244,8 +229,8 @@ function closePopup() {
     document.getElementById('ad-modal').style.display = 'none';
 }
 
-// ===== MULTI ACCOUNT =====
-function loadSavedList() {
+// ===== MULTI ACCOUNT (CORRECTED) =====
+async function loadSavedList() {
     const box = document.getElementById('accounts-display');
     const current = localStorage.getItem(TG_KEY);
     const saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
@@ -261,17 +246,18 @@ function loadSavedList() {
             if (d.status !== "success") continue;
 
             const u = d.user;
-
             box.innerHTML += `
-            <div class="account-item">
-                <div style="flex:1;cursor:pointer"
-                     onclick="switchAccount('${u.telegram_id}')">
-                    <b>${u.username}</b><br>
-                    <small>ID: ${u.telegram_id}</small>
+                <div class="account-item">
+                    <div class="info" onclick="switchAccount('${u.telegram_id}')">
+                        <b>${u.username || "User"}</b><br>
+                        <small>ID: ${u.telegram_id}</small>
+                    </div>
+                    <button onclick="removeOne('${u.telegram_id}')">❌</button>
                 </div>
-                <button onclick="removeOne('${u.telegram_id}')">❌</button>
-            </div>`;
-        } catch {}
+            `;
+        } catch(e) {
+            console.error("Failed to load saved account", id, e);
+        }
     }
 }
 
@@ -279,30 +265,28 @@ function switchAccount(id) {
     const current = localStorage.getItem(TG_KEY);
     let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
 
-    if (current && !saved.includes(current))
+    if (current && !saved.includes(current)) {
         saved.push(current);
-
+    }
+    saved = saved.filter(x => x !== id);
+    localStorage.setItem('saved_accounts', JSON.stringify(saved));
     localStorage.setItem(TG_KEY, id);
-    localStorage.setItem('saved_accounts',
-        JSON.stringify(saved.filter(x => x !== id)));
-
     location.reload();
 }
 
 function removeOne(id) {
     let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
-    localStorage.setItem('saved_accounts',
-        JSON.stringify(saved.filter(x => x !== id)));
-    loadSavedList();
+    saved = saved.filter(x => x !== id);
+    localStorage.setItem('saved_accounts', JSON.stringify(saved));
+    loadSavedList(); // refresh list
 }
 
 function addNewAccount() {
     const current = localStorage.getItem(TG_KEY);
     let saved = JSON.parse(localStorage.getItem('saved_accounts') || "[]");
-
-    if (current && !saved.includes(current))
+    if (current && !saved.includes(current)) {
         saved.push(current);
-
+    }
     localStorage.setItem('saved_accounts', JSON.stringify(saved));
     localStorage.removeItem(TG_KEY);
     location.href = "/login";
@@ -320,4 +304,4 @@ function clearAllData() {
 }
 </script>
 </body>
-</html>
+    </html>
