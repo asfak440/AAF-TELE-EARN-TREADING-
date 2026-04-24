@@ -637,6 +637,7 @@ def admin_login():
     admin = get_admin_config()
     if pin == admin.get("admin_pin"):
         session["admin_logged_in"] = True
+        session.permanent = True          # ← এই লাইনটি গুরুত্বপূর্ণ
         return jsonify({"ok": True})
     return jsonify({"ok": False})
 
