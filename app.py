@@ -342,6 +342,19 @@ def user_data(telegram_id):
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
 
+@app.route("/api/user/me")
+def user_me():
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"})
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"status": "error", "message": "user_not_found"})
+    admin = get_admin_config()
+    user["_id"] = str(user["_id"])
+    return jsonify({"status": "success", "user": user, "admin": admin})
+
 
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
