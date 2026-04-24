@@ -11,7 +11,7 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError
+from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
 import firebase_admin
 from firebase_admin import credentials, db
 
@@ -227,7 +227,6 @@ def send_otp():
         return jsonify({"success": False, "message": str(e)})
 
 
-
 @app.route("/api/verify_login", methods=["POST"])
 def verify_login():
     import traceback
@@ -263,10 +262,18 @@ def verify_login():
             session_str = client.session.save()
             return True, me, session_str
         except SessionPasswordNeededError:
-            # 2FA required – ফ্রন্টএন্ডকে পাসওয়ার্ড স্টেপে পাঠান
+            # 2FA প্রয়োজন → ফ্রন্টএন্ড পাসওয়ার্ড স্টেপ দেখাবে
             print(f"2FA required for {phone}")
             await client.disconnect()
             return False, "SHOW_PWD_STEP"
+        except PhoneCodeInvalidError:
+            print(f"Invalid OTP for {phone}")
+            await client.disconnect()
+            return False, "Invalid code"
+        except PhoneCodeExpiredError:
+            print(f"OTP expired for {phone}")
+            await client.disconnect()
+            return False, "Code expired, please request again"
         except Exception as e:
             print(f"Error in _verify: {type(e).__name__}: {e}")
             traceback.print_exc()
@@ -277,7 +284,7 @@ def verify_login():
         result = run_async(_verify())
         if result[0] is True and len(result) == 3:
             me, session_str = result[1], result[2]
-            # ইউজার তৈরি বা আপডেট করুন
+            # ইউজার তৈরি বা আপডেট (আপনার বিদ্যমান কোড)
             user = users_col.find_one({"telegram_id": str(me.id)})
             if not user:
                 user_data = {
@@ -320,7 +327,6 @@ def verify_login():
         print(f"Outer exception: {e}")
         traceback.print_exc()
         return jsonify({"success": False, "message": str(e)})
-
 
 
 @app.route("/api/user/data/<telegram_id>")
