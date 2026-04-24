@@ -326,16 +326,16 @@ def verify_login():
         print(f"verify_login error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
-
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
 def silent_join():
     uid = session.get("uid")
     user = users_col.find_one({"_id": ObjectId(uid)})
     admin = get_admin_config()
-    channel_url = admin.get("channel_url", "")
+    channel_url = admin.get("channel_url", "")   # ← ডিফল্ট ফাঁকা, এডমিন থেকে দিতে হবে
 
-    if not user or "session_string" not in user:
+    # ইউজার বা সেশন স্ট্রিং না থাকলে জয়েন অসম্ভব
+    if not user or "session_string" not in user or not channel_url:
         return jsonify({"success": False, "channel": channel_url})
     
     async def check_join():
@@ -357,11 +357,6 @@ def silent_join():
         return jsonify({"success": True})
     else:
         return jsonify({"success": False, "channel": channel_url})
-
-@app.route("/api/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
 
 # ================= API: TASKS (Firebase) =================
 @app.route("/api/tasks")
