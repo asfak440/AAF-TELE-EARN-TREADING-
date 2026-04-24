@@ -643,6 +643,22 @@ function openTab(el){
     .forEach(b=>b.classList.add('active'));
 }
 
+    async function updateServerSettings() {
+    const data = {
+        channel_url: document.getElementById('admin_channel_url').value,
+        min_trades: document.getElementById('admin_min_trades')?.value,
+        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off'
+    };
+    const res = await fetch('/api/admin/update_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+    if (res.ok) alert('সার্ভার আপডেট হয়েছে');
+    else alert('আপডেট ব্যর্থ');
+    }
+
     function toggleUserList() {
     const box = document.getElementById('member-list-body');
     if (box.style.display === 'none' || box.style.display === '') {
