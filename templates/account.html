@@ -190,20 +190,17 @@ async function initializeApp() {
         const user = data.user;
         const admin = data.admin;
 
-        // ইউজারের নাম ও আইডি দেখানো
         document.getElementById('u-name').innerText = (user.username || "USER").toUpperCase();
         document.getElementById('u-id').innerText = "ID: " + user.telegram_id;
         document.getElementById('cash-bal').innerText = "৳ " + parseFloat(user.cash || 0).toFixed(2);
         document.getElementById('coin-bal').innerText = parseFloat(user.aaf || 0).toFixed(2);
 
-        // বর্তমান ইউজারের নাম localStorage-এ সংরক্ষণ (ভবিষ্যতে সংরক্ষিত অ্যাকাউন্ট লিস্টে দেখানোর জন্য)
+        // বর্তমান ইউজারের নাম localStorage-এ সংরক্ষণ (সেভ করা লিস্টে নাম দেখানোর জন্য)
         localStorage.setItem(`user_${user.telegram_id}_name`, user.username || "User");
 
-        // অ্যাডমিন ব্যানার সেট
         if (admin.banner_image) {
             document.getElementById('admin-banner-slide').style.backgroundImage = `url('${admin.banner_image}')`;
         }
-
         popupData = admin.popup_ad || null;
 
     } catch (err) {
