@@ -28,6 +28,11 @@
         .back-link { color: #fff; text-decoration: none; font-size: 20px; padding: 5px; }
         .title { font-family: 'Syncopate'; font-size: 16px; color: var(--warning); letter-spacing: 1px; }
         
+        .section-title {
+            font-family: 'Syncopate'; font-size: 14px; color: var(--success);
+            margin: 20px 0 10px 5px; border-left: 3px solid var(--success); padding-left: 10px;
+        }
+        
         .history-card {
             background: var(--glass); border: 1px solid var(--border);
             border-radius: 18px; padding: 15px; margin-bottom: 12px;
@@ -45,7 +50,6 @@
             margin-bottom: 5px;
         }
         
-        /* Status Colors */
         .status-success { background: rgba(0, 255, 136, 0.15); color: var(--success); border: 1px solid var(--success); }
         .status-pending { background: rgba(255, 170, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
         .status-rejected { background: rgba(255, 0, 85, 0.15); color: var(--danger); border: 1px solid var(--danger); }
@@ -53,16 +57,17 @@
         .trx-id { font-size: 10px; color: var(--text-muted); display: block; }
         
         #loader { text-align: center; padding: 40px; color: var(--text-muted); }
+        .empty-message { text-align: center; padding: 30px; color: var(--text-muted); background: var(--glass); border-radius: 18px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i></a>
+        <a href="/dashboard" class="back-link"><i class="fas fa-arrow-left"></i></a>
         <div class="title">PAYMENT HISTORY</div>
     </div>
 
-    <div id="payment-list">
+    <div id="payment-history-container">
         <div id="loader"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>
     </div>
 
@@ -71,26 +76,83 @@ const API = window.location.origin;
 const TG_KEY = "telegram_id";
 
 function getTG(){
-  const id = localStorage.getItem(TG_KEY);
-  if(!id) location.href = "/login";
-  return id;
+    const id = localStorage.getItem(TG_KEY);
+    if(!id) location.href = "/login";
+    return id;
 }
 
 async function loadPaymentHistory(){
-  const tg = getTG();
-  try{
-    const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
-    const data = await res.json();
-    const container = document.getElementById('history-list');
-    let html = "<h3>Deposit History</h3>";
-    if(data.deposits.length === 0) html += "<div>No deposits</div>";
-    else data.deposits.forEach(d => html += `<div>${d.amount} Taka - ${d.status} (${d.created_at})</div>`);
-    html += "<h3>Withdrawal History</h3>";
-    if(data.withdraws.length === 0) html += "<div>No withdrawals</div>";
-    else data.withdraws.forEach(w => html += `<div>${w.amount} Taka to ${w.number} - ${w.status} (${w.created_at})</div>`);
-    container.innerHTML = html;
-  } catch(e){ console.log(e); }
+    const tg = getTG();
+    const container = document.getElementById('payment-history-container');
+    container.innerHTML = '<div id="loader"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>';
+    
+    try{
+        const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
+        const data = await res.json();
+        
+        let html = '';
+        
+        // Deposit Section
+        html += `<div class="section-title"><i class="fas fa-download"></i> DEPOSIT REQUESTS</div>`;
+        if(data.deposits && data.deposits.length > 0){
+            data.deposits.forEach(d => {
+                let statusClass = '';
+                if(d.status === 'approved') statusClass = 'status-success';
+                else if(d.status === 'pending') statusClass = 'status-pending';
+                else if(d.status === 'rejected') statusClass = 'status-rejected';
+                else statusClass = 'status-pending';
+                
+                html += `
+                    <div class="history-card">
+                        <div class="pay-info">
+                            <b>৳ ${parseFloat(d.amount).toFixed(2)}</b>
+                            <small>${d.method || 'Nagad'}</small>
+                        </div>
+                        <div class="pay-status">
+                            <div class="st-badge ${statusClass}">${d.status.toUpperCase()}</div>
+                            <small class="trx-id">${d.trx || d.created_at?.slice(0,10) || ''}</small>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<div class="empty-message"><i class="fas fa-history"></i> No deposit requests found.</div>`;
+        }
+        
+        // Withdraw Section
+        html += `<div class="section-title"><i class="fas fa-upload"></i> WITHDRAWAL REQUESTS</div>`;
+        if(data.withdraws && data.withdraws.length > 0){
+            data.withdraws.forEach(w => {
+                let statusClass = '';
+                if(w.status === 'approved') statusClass = 'status-success';
+                else if(w.status === 'pending') statusClass = 'status-pending';
+                else if(w.status === 'rejected') statusClass = 'status-rejected';
+                else statusClass = 'status-pending';
+                
+                html += `
+                    <div class="history-card">
+                        <div class="pay-info">
+                            <b>৳ ${parseFloat(w.amount).toFixed(2)}</b>
+                            <small>To: ${w.number}</small>
+                        </div>
+                        <div class="pay-status">
+                            <div class="st-badge ${statusClass}">${w.status.toUpperCase()}</div>
+                            <small class="trx-id">${w.created_at?.slice(0,10) || ''}</small>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<div class="empty-message"><i class="fas fa-history"></i> No withdrawal requests found.</div>`;
+        }
+        
+        container.innerHTML = html;
+    } catch(e){ 
+        console.error("Payment history error:", e);
+        container.innerHTML = '<div class="empty-message">Failed to load data. Try again later.</div>';
+    }
 }
+
 window.addEventListener('load', loadPaymentHistory);
 </script>
 </body>
