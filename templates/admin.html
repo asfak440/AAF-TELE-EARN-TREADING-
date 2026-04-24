@@ -659,6 +659,108 @@ function openTab(el){
     else alert('আপডেট ব্যর্থ');
     }
 
+    // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
+
+async function updateServerSettings() {
+    const data = {
+        channel_url: document.getElementById('admin_channel_url').value,
+        min_trades: document.getElementById('admin_min_trades')?.value,
+        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
+        bot_token: document.getElementById('admin_bot_token').value,
+        channel_id: document.getElementById('admin_channel_id').value
+    };
+    const res = await fetch('/api/admin/update_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+    if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
+    else alert('❌ আপডেট ব্যর্থ');
+}
+
+async function publishGlobalAd() {
+    const msg = document.getElementById('admin_ad_msg').value;
+    const res = await fetch('/api/admin/global_ad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: msg })
+    });
+    if (res.ok) alert('✅ নোটিশ পাবলিশ করা হয়েছে');
+    else alert('❌ পাবলিশ ব্যর্থ');
+}
+
+async function forceMarketPrice() {
+    const price = parseFloat(document.getElementById('inp-price').value);
+    if (isNaN(price)) return alert('সঠিক সংখ্যা দিন');
+    const res = await fetch('/api/admin/set_price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ price })
+    });
+    if (res.ok) alert('✅ মার্কেট প্রাইস আপডেট হয়েছে');
+    else alert('❌ আপডেট ব্যর্থ');
+}
+
+async function setGlobalFee() {
+    const fee = parseFloat(document.getElementById('c-fee').value);
+    if (isNaN(fee)) return alert('সঠিক সংখ্যা দিন');
+    const res = await fetch('/api/admin/set_fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ fee })
+    });
+    if (res.ok) alert('✅ ফি আপডেট হয়েছে');
+    else alert('❌ আপডেট ব্যর্থ');
+}
+
+async function updateWallets() {
+    const nagad = document.getElementById('admin_nagad').value;
+    const bkash = document.getElementById('admin_bkash').value;
+    const res = await fetch('/api/admin/update_wallets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ nagad, bkash })
+    });
+    if (res.ok) alert('✅ ওয়ালেট নম্বর সেভ হয়েছে');
+    else alert('❌ সেভ ব্যর্থ');
+}
+
+async function updateUserBalance() {
+    const uid = document.getElementById('target-uid').value;
+    const cash = parseFloat(document.getElementById('user-bal').value);
+    const aaf = parseFloat(document.getElementById('user-coins').value);
+    if (!uid) return alert('ইউজার আইডি দিন');
+    const res = await fetch('/api/admin/update_balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ uid, cash, aaf })
+    });
+    const data = await res.json();
+    if (data.success) alert('✅ ব্যালেন্স আপডেট হয়েছে');
+    else alert('❌ ব্যর্থ: ' + (data.error || 'ইউজার খুঁজে পাওয়া যায়নি'));
+}
+
+function toggleUserList() {
+    const box = document.getElementById('member-list-body');
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+        loadUsers();
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function initLivePrice() {
+    // price already loads from interval in loadLivePrice function
+    // make sure loadLivePrice is called every 2 seconds (already in your code)
+        }
+
     function toggleUserList() {
     const box = document.getElementById('member-list-body');
     if (box.style.display === 'none' || box.style.display === '') {
