@@ -291,33 +291,24 @@ function smartInterval(fn, time){
 
 // ================= INIT DASHBOARD =================
 async function initDashboard() {
-  const telegramId = getTG();
-
   try {
-    const response = await fetch(`/api/user/data/${telegramId}`, {
-    credentials: "include"
-    });
-
+    const response = await fetch(`/api/user/me`, { credentials: "include" });
     if (!response.ok) throw new Error("Network Error");
-
     const data = await response.json();
-
     if (data.status === "success") {
       renderUI(data.user, data.admin);
-
       const linkInput = document.getElementById('referLinkInput');
-      if (linkInput && telegramId) {
-        linkInput.value = `${window.location.origin}/login?ref=${telegramId}`;
+      if (linkInput && data.user.telegram_id) {
+        linkInput.value = `${window.location.origin}/login?ref=${data.user.telegram_id}`;
       }
     } else if (data.message === "session_expired") {
-      localStorage.removeItem(TG_KEY);
+      localStorage.removeItem("telegram_id");
       location.href = "/login";
     }
-
   } catch (err) {
     triggerPopup("Server Connection Error");
   }
-}   
+}
 
 // ================= ACTION HANDLER =================
 function handleAction(type) {
