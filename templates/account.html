@@ -233,7 +233,7 @@ async function loadSavedList() {
         let username = localStorage.getItem(`user_${id}_name`);
         if (!username) {
             try {
-                const res = await fetch(`${API}/api/user/data/${id}`);
+                const res = await fetch(`${API}/api/user/data/${telegram_id}`);
                 const data = await res.json();
                 if (data.status === "success") {
                     username = data.user.username || "User";
