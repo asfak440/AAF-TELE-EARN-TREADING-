@@ -724,6 +724,70 @@ def admin_approve_withdraw():
             withdraws_col.update_one({"_id": ObjectId(w_id)}, {"$set": {"status": "approved"}})
     return jsonify({"success": True})
 
+# ===================== ADMIN CONFIG UPDATE =====================
+@app.route("/api/admin/update_settings", methods=["POST"])
+@login_required
+def admin_update_settings():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    # উদাহরণ: channel_url, min_trades, ip_limit ইত্যাদি
+    admin_config_col.update_one({"_id": "global"}, {"$set": {
+        "channel_url": data.get("channel_url", ""),
+        "min_trades": data.get("min_trades", 5),
+        "ip_limit": data.get("ip_limit", "off")
+    }}, upsert=True)
+    return jsonify({"success": True})
+
+@app.route("/api/admin/set_price", methods=["POST"])
+@login_required
+def admin_set_price():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    price = request.json.get("price")
+    if price:
+        admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": float(price)}})
+        return jsonify({"success": True})
+    return jsonify({"error": "Invalid price"}), 400
+
+@app.route("/api/admin/set_fee", methods=["POST"])
+@login_required
+def admin_set_fee():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    fee = request.json.get("fee")
+    if fee:
+        admin_config_col.update_one({"_id": "global"}, {"$set": {"trading_fee": float(fee)}})
+        return jsonify({"success": True})
+    return jsonify({"error": "Invalid fee"}), 400
+
+@app.route("/api/admin/update_wallets", methods=["POST"])
+@login_required
+def admin_update_wallets():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    nagad = request.json.get("nagad", "")
+    bkash = request.json.get("bkash", "")
+    admin_config_col.update_one({"_id": "global"}, {"$set": {"wallet": {"nagad": nagad, "bkash": bkash}}})
+    return jsonify({"success": True})
+
+@app.route("/api/admin/update_balance", methods=["POST"])
+@login_required
+def admin_update_balance():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.json.get("uid")   # এখানে telegram_id আসবে বা MongoDB _id?
+    cash = request.json.get("cash")
+    aaf = request.json.get("aaf")
+    user = users_col.find_one({"telegram_id": uid})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if cash is not None:
+        users_col.update_one({"_id": user["_id"]}, {"$set": {"cash": float(cash)}})
+    if aaf is not None:
+        users_col.update_one({"_id": user["_id"]}, {"$set": {"aaf": float(aaf)}})
+    return jsonify({"success": True})
+
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
