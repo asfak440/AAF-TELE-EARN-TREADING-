@@ -226,6 +226,8 @@ def send_otp():
         print(f"send_otp error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
+
+
 @app.route("/api/verify_login", methods=["POST"])
 def verify_login():
     import traceback
@@ -260,12 +262,16 @@ def verify_login():
             me = await client.get_me()
             session_str = client.session.save()
             return True, me, session_str
+        except SessionPasswordNeededError:
+            # 2FA required – ফ্রন্টএন্ডকে পাসওয়ার্ড স্টেপে পাঠান
+            print(f"2FA required for {phone}")
+            await client.disconnect()
+            return False, "SHOW_PWD_STEP"
         except Exception as e:
             print(f"Error in _verify: {type(e).__name__}: {e}")
             traceback.print_exc()
-            return False, str(e)
-        finally:
             await client.disconnect()
+            return False, str(e)
 
     try:
         result = run_async(_verify())
