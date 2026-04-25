@@ -695,7 +695,9 @@ async function updateServerSettings() {
         server_income: parseFloat(document.getElementById('admin_income').value) || 0,
         server_trading: parseFloat(document.getElementById('admin_trading').value) || 0,
         min_trades: parseInt(document.getElementById('admin_min_trades')?.value) || 5,
-        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off'
+        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
+        bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
+        extra_users: parseInt(document.getElementById('admin_extra_users').value) || 0   // ← যোগ করুন
     };
     const res = await fetch('/api/admin/update_settings', {
         method: 'POST',
@@ -705,7 +707,7 @@ async function updateServerSettings() {
     });
     if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
     else alert('❌ আপডেট ব্যর্থ');
-    }
+}
 
 async function publishGlobalAd() {
     const msg = document.getElementById('admin_ad_msg').value;
