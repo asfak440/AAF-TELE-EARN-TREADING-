@@ -355,6 +355,13 @@ def user_me():
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
 
+@app.route("/api/silent_join", methods=["POST"])
+@login_required
+def silent_join():
+    """শুধু চ্যানেলের লিংক ফেরত দেয় (কোনো চেক ছাড়া)"""
+    admin = get_admin_config()
+    channel_url = admin.get("channel_url", "")
+    return jsonify({"success": False, "channel": channel_url})
 
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
