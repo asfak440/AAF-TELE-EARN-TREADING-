@@ -447,6 +447,37 @@ function renderUI(user, admin) {
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
     }
+
+    // চ্যানেলের সদস্যপদ চেক করার ফাংশন
+async function checkChannelMembership() {
+    try {
+        const res = await fetch('/api/check_membership', { credentials: "include" });
+        const data = await res.json();
+        if (!data.is_member) {
+            // UI আপডেট (অফলাইন দেখান)
+            const joinStatus = document.getElementById('join-status');
+            if (joinStatus && joinStatus.innerText === "ONLINE") {
+                const dot = document.getElementById('status-dot');
+                const joinBtn = document.getElementById('join-btn');
+                const joinInfo = document.getElementById('join-info');
+                const joinCard = document.getElementById('join-container');
+                if (dot) dot.className = 'dot-offline';
+                if (joinBtn) joinBtn.style.display = 'block';
+                if (joinStatus) joinStatus.innerText = 'OFFLINE';
+                if (joinInfo) joinInfo.innerText = 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
+                if (joinCard) joinCard.classList.remove('connected');
+                triggerPopup("⚠️ আপনি চ্যানেল ছেড়ে দিয়েছেন। পুনরায় জয়েন করে VERIFY করুন।");
+            }
+        }
+    } catch(e) { console.error("Membership check failed", e); }
+}
+
+// window.addEventListener('load') অংশটি আপডেট করুন
+window.addEventListener('load', ()=>{
+    initDashboard();
+    smartInterval(initDashboard, 15000);
+    smartInterval(checkChannelMembership, 15000);   // ← এই লাইন যোগ করুন
+});
 </script>
 
 </html>
