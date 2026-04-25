@@ -355,19 +355,9 @@ def user_me():
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
 
-
-@app.route("/api/silent_join", methods=["POST"])
-@login_required
-def silent_join():
-    """শুধু চ্যানেলের লিংক ফেরত দেয় (কোনো চেক ছাড়া)"""
-    admin = get_admin_config()
-    channel_url = admin.get("channel_url", "")
-    return jsonify({"success": False, "channel": channel_url})
-
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
 def verify_join():
-    """টেলিগ্রাম চেক করে সদস্য হলে is_joined=True সেট করে"""
     uid = session.get("uid")
     user = users_col.find_one({"_id": ObjectId(uid)})
     admin = get_admin_config()
@@ -381,13 +371,11 @@ def verify_join():
         await client.connect()
         try:
             entity = await client.get_entity(channel_url)
-            # ইউজারের আইডি খোঁজার আরও নির্ভরযোগ্য উপায়
-            async for participant in client.iter_participants(entity):
-                if str(participant.id) == str(user.get("telegram_id")):
-                    return True
-            return False
+            # get_participant সরাসরি চেক করে – সদস্য থাকলে exception ছোড়ে না
+            await client.get_participant(entity, int(user["telegram_id"]))
+            return True
         except Exception as e:
-            print(f"Telegram verify error: {e}")
+            print(f"Telegram membership check error: {e}")
             return False
         finally:
             await client.disconnect()
@@ -398,7 +386,6 @@ def verify_join():
         return jsonify({"success": True})
     else:
         return jsonify({"success": False, "channel": channel_url})
-
 
 # ================= API: TASKS (Firebase) =================
 @app.route("/api/tasks")
