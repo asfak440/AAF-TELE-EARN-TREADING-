@@ -663,21 +663,7 @@ function openTab(el){
     .forEach(b=>b.classList.add('active'));
 }
 
-    async function updateServerSettings() {
-    const data = {
-        channel_url: document.getElementById('admin_channel_url').value,
-        min_trades: document.getElementById('admin_min_trades')?.value,
-        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off'
-    };
-    const res = await fetch('/api/admin/update_settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data)
-    });
-    if (res.ok) alert('সার্ভার আপডেট হয়েছে');
-    else alert('আপডেট ব্যর্থ');
-    }
+    
 
     // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
 async function updateServerSettings() {
@@ -701,6 +687,25 @@ async function updateServerSettings() {
     else alert('❌ আপডেট ব্যর্থ');
 }
 
+async function updateServerSettings() {
+    const data = {
+        channel_url: document.getElementById('admin_channel_url').value,
+        bot_token: document.getElementById('admin_bot_token').value,
+        channel_id: document.getElementById('admin_channel_id').value,
+        server_income: parseFloat(document.getElementById('admin_income').value) || 0,
+        server_trading: parseFloat(document.getElementById('admin_trading').value) || 0,
+        min_trades: parseInt(document.getElementById('admin_min_trades')?.value) || 5,
+        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off'
+    };
+    const res = await fetch('/api/admin/update_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+    if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
+    else alert('❌ আপডেট ব্যর্থ');
+    }
 
 async function publishGlobalAd() {
     const msg = document.getElementById('admin_ad_msg').value;
