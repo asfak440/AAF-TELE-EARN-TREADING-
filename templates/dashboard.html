@@ -224,7 +224,7 @@
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
                     <div>
-                        <h4 style="font-size: 11px; margin: 0;">PAYMENT HISTORY</h4>
+                        <h4 এটা: 11px; margin: 0;">PAYMENT HISTORY</h4>
                         <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
                     </div>
                 </div>
@@ -363,16 +363,17 @@ async function verifyJoin() {
             triggerPopup("✅ চ্যানেল ভেরিফাইড!");
             initDashboard();
         } else {
-            // শুধুমাত্র চ্যানেল লিংক থাকলেই খুলবে
+            // শুধুমাত্র চ্যানেল লিংক থাকলেই খোলা হবে, না হলে মেসেজ দেখাবে
             if (data.channel && data.channel.trim() !== "") {
                 window.open(data.channel, "_blank");
-                triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার ভেরিফাই করুন");
+                triggerPopup("❌ চ্যানেলে জয়েন করে আবার ভেরিফাই করুন");
             } else {
-                triggerPopup("❌ ভেরিফিকেশন ব্যর্থ। এডমিনকে জানান।");
+                triggerPopup("❌ ভেরিফিকেশন ব্যর্থ: " + (data.message || "অজানা ত্রুটি"));
             }
         }
-    } catch {
-        triggerPopup("Server Error");
+    } catch (error) {
+        console.error(error);
+        triggerPopup("সার্ভার ত্রুটি, আবার চেষ্টা করুন");
     }
     btn.innerText = "VERIFY MEMBERSHIP";
     btn.disabled = false;
