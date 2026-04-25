@@ -366,43 +366,41 @@ def silent_join():
     channel_url = admin.get("channel_url", "")
     return jsonify({"success": False, "channel": channel_url})
 
+
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
 def verify_join():
-    """বট ব্যবহার করে ইউজারের চ্যানেল সদস্যপদ যাচাই করে"""
     uid = session.get("uid")
     if not uid:
-        return jsonify({"success": False, "message": "Not logged in"})
+        return jsonify({"success": False, "message": "Not logged in", "channel": ""})
 
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         session.clear()
-        return jsonify({"success": False, "message": "User not found"})
+        return jsonify({"success": False, "message": "User not found", "channel": ""})
 
     admin = get_admin_config()
     bot_token = admin.get("bot_token")
     channel_url = admin.get("channel_url", "")
 
     if not bot_token or not channel_url:
-        return jsonify({"success": False, "message": "Bot or channel not configured by admin"})
+        return jsonify({"success": False, "message": "Bot or channel not configured", "channel": channel_url})
 
-    # ইউজারের টেলিগ্রাম আইডি integer এ কনভার্ট
     try:
         user_tg_id = int(user.get("telegram_id"))
     except (TypeError, ValueError):
-        return jsonify({"success": False, "message": "Invalid Telegram ID"})
+        return jsonify({"success": False, "message": "Invalid Telegram ID", "channel": channel_url})
 
-    # চ্যানেলের ইউজারনেম বের করুন (লিংক থেকে @username)
+    # চ্যানেল ইউজারনেম বের করা
     if "t.me/" in channel_url:
-        # https://t.me/username
-        username_part = channel_url.split("t.me/")[-1].split("/")[0]
-        channel_username = "@" + username_part
+        channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
     elif channel_url.startswith("@"):
         channel_username = channel_url
     else:
         channel_username = "@" + channel_url
 
     try:
+        import telebot
         bot = telebot.TeleBot(bot_token)
         chat_member = bot.get_chat_member(channel_username, user_tg_id)
         if chat_member.status in ["member", "creator", "administrator"]:
@@ -411,14 +409,11 @@ def verify_join():
         else:
             return jsonify({"success": False, "channel": channel_url})
     except ApiTelegramException as e:
-        if "user not found" in str(e).lower():
-            return jsonify({"success": False, "channel": channel_url})
-        else:
-            print(f"Telegram API error: {e}")
-            return jsonify({"success": False, "message": "Verification failed, try again later"})
+        # বট অ্যাডমিন না হলে এই error আসে
+        return jsonify({"success": False, "channel": channel_url, "message": "Verification failed. Channel inaccessible."})
     except Exception as e:
         print(f"Verification error: {e}")
-        return jsonify({"success": False, "message": "Server error"})
+        return jsonify({"success": False, "channel": channel_url, "message": "Server error"})
 
 
 # ================= API: TASKS (Firebase) =================
