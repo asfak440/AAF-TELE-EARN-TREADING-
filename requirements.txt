@@ -9,4 +9,4 @@ cryptography
 requests
 nest_asyncio
 firebase-admin
-pyTelegramBotAPI
+pyTelegramBotAPI==4.16.0
