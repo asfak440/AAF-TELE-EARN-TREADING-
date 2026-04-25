@@ -91,14 +91,18 @@ def get_admin_config():
             "server_trading": 0,
             "total_users": users_col.count_documents({}),
             "admin_pin": "Abdullah6790",
-            "wallet": {"nagad": "017XXXXXXXX"},
+            "wallet": {"nagad": "017XXXXXXXX", "bkash": ""},
             "trading_ad_text": "Welcome to Trading",
             "task_banner_ad": "",
             "task_popup_ad": "",
             "banner_image": "",
             "popup_ad": {"enabled": False, "image": "", "title": "", "desc": ""},
             "live_price": 1.0,
-            "channel_url": "https://t.me/your_channel"
+            "channel_url": "",
+            "bot_token": "",
+            "min_trades": 5,
+            "ip_limit": "off",
+            "extra_users": 0         # ← ডিফল্ট ফেক ইউজার 0
         }
         admin_config_col.insert_one(doc)
     return doc
