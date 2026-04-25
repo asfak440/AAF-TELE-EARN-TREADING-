@@ -249,6 +249,8 @@
             <!-- এখন এটি সরাসরি ব্যাকএন্ডে রিকোয়েস্ট পাঠাবে -->
             <button class="btn-join" id="join-btn" onclick="handleAutoJoin()">JOIN NOW</button>
             <button onclick="verifyJoin()" id="verify-btn" style="display:block; background:#00f2fe; border:1px solid #00f2fe; color:#000; margin-top:10px; width:100%; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">✅ VERIFY MEMBERSHIP</button>
+            <!-- আপনার বিদ্যমান JOIN NOW বাটনের পরে -->
+            <button onclick="testVerify()" style="background:#00f2fe; border:none; padding:8px 15px; margin:5px; border-radius:8px;">🔍 TEST VERIFY</button>
         </div>
 
     </div>
@@ -442,5 +444,17 @@ function renderUI(user, admin) {
   if (joinCard) joinCard.classList.toggle('connected', joined);
     }
 </script>
-    
+
+
+<script>
+async function testVerify() {
+    try {
+        const res = await fetch('/api/verify_join', { method: 'POST', credentials: 'include' });
+        const data = await res.json();
+        alert("রেসপন্স:\n" + JSON.stringify(data, null, 2));
+    } catch(e) {
+        alert("Error: " + e.message);
+    }
+}
+</script>
 </html>
