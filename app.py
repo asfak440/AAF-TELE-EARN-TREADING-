@@ -359,29 +359,37 @@ def user_me():
 @login_required
 def silent_join():
     uid = session.get("uid")
+    if not uid:
+        return jsonify({"success": False, "message": "Not logged in"})
+
     user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"success": False, "message": "User not found"})
+
     admin = get_admin_config()
     channel_url = admin.get("channel_url", "")
+    if not channel_url:
+        return jsonify({"success": False, "message": "Channel URL not set by admin"})
 
-    # ইউজার বা সেশন স্ট্রিং না থাকলে জয়েন অসম্ভব
-    if not user or "session_string" not in user or not channel_url:
-        return jsonify({"success": False, "channel": channel_url})
+    if "session_string" not in user or not user["session_string"]:
+        return jsonify({"success": False, "message": "Telegram session missing. Please re-login."})
 
-    async def check_join():
+    async def check_membership():
         client = TelegramClient(StringSession(user["session_string"]), API_ID, API_HASH)
         await client.connect()
         try:
             entity = await client.get_entity(channel_url)
-            # get_participant সরাসরি চেক করে – সদস্য থাকলে কোনো exception ছোড়ে না
-            await client.get_participant(entity, int(user["telegram_id"]))
-            return True
+            # get_participants ব্যবহার করে সদস্য কিনা চেক করা (লিমিট 1, সার্চ দিয়ে)
+            participants = await client.get_participants(entity, limit=1, search=str(user["telegram_id"]))
+            return len(participants) > 0
         except Exception as e:
-            print(f"Telegram check error: {type(e).__name__}: {e}")
+            print(f"Telegram membership check error: {type(e).__name__}: {e}")
             return False
         finally:
             await client.disconnect()
 
-    is_member = run_async(check_join())
+    is_member = run_async(check_membership())
     if is_member:
         users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
         return jsonify({"success": True})
