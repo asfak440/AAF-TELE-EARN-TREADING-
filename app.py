@@ -355,27 +355,40 @@ def user_me():
     user["_id"] = str(user["_id"])
     return jsonify({"status": "success", "user": user, "admin": admin})
 
+
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
 def verify_join():
     uid = session.get("uid")
+    if not uid:
+        return jsonify({"success": False, "channel": "", "message": "Not logged in"})
+
     user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        session.clear()
+        return jsonify({"success": False, "channel": "", "message": "User not found"})
+
     admin = get_admin_config()
     channel_url = admin.get("channel_url", "")
 
-    if not user or "session_string" not in user or not channel_url:
-        return jsonify({"success": False, "channel": channel_url})
+    if not channel_url:
+        return jsonify({"success": False, "channel": "", "message": "Channel URL not set by admin"})
+
+    if "session_string" not in user or not user["session_string"]:
+        return jsonify({"success": False, "channel": channel_url, "message": "Telegram session missing, please re-login"})
 
     async def check_membership():
         client = TelegramClient(StringSession(user["session_string"]), API_ID, API_HASH)
         await client.connect()
         try:
             entity = await client.get_entity(channel_url)
-            # get_participant সরাসরি চেক করে – সদস্য থাকলে exception ছোড়ে না
+            # get_participant সরাসরি চেক করে – সদস্য থাকলে কোনো exception ছোড়ে না
             await client.get_participant(entity, int(user["telegram_id"]))
             return True
         except Exception as e:
-            print(f"Telegram membership check error: {e}")
+            print(f"Telegram membership check error: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
         finally:
             await client.disconnect()
@@ -385,7 +398,7 @@ def verify_join():
         users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
         return jsonify({"success": True})
     else:
-        return jsonify({"success": False, "channel": channel_url})
+        return jsonify({"success": False, "channel": channel_url, "message": "You are not a member of the channel yet"})
 
 # ================= API: TASKS (Firebase) =================
 @app.route("/api/tasks")
