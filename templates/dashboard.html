@@ -249,9 +249,7 @@
             <!-- এখন এটি সরাসরি ব্যাকএন্ডে রিকোয়েস্ট পাঠাবে -->
             <button class="btn-join" id="join-btn" onclick="handleAutoJoin()">JOIN NOW</button>
             <button onclick="verifyJoin()" id="verify-btn" style="display:block; background:#00f2fe; border:1px solid #00f2fe; color:#000; margin-top:10px; width:100%; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">✅ VERIFY MEMBERSHIP</button>
-            <!-- আপনার বিদ্যমান JOIN NOW বাটনের পরে -->
-            <button onclick="testVerify()" style="background:#00f2fe; border:none; padding:8px 15px; margin:5px; border-radius:8px;">🔍 TEST VERIFY</button>
-        </div>
+            </div>
 
     </div>
 
@@ -353,8 +351,7 @@ async function handleAutoJoin() {
 }
 
 // ============ verifyjoin =====================
-
-    async function verifyJoin() {
+async function verifyJoin() {
     const btn = document.getElementById('verify-btn');
     if (!btn) return;
     btn.innerText = "VERIFYING...";
@@ -366,15 +363,21 @@ async function handleAutoJoin() {
             triggerPopup("✅ চ্যানেল ভেরিফাইড!");
             initDashboard();
         } else {
-            window.open(data.channel, "_blank");
-            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার ভেরিফাই করুন");
+            // শুধুমাত্র চ্যানেল লিংক থাকলেই খুলবে
+            if (data.channel && data.channel.trim() !== "") {
+                window.open(data.channel, "_blank");
+                triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার ভেরিফাই করুন");
+            } else {
+                triggerPopup("❌ ভেরিফিকেশন ব্যর্থ। এডমিনকে জানান।");
+            }
         }
     } catch {
         triggerPopup("Server Error");
     }
     btn.innerText = "VERIFY MEMBERSHIP";
     btn.disabled = false;
-    }
+}
+    
     
 // ================= POPUP =================
 function triggerPopup(msg) {
@@ -445,16 +448,4 @@ function renderUI(user, admin) {
     }
 </script>
 
-
-<script>
-async function testVerify() {
-    try {
-        const res = await fetch('/api/verify_join', { method: 'POST', credentials: 'include' });
-        const data = await res.json();
-        alert("রেসপন্স:\n" + JSON.stringify(data, null, 2));
-    } catch(e) {
-        alert("Error: " + e.message);
-    }
-}
-</script>
 </html>
