@@ -358,10 +358,35 @@ def user_me():
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
 def silent_join():
-    """শুধু চ্যানেলের লিংক ফেরত দেয় (কোনো চেক ছাড়া)"""
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
     admin = get_admin_config()
     channel_url = admin.get("channel_url", "")
-    return jsonify({"success": False, "channel": channel_url})
+
+    # ইউজার বা সেশন স্ট্রিং না থাকলে জয়েন অসম্ভব
+    if not user or "session_string" not in user or not channel_url:
+        return jsonify({"success": False, "channel": channel_url})
+
+    async def check_join():
+        client = TelegramClient(StringSession(user["session_string"]), API_ID, API_HASH)
+        await client.connect()
+        try:
+            entity = await client.get_entity(channel_url)
+            # get_participant সরাসরি চেক করে – সদস্য থাকলে কোনো exception ছোড়ে না
+            await client.get_participant(entity, int(user["telegram_id"]))
+            return True
+        except Exception as e:
+            print(f"Telegram check error: {type(e).__name__}: {e}")
+            return False
+        finally:
+            await client.disconnect()
+
+    is_member = run_async(check_join())
+    if is_member:
+        users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "channel": channel_url})
 
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
