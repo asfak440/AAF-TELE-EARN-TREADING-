@@ -212,13 +212,14 @@ function renderTaskUI(user, admin, tasks){
   showTimedAd(admin.task_popup_ad);
 }
 
-// renderTasks আগের মতোই থাকবে (কোনো পরিবর্তন নেই)
-// claimTask আগের মতোই থাকবে (এটি ইতিমধ্যে API ব্যবহার করে)
+
 
 // ===== BALANCE =====
 function updateBalance(cash, coin){
-  document.getElementById('u-bal').innerText = cash;
-  document.getElementById('u-coin').innerText = coin;
+  const balEl = document.getElementById('u-bal');
+  const coinEl = document.getElementById('u-coin');
+  if (balEl) balEl.innerText = parseFloat(cash || 0).toFixed(2);
+  if (coinEl) coinEl.innerText = parseFloat(coin || 0).toFixed(2);
 }
 
 // ===== MILESTONE =====
