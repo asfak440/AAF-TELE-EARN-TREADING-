@@ -831,6 +831,50 @@ def admin_config():
         # প্রয়োজনে অন্য কনফিগ ফিল্ডও পাঠাতে পারেন
     })
 
+
+@app.route("/api/check_membership", methods=["GET"])
+@login_required
+def check_membership():
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"is_member": False})
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"is_member": False})
+    
+    # যদি ইতিমধ্যে is_joined False থাকে, তাহলে দ্রুত False রিটার্ন করুন
+    if not user.get("is_joined", False):
+        return jsonify({"is_member": False})
+    
+    admin = get_admin_config()
+    bot_token = admin.get("bot_token")
+    channel_url = admin.get("channel_url", "")
+    
+    if not bot_token or not channel_url:
+        return jsonify({"is_member": user.get("is_joined", False)})
+    
+    try:
+        user_tg_id = int(user.get("telegram_id"))
+        if "t.me/" in channel_url:
+            channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
+        elif channel_url.startswith("@"):
+            channel_username = channel_url
+        else:
+            channel_username = "@" + channel_url
+        
+        import telebot
+        bot = telebot.TeleBot(bot_token)
+        chat_member = bot.get_chat_member(channel_username, user_tg_id)
+        is_member = chat_member.status in ["member", "creator", "administrator"]
+        
+        # যদি সদস্য না থাকে এবং ডাটাবেজে True থাকে, তাহলে False করে দিন
+        if not is_member and user.get("is_joined", False):
+            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": False}})
+        return jsonify({"is_member": is_member})
+    except Exception as e:
+        print(f"Check membership error: {e}")
+        return jsonify({"is_member": user.get("is_joined", False)})
+
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
