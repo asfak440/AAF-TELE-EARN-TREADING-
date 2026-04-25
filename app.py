@@ -764,8 +764,10 @@ def admin_update_settings():
         "ip_limit": data.get("ip_limit", "off"),
         "bot_token": data.get("bot_token", ""),
         "channel_id": data.get("channel_id", ""),
-        "server_income": float(data.get("server_income", 0)),   # ← গুরুত্বপূর্ণ
-        "server_trading": float(data.get("server_trading", 0))  # ← গুরুত্বপূর্ণ
+        "server_income": float(data.get("server_income", 0)),
+        "server_trading": float(data.get("server_trading", 0)),
+        "bonus_target": int(data.get("bonus_target", 5)),
+        "extra_users": int(data.get("extra_users", 0))      # ← ফেক ইউজার যোগ করুন
     }
     admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
