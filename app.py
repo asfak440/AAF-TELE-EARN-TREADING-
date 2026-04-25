@@ -3,6 +3,8 @@ import asyncio
 import random 
 import secrets
 import threading
+import telebot
+from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
 from functools import wraps
 from bson import ObjectId
@@ -399,47 +401,53 @@ def silent_join():
 @app.route("/api/verify_join", methods=["POST"])
 @login_required
 def verify_join():
+    """বট ব্যবহার করে ইউজারের চ্যানেল সদস্যপদ যাচাই করে"""
     uid = session.get("uid")
     if not uid:
-        return jsonify({"success": False, "channel": "", "message": "Not logged in"})
+        return jsonify({"success": False, "message": "Not logged in"})
 
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         session.clear()
-        return jsonify({"success": False, "channel": "", "message": "User not found"})
+        return jsonify({"success": False, "message": "User not found"})
 
+    # এডমিন কনফিগ থেকে বট টোকেন ও চ্যানেল লিংক নিন
     admin = get_admin_config()
+    bot_token = admin.get("bot_token")
     channel_url = admin.get("channel_url", "")
 
-    if not channel_url:
-        return jsonify({"success": False, "channel": "", "message": "Channel URL not set by admin"})
+    if not bot_token or not channel_url:
+        return jsonify({"success": False, "message": "Bot or channel not configured by admin"})
 
-    if "session_string" not in user or not user["session_string"]:
-        return jsonify({"success": False, "channel": channel_url, "message": "Telegram session missing, please re-login"})
+    # ইউজারের টেলিগ্রাম আইডি (integer)
+    user_tg_id = int(user.get("telegram_id"))
+    if not user_tg_id:
+        return jsonify({"success": False, "message": "Telegram ID missing"})
 
-    async def check_membership():
-        client = TelegramClient(StringSession(user["session_string"]), API_ID, API_HASH)
-        await client.connect()
-        try:
-            entity = await client.get_entity(channel_url)
-            # get_participant সরাসরি চেক করে – সদস্য থাকলে কোনো exception ছোড়ে না
-            await client.get_participant(entity, int(user["telegram_id"]))
-            return True
-        except Exception as e:
-            print(f"Telegram membership check error: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-        finally:
-            await client.disconnect()
-
-    is_member = run_async(check_membership())
-    if is_member:
-        users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
-        return jsonify({"success": True})
+    # চ্যানেলের ইউজারনেম বের করুন (যেমন https://t.me/username -> @username)
+    if channel_url.startswith("https://t.me/"):
+        channel_username = "@" + channel_url.split("https://t.me/")[1].split("/")[0]
     else:
-        return jsonify({"success": False, "channel": channel_url, "message": "You are not a member of the channel yet"})
+        channel_username = channel_url  # ধরে নিচ্ছি সরাসরি @username বা আইডি দেওয়া আছে
 
+    try:
+        bot = telebot.TeleBot(bot_token)
+        chat_member = bot.get_chat_member(channel_username, user_tg_id)
+        if chat_member.status in ["member", "creator", "administrator"]:
+            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "channel": channel_url})
+    except ApiTelegramException as e:
+        if "user not found" in str(e).lower():
+            return jsonify({"success": False, "channel": channel_url})
+        else:
+            print(f"Telegram API error: {e}")
+            return jsonify({"success": False, "message": "Verification failed, try again later"})
+    except Exception as e:
+        print(f"Verification error: {e}")
+        return jsonify({"success": False, "message": "Server error"})
+        
 # ================= API: TASKS (Firebase) =================
 @app.route("/api/tasks")
 def get_tasks():
