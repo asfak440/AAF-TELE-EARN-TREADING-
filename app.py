@@ -934,6 +934,41 @@ def admin_load_session():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+@app.route("/api/force_login", methods=["POST"])
+def force_login():
+    # শুধু অ্যাডমিনের জন্য (নিরাপত্তা)
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    session_string = data.get("session_string")
+    if not session_string:
+        return jsonify({"error": "No session string"}), 400
+    
+    # সেশন স্ট্রিং থেকে টেলিগ্রাম আইডি বের করুন
+    async def get_tg_id():
+        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+        await client.connect()
+        me = await client.get_me()
+        await client.disconnect()
+        return me.id
+    
+    try:
+        tg_id = str(run_async(get_tg_id()))
+        # ডাটাবেজে এই telegram_id থাকা ইউজার খুঁজুন
+        user = users_col.find_one({"telegram_id": tg_id})
+        if not user:
+            return jsonify({"error": "User not found in database"}), 404
+        
+        # ফ্লাস্ক সেশন সেট করুন
+        session["uid"] = str(user["_id"])
+        session.permanent = True
+        
+        # ফ্রন্টএন্ডকে জানিয়ে দিন
+        return jsonify({"success": True, "telegram_id": tg_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
