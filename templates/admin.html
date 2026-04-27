@@ -341,16 +341,17 @@ table {
     </div>  
 
     <!-- Users Session List -->
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>  
-        <a href="/session_viewer" target="_blank" style="...">সেশন ভিউয়ার</a>
-        <button onclick="toggleUserList()" 
-        style="margin-bottom:10px;background:var(--purple);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer">
-        Show Users
-        </button>
+<div class="premium-card">  
+    <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
+    
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+        <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
+        <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
+        <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
+    </div>
 
-        <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
-    </div>  
+    <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
+</div>
 
     <!-- Ads Control -->
     <div class="premium-card">
