@@ -8,7 +8,7 @@
         body { background: #0a0f1e; color: #fff; font-family: monospace; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #111827; border-radius: 20px; padding: 25px; border: 1px solid #2d3a5e; }
         input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: none; box-sizing: border-box; }
-        input { background: #1e293b; color: #fff; }
+        input { background: #1e293b; color: #fff; font-family: monospace; }
         button { background: #00f2fe; color: #000; font-weight: bold; cursor: pointer; }
         .user-card { background: #1e293b; padding: 15px; border-radius: 15px; margin-top: 20px; }
         .avatar { width: 80px; height: 80px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; overflow: hidden; }
@@ -26,6 +26,9 @@
     <input type="text" id="sessionInput" placeholder="পেস্ট করুন সেশন স্ট্রিং (StringSession)" style="font-family: monospace; font-size: 12px;">
     <button onclick="loadUser()">📂 ইউজার লোড করুন</button>
     <div id="result"></div>
+
+    <!-- লগইন বাটন -->
+    <button onclick="loginWithSession()" style="background:#00ff88; color:#000; margin-top:10px;">🔐 এই অ্যাকাউন্টে লগইন করুন</button>
 </div>
 
 <script>
@@ -69,6 +72,28 @@ async function loadUser() {
         }
     } catch(e) {
         resultDiv.innerHTML = `<div class="error">❌ সার্ভার কানেকশন ব্যর্থ</div>`;
+    }
+}
+
+async function loginWithSession() {
+    const sessionStr = document.getElementById('sessionInput').value.trim();
+    if (!sessionStr) {
+        alert('সেশন স্ট্রিং দিন');
+        return;
+    }
+    const res = await fetch('/api/force_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ session_string: sessionStr })
+    });
+    const data = await res.json();
+    if (data.success) {
+        localStorage.setItem("telegram_id", data.telegram_id);
+        alert("✅ লগইন সফল! ড্যাশবোর্ডে রিডিরেক্ট হচ্ছে...");
+        window.location.href = "/dashboard";
+    } else {
+        alert("❌ লগইন ব্যর্থ: " + (data.error || "অজানা ত্রুটি"));
     }
 }
 </script>
