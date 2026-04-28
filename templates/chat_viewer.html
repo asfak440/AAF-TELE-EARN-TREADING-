@@ -110,6 +110,12 @@ function escapeHtml(str) {
         return m;
     });
 }
+    fetch('/api/admin/chat_dialogs', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({ session_string: 'YOUR_VALID_SESSION_STRING' })
+}).then(r=>r.json()).then(console.log)
 </script>
 </body>
 </html>
