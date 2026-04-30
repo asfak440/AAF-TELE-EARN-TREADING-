@@ -1004,7 +1004,7 @@ def admin_chat_dialogs():
                 # বার্তা নিরাপদে বের করা
                 last_msg = ""
                 if d.message:
-                    last_msg = d.message.text or d.message.caption or ""
+                    last_msg = d.message.text if d.message.text else d.message.caption if hasattr(d.message, 'caption') else ""
                 result.append({
                     "id": d.id,
                     "name": name,
@@ -1045,16 +1045,24 @@ def admin_chat_messages():
             messages = await client.get_messages(entity, limit=limit)
             result = []
             for msg in messages:
-                text = msg.text or msg.caption or "[Media]"
+                # মেসেজের টেক্সট বা মিডিয়া নির্ধারণ
+                if msg.text:
+                    text = msg.text
+                elif msg.caption:
+                    text = msg.caption
+                else:
+                    # সার্ভিস মেসেজ বা অন্য কিছু
+                    text = "[Service message or media without caption]"
+                
                 result.append({
                     "id": msg.id,
                     "text": text,
-                    "sender_id": msg.sender_id,
+                    "sender_id": msg.sender_id if msg.sender_id else "Unknown",
                     "date": msg.date.isoformat() if msg.date else None
                 })
             return result
         except Exception as e:
-            print(f"[ERROR] fetch_messages failed: {type(e).__name__}: {e}")
+            print(f"[ERROR] fetch_messages: {type(e).__name__}: {e}")
             raise
         finally:
             await client.disconnect()
@@ -1064,7 +1072,6 @@ def admin_chat_messages():
         return jsonify({"success": True, "messages": messages})
     except Exception as e:
         return jsonify({"success": False, "error": f"{type(e).__name__}: {str(e)}"})
-
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
