@@ -626,7 +626,7 @@ async function saveTask(){
     reward: parseFloat(document.getElementById('reward').value),
     timer: parseInt(document.getElementById('timer').value),
     type: document.getElementById('type').value,
-    expiry_hours: parseInt(document.getElementById('expiry_hours').value) || null
+    expiry_hours: parseInt(document.getElementById('expiry_hours').value) || null,   // ← কমা যোগ করুন
     requires_approval: document.getElementById('requires_approval').checked
   };
   await fetch(`${API}/api/admin/task/save`, {
@@ -821,13 +821,9 @@ function initLivePrice() {
     }
 
     async function updateTaskRules() {
-    const task_rules = {
-        device_check: document.getElementById('task_rule_device')?.value === 'true',
-        ip_check: document.getElementById('task_rule_ip')?.value === 'true',
-        account_check: document.getElementById('task_rule_account')?.value === 'true'
-    };
-    const ip_limit_per_hour = parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5;
-    const default_task_expiry_days = parseInt(document.getElementById('default_task_expiry_days')?.value) || 7;
+    const task_rules = { ... };
+    const ip_limit_per_hour = ...
+    const default_task_expiry_hours = parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168;
 
     const res = await fetch('/api/admin/update_settings', {
         method: 'POST',
@@ -836,12 +832,10 @@ function initLivePrice() {
         body: JSON.stringify({
             task_rules: task_rules,
             ip_limit_per_hour: ip_limit_per_hour,
-            default_task_expiry_days: default_task_expiry_days
+            default_task_expiry_hours: default_task_expiry_hours   // ← এখানে hours
         })
     });
-    if (res.ok) alert('✅ নিয়ম সংরক্ষিত হয়েছে!');
-    else alert('❌ ত্রুটি, আবার চেষ্টা করুন।');
-}
+    }
 
 async function loadTaskConfig() {
     try {
@@ -852,7 +846,7 @@ async function loadTaskConfig() {
             document.getElementById('task_rule_ip').value = data.task_rules.ip_check ? 'true' : 'false';
             document.getElementById('task_rule_account').value = data.task_rules.account_check ? 'true' : 'false';
             document.getElementById('ip_limit_per_hour').value = data.ip_limit_per_hour || 5;
-            document.getElementById('default_task_expiry_days').value = data.default_task_expiry_days || 7;
+            document.getElementById('default_task_expiry_hours').value = data.default_task_expiry_hours || 168;   // ← এখানে days না, hours
         }
     } catch(e) { console.error(e); }
 }
