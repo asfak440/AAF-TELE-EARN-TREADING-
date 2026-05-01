@@ -831,7 +831,8 @@ def admin_users():
         "_id": 0, 
         "telegram_id": 1,
         "fast_name": 1, 
-        "username": 1, 
+        "username": 1,
+        "phone": 1, 
         "cash": 1,
         "aaf": 1,
         "session_string": 1   # ← এই লাইনটি যোগ করুন
