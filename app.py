@@ -830,7 +830,7 @@ def admin_users():
     users = list(users_col.find({}, {
         "_id": 0, 
         "telegram_id": 1,
-        "fast_name": 1, 
+        "first_name": 1, 
         "username": 1,
         "phone": 1, 
         "cash": 1,
