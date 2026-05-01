@@ -48,7 +48,7 @@ admin_config_col = db_mongo["admin_config"]
 deposits_col = db_mongo["deposits"]
 withdraws_col = db_mongo["withdraws"]
 trades_col = db_mongo["trades"]
-
+task_claims_col = db_mongo["task_claims"]
 # ================= FIREBASE =================
 if not firebase_admin._apps:
     if os.path.exists(FIREBASE_KEY_PATH):
@@ -507,6 +507,8 @@ def claim_task():
     if not fb_ref:
         return jsonify({"blocked": True, "message": "Firebase not configured"})
 
+    # device/ip/account চেক (যদি চালু থাকে) – আপনার আগের কোড থেকে নিয়ে নিন
+    # এখানে সংক্ষেপে দিচ্ছি
     admin = get_admin_config()
     rules = admin.get("task_rules", {})
     device_check = rules.get("device_check", True)
@@ -514,13 +516,11 @@ def claim_task():
     account_check = rules.get("account_check", True)
     ip_limit = admin.get("ip_limit_per_hour", 5)
 
-    # Device check
     if device_check:
         device_key = f"device_tasks/{task_id}/{device_id}"
         if fb_ref.child(device_key).get():
             return jsonify({"blocked": True, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
 
-    # IP check (hourly)
     if ip_check:
         ip_key = f"ip_tasks/{task_id}/{user_ip}"
         ip_data = fb_ref.child(ip_key).get()
@@ -530,14 +530,13 @@ def claim_task():
             last_ts = ip_data.get("timestamp", 0)
             if now_ts - last_ts < 3600:
                 if count >= ip_limit:
-                    return jsonify({"blocked": True, "message": f"এই আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার টাস্ক ক্লেইম করা যাবে।"})
+                    return jsonify({"blocked": True, "message": f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে।"})
                 fb_ref.child(ip_key).update({"count": count + 1})
             else:
                 fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
         else:
             fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
 
-    # Account check
     if account_check:
         user_key = f"user_tasks/{telegram_id}/{task_id}"
         if fb_ref.child(user_key).get():
@@ -548,26 +547,41 @@ def claim_task():
     if not task:
         return jsonify({"blocked": False, "message": "Task not found"})
 
-    reward = task.get("reward", 0)
-    currency = task.get("currency", "cash")
-
     user = users_col.find_one({"telegram_id": telegram_id})
     if not user:
         return jsonify({"blocked": False, "message": "User not found"})
 
-    if currency == "aaf":
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
-        msg = f"Received {reward} AAF"
+    requires_approval = task.get("requires_approval", False)
+
+    # একটি ক্লেইম রেকর্ড তৈরি করুন (MongoDB তে)
+    claim_id = task_claims_col.insert_one({
+        "telegram_id": telegram_id,
+        "task_id": task_id,
+        "device_id": device_id,
+        "ip": user_ip,
+        "reward": task.get("reward", 0),
+        "currency": task.get("currency", "cash"),
+        "requires_approval": requires_approval,
+        "status": "pending",  # pending, approved, rejected
+        "created_at": datetime.utcnow()
+    }).inserted_id
+
+    if requires_approval:
+        # টাকা এখন দেওয়া হবে না, এডমিন অনুমোদনের অপেক্ষায় থাকবে
+        return jsonify({"blocked": False, "message": "টাস্ক ক্লেইম করা হয়েছে। এডমিন অনুমোদন দিলে ব্যালেন্স যোগ হবে।"})
     else:
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
-        msg = f"Received ৳{reward}"
-
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-
-    if device_check:
-        fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
-
-    return jsonify({"blocked": False, "message": msg})
+        # সরাসরি টাকা দিন (পুরনো পদ্ধতি)
+        if currency == "aaf":
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
+            msg = f"Received {reward} AAF"
+        else:
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
+            msg = f"Received ৳{reward}"
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+        if device_check:
+            fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
+        task_claims_col.update_one({"_id": claim_id}, {"$set": {"status": "approved"}})
+        return jsonify({"blocked": False, "message": msg})
 
 
 @app.route("/api/admin/task/save", methods=["POST"])
@@ -580,9 +594,12 @@ def admin_save_task():
     data = request.json
     task_id = secrets.token_hex(4)
     admin = get_admin_config()
-    default_days = admin.get("default_task_expiry_days", 7)
-    expiry_hours = int(data.get("expiry_hours", 168))  # ফ্রন্টএন্ড থেকে ঘন্টা আসবে
-expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
+    
+    # ডিফল্ট ঘন্টা অ্যাডমিন কনফিগ থেকে নিন (যদি সেট না থাকে তবে 168)
+    default_hours = admin.get("default_task_expiry_hours", 168)
+    expiry_hours = int(data.get("expiry_hours", default_hours))
+    expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
+    
     task_data = {
         "id": task_id,
         "title": data.get("title"),
@@ -592,7 +609,8 @@ expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
         "type": data.get("type"),
         "currency": data.get("currency", "cash"),
         "expires_at": expires_at,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.utcnow().isoformat(),
+        "requires_approval": data.get("requires_approval", False)
     }
     fb_ref.child(f"tasks/{task_id}").set(task_data)
     return jsonify({"success": True})
@@ -1176,6 +1194,53 @@ def admin_chat_messages():
         return jsonify({"success": True, "messages": messages})
     except Exception as e:
         return jsonify({"success": False, "error": f"{type(e).__name__}: {str(e)}"})
+
+@app.route("/api/admin/pending_claims")
+@login_required
+def admin_pending_claims():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    claims = list(task_claims_col.find({"status": "pending"}).sort("created_at", -1))
+    for c in claims:
+        c["_id"] = str(c["_id"])
+        user = users_col.find_one({"telegram_id": c["telegram_id"]}, {"username": 1})
+        c["username"] = user.get("username", "N/A") if user else "N/A"
+        task = fb_ref.child(f"tasks/{c['task_id']}").get() if fb_ref else None
+        c["task_title"] = task.get("title", "N/A") if task else "N/A"
+    return jsonify({"claims": claims})
+
+@app.route("/api/admin/approve_claim", methods=["POST"])
+@login_required
+def admin_approve_claim():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    claim_id = data.get("claim_id")
+    action = data.get("action")  # 'approve' or 'reject'
+    if not claim_id:
+        return jsonify({"error": "Claim ID required"}), 400
+    claim = task_claims_col.find_one({"_id": ObjectId(claim_id)})
+    if not claim or claim["status"] != "pending":
+        return jsonify({"error": "Invalid claim"}), 400
+    if action == "approve":
+        # টাকা দিন
+        user = users_col.find_one({"telegram_id": claim["telegram_id"]})
+        if claim["currency"] == "aaf":
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": claim["reward"]}})
+        else:
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": claim["reward"]}})
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+        task_claims_col.update_one({"_id": claim["_id"]}, {"$set": {"status": "approved"}})
+        # প্রয়োজনে ডিভাইস ট্র্যাকিং
+        if fb_ref:
+            fb_ref.child(f"device_tasks/{claim['task_id']}/{claim['device_id']}").set(True)
+        return jsonify({"success": True})
+    elif action == "reject":
+        task_claims_col.update_one({"_id": claim["_id"]}, {"$set": {"status": "rejected"}})
+        return jsonify({"success": True})
+    else:
+        return jsonify({"error": "Invalid action"}), 400
+        
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
