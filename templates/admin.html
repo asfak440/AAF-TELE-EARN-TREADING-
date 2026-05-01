@@ -257,43 +257,93 @@ table {
         </div>  
     </div>  
 
+
     <!-- Task Management Section -->  
-    <div id="task" class="page-section">  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>  
-            <input type="text" id="title" placeholder="টাস্ক টাইটেল">  
-            <input type="text" id="link" placeholder="টাস্ক লিংক">  
-            <div class="row">  
-                <input type="number" id="reward" placeholder="পুরস্কার (Amount)">  
-                <select id="currency"><option value="bdt">BDT</option><option value="aaf">AAF</option></select>  
-            </div>  
-            <div class="row">  
-                <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">  
-                <select id="type"><option value="video">Video</option><option value="link">Link Join</option></select>  
-            </div>  
-            <button class="btn-main" onclick="saveTask()">সেভ টাস্ক</button>  
+<div id="task" class="page-section">  
+    <!-- নতুন টাস্ক যোগ করার ফর্ম -->
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>  
+        <input type="text" id="title" placeholder="টাস্ক টাইটেল">  
+        <input type="text" id="link" placeholder="টাস্ক লিংক">  
+        <div class="row">  
+            <input type="number" id="reward" placeholder="পুরস্কার (Amount)">  
+            <select id="currency"><option value="bdt">BDT</option><option value="aaf">AAF</option></select>  
         </div>  
-        <div id="admin-task-list" class="premium-card">লুড হচ্ছে...</div>
-        <div class="premium-card">
-    <div class="card-title"><i class="fas fa-bullhorn"></i> Task Page Ads & Bonus</div>
-
-    <label>বোনাস টার্গেট (কত টাস্কে বোনাস)</label>
-    <input type="number" id="bonus_target">
-
-    <label>Task Banner Ad Image URL</label>
-    <input type="text" id="task_banner_ad">
-
-    <label>Task Popup Ad Text</label>
-    <textarea id="task_popup_ad" rows="3"></textarea>
-</div>  
-
-<label>Strict Protection (1 Device = 1 Time)</label>
-<select id="strict_protection">
-    <option value="false">OFF</option>
-    <option value="true">ON</option>
-</select>
+        <div class="row">  
+            <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">  
+            <select id="type"><option value="video">Video</option><option value="link">Link Join</option></select>  
+        </div>  
+        <!-- টাস্ক মেয়াদ ইনপুট (নতুন) -->
+        <div class="row">
+            <div>
+                <label>টাস্ক মেয়াদ (দিন)</label>
+                <input type="number" id="expiry_days" value="7" min="1" max="365">
+                <small>ডিফল্ট ব্যবহার করলে খালি রাখুন</small>
+            </div>
+        </div>
+        <button class="btn-main" onclick="saveTask()">সেভ টাস্ক</button>  
     </div>  
 
+    <!-- টাস্ক লিস্ট দেখানোর জায়গা -->
+    <div id="admin-task-list" class="premium-card">লুড হচ্ছে...</div>
+
+    <!-- টাস্ক পেজের এড ও বোনাস সেটিং -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-bullhorn"></i> Task Page Ads & Bonus</div>
+        <label>বোনাস টার্গেট (কত টাস্কে বোনাস)</label>
+        <input type="number" id="bonus_target">
+        <label>Task Banner Ad Image URL</label>
+        <input type="text" id="task_banner_ad">
+        <label>Task Popup Ad Text</label>
+        <textarea id="task_popup_ad" rows="3"></textarea>
+    </div>  
+
+    <!-- Strict Protection সেটিং (আগে থেকেই ছিল) -->
+    <label>Strict Protection (1 Device = 1 Time)</label>
+    <select id="strict_protection">
+        <option value="false">OFF</option>
+        <option value="true">ON</option>
+    </select>
+
+    <!-- 🆕 টাস্ক ক্লেইম সুরক্ষা নিয়ম সংক্রান্ত কার্ড (নতুন) -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-shield-alt"></i> টাস্ক ক্লেইম সুরক্ষা নিয়ম</div>
+        <div class="row">
+            <div>
+                <label>ডিভাইস চেক (একই ডিভাইস একবার)</label>
+                <select id="task_rule_device">
+                    <option value="true">চালু</option>
+                    <option value="false">বন্ধ</option>
+                </select>
+            </div>
+            <div>
+                <label>আইপি ঘন্টাভিত্তিক চেক</label>
+                <select id="task_rule_ip">
+                    <option value="true">চালু</option>
+                    <option value="false">বন্ধ</option>
+                </select>
+            </div>
+            <div>
+                <label>অ্যাকাউন্ট চেক (একই অ্যাকাউন্ট একবার)</label>
+                <select id="task_rule_account">
+                    <option value="true">চালু</option>
+                    <option value="false">বন্ধ</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>আইপি প্রতি ঘন্টায় সর্বোচ্চ ক্লেইম</label>
+                <input type="number" id="ip_limit_per_hour" value="5" min="1">
+            </div>
+            <div>
+                <label>ডিফল্ট টাস্ক মেয়াদ (দিন)</label>
+                <input type="number" id="default_task_expiry_days" value="7" min="1" max="365">
+            </div>
+        </div>
+        <button class="btn-main" onclick="updateTaskRules()">নিয়ম সংরক্ষণ করুন</button>
+    </div>
+</div>
     <!-- Trading Section -->  
     <div id="trading" class="page-section">  
         <div class="premium-card">  
@@ -757,6 +807,43 @@ function initLivePrice() {
         box.style.display = 'none';
     }
     }
+
+    async function updateTaskRules() {
+    const task_rules = {
+        device_check: document.getElementById('task_rule_device')?.value === 'true',
+        ip_check: document.getElementById('task_rule_ip')?.value === 'true',
+        account_check: document.getElementById('task_rule_account')?.value === 'true'
+    };
+    const ip_limit_per_hour = parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5;
+    const default_task_expiry_days = parseInt(document.getElementById('default_task_expiry_days')?.value) || 7;
+
+    const res = await fetch('/api/admin/update_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            task_rules: task_rules,
+            ip_limit_per_hour: ip_limit_per_hour,
+            default_task_expiry_days: default_task_expiry_days
+        })
+    });
+    if (res.ok) alert('✅ নিয়ম সংরক্ষিত হয়েছে!');
+    else alert('❌ ত্রুটি, আবার চেষ্টা করুন।');
+}
+
+async function loadTaskConfig() {
+    try {
+        const res = await fetch('/api/admin/config', { credentials: 'include' });
+        const data = await res.json();
+        if (data.task_rules) {
+            document.getElementById('task_rule_device').value = data.task_rules.device_check ? 'true' : 'false';
+            document.getElementById('task_rule_ip').value = data.task_rules.ip_check ? 'true' : 'false';
+            document.getElementById('task_rule_account').value = data.task_rules.account_check ? 'true' : 'false';
+            document.getElementById('ip_limit_per_hour').value = data.ip_limit_per_hour || 5;
+            document.getElementById('default_task_expiry_days').value = data.default_task_expiry_days || 7;
+        }
+    } catch(e) { console.error(e); }
+}
 </script>
     
 </body>
