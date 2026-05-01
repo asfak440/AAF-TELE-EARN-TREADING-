@@ -619,26 +619,39 @@ async function loadUsers(){
     if (r.status === 401) { box.innerHTML = `<div>Please login as admin first.</div>`; return; }
     if (!d.users || d.users.length === 0) { box.innerHTML = `<div>No users found.</div>`; return; }
     
-    // টেবিল শুরু (সরাসরি ইনলাইন স্টাইল ব্যবহার করে সঠিক লেআউট নিশ্চিত)
     let html = `<div style="overflow-x: auto;">`;
-    html += `<table style="width:100%; border-collapse: collapse; font-size: 13px; background: transparent; min-width: 700px;">`;
+    html += `<table style="width:100%; border-collapse: collapse; font-size: 13px; min-width: 800px;">`;
     html += `<thead><tr style="background: #1e293b; color: #00f2fe;">`;
-    html += `<th style="padding: 10px 8px; text-align: left;">User</th>`;
-    html += `<th style="padding: 10px 8px; text-align: left;">Telegram ID</th>`;
-    html += `<th style="padding: 10px 8px; text-align: left;">Phone</th>`;
-    html += `<th style="padding: 10px 8px; text-align: left;">Cash (৳)</th>`;
-    html += `<th style="padding: 10px 8px; text-align: left;">AAF</th>`;
-    html += `<th style="padding: 10px 8px; text-align: left;">Session String</th>`;
+    html += `<th style="padding: 10px 8px;">Full Name</th>`;
+    html += `<th style="padding: 10px 8px;">Username</th>`;
+    html += `<th style="padding: 10px 8px;">Telegram ID</th>`;
+    html += `<th style="padding: 10px 8px;">Phone</th>`;
+    html += `<th style="padding: 10px 8px;">Cash (৳)</th>`;
+    html += `<th style="padding: 10px 8px;">AAF</th>`;
+    html += `<th style="padding: 10px 8px;">Session String</th>`;
     html += `<th style="padding: 10px 8px; text-align: center;">Copy</th>`;
-    html += `</tr></thead><tbody>`;
+    html += `</table></thead><tbody>`;
     
     d.users.forEach(u => {
+      // পূর্ণ নাম (first_name + last_name)
+      let fullName = '';
+      if (u.first_name) fullName += u.first_name;
+      if (u.last_name) fullName += ' ' + u.last_name;
+      fullName = fullName.trim() || (u.username || 'N/A');
+      
+      // ইউজারনেম
+      let username = u.username || 'N/A';
+      
+      // ফোন নাম্বার ফরম্যাট (01XXXXXXXXX)
+      let phone = u.phone || "N/A";
+      if (phone !== "N/A" && phone.startsWith("+880")) phone = phone.slice(4);
+      
       const session = u.session_string || "Not available";
       const displaySession = session.length > 20 ? session.substring(0,17)+"..." : session;
-      let phone = u.phone || "N/A";
-      if (phone && phone.startsWith("+880")) phone = phone.slice(4); // শুধু 01... দেখাবে
+      
       html += `<tr style="border-bottom: 1px solid #2d3a5e;">`;
-      html += `<td style="padding: 8px;">${escapeHtml(u.username) || "N/A"}</td>`;
+      html += `<td style="padding: 8px;">${escapeHtml(fullName)}</td>`;
+      html += `<td style="padding: 8px;">${escapeHtml(username)}</td>`;
       html += `<td style="padding: 8px;">${u.telegram_id || "N/A"}</td>`;
       html += `<td style="padding: 8px;">${escapeHtml(phone)}</td>`;
       html += `<td style="padding: 8px;">৳ ${parseFloat(u.cash || 0).toFixed(2)}</td>`;
@@ -655,7 +668,7 @@ async function loadUsers(){
   }
 }
 
-// ছোট হেল্পার ফাংশন (XSS প্রতিরোধ)
+// XSS প্রতিরোধের জন্য হেল্পার ফাংশন
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -664,7 +677,7 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-            }
+}
 // কপি ফাংশন
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
