@@ -581,8 +581,8 @@ def admin_save_task():
     task_id = secrets.token_hex(4)
     admin = get_admin_config()
     default_days = admin.get("default_task_expiry_days", 7)
-    expiry_days = int(data.get("expiry_days", default_days))
-    expires_at = (datetime.utcnow() + timedelta(days=expiry_days)).isoformat()
+    expiry_hours = int(data.get("expiry_hours", 168))  # ফ্রন্টএন্ড থেকে ঘন্টা আসবে
+expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
     task_data = {
         "id": task_id,
         "title": data.get("title"),
