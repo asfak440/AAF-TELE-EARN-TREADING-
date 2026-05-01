@@ -257,6 +257,12 @@ def admin_panel():
     return render_template("admin.html")
 
 
+@app.route("/reset_admin_pin")
+def reset_admin_pin():
+    admin_config_col.update_one({"_id": "global"}, {"$set": {"admin_pin": "Abdullah6790"}}, upsert=True)
+    return "Admin PIN reset to Abdullah6790"
+
+
 @app.route("/session_viewer")
 def session_viewer():
     # শুধু অ্যাডমিন লগইন থাকলেই পেজ দেখাবে (একই পিন)
