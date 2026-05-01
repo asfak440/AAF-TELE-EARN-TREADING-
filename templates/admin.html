@@ -463,7 +463,8 @@ function initAdmin(){
     loadAds();
     loadWithdraws();
     initLivePrice();
-    loadAdminStats(); // ← এই লাইন যোগ করুন
+    loadAdminStats();
+    loadTaskConfig();   // ← এই লাইন যোগ করুন
 }
     
     async function loadAdminStats() {
@@ -563,7 +564,8 @@ async function saveTask(){
     link: document.getElementById('link').value,
     reward: parseFloat(document.getElementById('reward').value),
     timer: parseInt(document.getElementById('timer').value),
-    type: document.getElementById('type').value
+    type: document.getElementById('type').value,
+    expiry_days: parseInt(document.getElementById('expiry_days').value) || null
   };
   await fetch(`${API}/api/admin/task/save`, {
     method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
@@ -670,27 +672,6 @@ function openTab(el){
 async function updateServerSettings() {
     const data = {
         channel_url: document.getElementById('admin_channel_url').value,
-        min_trades: document.getElementById('admin_min_trades')?.value,
-        ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
-        bot_token: document.getElementById('admin_bot_token').value,
-        channel_id: document.getElementById('admin_channel_id').value,
-        // নিচের দুটি লাইন যোগ করুন
-        server_income: parseFloat(document.getElementById('admin_income').value) || 0,
-        server_trading: parseFloat(document.getElementById('admin_trading').value) || 0
-    };
-    const res = await fetch('/api/admin/update_settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data)
-    });
-    if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
-    else alert('❌ আপডেট ব্যর্থ');
-}
-
-async function updateServerSettings() {
-    const data = {
-        channel_url: document.getElementById('admin_channel_url').value,
         bot_token: document.getElementById('admin_bot_token').value,
         channel_id: document.getElementById('admin_channel_id').value,
         server_income: parseFloat(document.getElementById('admin_income').value) || 0,
@@ -698,7 +679,14 @@ async function updateServerSettings() {
         min_trades: parseInt(document.getElementById('admin_min_trades')?.value) || 5,
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
-        extra_users: parseInt(document.getElementById('admin_extra_users').value) || 0   // ← যোগ করুন
+        extra_users: parseInt(document.getElementById('admin_extra_users').value) || 0,
+        task_rules: {
+            device_check: document.getElementById('task_rule_device')?.value === 'true',
+            ip_check: document.getElementById('task_rule_ip')?.value === 'true',
+            account_check: document.getElementById('task_rule_account')?.value === 'true'
+        },
+        ip_limit_per_hour: parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5,
+        default_task_expiry_days: parseInt(document.getElementById('default_task_expiry_days')?.value) || 7
     };
     const res = await fetch('/api/admin/update_settings', {
         method: 'POST',
@@ -710,30 +698,7 @@ async function updateServerSettings() {
     else alert('❌ আপডেট ব্যর্থ');
 }
 
-async function publishGlobalAd() {
-    const msg = document.getElementById('admin_ad_msg').value;
-    const res = await fetch('/api/admin/global_ad', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message: msg })
-    });
-    if (res.ok) alert('✅ নোটিশ পাবলিশ করা হয়েছে');
-    else alert('❌ পাবলিশ ব্যর্থ');
-}
 
-async function forceMarketPrice() {
-    const price = parseFloat(document.getElementById('inp-price').value);
-    if (isNaN(price)) return alert('সঠিক সংখ্যা দিন');
-    const res = await fetch('/api/admin/set_price', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ price })
-    });
-    if (res.ok) alert('✅ মার্কেট প্রাইস আপডেট হয়েছে');
-    else alert('❌ আপডেট ব্যর্থ');
-}
 
 async function setGlobalFee() {
     const fee = parseFloat(document.getElementById('c-fee').value);
@@ -777,15 +742,6 @@ async function updateUserBalance() {
     else alert('❌ ব্যর্থ: ' + (data.error || 'ইউজার খুঁজে পাওয়া যায়নি'));
 }
 
-function toggleUserList() {
-    const box = document.getElementById('member-list-body');
-    if (box.style.display === 'none' || box.style.display === '') {
-        box.style.display = 'block';
-        loadUsers();
-    } else {
-        box.style.display = 'none';
-    }
-}
 
 function initLivePrice() {
     // price already loads from interval in loadLivePrice function
