@@ -14,7 +14,7 @@ from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
-import firebase_admin
+import firebase_admin import time 
 from firebase_admin import credentials, db
 
 # ================= APP =================
@@ -692,7 +692,7 @@ def deposit():
     })
     return jsonify({"message": "Deposit request sent"})
 
-    @app.route("/api/wallet/withdraw", methods=["POST"])
+@app.route("/api/wallet/withdraw", methods=["POST"])
 @login_required
 def withdraw():
     data = request.json
@@ -710,6 +710,7 @@ def withdraw():
         "created_at": datetime.utcnow()
     })
     return jsonify({"message": "Withdraw request sent"})
+    
 
 @app.route("/api/wallet/transfer", methods=["POST"])
 @login_required
