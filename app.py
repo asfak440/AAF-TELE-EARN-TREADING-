@@ -4,6 +4,7 @@ import random
 import secrets
 import threading
 import telebot
+import time
 from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
 from functools import wraps
@@ -14,7 +15,7 @@ from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
-import firebase_admin import time 
+import firebase_admin  
 from firebase_admin import credentials, db
 
 # ================= APP =================
