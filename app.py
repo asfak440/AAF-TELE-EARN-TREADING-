@@ -135,6 +135,25 @@ def get_admin_config():
         }})
     
     return doc
+
+
+def clean_expired_tasks():
+    while True:
+        try:
+            if fb_ref:
+                now = datetime.utcnow().isoformat()
+                tasks = fb_ref.child("tasks").get()
+                if tasks:
+                    for key, task in tasks.items():
+                        if task.get("expires_at") and task["expires_at"] < now:
+                            fb_ref.child(f"tasks/{key}").delete()
+                            print(f"Deleted expired task: {key}")
+        except Exception as e:
+            print(f"Clean error: {e}")
+        time.sleep(3600)  # প্রতি ঘন্টা
+
+# অ্যাপ স্টার্টআপে থ্রেড চালু করুন (আপনার অন্যান্য থ্রেডের সাথে)
+threading.Thread(target=clean_expired_tasks, daemon=True).start()
     
 
 def update_total_users():
@@ -482,16 +501,48 @@ def claim_task():
     telegram_id = data.get("telegram_id")
     task_id = data.get("task_id")
     device_id = data.get("device_id")
+    user_ip = request.remote_addr
 
     if not fb_ref:
         return jsonify({"blocked": True, "message": "Firebase not configured"})
 
-    # Check device usage
-    device_used = fb_ref.child(f"device_tasks/{task_id}/{device_id}").get()
-    if device_used:
-        return jsonify({"blocked": True, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+    admin = get_admin_config()
+    rules = admin.get("task_rules", {})
+    device_check = rules.get("device_check", True)
+    ip_check = rules.get("ip_check", False)
+    account_check = rules.get("account_check", True)
+    ip_limit = admin.get("ip_limit_per_hour", 5)
 
-    # Get task from Firebase
+    # Device check
+    if device_check:
+        device_key = f"device_tasks/{task_id}/{device_id}"
+        if fb_ref.child(device_key).get():
+            return jsonify({"blocked": True, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+
+    # IP check (hourly)
+    if ip_check:
+        ip_key = f"ip_tasks/{task_id}/{user_ip}"
+        ip_data = fb_ref.child(ip_key).get()
+        now_ts = datetime.utcnow().timestamp()
+        if ip_data:
+            count = ip_data.get("count", 0)
+            last_ts = ip_data.get("timestamp", 0)
+            if now_ts - last_ts < 3600:
+                if count >= ip_limit:
+                    return jsonify({"blocked": True, "message": f"এই আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার টাস্ক ক্লেইম করা যাবে।"})
+                fb_ref.child(ip_key).update({"count": count + 1})
+            else:
+                fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
+        else:
+            fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
+
+    # Account check
+    if account_check:
+        user_key = f"user_tasks/{telegram_id}/{task_id}"
+        if fb_ref.child(user_key).get():
+            return jsonify({"blocked": True, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"})
+        fb_ref.child(user_key).set(True)
+
     task = fb_ref.child(f"tasks/{task_id}").get()
     if not task:
         return jsonify({"blocked": False, "message": "Task not found"})
@@ -511,9 +562,39 @@ def claim_task():
         msg = f"Received ৳{reward}"
 
     users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
+
+    if device_check:
+        fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
 
     return jsonify({"blocked": False, "message": msg})
+
+
+@app.route("/api/admin/task/save", methods=["POST"])
+@login_required
+def admin_save_task():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    if not fb_ref:
+        return jsonify({"error": "Firebase not configured"}), 500
+    data = request.json
+    task_id = secrets.token_hex(4)
+    admin = get_admin_config()
+    default_days = admin.get("default_task_expiry_days", 7)
+    expiry_days = int(data.get("expiry_days", default_days))
+    expires_at = (datetime.utcnow() + timedelta(days=expiry_days)).isoformat()
+    task_data = {
+        "id": task_id,
+        "title": data.get("title"),
+        "link": data.get("link"),
+        "reward": data.get("reward"),
+        "timer": data.get("timer"),
+        "type": data.get("type"),
+        "currency": data.get("currency", "cash"),
+        "expires_at": expires_at,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    fb_ref.child(f"tasks/{task_id}").set(task_data)
+    return jsonify({"success": True})
 
 
 @app.route("/api/admin/task/delete", methods=["POST"])
@@ -611,24 +692,19 @@ def deposit():
     })
     return jsonify({"message": "Deposit request sent"})
 
-@app.route("/api/wallet/withdraw", methods=["POST"])
+@app.route("/api/admin/config")
 @login_required
-def withdraw():
-    data = request.json
-    telegram_id = data.get("telegram_id")
-    amount = data.get("amount")
-    number = data.get("number")
-    user = users_col.find_one({"telegram_id": telegram_id})
-    if not user or user.get("cash", 0) < amount:
-        return jsonify({"message": "Insufficient balance"})
-    withdraws_col.insert_one({
-        "telegram_id": telegram_id,
-        "amount": amount,
-        "number": number,
-        "status": "pending",
-        "created_at": datetime.utcnow()
+def admin_config():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    admin = get_admin_config()
+    return jsonify({
+        "server_income": admin.get("server_income", 0),
+        "server_trading": admin.get("server_trading", 0),
+        "task_rules": admin.get("task_rules", {}),
+        "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
+        "default_task_expiry_days": admin.get("default_task_expiry_days", 7)
     })
-    return jsonify({"message": "Withdraw request sent"})
 
 @app.route("/api/wallet/transfer", methods=["POST"])
 @login_required
@@ -745,25 +821,6 @@ def admin_tasks():
             task_list.append(t)
     return jsonify({"tasks": task_list})
 
-@app.route("/api/admin/task/save", methods=["POST"])
-def admin_save_task():
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    if not fb_ref:
-        return jsonify({"error": "Firebase not configured"}), 500
-    data = request.json
-    task_id = secrets.token_hex(4)
-    task_data = {
-        "id": task_id,
-        "title": data.get("title"),
-        "link": data.get("link"),
-        "reward": data.get("reward"),
-        "timer": data.get("timer"),
-        "type": data.get("type"),
-        "currency": data.get("currency", "cash")
-    }
-    fb_ref.child(f"tasks/{task_id}").set(task_data)
-    return jsonify({"success": True})
 
 @app.route("/api/admin/ads")
 def admin_ads():
@@ -815,10 +872,18 @@ def admin_update_settings():
         "server_income": float(data.get("server_income", 0)),
         "server_trading": float(data.get("server_trading", 0)),
         "bonus_target": int(data.get("bonus_target", 5)),
-        "extra_users": int(data.get("extra_users", 0))      # ← ফেক ইউজার যোগ করুন
+        "extra_users": int(data.get("extra_users", 0)),
+        "task_rules": data.get("task_rules", {
+            "device_check": True,
+            "ip_check": False,
+            "account_check": True
+        }),
+        "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),
+        "default_task_expiry_days": int(data.get("default_task_expiry_days", 7))
     }
     admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
+    
     
 @app.route("/api/admin/set_price", methods=["POST"])
 @login_required
