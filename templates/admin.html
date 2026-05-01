@@ -821,8 +821,12 @@ function initLivePrice() {
     }
 
     async function updateTaskRules() {
-    const task_rules = { ... };
-    const ip_limit_per_hour = ...
+    const task_rules = {
+        device_check: document.getElementById('task_rule_device')?.value === 'true',
+        ip_check: document.getElementById('task_rule_ip')?.value === 'true',
+        account_check: document.getElementById('task_rule_account')?.value === 'true'
+    };
+    const ip_limit_per_hour = parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5;
     const default_task_expiry_hours = parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168;
 
     const res = await fetch('/api/admin/update_settings', {
@@ -832,9 +836,11 @@ function initLivePrice() {
         body: JSON.stringify({
             task_rules: task_rules,
             ip_limit_per_hour: ip_limit_per_hour,
-            default_task_expiry_hours: default_task_expiry_hours   // ← এখানে hours
+            default_task_expiry_hours: default_task_expiry_hours
         })
     });
+    if (res.ok) alert('✅ নিয়ম সংরক্ষিত হয়েছে!');
+    else alert('❌ ত্রুটি, আবার চেষ্টা করুন।');
     }
 
 async function loadTaskConfig() {
