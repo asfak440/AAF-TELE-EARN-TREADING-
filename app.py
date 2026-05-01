@@ -692,19 +692,24 @@ def deposit():
     })
     return jsonify({"message": "Deposit request sent"})
 
-@app.route("/api/admin/config")
+    @app.route("/api/wallet/withdraw", methods=["POST"])
 @login_required
-def admin_config():
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    admin = get_admin_config()
-    return jsonify({
-        "server_income": admin.get("server_income", 0),
-        "server_trading": admin.get("server_trading", 0),
-        "task_rules": admin.get("task_rules", {}),
-        "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
-        "default_task_expiry_days": admin.get("default_task_expiry_days", 7)
+def withdraw():
+    data = request.json
+    telegram_id = data.get("telegram_id")
+    amount = data.get("amount")
+    number = data.get("number")
+    user = users_col.find_one({"telegram_id": telegram_id})
+    if not user or user.get("cash", 0) < amount:
+        return jsonify({"message": "Insufficient balance"})
+    withdraws_col.insert_one({
+        "telegram_id": telegram_id,
+        "amount": amount,
+        "number": number,
+        "status": "pending",
+        "created_at": datetime.utcnow()
     })
+    return jsonify({"message": "Withdraw request sent"})
 
 @app.route("/api/wallet/transfer", methods=["POST"])
 @login_required
@@ -943,7 +948,9 @@ def admin_config():
     return jsonify({
         "server_income": admin.get("server_income", 0),
         "server_trading": admin.get("server_trading", 0),
-        # প্রয়োজনে অন্য কনফিগ ফিল্ডও পাঠাতে পারেন
+        "task_rules": admin.get("task_rules", {}),
+        "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
+        "default_task_expiry_days": admin.get("default_task_expiry_days", 7)
     })
 
 
