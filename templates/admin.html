@@ -276,8 +276,8 @@ table {
         <!-- টাস্ক মেয়াদ ইনপুট (নতুন) -->
         <div class="row">
             <div>
-                <label>টাস্ক মেয়াদ (দিন)</label>
-                <input type="number" id="expiry_days" value="7" min="1" max="365">
+                <label>টাস্ক মেয়াদ (ঘণ্টা)</label>
+                <input type="number" id="expiry_hours" value="168" min="1" max="8760">
                 <small>ডিফল্ট ব্যবহার করলে খালি রাখুন</small>
             </div>
         </div>
@@ -615,7 +615,7 @@ async function saveTask(){
     reward: parseFloat(document.getElementById('reward').value),
     timer: parseInt(document.getElementById('timer').value),
     type: document.getElementById('type').value,
-    expiry_days: parseInt(document.getElementById('expiry_days').value) || null
+    expiry_hours: parseInt(document.getElementById('expiry_hours').value) || null
   };
   await fetch(`${API}/api/admin/task/save`, {
     method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
