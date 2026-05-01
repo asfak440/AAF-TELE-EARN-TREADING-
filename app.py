@@ -102,10 +102,40 @@ def get_admin_config():
             "bot_token": "",
             "min_trades": 5,
             "ip_limit": "off",
-            "extra_users": 0         # ← ডিফল্ট ফেক ইউজার 0
+            "extra_users": 0,
+            # ========== নিচের লাইনগুলো যোগ করুন ==========
+            "task_rules": {
+                "device_check": True,
+                "ip_check": False,
+                "account_check": True
+            },
+            "ip_limit_per_hour": 5,
+            "default_task_expiry_days": 7
         }
         admin_config_col.insert_one(doc)
+    
+    # যদি ডকুমেন্ট আগে থেকেই থাকে কিন্তু নতুন ফিল্ড নেই (যেমন পুরনো ডাটা আপগ্রেড করা)
+    # তাহলে নিচের অংশটুকু যোগ করুন
+    need_update = False
+    if "task_rules" not in doc:
+        doc["task_rules"] = {"device_check": True, "ip_check": False, "account_check": True}
+        need_update = True
+    if "ip_limit_per_hour" not in doc:
+        doc["ip_limit_per_hour"] = 5
+        need_update = True
+    if "default_task_expiry_days" not in doc:
+        doc["default_task_expiry_days"] = 7
+        need_update = True
+    
+    if need_update:
+        admin_config_col.update_one({"_id": "global"}, {"$set": {
+            "task_rules": doc["task_rules"],
+            "ip_limit_per_hour": doc["ip_limit_per_hour"],
+            "default_task_expiry_days": doc["default_task_expiry_days"]
+        }})
+    
     return doc
+    
 
 def update_total_users():
     total = users_col.count_documents({})
