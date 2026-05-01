@@ -333,15 +333,22 @@ table {
         </div>
         <div class="row">
             <div>
-                <label>আইপি প্রতি ঘন্টায় সর্বোচ্চ ক্লেইম</label>
-                <input type="number" id="ip_limit_per_hour" value="5" min="1">
+                <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
+                <input type="number" id="default_task_expiry_hours" value="168" min="1" max="8760">
             </div>
             <div>
-                <label>ডিফল্ট টাস্ক মেয়াদ (দিন)</label>
+                <label>ডিফল্ট টাস্ক মেয়াদ (ঘন)</label>
                 <input type="number" id="default_task_expiry_days" value="7" min="1" max="365">
             </div>
         </div>
         <button class="btn-main" onclick="updateTaskRules()">নিয়ম সংরক্ষণ করুন</button>
+    </div>
+    </div>
+    <div class="row">
+    <div>
+        <label>এডমিন এপ্রুভাল প্রয়োজন?</label>
+        <input type="checkbox" id="requires_approval">
+        <small>চেক করলে ইউজার টাকা পাবে এডমিন অনুমোদন দেওয়ার পর</small>
     </div>
 </div>
     <!-- Trading Section -->  
@@ -378,6 +385,10 @@ table {
     </div>  
 
     <div id="account" class="page-section">
+    <div class="premium-card">
+    <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং টাস্ক ক্লেইম (এডমিন এপ্রুভাল প্রয়োজন)</div>
+    <div id="pending-claims-list">লোড হচ্ছে...</div>
+    </div>
 
     <!-- Balance Edit -->
     <div class="premium-card">  
@@ -616,6 +627,7 @@ async function saveTask(){
     timer: parseInt(document.getElementById('timer').value),
     type: document.getElementById('type').value,
     expiry_hours: parseInt(document.getElementById('expiry_hours').value) || null
+    requires_approval: document.getElementById('requires_approval').checked
   };
   await fetch(`${API}/api/admin/task/save`, {
     method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
@@ -843,6 +855,46 @@ async function loadTaskConfig() {
             document.getElementById('default_task_expiry_days').value = data.default_task_expiry_days || 7;
         }
     } catch(e) { console.error(e); }
+}
+
+    async function loadPendingClaims() {
+    const container = document.getElementById('pending-claims-list');
+    try {
+        const res = await fetch('/api/admin/pending_claims', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.claims || data.claims.length === 0) {
+            container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
+            return;
+        }
+        let html = '<table style="width:100%; border-collapse:collapse;">';
+        html += '<tr><th>User</th><th>Task</th><th>Reward</th><th>Action</th></tr>';
+        data.claims.forEach(c => {
+            html += `<tr>
+                <td>${c.username} (${c.telegram_id})</td>
+                <td>${c.task_title}</td>
+                <td>${c.reward} ${c.currency === 'aaf' ? 'AAF' : 'BDT'}</td>
+                <td>
+                    <button onclick="processClaim('${c._id}', 'approve')" style="background:#00ff88;">✅ Approve</button>
+                    <button onclick="processClaim('${c._id}', 'reject')" style="background:#ff5555;">❌ Reject</button>
+                </td>
+            </tr>`;
+        });
+        html += '</table>';
+        container.innerHTML = html;
+    } catch(e) { container.innerHTML = '<div>Error loading</div>'; }
+}
+
+async function processClaim(claimId, action) {
+    const res = await fetch('/api/admin/approve_claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ claim_id: claimId, action })
+    });
+    const data = await res.json();
+    if (data.success) alert(`✅ Claim ${action}d`);
+    else alert('Failed');
+    loadPendingClaims(); // রিফ্রেশ
 }
 </script>
     
