@@ -595,8 +595,35 @@ function initAdmin(){
             document.getElementById('admin_income').value = data.server_income;
             document.getElementById('admin_trading').value = data.server_trading;
         }
+        // ব্যানার অ্যাড
+        if (data.banner_ad_code !== undefined) {
+            document.getElementById('admin_banner_ad_code').value = data.banner_ad_code;
+        }
+        // বট টোকেন ও চ্যানেল
+        if (data.bot_token !== undefined) {
+            document.getElementById('admin_bot_token').value = data.bot_token;
+        }
+        if (data.channel_url !== undefined) {
+            document.getElementById('admin_channel_url').value = data.channel_url;
+        }
+        if (data.channel_id !== undefined) {
+            document.getElementById('admin_channel_id').value = data.channel_id;
+        }
+        // ফেক ইউজার
+        if (data.extra_users !== undefined) {
+            document.getElementById('admin_extra_users').value = data.extra_users;
+        }
+        // বোনাস টার্গেট
+        if (data.bonus_target !== undefined) {
+            document.getElementById('bonus_target').value = data.bonus_target;
+        }
+        // ওয়ালেট নম্বর (যদি আলাদা ফিল্ড থাকে)
+        if (data.wallet) {
+            if (data.wallet.nagad !== undefined) document.getElementById('admin_nagad').value = data.wallet.nagad;
+            if (data.wallet.bkash !== undefined) document.getElementById('admin_bkash').value = data.wallet.bkash;
+        }
     } catch(e) { console.error("Failed to load admin stats", e); }
-}
+    }
     
 
 /* ================= HELPERS ================= */
