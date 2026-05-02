@@ -904,6 +904,7 @@ def admin_update_settings():
         "server_income": float(data.get("server_income", 0)),
         "server_trading": float(data.get("server_trading", 0)),
         "bonus_target": int(data.get("bonus_target", 5)),
+        "banner_ad_code": data.get("banner_ad_code", ""),
         "extra_users": int(data.get("extra_users", 0)),
         "task_rules": data.get("task_rules", {
             "device_check": True,
