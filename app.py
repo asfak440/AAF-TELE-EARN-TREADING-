@@ -976,9 +976,16 @@ def admin_config():
     return jsonify({
         "server_income": admin.get("server_income", 0),
         "server_trading": admin.get("server_trading", 0),
-        "task_rules": admin.get("task_rules", {}),
+        "banner_ad_code": admin.get("banner_ad_code", ""),
+        "bot_token": admin.get("bot_token", ""),
+        "channel_url": admin.get("channel_url", ""),
+        "channel_id": admin.get("channel_id", ""),
+        "extra_users": admin.get("extra_users", 0),
+        "bonus_target": admin.get("bonus_target", 5),
+        "task_rules": admin.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
-        "default_task_expiry_days": admin.get("default_task_expiry_days", 7)
+        "default_task_expiry_hours": admin.get("default_task_expiry_hours", 168),
+        "wallet": admin.get("wallet", {"nagad": "", "bkash": ""})
     })
 
 
