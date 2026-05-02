@@ -285,45 +285,41 @@ table {
 </div>
 
 <div class="main-content">  
-    <!-- Dashboard Section -->  
-    <div id="dashboard" class="page-section active">  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>  
-            <div class="row">  
-                <div><label>সার্ভার ইনকাম</label><input type="text" id="admin_income"></div>  
-                <div><label>ট্রেডিং ভলিউম</label><input type="text" id="admin_trading"></div>  
-            </div>  
-            <div class="row">    
-    <div><label>ফেক ইউজার</label><input type="number" id="admin_extra_users"></div>    
-    <div><label>মোট ইউজার (Total Users)</label><input type="number" id="admin_total_users"></div>    
-</div>
-
-<label>বট টোকেন</label>
-<input type="text" id="admin_bot_token">
-
-<label>টেলিগ্রাম চ্যানেল লিংক</label>
-<input type="text" id="admin_channel_url">
-
-<label>চ্যানেল ইউজারনেম (ID)</label>
-<input type="text" id="admin_channel_id">
-
-<button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
+   <!-- Dashboard Section -->  
+<div id="dashboard" class="page-section active">  
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>  
+        <div class="row">  
+            <div><label>সার্ভার ইনকাম</label><input type="text" id="admin_income"></div>  
+            <div><label>ট্রেডিং ভলিউম</label><input type="text" id="admin_trading"></div>  
+        </div>  
+        <div class="row">    
+            <div><label>ফেক ইউজার</label><input type="number" id="admin_extra_users"></div>    
+            <div><label>মোট ইউজার (Total Users)</label><input type="number" id="admin_total_users"></div>    
         </div>  
 
-        <div style="background: #1e293b; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">  
-            <span>IP Anti-Cheat System</span>  
-            <label class="switch">  
-                <input type="checkbox" id="ip_security_toggle"> <span class="slider round"></span>  
-            </label>  
-        </div>  
+        <label>বট টোকেন</label>
+        <input type="text" id="admin_bot_token">
 
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-bullhorn"></i> গ্লোবাল নোটিশ (Popup Ad)</div>  
-            <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>  
-            <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>  
-        </div>  
+        <label>টেলিগ্রাম চ্যানেল লিংক</label>
+        <input type="text" id="admin_channel_url">
+
+        <label>চ্যানেল ইউজারনেম (ID)</label>
+        <input type="text" id="admin_channel_id">
+
+        <!-- ব্যানার অ্যাড ইনপুট -->
+        <label>ড্যাশবোর্ড ব্যানার অ্যাড (HTML/ইমেজ লিংক)</label>
+        <textarea id="admin_banner_ad_code" rows="3" placeholder='ব্যানারের কোড দিন, যেমন: &lt;img src="url" style="width:100%">'></textarea>
+
+        <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
     </div>  
 
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-bullhorn"></i> গ্লোবাল নোটিশ (Popup Ad)</div>  
+        <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>  
+        <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>  
+    </div>  
+</div>
 
     <!-- Task Management Section -->  
 <div id="task" class="page-section">  
@@ -818,6 +814,7 @@ async function updateServerSettings() {
         channel_id: document.getElementById('admin_channel_id').value,
         server_income: parseFloat(document.getElementById('admin_income').value) || 0,
         server_trading: parseFloat(document.getElementById('admin_trading').value) || 0,
+        banner_ad_code: document.getElementById('admin_banner_ad_code').value,
         min_trades: parseInt(document.getElementById('admin_min_trades')?.value) || 5,
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
