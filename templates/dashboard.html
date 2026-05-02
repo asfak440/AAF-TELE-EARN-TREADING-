@@ -446,7 +446,17 @@ function renderUI(user, admin) {
   if (joinStatus) joinStatus.innerText = joined ? 'ONLINE' : 'OFFLINE';
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
+
+  // ✅ ব্যানার আপডেট (এখানে রাখুন)
+  const bannerBox = document.getElementById('banner-ad');
+  if (bannerBox) {
+    if (admin.banner_ad_code && admin.banner_ad_code.trim() !== "") {
+      bannerBox.innerHTML = admin.banner_ad_code;
+    } else {
+      bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
     }
+  }
+}
 
     // চ্যানেলের সদস্যপদ চেক করার ফাংশন
 async function checkChannelMembership() {
