@@ -852,7 +852,7 @@ async function updateServerSettings() {
             account_check: document.getElementById('task_rule_account')?.value === 'true'
         },
         ip_limit_per_hour: parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5,
-        default_task_expiry_days: parseInt(document.getElementById('default_task_expiry_days')?.value) || 7
+        default_task_expiry_hours: parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168
     };
     const res = await fetch('/api/admin/update_settings', {
         method: 'POST',
