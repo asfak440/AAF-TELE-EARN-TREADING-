@@ -122,7 +122,7 @@
     <!-- ১. হেডার সেকশন -->
     <header class="nav-header">
         <div class="u-info">
-            <h2 id="u-name">LOADING...</h2>
+            <h2 id="full-name">LOADING...</h2>
             <span>ID: <span id="u-id">000000</span></span>
         </div>
 
@@ -425,7 +425,16 @@ function renderUI(user, admin) {
     if (el) el.innerText = val;
   };
 
-  setText('u-name', (user.username || "USER").toUpperCase());
+  // পূর্ণ নাম দেখানো (পুরনো u-name প্রতিস্থাপন)
+  const nameElement = document.getElementById('u-name');
+  if (nameElement) {
+    let fullName = '';
+    if (user.first_name) fullName += user.first_name;
+    if (user.last_name) fullName += ' ' + user.last_name;
+    fullName = fullName.trim() || user.username || 'USER';
+    nameElement.innerText = fullName.toUpperCase();
+  }
+
   setText('u-id', ": " + user.telegram_id);
   setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
   setText('h-aaf', user.aaf || 0);
@@ -447,7 +456,6 @@ function renderUI(user, admin) {
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
 
-  // ✅ ব্যানার আপডেট (এখানে রাখুন)
   const bannerBox = document.getElementById('banner-ad');
   if (bannerBox) {
     if (admin.banner_ad_code && admin.banner_ad_code.trim() !== "") {
