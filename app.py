@@ -276,6 +276,11 @@ def chat_viewer():
         return redirect(url_for("admin_panel"))
     return render_template("chat_viewer.html")
 
+@app.route('/monetag-verification.html')
+def serve_monetag_file():
+    with open('static/monetag-verification.html', 'r') as f:
+        return f.read(), 200, {'Content-Type': 'text/html'}
+
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
