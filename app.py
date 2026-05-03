@@ -381,7 +381,12 @@ def verify_login():
                 }
                 if ref:
                     users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
-                result_id = users_col.insert_one(user_data).inserted_id
+    # এডমিন কনফিগ থেকে বোনাসের মান নিন
+                    admin = get_admin_config()
+                    bonus_amount = admin.get("referral_bonus", 0)
+                    if bonus_amount > 0:
+                    users_col.update_one({"telegram_id": ref}, {"$inc": {"cash": bonus_amount}})
+                    print(f"Referral bonus {bonus_amount} added to {ref}")
             else:
                 users_col.update_one(
                     {"telegram_id": str(me.id)},
