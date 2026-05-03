@@ -289,27 +289,71 @@ table {
 <div id="dashboard" class="page-section active">  
     <div class="premium-card">  
         <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>  
-        <div class="row">  
-            <div><label>সার্ভার ইনকাম</label><input type="text" id="admin_income"></div>  
-            <div><label>ট্রেডিং ভলিউম</label><input type="text" id="admin_trading"></div>  
-        </div>  
-        <div class="row">    
-            <div><label>ফেক ইউজার</label><input type="number" id="admin_extra_users"></div>    
-            <div><label>মোট ইউজার (Total Users)</label><input type="number" id="admin_total_users"></div>    
-        </div>  
 
+        <!-- সার্ভার ইনকাম -->
+        <div class="row">
+            <div style="flex:1;">
+                <label>সার্ভার ইনকাম</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="admin_income" style="flex:1;">
+                    <button onclick="clearField('server_income', 'admin_income')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+            </div>
+            <!-- ট্রেডিং ভলিউম -->
+            <div style="flex:1;">
+                <label>ট্রেডিং ভলিউম</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="admin_trading" style="flex:1;">
+                    <button onclick="clearField('server_trading', 'admin_trading')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ফেক ইউজার ও মোট ইউজার -->
+        <div class="row">
+            <div style="flex:1;">
+                <label>ফেক ইউজার</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="admin_extra_users" style="flex:1;">
+                    <button onclick="clearField('extra_users', 'admin_extra_users')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+            </div>
+            <div style="flex:1;">
+                <label>মোট ইউজার (Total Users)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="admin_total_users" style="flex:1;">
+                    <button onclick="clearField('total_users', 'admin_total_users')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- বট টোকেন -->
         <label>বট টোকেন</label>
-        <input type="text" id="admin_bot_token">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="admin_bot_token" style="flex:1;">
+            <button onclick="clearField('bot_token', 'admin_bot_token')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
 
+        <!-- টেলিগ্রাম চ্যানেল লিংক -->
         <label>টেলিগ্রাম চ্যানেল লিংক</label>
-        <input type="text" id="admin_channel_url">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="admin_channel_url" style="flex:1;">
+            <button onclick="clearField('channel_url', 'admin_channel_url')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
 
+        <!-- চ্যানেল ইউজারনেম (ID) -->
         <label>চ্যানেল ইউজারনেম (ID)</label>
-        <input type="text" id="admin_channel_id">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="admin_channel_id" style="flex:1;">
+            <button onclick="clearField('channel_id', 'admin_channel_id')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
 
-        <!-- ব্যানার অ্যাড ইনপুট -->
+        <!-- ব্যানার অ্যাড -->
         <label>ড্যাশবোর্ড ব্যানার অ্যাড (HTML/ইমেজ লিংক)</label>
-        <textarea id="admin_banner_ad_code" rows="3" placeholder='ব্যানারের কোড দিন, যেমন: &lt;img src="url" style="width:100%">'></textarea>
+        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
+            <textarea id="admin_banner_ad_code" rows="3" style="flex:1;"></textarea>
+            <button onclick="clearField('banner_ad_code', 'admin_banner_ad_code')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
+        </div>
 
         <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
     </div>  
@@ -323,7 +367,7 @@ table {
 
     <!-- Task Management Section -->  
 <div id="task" class="page-section">  
-    <!-- নতুন টাস্ক যোগ করার ফর্ম -->
+    <!-- নতুন টাস্ক যোগ করার ফর্ম (এতে রিমুভ বাটন লাগবে না, কারণ এটা কনফিগ নয়) -->
     <div class="premium-card">  
         <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>  
         <input type="text" id="title" placeholder="টাস্ক টাইটেল">  
@@ -336,7 +380,6 @@ table {
             <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">  
             <select id="type"><option value="video">Video</option><option value="link">Link Join</option></select>  
         </div>  
-        <!-- টাস্ক মেয়াদ ইনপুট (নতুন) -->
         <div class="row">
             <div>
                 <label>টাস্ক মেয়াদ (ঘণ্টা)</label>
@@ -350,25 +393,40 @@ table {
     <!-- টাস্ক লিস্ট দেখানোর জায়গা -->
     <div id="admin-task-list" class="premium-card">লুড হচ্ছে...</div>
 
-    <!-- টাস্ক পেজের এড ও বোনাস সেটিং -->
+    <!-- টাস্ক পেজের এড ও বোনাস সেটিং (এখানে রিমুভ বাটন যুক্ত) -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-bullhorn"></i> Task Page Ads & Bonus</div>
+        
+        <!-- বোনাস টার্গেট -->
         <label>বোনাস টার্গেট (কত টাস্কে বোনাস)</label>
-        <input type="number" id="bonus_target">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="number" id="bonus_target" style="flex:1;">
+            <button onclick="clearField('bonus_target', 'bonus_target')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+
+        <!-- Task Banner Ad Image URL -->
         <label>Task Banner Ad Image URL</label>
-        <input type="text" id="task_banner_ad">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="task_banner_ad" style="flex:1;">
+            <button onclick="clearField('task_banner_ad', 'task_banner_ad')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+
+        <!-- Task Popup Ad Text -->
         <label>Task Popup Ad Text</label>
-        <textarea id="task_popup_ad" rows="3"></textarea>
+        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
+            <textarea id="task_popup_ad" rows="3" style="flex:1;"></textarea>
+            <button onclick="clearField('task_popup_ad', 'task_popup_ad')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
+        </div>
     </div>  
 
-    <!-- Strict Protection সেটিং (আগে থেকেই ছিল) -->
+    <!-- Strict Protection (অপশনাল, ডাটাবেজে strict_protection ফিল্ড না থাকায় রিমুভ বাটন না দেওয়াই ভালো) -->
     <label>Strict Protection (1 Device = 1 Time)</label>
     <select id="strict_protection">
         <option value="false">OFF</option>
         <option value="true">ON</option>
     </select>
 
-    <!-- 🆕 টাস্ক ক্লেইম সুরক্ষা নিয়ম সংক্রান্ত কার্ড (নতুন) -->
+    <!-- টাস্ক ক্লেইম সুরক্ষা নিয়ম (এখানে ডিফল্ট টাস্ক মেয়াদে রিমুভ বাটন) -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-shield-alt"></i> টাস্ক ক্লেইম সুরক্ষা নিয়ম</div>
         <div class="row">
@@ -397,19 +455,28 @@ table {
         <div class="row">
             <div>
                 <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
-                <input type="number" id="default_task_expiry_hours" value="168" min="1" max="8760">
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="default_task_expiry_hours" value="168" min="1" max="8760" style="flex:1;">
+                    <button onclick="clearField('default_task_expiry_hours', 'default_task_expiry_hours')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
             </div>
         </div>
         <button class="btn-main" onclick="updateTaskRules()">নিয়ম সংরক্ষণ করুন</button>
     </div>
-    </div>
+
+    <!-- এডমিন এপ্রুভাল প্রয়োজন (চেকবক্স রিসেট করার জন্য বাটন) -->
     <div class="row">
-    <div>
-        <label>এডমিন এপ্রুভাল প্রয়োজন?</label>
-        <input type="checkbox" id="requires_approval">
-        <small>চেক করলে ইউজার টাকা পাবে এডমিন অনুমোদন দেওয়ার পর</small>
+        <div>
+            <label>এডমিন এপ্রুভাল প্রয়োজন?</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="checkbox" id="requires_approval">
+                <button onclick="clearCheckbox('requires_approval')" style="background:#da3633; color:white; border:none; padding:4px 10px; border-radius:6px;">🗑️ রিসেট</button>
+            </div>
+            <small>চেক করলে ইউজার টাকা পাবে এডমিন অনুমোদন দেওয়ার পর</small>
+        </div>
     </div>
 </div>
+    
     <!-- Trading Section -->  
     <div id="trading" class="page-section">  
         <div class="premium-card">  
