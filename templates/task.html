@@ -206,10 +206,37 @@ function renderTaskUI(user, admin, tasks){
   document.getElementById('join-warning').style.display = USER_JOINED ? 'none':'flex';
   updateMilestone(user.tasks_done, admin.bonus_target);
   renderTasks(tasks);   // tasks ব্যবহার করুন, admin.tasks না
-  if(admin.task_banner_ad){
-    document.getElementById('banner-ad').innerHTML = admin.task_banner_ad;
+  if(admin.task_banner_ad && admin.task_banner_ad.trim() !== ""){
+    injectSafeAdHTML(admin.task_banner_ad);
   }
   showTimedAd(admin.task_popup_ad);
+}
+
+
+function injectSafeAdHTML(htmlString) {
+    const container = document.getElementById('banner-ad');
+    if (!container) return;
+    container.innerHTML = ''; // পুরনো ক্লিয়ার
+
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlString;
+
+    const scripts = Array.from(temp.querySelectorAll('script'));
+    for (let node of temp.childNodes) {
+        if (node.nodeType === 1 && node.tagName === 'SCRIPT') continue;
+        container.appendChild(node.cloneNode(true));
+    }
+
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        if (oldScript.src) {
+            newScript.src = oldScript.src;
+            newScript.async = false;
+        } else {
+            newScript.textContent = oldScript.textContent;
+        }
+        container.appendChild(newScript);
+    });
 }
 
 
