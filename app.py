@@ -916,6 +916,8 @@ def admin_update_settings():
         "banner_ad_code": data.get("banner_ad_code", ""),
         "extra_users": int(data.get("extra_users", 0)),
         "referral_bonus": float(data.get("referral_bonus", 0)),
+        "task_banner_ad": data.get("task_banner_ad", ""),
+        "task_popup_ad": data.get("task_popup_ad", ""),
         "task_rules": data.get("task_rules", {
             "device_check": True,
             "ip_check": False,
