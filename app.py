@@ -906,6 +906,7 @@ def admin_update_settings():
         "bonus_target": int(data.get("bonus_target", 5)),
         "banner_ad_code": data.get("banner_ad_code", ""),
         "extra_users": int(data.get("extra_users", 0)),
+        "referral_bonus": float(data.get("referral_bonus", 0)),
         "task_rules": data.get("task_rules", {
             "device_check": True,
             "ip_check": False,
@@ -977,6 +978,7 @@ def admin_config():
         "server_income": admin.get("server_income", 0),
         "server_trading": admin.get("server_trading", 0),
         "banner_ad_code": admin.get("banner_ad_code", ""),
+        "referral_bonus": admin.get("referral_bonus", 0),
         "bot_token": admin.get("bot_token", ""),
         "channel_url": admin.get("channel_url", ""),
         "channel_id": admin.get("channel_id", ""),
