@@ -302,7 +302,6 @@ def send_otp():
         print(f"send_otp error: {e}")
         return jsonify({"success": False, "message": str(e)})
 
-
 @app.route("/api/verify_login", methods=["POST"])
 def verify_login():
     import traceback
@@ -338,7 +337,6 @@ def verify_login():
             session_str = client.session.save()
             return True, me, session_str
         except SessionPasswordNeededError:
-            # 2FA প্রয়োজন → ফ্রন্টএন্ড পাসওয়ার্ড স্টেপ দেখাবে
             print(f"2FA required for {phone}")
             await client.disconnect()
             return False, "SHOW_PWD_STEP"
@@ -360,9 +358,9 @@ def verify_login():
         result = run_async(_verify())
         if result[0] is True and len(result) == 3:
             me, session_str = result[1], result[2]
-            # ইউজার তৈরি বা আপডেট (আপনার বিদ্যমান কোড)
             user = users_col.find_one({"telegram_id": str(me.id)})
             if not user:
+                # নতুন ইউজার তৈরি
                 user_data = {
                     "telegram_id": str(me.id),
                     "phone": phone,
@@ -379,20 +377,26 @@ def verify_login():
                     "created_at": datetime.utcnow(),
                     "last_login": datetime.utcnow()
                 }
+                result_id = users_col.insert_one(user_data).inserted_id
+
+                # রেফারেল বোনাস (যদি রেফারার থাকে)
                 if ref:
+                    # রেফারারের refer_count বাড়ান
                     users_col.update_one({"telegram_id": ref}, {"$inc": {"refer_count": 1}})
-    # এডমিন কনফিগ থেকে বোনাসের মান নিন
+                    # অ্যাডমিন কনফিগ থেকে বোনাসের মান নিন
                     admin = get_admin_config()
                     bonus_amount = admin.get("referral_bonus", 0)
                     if bonus_amount > 0:
-                    users_col.update_one({"telegram_id": ref}, {"$inc": {"cash": bonus_amount}})
-                    print(f"Referral bonus {bonus_amount} added to {ref}")
+                        users_col.update_one({"telegram_id": ref}, {"$inc": {"cash": bonus_amount}})
+                        print(f"Referral bonus {bonus_amount} added to {ref}")
             else:
+                # পুরনো ইউজার লগইন (শুধু সেশন আপডেট)
                 users_col.update_one(
                     {"telegram_id": str(me.id)},
                     {"$set": {"session_string": session_str, "last_login": datetime.utcnow(), "phone": phone}}
                 )
                 result_id = user["_id"]
+
             session["uid"] = str(result_id)
             session.permanent = True
             update_total_users()
