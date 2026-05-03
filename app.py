@@ -1255,6 +1255,25 @@ def admin_approve_claim():
         return jsonify({"success": True})
     else:
         return jsonify({"error": "Invalid action"}), 400
+
+
+@app.route("/api/admin/clear_field", methods=["POST"])
+@login_required
+def admin_clear_field():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    field_name = data.get("field")
+    if not field_name:
+        return jsonify({"error": "Field name required"}), 400
+    
+    # কোন ফিল্ডটি ক্লিয়ার করতে চান, সেটি $unset অথবা $set করে খালি করুন
+    # আমরা এখানে $set করে খালি স্ট্রিং সেট করছি (যাতে ফিল্ডটি থেকে যায়)
+    admin_config_col.update_one(
+        {"_id": "global"},
+        {"$set": {field_name: ""}}
+    )
+    return jsonify({"success": True})
         
 # ================= RUN =================
 if __name__ == "__main__":
