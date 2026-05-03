@@ -993,6 +993,7 @@ function openTab(el){
     
 
     // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
+
 async function updateServerSettings() {
     const data = {
         channel_url: document.getElementById('admin_channel_url').value,
@@ -1006,6 +1007,8 @@ async function updateServerSettings() {
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
         extra_users: parseInt(document.getElementById('admin_extra_users').value) || 0,
+        task_banner_ad: document.getElementById('task_banner_ad').value,      // ← যোগ করুন
+        task_popup_ad: document.getElementById('task_popup_ad').value,       // ← যোগ করুন
         task_rules: {
             device_check: document.getElementById('task_rule_device')?.value === 'true',
             ip_check: document.getElementById('task_rule_ip')?.value === 'true',
@@ -1023,7 +1026,6 @@ async function updateServerSettings() {
     if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
     else alert('❌ আপডেট ব্যর্থ');
 }
-
 
 
 async function setGlobalFee() {
