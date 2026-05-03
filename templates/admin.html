@@ -362,12 +362,12 @@ textarea {
 </div>
 
 <div class="main-content">  
-   <!-- Dashboard Section -->  
+    <!-- Dashboard Section -->  
 <div id="dashboard" class="page-section active">  
     <div class="premium-card">  
         <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>  
 
-        <!-- সার্ভার ইনকাম -->
+        <!-- সার্ভার ইনকাম ও ট্রেডিং ভলিউম -->
         <div class="row">
             <div style="flex:1;">
                 <label>সার্ভার ইনকাম</label>
@@ -376,7 +376,6 @@ textarea {
                     <button onclick="clearField('server_income', 'admin_income')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
                 </div>
             </div>
-            <!-- ট্রেডিং ভলিউম -->
             <div style="flex:1;">
                 <label>ট্রেডিং ভলিউম</label>
                 <div style="display: flex; gap: 10px;">
@@ -432,6 +431,18 @@ textarea {
             <button onclick="clearField('banner_ad_code', 'admin_banner_ad_code')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
         </div>
 
+        <!-- 🆕 রেফার বোনাস (এখন সঠিক জায়গায়) -->
+        <div class="row">
+            <div>
+                <label>রেফার বোনাস (৳)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="admin_referral_bonus" step="0.5" value="0" placeholder="প্রতি রেফারে কত টাকা দেবেন">
+                    <button onclick="clearField('referral_bonus', 'admin_referral_bonus')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                </div>
+                <small>শূন্য (0) দিলে বোনাস বন্ধ থাকবে</small>
+            </div>
+        </div>
+
         <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
     </div>  
 
@@ -441,7 +452,7 @@ textarea {
         <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>  
     </div>  
 </div>
-
+    
     <!-- Task Management Section -->  
 <div id="task" class="page-section">  
     <!-- নতুন টাস্ক যোগ করার ফর্ম (এতে রিমুভ বাটন লাগবে না, কারণ এটা কনফিগ নয়) -->
@@ -761,6 +772,10 @@ function initAdmin(){
         if (data.bonus_target !== undefined) {
             document.getElementById('bonus_target').value = data.bonus_target;
         }
+        //রেফার বোনাস 
+        if (data.referral_bonus !== undefined) {
+            document.getElementById('admin_referral_bonus').value = data.referral_bonus;
+        }
         // ওয়ালেট নম্বর (যদি আলাদা ফিল্ড থাকে)
         if (data.wallet) {
             if (data.wallet.nagad !== undefined) document.getElementById('admin_nagad').value = data.wallet.nagad;
@@ -986,6 +1001,7 @@ async function updateServerSettings() {
         server_income: parseFloat(document.getElementById('admin_income').value) || 0,
         server_trading: parseFloat(document.getElementById('admin_trading').value) || 0,
         banner_ad_code: document.getElementById('admin_banner_ad_code').value,
+        referral_bonus: parseFloat(document.getElementById('admin_referral_bonus').value) || 0,
         min_trades: parseInt(document.getElementById('admin_min_trades')?.value) || 5,
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
