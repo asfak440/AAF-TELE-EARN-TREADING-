@@ -248,6 +248,83 @@ table {
         padding: 5px 4px;
     }
 }
+
+    /* কম্প্যাক্ট ভিউ – সব জায়গায় প্যাডিং ও মার্জিন কমানো */
+.premium-card {
+    padding: 15px !important;
+    margin-bottom: 15px !important;
+}
+.card-title {
+    font-size: 14px !important;
+    margin-bottom: 12px !important;
+    gap: 6px !important;
+}
+input, textarea, select {
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
+    font-size: 13px !important;
+}
+.btn-main {
+    padding: 10px !important;
+    font-size: 12px !important;
+    margin-top: 5px !important;
+}
+.row {
+    gap: 8px !important;
+    margin-bottom: 5px !important;
+}
+/* ডিভাইস চেক সিলেক্ট বক্স ছোট করা */
+select {
+    padding: 6px 8px !important;
+}
+/* লেবেলের ফন্ট সাইজ */
+label {
+    font-size: 12px;
+    margin-bottom: 2px;
+    display: inline-block;
+}
+/* রিমুভ বাটন ছোট করা */
+button[onclick*="clearField"] {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    margin-top: 0 !important;
+}
+/* টেক্সটএরিয়া রো সংখ্যা কমানো */
+textarea {
+    padding: 6px 10px !important;
+}
+/* টাস্ক লিস্টের কার্ডের মধ্যে ডিভের প্যাডিং কমানো */
+#admin-task-list div {
+    padding: 6px 0 !important;
+}
+/* নিচের বটম নেভিগেশন স্পেস */
+.bottom-nav {
+    padding: 6px 0 !important;
+}
+.bottom-nav i {
+    font-size: 16px !important;
+}
+/* টেবিল ফন্ট ও স্পেস কমানো */
+.user-table th, .user-table td {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+}
+/* মোবাইলে আরও ছোট */
+@media (max-width: 768px) {
+    .premium-card {
+        padding: 10px !important;
+    }
+    input, textarea, select {
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+    }
+    .btn-main {
+        padding: 8px !important;
+    }
+    .card-title {
+        font-size: 12px !important;
+    }
+}
 </style>
 
 </head>  <body>  <div id="admin-login-overlay">  
@@ -1067,6 +1144,21 @@ async function processClaim(claimId, action) {
     else alert('Failed');
     loadPendingClaims(); // রিফ্রেশ
 }
+
+    async function clearField(fieldName, elementId) {
+    if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
+    document.getElementById(elementId).value = '';
+    try {
+        const res = await fetch('/api/admin/clear_field', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ field: fieldName })
+        });
+        const data = await res.json();
+        alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
+    } catch(e) { alert('সার্ভার এরর'); }
+    }
 </script>
     
 </body>
