@@ -524,6 +524,12 @@ textarea {
                 </select>
             </div>
             <div>
+
+                <div>
+                <label>আইপি লিমিট (প্রতি ঘন্টা)</label>
+                <input type="number" id="ip_limit_per_hour" value="5" min="1" max="100">
+                </div>
+                
                 <label>অ্যাকাউন্ট চেক (একই অ্যাকাউন্ট একবার)</label>
                 <select id="task_rule_account">
                     <option value="true">চালু</option>
@@ -616,6 +622,7 @@ textarea {
         <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
     </div>
 
+    <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
     <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
 </div>
 
@@ -1133,6 +1140,7 @@ function initAdmin(){
     loadTaskConfig();
     loadPendingClaims();
     initFirebaseSync();
+    loadPendingDeposits();
 }
 
 
@@ -1149,18 +1157,6 @@ async function setGlobalFee() {
     else alert('❌ আপডেট ব্যর্থ');
 }
 
-async function updateWallets() {
-    const nagad = document.getElementById('admin_nagad').value;
-    const bkash = document.getElementById('admin_bkash').value;
-    const res = await fetch('/api/admin/update_wallets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ nagad, bkash })
-    });
-    if (res.ok) alert('✅ ওয়ালেট নম্বর সেভ হয়েছে');
-    else alert('❌ সেভ ব্যর্থ');
-}
 
 async function updateUserBalance() {
     const uid = document.getElementById('target-uid').value;
@@ -1299,6 +1295,21 @@ async function processClaim(claimId, action) {
     const el = document.getElementById(elementId);
     if (el) el.checked = false;
     }
+
+    async function loadPendingDeposits() {
+    const container = document.getElementById('pending-list-view');
+    try {
+        const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.deposits || data.deposits.length === 0) {
+            container.innerHTML = '<div>কোনো পেন্ডিং ডিপোজিট নেই।</div>';
+            return;
+        }
+        // টেবিল তৈরি করুন...
+    } catch(e) {
+        container.innerHTML = '<div>Error loading deposits</div>';
+    }
+                             }
     
 </script>
     
