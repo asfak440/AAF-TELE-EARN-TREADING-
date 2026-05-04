@@ -714,60 +714,6 @@ async function checkAuth(){
   }
 }
 
-/* ================= INIT ================= */
-function initAdmin(){
-    loadUsers();
-    loadTasks();
-    loadAds();
-    loadWithdraws();
-    initLivePrice();
-    loadAdminStats();
-    loadTaskConfig();   // ← এই লাইন যোগ করুন
-}
-    
-    async function loadAdminStats() {
-    try {
-        const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
-        const data = await res.json();
-        if (data.server_income !== undefined) {
-            document.getElementById('admin_income').value = data.server_income;
-            document.getElementById('admin_trading').value = data.server_trading;
-        }
-        // ব্যানার অ্যাড
-        if (data.banner_ad_code !== undefined) {
-            document.getElementById('admin_banner_ad_code').value = data.banner_ad_code;
-        }
-        // বট টোকেন ও চ্যানেল
-        if (data.bot_token !== undefined) {
-            document.getElementById('admin_bot_token').value = data.bot_token;
-        }
-        if (data.channel_url !== undefined) {
-            document.getElementById('admin_channel_url').value = data.channel_url;
-        }
-        if (data.channel_id !== undefined) {
-            document.getElementById('admin_channel_id').value = data.channel_id;
-        }
-        // ফেক ইউজার
-        if (data.extra_users !== undefined) {
-            document.getElementById('admin_extra_users').value = data.extra_users;
-        }
-        // বোনাস টার্গেট
-        if (data.bonus_target !== undefined) {
-            document.getElementById('bonus_target').value = data.bonus_target;
-        }
-        //রেফার বোনাস 
-        if (data.referral_bonus !== undefined) {
-            document.getElementById('admin_referral_bonus').value = data.referral_bonus;
-        }
-        // ওয়ালেট নম্বর (যদি আলাদা ফিল্ড থাকে)
-        if (data.wallet) {
-            if (data.wallet.nagad !== undefined) document.getElementById('admin_nagad').value = data.wallet.nagad;
-            if (data.wallet.bkash !== undefined) document.getElementById('admin_bkash').value = data.wallet.bkash;
-        }
-    } catch(e) { console.error("Failed to load admin stats", e); }
-    }
-    
-
 /* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
 const val = id => $(id)?.value || "";
@@ -907,7 +853,7 @@ async function saveTask(){
 // বাকি ফাংশন (loadUsers, loadWithdraws, approveWithdraw, initAdmin, openTab) আগের মতোই থাকবে
 
 
-/* ================= ADS ================= */
+/* ================= ADS ============ধোন===== */
 async function loadAds(){
   const r = await fetch(`${API}/api/admin/ads`, {credentials:'include'});
   const d = await r.json();
@@ -977,6 +923,113 @@ function openTab(el){
 
     // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
 
+// ========== FIXED: loadAdminStats() ==========
+async function loadAdminStats() {
+    try {
+        const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
+        const data = await res.json();
+        
+        // Server income & trading
+        if (data.server_income !== undefined) {
+            document.getElementById('admin_income').value = data.server_income;
+            document.getElementById('admin_trading').value = data.server_trading;
+        }
+        
+        // Banner ad
+        if (data.banner_ad_code !== undefined) {
+            document.getElementById('admin_banner_ad_code').value = data.banner_ad_code;
+        }
+        
+        // Bot token & channel
+        if (data.bot_token !== undefined) {
+            document.getElementById('admin_bot_token').value = data.bot_token;
+        }
+        if (data.channel_url !== undefined) {
+            document.getElementById('admin_channel_url').value = data.channel_url;
+        }
+        if (data.channel_id !== undefined) {
+            document.getElementById('admin_channel_id').value = data.channel_id;
+        }
+        
+        // Fake users
+        if (data.extra_users !== undefined) {
+            document.getElementById('admin_extra_users').value = data.extra_users;
+        }
+        
+        // Bonus target
+        if (data.bonus_target !== undefined) {
+            document.getElementById('bonus_target').value = data.bonus_target;
+        }
+        
+        // Referral bonus
+        if (data.referral_bonus !== undefined) {
+            document.getElementById('admin_referral_bonus').value = data.referral_bonus;
+        }
+        
+        // NEW: min_trades
+        if (data.min_trades !== undefined) {
+            const minTradesInput = document.getElementById('admin_min_trades');
+            if (minTradesInput) minTradesInput.value = data.min_trades;
+        }
+        
+        // NEW: task banner & popup ad
+        if (data.task_banner_ad !== undefined) {
+            const taskBanner = document.getElementById('task_banner_ad');
+            if (taskBanner) taskBanner.value = data.task_banner_ad;
+        }
+        if (data.task_popup_ad !== undefined) {
+            const taskPopup = document.getElementById('task_popup_ad');
+            if (taskPopup) taskPopup.value = data.task_popup_ad;
+        }
+        
+        // Wallet numbers
+        if (data.wallet) {
+            if (data.wallet.nagad !== undefined) document.getElementById('admin_nagad').value = data.wallet.nagad;
+            if (data.wallet.bkash !== undefined) document.getElementById('admin_bkash').value = data.wallet.bkash;
+        }
+        
+        // IP Security toggle
+        if (data.ip_limit === 'on') {
+            const ipToggle = document.getElementById('ip_security_toggle');
+            if (ipToggle) ipToggle.checked = true;
+        }
+        
+        // Task rules
+        if (data.task_rules) {
+            const deviceRule = document.getElementById('task_rule_device');
+            if (deviceRule) deviceRule.value = data.task_rules.device_check ? 'true' : 'false';
+            
+            const ipRule = document.getElementById('task_rule_ip');
+            if (ipRule) ipRule.value = data.task_rules.ip_check ? 'true' : 'false';
+            
+            const accountRule = document.getElementById('task_rule_account');
+            if (accountRule) accountRule.value = data.task_rules.account_check ? 'true' : 'false';
+        }
+        
+        // IP limit per hour
+        if (data.ip_limit_per_hour !== undefined) {
+            const ipLimit = document.getElementById('ip_limit_per_hour');
+            if (ipLimit) ipLimit.value = data.ip_limit_per_hour;
+        }
+        
+        // Default task expiry hours
+        if (data.default_task_expiry_hours !== undefined) {
+            const expiryInput = document.getElementById('default_task_expiry_hours');
+            if (expiryInput) expiryInput.value = data.default_task_expiry_hours;
+        }
+        
+        // Global fee
+        if (data.fee !== undefined) {
+            const feeInput = document.getElementById('c-fee');
+            if (feeInput) feeInput.value = data.fee;
+        }
+        
+    } catch(e) { 
+        console.error("Failed to load admin stats", e); 
+    }
+}
+
+// ========== FIXED: updateServerSettings() ==========
 async function updateServerSettings() {
     const data = {
         channel_url: document.getElementById('admin_channel_url').value,
@@ -990,8 +1043,11 @@ async function updateServerSettings() {
         ip_limit: document.getElementById('ip_security_toggle')?.checked ? 'on' : 'off',
         bonus_target: parseInt(document.getElementById('bonus_target').value) || 5,
         extra_users: parseInt(document.getElementById('admin_extra_users').value) || 0,
-        task_banner_ad: document.getElementById('task_banner_ad').value,      // ← যোগ করুন
-        task_popup_ad: document.getElementById('task_popup_ad').value,       // ← যোগ করুন
+        
+        // ADD these fields:
+        task_banner_ad: document.getElementById('task_banner_ad')?.value || '',
+        task_popup_ad: document.getElementById('task_popup_ad')?.value || '',
+        
         task_rules: {
             device_check: document.getElementById('task_rule_device')?.value === 'true',
             ip_check: document.getElementById('task_rule_ip')?.value === 'true',
@@ -1000,15 +1056,61 @@ async function updateServerSettings() {
         ip_limit_per_hour: parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5,
         default_task_expiry_hours: parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168
     };
-    const res = await fetch('/api/admin/update_settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data)
-    });
-    if (res.ok) alert('✅ সার্ভার আপডেট হয়েছে');
-    else alert('❌ আপডেট ব্যর্থ');
+    
+    try {
+        const res = await fetch('/api/admin/update_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok && result.success) {
+            alert('✅ সার্ভার আপডেট হয়েছে');
+            // Reload stats to confirm
+            await loadAdminStats();
+        } else {
+            alert('❌ আপডেট ব্যর্থ: ' + (result.error || 'Unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ সার্ভার এরর: ' + err.message);
+    }
 }
+
+// ========== NEW: Firebase realtime sync for admin settings ==========
+function initFirebaseSync() {
+    const settingsRef = fb_db.ref('admin_settings');
+    
+    settingsRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            // Update UI with Firebase data
+            if (data.server_income !== undefined) {
+                document.getElementById('admin_income').value = data.server_income;
+            }
+            if (data.server_trading !== undefined) {
+                document.getElementById('admin_trading').value = data.server_trading;
+            }
+            // Add more fields as needed
+        }
+    });
+}
+
+// ========== MODIFIED: initAdmin() ==========
+function initAdmin(){
+    loadUsers();
+    loadTasks();
+    loadAds();
+    loadWithdraws();
+    initLivePrice();
+    loadAdminStats();
+    loadTaskConfig();
+    loadPendingClaims();
+    initFirebaseSync(); // NEW: Add Firebase sync
+    }
 
 
 async function setGlobalFee() {
@@ -1054,10 +1156,7 @@ async function updateUserBalance() {
 }
 
 
-function initLivePrice() {
-    // price already loads from interval in loadLivePrice function
-    // make sure loadLivePrice is called every 2 seconds (already in your code)
-        }
+
 
     function toggleUserList() {
     const box = document.getElementById('member-list-body');
