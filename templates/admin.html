@@ -714,6 +714,21 @@ async function checkAuth(){
   }
 }
 
+
+    function toggleUserList() {
+    const box = document.getElementById('member-list-body');
+    if (!box) return;
+    
+    const isHidden = box.style.display === 'none' || getComputedStyle(box).display === 'none';
+    
+    if (isHidden) {
+        box.style.display = 'block';
+        loadUsers();
+    } else {
+        box.style.display = 'none';
+    }
+    }
+
 /* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
 const val = id => $(id)?.value || "";
