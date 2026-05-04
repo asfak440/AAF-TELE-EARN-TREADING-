@@ -425,7 +425,7 @@ function renderUI(user, admin) {
     if (el) el.innerText = val;
   };
 
-  // পূর্ণ নাম দেখানো (পুরনো u-name প্রতিস্থাপন)
+  // পূর্ণ নাম দেখানো
   const nameElement = document.getElementById('u-name');
   if (nameElement) {
     let fullName = '';
@@ -456,15 +456,59 @@ function renderUI(user, admin) {
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
 
+  // 🆕 ব্যানার অ্যাড (স্ক্রিপ্ট সাপোর্ট সহ)
   const bannerBox = document.getElementById('banner-ad');
   if (bannerBox) {
-    if (admin.banner_ad_code && admin.banner_ad_code.trim() !== "") {
-      bannerBox.innerHTML = admin.banner_ad_code;
+    const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
+    if (adCode !== "") {
+      executeScriptHTML(adCode, bannerBox);
     } else {
       bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
     }
   }
 }
+
+    // পপ-আপ/পপ-আন্ডার অ্যাড রেন্ডার (যেকোনো স্ক্রিপ্ট ভিত্তিক)
+if (admin.popup_ad_code && admin.popup_ad_code.trim() !== "") {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = admin.popup_ad_code;
+    
+    // স্ক্রিপ্ট ট্যাগগুলো আলাদা করে রান করানো
+    const scripts = tempDiv.getElementsByTagName('script');
+    for (let script of scripts) {
+        const newScript = document.createElement('script');
+        if (script.src) {
+            newScript.src = script.src;
+        } else {
+            newScript.textContent = script.textContent;
+        }
+        document.body.appendChild(newScript);  // document.body-তে যোগ করলে পপআপ কাজ করবে
+    }
+}
+// হেল্পার ফাংশন: স্ক্রিপ্ট HTML এক্সিকিউট করবে
+function executeScriptHTML(html, targetElement) {
+  targetElement.innerHTML = "";
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // স্ক্রিপ্টগুলো আলাদা করে রান করানো
+  const scripts = tempDiv.getElementsByTagName('script');
+  for (let script of scripts) {
+    const newScript = document.createElement('script');
+    if (script.src) {
+      newScript.src = script.src;
+    } else {
+      newScript.textContent = script.textContent;
+    }
+    targetElement.appendChild(newScript);
+  }
+
+  // বাকি HTML (ইফ্রেম, ইমেজ, ডিভি) বসানো
+  const otherNodes = Array.from(tempDiv.childNodes).filter(n => n.nodeType !== 1 || n.tagName !== 'SCRIPT');
+  for (let node of otherNodes) {
+    targetElement.appendChild(node.cloneNode(true));
+  }
+    }
 
     // চ্যানেলের সদস্যপদ চেক করার ফাংশন
 async function checkChannelMembership() {
