@@ -385,6 +385,14 @@ textarea {
             </div>
         </div>
 
+        <div>
+        <label>এক্সট্রা ইউজার (ফেক ইউজার)</label>
+        <div style="display: flex; gap: 10px;">
+           <input type="number" id="admin_extra_users" value="0">
+           <button onclick="clearField('extra_users', 'admin_extra_users')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+     </div>
+
         
         <!-- বট টোকেন -->
         <label>বট টোকেন</label>
@@ -1120,12 +1128,12 @@ function initAdmin(){
     loadTasks();
     loadAds();
     loadWithdraws();
-    initLivePrice();
+    loadLivePrice();  // ← fixed
     loadAdminStats();
     loadTaskConfig();
     loadPendingClaims();
-    initFirebaseSync(); // NEW: Add Firebase sync
-    }
+    initFirebaseSync();
+}
 
 
 async function setGlobalFee() {
@@ -1171,41 +1179,6 @@ async function updateUserBalance() {
 }
 
 
-
-
-    function toggleUserList() {
-    const box = document.getElementById('member-list-body');
-    if (box.style.display === 'none' || box.style.display === '') {
-        box.style.display = 'block';
-        loadUsers();   // ← এই লাইনটি গুরুত্বপূর্ণ
-    } else {
-        box.style.display = 'none';
-    }
-    }
-
-    async function updateTaskRules() {
-    const task_rules = {
-        device_check: document.getElementById('task_rule_device')?.value === 'true',
-        ip_check: document.getElementById('task_rule_ip')?.value === 'true',
-        account_check: document.getElementById('task_rule_account')?.value === 'true'
-    };
-    const ip_limit_per_hour = parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5;
-    const default_task_expiry_hours = parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168;
-
-    const res = await fetch('/api/admin/update_settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-            task_rules: task_rules,
-            ip_limit_per_hour: ip_limit_per_hour,
-            default_task_expiry_hours: default_task_expiry_hours
-        })
-    });
-    if (res.ok) alert('✅ নিয়ম সংরক্ষিত হয়েছে!');
-    else alert('❌ ত্রুটি, আবার চেষ্টা করুন।');
-    }
-
 async function loadTaskConfig() {
     try {
         const res = await fetch('/api/admin/config', { credentials: 'include' });
@@ -1216,6 +1189,9 @@ async function loadTaskConfig() {
             document.getElementById('task_rule_account').value = data.task_rules.account_check ? 'true' : 'false';
             document.getElementById('ip_limit_per_hour').value = data.ip_limit_per_hour || 5;
             document.getElementById('default_task_expiry_hours').value = data.default_task_expiry_hours || 168;   // ← এখানে days না, hours
+            document.getElementById('admin_extra_users').value = data.extra_users;
+
+// কিন্তু HTML এ এই ফিল্ড নেই!
         }
     } catch(e) { console.error(e); }
 }
@@ -1275,6 +1251,54 @@ async function processClaim(claimId, action) {
     } catch(e) { alert('সার্ভার এরর'); }
     }
 
+    async function updateWallets() {
+    const nagad = document.getElementById('admin_nagad').value;
+    const bkash = document.getElementById('admin_bkash').value;
+    const walletPopupAd = document.getElementById('wallet_popup_ad')?.value || ''; // যোগ করুন
+    
+    const res = await fetch('/api/admin/update_wallets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ nagad, bkash, wallet_popup_ad: walletPopupAd }) // যোগ করুন
+    });
+    // ...
+    }
+
+    async function publishGlobalAd() {
+    const adMsg = document.getElementById('admin_ad_msg').value;
+    if (!adMsg) return alert('নোটিশ লিখুন');
+    
+    const res = await fetch('/api/admin/global_ad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: adMsg })
+    });
+    if (res.ok) alert('✅ নোটিশ পাবলিশ হয়েছে');
+    else alert('❌ ব্যর্থ');
+    }
+
+    async function forceMarketPrice() {
+    const price = parseFloat(document.getElementById('inp-price').value);
+    if (isNaN(price)) return alert('সঠিক মূল্য দিন');
+    
+    const res = await fetch('/api/admin/set_price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ price })
+    });
+    if (res.ok) {
+        alert('✅ প্রাইস আপডেট হয়েছে');
+        loadLivePrice();
+    } else alert('❌ ব্যর্থ');
+ }
+
+    function clearCheckbox(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) el.checked = false;
+    }
     
 </script>
     
