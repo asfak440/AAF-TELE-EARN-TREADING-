@@ -542,6 +542,31 @@ window.addEventListener('load', ()=>{
     smartInterval(initDashboard, 15000);
     smartInterval(checkChannelMembership, 15000);   // ← এই লাইন যোগ করুন
 });
+
+
+    /* --- ড্যাশবোর্ডের জন্য (এটি অত্যন্ত গুরুত্বপূর্ণ) --- */
+function renderUniversalContent(containerId, content) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = ""; 
+
+    if (!content || content.trim() === "") {
+        container.style.display = "none"; 
+        return;
+    }
+    container.style.display = "block";
+
+    // যদি শুধু লিঙ্ক হয়
+    if (content.startsWith('http') && !content.includes('<')) {
+        container.innerHTML = `<a href="${content}" target="_blank" style="color:#00f2fe;">${content}</a>`;
+    } 
+    // যদি HTML বা Script কোড হয় (যেমন AdMaven বা Clickadu এর কোড)
+    else {
+        const range = document.createRange();
+        const documentFragment = range.createContextualFragment(content);
+        container.appendChild(documentFragment);
+    }
+}
 </script>
 
 </html>
