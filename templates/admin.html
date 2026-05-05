@@ -600,6 +600,25 @@ textarea {
     <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং টাস্ক ক্লেইম (এডমিন এপ্রুভাল প্রয়োজন)</div>
     <div id="pending-claims-list">লোড হচ্ছে...</div>
     </div>
+        <!-- Wallet Section -->
+<div id="wallet" class="page-section">  
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>  
+        ...
+    </div>  
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>  
+        <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div> 
+    </div>
+    
+    <!-- withdraw-list এখানে রাখুন -->
+    <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
+    
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-bullhorn"></i> Wallet Popup Ad</div>
+        <textarea id="wallet_popup_ad" rows="3" placeholder="ওয়ালেট পেজ পপআপ অ্যাড"></textarea>
+    </div> 
+</div>
 
     <!-- Balance Edit -->
     <div class="premium-card">  
@@ -622,7 +641,6 @@ textarea {
         <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
     </div>
 
-    <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
     <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
 </div>
 
@@ -1137,7 +1155,6 @@ function initAdmin(){
     loadWithdraws();
     loadLivePrice();  // ← fixed
     loadAdminStats();
-    loadTaskConfig();
     loadPendingClaims();
     initFirebaseSync();
     loadPendingDeposits();
@@ -1175,22 +1192,6 @@ async function updateUserBalance() {
 }
 
 
-async function loadTaskConfig() {
-    try {
-        const res = await fetch('/api/admin/config', { credentials: 'include' });
-        const data = await res.json();
-        if (data.task_rules) {
-            document.getElementById('task_rule_device').value = data.task_rules.device_check ? 'true' : 'false';
-            document.getElementById('task_rule_ip').value = data.task_rules.ip_check ? 'true' : 'false';
-            document.getElementById('task_rule_account').value = data.task_rules.account_check ? 'true' : 'false';
-            document.getElementById('ip_limit_per_hour').value = data.ip_limit_per_hour || 5;
-            document.getElementById('default_task_expiry_hours').value = data.default_task_expiry_hours || 168;   // ← এখানে days না, hours
-            document.getElementById('admin_extra_users').value = data.extra_users;
-
-// কিন্তু HTML এ এই ফিল্ড নেই!
-        }
-    } catch(e) { console.error(e); }
-}
 
     async function loadPendingClaims() {
     const container = document.getElementById('pending-claims-list');
@@ -1250,15 +1251,26 @@ async function processClaim(claimId, action) {
     async function updateWallets() {
     const nagad = document.getElementById('admin_nagad').value;
     const bkash = document.getElementById('admin_bkash').value;
-    const walletPopupAd = document.getElementById('wallet_popup_ad')?.value || ''; // যোগ করুন
+    const walletPopupAd = document.getElementById('wallet_popup_ad')?.value || '';
     
-    const res = await fetch('/api/admin/update_wallets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ nagad, bkash, wallet_popup_ad: walletPopupAd }) // যোগ করুন
-    });
-    // ...
+    try {
+        const res = await fetch('/api/admin/update_wallets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ nagad, bkash, wallet_popup_ad: walletPopupAd })
+        });
+        
+        if (res.ok) {
+            alert('✅ ওয়ালেট নম্বর সেভ হয়েছে');
+            await loadAdminStats(); // রিলোড
+        } else {
+            alert('❌ সেভ ব্যর্থ');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ সার্ভার এরর: ' + err.message);
+    }
     }
 
     async function publishGlobalAd() {
@@ -1298,18 +1310,74 @@ async function processClaim(claimId, action) {
 
     async function loadPendingDeposits() {
     const container = document.getElementById('pending-list-view');
+    if (!container) return;
+    
     try {
         const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
         const data = await res.json();
+        
         if (!data.deposits || data.deposits.length === 0) {
-            container.innerHTML = '<div>কোনো পেন্ডিং ডিপোজিট নেই।</div>';
+            container.innerHTML = '<div>✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
             return;
         }
-        // টেবিল তৈরি করুন...
+        
+        let html = '<table style="width:100%; border-collapse:collapse;">';
+        html += '<thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead><tbody>';
+        
+        data.deposits.forEach(d => {
+            html += `<tr>
+                <td>${escapeHtml(d.telegram_id || d.user_id)}</td>
+                <td>৳${d.amount}</td>
+                <td>${d.method || 'N/A'}</td>
+                <td>
+                    <button onclick="approveDeposit('${d._id}')" style="background:#00ff88; margin-right:5px;">✅ Approve</button>
+                    <button onclick="rejectDeposit('${d._id}')" style="background:#ff5555;">❌ Reject</button>
+                </td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
     } catch(e) {
-        container.innerHTML = '<div>Error loading deposits</div>';
+        console.error(e);
+        container.innerHTML = '<div>❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
     }
-                             }
+}
+
+// 필요한 헬퍼 함수들
+async function approveDeposit(id) {
+    const res = await fetch('/api/admin/approve_deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('✅ ডিপোজিট অনুমোদিত হয়েছে');
+        loadPendingDeposits();
+        loadAdminStats();
+    } else {
+        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+    }
+}
+
+async function rejectDeposit(id) {
+    const res = await fetch('/api/admin/reject_deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('❌ ডিপোজিট বাতিল করা হয়েছে');
+        loadPendingDeposits();
+    } else {
+        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+    }
+}
     
 </script>
     
