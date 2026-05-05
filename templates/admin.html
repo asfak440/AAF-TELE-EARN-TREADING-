@@ -1124,6 +1124,12 @@ async function updateServerSettings() {
         
         task_banner_ad: document.getElementById('task_banner_ad')?.value || '',
         task_popup_ad: document.getElementById('task_popup_ad')?.value || '',
+
+         // 🆕 পপআপ ফিল্ড যোগ করুন
+        popup_ad_title: document.getElementById('popup_ad_title')?.value || '',
+        popup_ad_desc: document.getElementById('popup_ad_desc')?.value || '',
+        popup_ad_image: document.getElementById('popup_ad_image')?.value || '',
+        popup_ad_enabled: document.getElementById('popup_ad_enabled')?.value === 'true',
         
         task_rules: {
             device_check: document.getElementById('task_rule_device')?.value === 'true',
