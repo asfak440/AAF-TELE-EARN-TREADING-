@@ -910,14 +910,7 @@ def admin_update_settings():
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     
-    # পপআপ ফিল্ডগুলো nested অবজেক্টে রূপান্তর
-    popup_ad = {
-        "title": data.get("popup_ad_title", ""),
-        "desc": data.get("popup_ad_desc", ""),
-        "image": data.get("popup_ad_image", ""),
-        "enabled": data.get("popup_ad_enabled", False)
-    }
-    
+    # বাকি সব ফিল্ড আগের মতো
     update_data = {
         "channel_url": data.get("channel_url", ""),
         "min_trades": int(data.get("min_trades", 5)),
@@ -939,8 +932,17 @@ def admin_update_settings():
         }),
         "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),
         "default_task_expiry_days": int(data.get("default_task_expiry_days", 7)),
-        "popup_ad": popup_ad   // ⬅️ এটাই মূল ম্যাজিক
     }
+    
+    # পপআপ ফিল্ডগুলো nested অবজেক্টে রূপান্তর
+    update_data["popup_ad"] = {
+        "title": data.get("popup_ad_title", ""),
+        "desc": data.get("popup_ad_desc", ""),
+        "image": data.get("popup_ad_image", ""),
+        "enabled": data.get("popup_ad_enabled", False)
+    }
+    
+    # MongoDB আপডেট
     admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
     
@@ -999,9 +1001,8 @@ def admin_update_balance():
 def admin_config():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
-    admin = get_admin_config()          # MongoDB থেকে পুরো ডকুমেন্ট
-    popup = admin.get("popup_ad", {})   # nested অবজেক্ট (যেমন {"title":"", "desc":"", ...})
-    
+    admin = get_admin_config()
+    popup = admin.get("popup_ad", {})
     return jsonify({
         "server_income": admin.get("server_income", 0),
         "server_trading": admin.get("server_trading", 0),
@@ -1016,8 +1017,6 @@ def admin_config():
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
         "default_task_expiry_hours": admin.get("default_task_expiry_hours", 168),
         "wallet": admin.get("wallet", {"nagad": "", "bkash": ""}),
-        
-        # 🔥 পপআপ ফিল্ডগুলো nested থেকে ফ্ল্যাটে এনেছে
         "popup_ad_title": popup.get("title", ""),
         "popup_ad_desc": popup.get("desc", ""),
         "popup_ad_image": popup.get("image", ""),
