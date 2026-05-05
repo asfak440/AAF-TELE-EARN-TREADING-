@@ -1293,35 +1293,42 @@ def admin_clear_field():
     )
     return jsonify({"success": True})
 
-// পপআপ সেটিংস আপডেট করার এন্ডপয়েন্ট
-app.post('/api/admin/update_popup', async (req, res) => {
-    try {
-        const { popup_ad_title, popup_ad_desc, popup_ad_image, popup_ad_enabled } = req.body;
+
+# ========== পপআপ সেটিংস আপডেট করার এন্ডপয়েন্ট ==========
+@app.route('/api/admin/update_popup', methods=['POST'])
+def update_popup():
+    try:
+        data = request.get_json()
+        popup_ad_title = data.get('popup_ad_title', '')
+        popup_ad_desc = data.get('popup_ad_desc', '')
+        popup_ad_image = data.get('popup_ad_image', '')
+        popup_ad_enabled = data.get('popup_ad_enabled', False)
         
-        // আপনার ডাটাবেজ আপডেট করুন (MongoDB উদাহরণ)
-        const config = await Config.findOne();
-        if (config) {
-            config.popup_ad_title = popup_ad_title;
-            config.popup_ad_desc = popup_ad_desc;
-            config.popup_ad_image = popup_ad_image;
-            config.popup_ad_enabled = popup_ad_enabled;
-            await config.save();
-        } else {
-            await Config.create({
-                popup_ad_title,
-                popup_ad_desc, 
-                popup_ad_image,
-                popup_ad_enabled
-            });
-        }
+        # MongoDB আপডেট (আপনার ডাটাবেস স্ট্রাকচার অনুযায়ী)
+        config = db.config.find_one()
+        if config:
+            db.config.update_one(
+                {'_id': config['_id']},
+                {'$set': {
+                    'popup_ad_title': popup_ad_title,
+                    'popup_ad_desc': popup_ad_desc,
+                    'popup_ad_image': popup_ad_image,
+                    'popup_ad_enabled': popup_ad_enabled
+                }}
+            )
+        else:
+            db.config.insert_one({
+                'popup_ad_title': popup_ad_title,
+                'popup_ad_desc': popup_ad_desc,
+                'popup_ad_image': popup_ad_image,
+                'popup_ad_enabled': popup_ad_enabled
+            })
         
-        res.json({ success: true });
-    } catch(error) {
-        console.error('Popup update error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+        return jsonify({'success': True, 'message': 'Popup settings updated'})
         
+    except Exception as error:
+        print(f'Popup update error: {error}')
+        return jsonify({'success': False, 'error': str(error)}), 500
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
