@@ -1164,23 +1164,6 @@ async function updateServerSettings() {
 
 
 // ========== NEW: Firebase realtime sync for admin settings ==========
-function initFirebaseSync() {
-    const settingsRef = fb_db.ref('admin_settings');
-    
-    settingsRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            // Update UI with Firebase data
-            if (data.server_income !== undefined) {
-                document.getElementById('admin_income').value = data.server_income;
-            }
-            if (data.server_trading !== undefined) {
-                document.getElementById('admin_trading').value = data.server_trading;
-            }
-            // Add more fields as needed
-        }
-    });
-}
 
 // ========== MODIFIED: initAdmin() ==========
 function initAdmin(){
