@@ -579,13 +579,13 @@ async function checkChannelMembership() {
     } catch(e) { console.error("Membership check failed", e); }
 }
 
-// window.addEventListener('load') অংশটি আপডেট করুন
-window.addEventListener('load', ()=>{
+ window.addEventListener('load', ()=>{
+    createPopupContainer();      // ← যোগ করুন
     initDashboard();
     smartInterval(initDashboard, 15000);
-    smartInterval(checkChannelMembership, 15000);   // ← এই লাইন যোগ করুন
+    smartInterval(checkChannelMembership, 15000);
+    loadPopupData();             // ← রাখুন
 });
-
 
     
 </script>
