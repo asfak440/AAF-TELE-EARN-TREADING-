@@ -558,26 +558,25 @@ function executeScriptHTML(html, targetElement) {
     // চ্যানেলের সদস্যপদ চেক করার ফাংশন
 async function checkChannelMembership() {
     try {
-        const res = await fetch('/api/check_membership', { credentials: "include" });
+        const res = await fetch('/api/check_membership', { 
+            credentials: "include",
+            cache: 'no-store'
+        });
         const data = await res.json();
-        if (!data.is_member) {
-            // UI আপডেট (অফলাইন দেখান)
-            const joinStatus = document.getElementById('join-status');
-            if (joinStatus && joinStatus.innerText === "ONLINE") {
-                const dot = document.getElementById('status-dot');
-                const joinBtn = document.getElementById('join-btn');
-                const joinInfo = document.getElementById('join-info');
-                const joinCard = document.getElementById('join-container');
-                if (dot) dot.className = 'dot-offline';
-                if (joinBtn) joinBtn.style.display = 'block';
-                if (joinStatus) joinStatus.innerText = 'OFFLINE';
-                if (joinInfo) joinInfo.innerText = 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
-                if (joinCard) joinCard.classList.remove('connected');
-                triggerPopup("⚠️ আপনি চ্যানেল ছেড়ে দিয়েছেন। পুনরায় জয়েন করে VERIFY করুন।");
-            }
+        
+        // ব্যাকএন্ড যা বলবে তাই বিশ্বাস করে পুরো UI আপডেট করি
+        // সঠিক স্ট্যাটাস পেতে initDashboard() কল করি
+        if (data.is_member === false) {
+            // অফলাইন হলে বাটন দেখানোর প্রয়োজন হতে পারে
+            initDashboard();
+        } else if (data.is_member === true) {
+            // অনলাইন হলে UI ঠিক রাখি
+            initDashboard();
         }
-    } catch(e) { console.error("Membership check failed", e); }
-}
+    } catch(e) {
+        console.error("Membership check failed", e);
+    }
+ }
 
  window.addEventListener('load', ()=>{
     createPopupContainer();      // ← যোগ করুন
