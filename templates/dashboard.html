@@ -383,15 +383,39 @@ async function verifyJoin() {
     
     
 // ================= POPUP =================
-function triggerPopup(msg) {
-  const bar = document.getElementById('active-user-bar');
-  const text = document.getElementById('popup-text');
-  if (!bar || !text) return;
-
-  text.innerText = msg;
-  bar.style.display = "flex";
-  setTimeout(()=> bar.style.display="none", 3000);
+async function loadPopupData() {
+    try {
+        const res = await fetch('/api/admin/config');
+        const data = await res.json();
+        
+        const enabled = data.popup_ad_enabled === true;
+        const title = data.popup_ad_title || '📢 নতুন অফার!';
+        const desc = data.popup_ad_desc || '';
+        const image = data.popup_ad_image || '';
+        
+        let html = `<h3 style="color: #00f2fe;">${escapeHtml(title)}</h3>`;
+        if (image) html += `<img src="${image}" style="width:100%; border-radius:10px; margin:10px 0;">`;
+        if (desc) html += `<p>${escapeHtml(desc)}</p>`;
+        document.getElementById('popup-content').innerHTML = html;
+        
+        if (enabled) {
+            const shown = localStorage.getItem('popup_shown_today') === new Date().toDateString();
+            if (!shown) {
+                setTimeout(() => {
+                    document.getElementById('popup-display').style.display = 'block';
+                }, 2000);
+            }
+        }
+    } catch(e) { console.error(e); }
 }
+
+function closePopup() {
+    document.getElementById('popup-display').style.display = 'none';
+    localStorage.setItem('popup_shown_today', new Date().toDateString());
+}
+
+// পেজ লোড হলে
+window.addEventListener('DOMContentLoaded', loadPopupData);
 
 function copyReferLink() {
     const tg = localStorage.getItem(TG_KEY);
@@ -412,6 +436,25 @@ function copyReferLink() {
         triggerPopup("❌ কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
     });
 }
+
+    function createPopupContainer() {
+    if (document.getElementById('popup-display')) return;
+    
+    const popupDiv = document.createElement('div');
+    popupDiv.id = 'popup-display';
+    popupDiv.style.cssText = `
+        display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: #0d111c; border: 2px solid #00f2fe; border-radius: 20px; padding: 20px;
+        z-index: 10000; width: 350px; max-width: 90%; box-shadow: 0 0 30px rgba(0,242,254,0.3);
+    `;
+    popupDiv.innerHTML = `
+        <div style="text-align: right;">
+            <button onclick="closePopup()" style="background:none; border:none; color:#ff5555; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <div id="popup-content"></div>
+    `;
+    document.body.appendChild(popupDiv);
+    }
 
 // ================= INIT =================
 window.addEventListener('load', ()=>{
