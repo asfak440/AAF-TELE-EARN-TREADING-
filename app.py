@@ -1033,19 +1033,17 @@ def check_membership():
     if not user:
         return jsonify({"is_member": False})
     
-    # যদি ইতিমধ্যে is_joined False থাকে, তাহলে দ্রুত False রিটার্ন করুন
-    if not user.get("is_joined", False):
-        return jsonify({"is_member": False})
-    
     admin = get_admin_config()
     bot_token = admin.get("bot_token")
     channel_url = admin.get("channel_url", "")
     
+    # কনফিগ না থাকলে ডাটাবেসের মানই রিটার্ন করুন
     if not bot_token or not channel_url:
         return jsonify({"is_member": user.get("is_joined", False)})
     
     try:
         user_tg_id = int(user.get("telegram_id"))
+        # চ্যানেল ইউজারনেম পার্স করুন
         if "t.me/" in channel_url:
             channel_username = "@" + channel_url.split("t.me/")[-1].split("/")[0]
         elif channel_url.startswith("@"):
@@ -1053,21 +1051,32 @@ def check_membership():
         else:
             channel_username = "@" + channel_url
         
-        import telebot
-        bot = telebot.TeleBot(bot_token)
-        chat_member = bot.get_chat_member(channel_username, user_tg_id)
-        is_member = chat_member.status in ["member", "creator", "administrator"]
+        # টেলিগ্রাম বট API কল (ক্যাশ এড়াতে headers যোগ করুন)
+        import requests
+        url = f"https://api.telegram.org/bot{bot_token}/getChatMember?chat_id={channel_username}&user_id={user_tg_id}"
+        resp = requests.get(url, headers={"Cache-Control": "no-cache"}, timeout=10)
+        data = resp.json()
         
-        # যদি সদস্য না থাকে এবং ডাটাবেজে True থাকে, তাহলে False করে দিন
-        if not is_member and user.get("is_joined", False):
-            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": False}})
-        return jsonify({"is_member": is_member})
+        if data.get("ok"):
+            status = data["result"]["status"]
+            is_member = status in ("member", "administrator", "creator")
+        else:
+            is_member = False
+        
+        # ডাটাবেস আপডেট করুন
+        new_joined = is_member
+        if user.get("is_joined") != new_joined:
+            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": new_joined}})
+        
+        # রেসপন্সে ক্যাশ নিষিদ্ধ হেডার দিন
+        response = jsonify({"is_member": is_member})
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        return response
+        
     except Exception as e:
         print(f"Check membership error: {e}")
-        return jsonify({"is_member": user.get("is_joined", False)})
-
-
-# (আপনার বিদ্যমান কোডের সাথে যুক্ত করুন)
+        # কোনো error হলে is_member = False ধরে নিন (ডাটাবেস আপডেট করবেন না)
+        return jsonify({"is_member": False})
 
 @app.route("/api/admin/load_session", methods=["POST"])
 def admin_load_session():
