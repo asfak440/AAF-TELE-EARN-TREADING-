@@ -929,7 +929,13 @@ def admin_update_settings():
             "account_check": True
         }),
         "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),
-        "default_task_expiry_days": int(data.get("default_task_expiry_days", 7))
+        "default_task_expiry_days": int(data.get("default_task_expiry_days", 7)),
+
+        # 🆕 পপআপ ফিল্ড যোগ করুন
+        "popup_ad_title": data.get("popup_ad_title", ""),
+        "popup_ad_desc": data.get("popup_ad_desc", ""),
+        "popup_ad_image": data.get("popup_ad_image", ""),
+        "popup_ad_enabled": data.get("popup_ad_enabled", False)
     }
     admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
@@ -1003,9 +1009,14 @@ def admin_config():
         "task_rules": admin.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
         "default_task_expiry_hours": admin.get("default_task_expiry_hours", 168),
-        "wallet": admin.get("wallet", {"nagad": "", "bkash": ""})
+        "wallet": admin.get("wallet", {"nagad": "", "bkash": ""}),
+        
+        # 🆕 পপআপ ফিল্ড যোগ করুন
+        "popup_ad_title": admin.get("popup_ad_title", ""),
+        "popup_ad_desc": admin.get("popup_ad_desc", ""),
+        "popup_ad_image": admin.get("popup_ad_image", ""),
+        "popup_ad_enabled": admin.get("popup_ad_enabled", False)
     })
-
 
 @app.route("/api/check_membership", methods=["GET"])
 @login_required
