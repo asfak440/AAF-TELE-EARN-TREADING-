@@ -553,7 +553,7 @@ textarea {
                 </div>
             </div>
         </div>
-        <button class="btn-main" onclick="updateTaskRules()">নিয়ম সংরক্ষণ করুন</button>
+        <button class="btn-main" onclick="updateServerSettings()">নিয়ম সংরক্ষণ করুন</button>
     </div>
 
     <!-- এডমিন এপ্রুভাল প্রয়োজন (চেকবক্স রিসেট করার জন্য বাটন) -->
@@ -600,14 +600,7 @@ textarea {
     <textarea id="wallet_popup_ad" rows="3" placeholder="ওয়ালেট পেজ পপআপ অ্যাড"></textarea>
 </div> 
 
-            <!-- Wallet Section -->
-<div id="wallet" class="page-section">  
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>  
-        <label>নগদ নম্বর</label><input type="text" id="admin_nagad">  
-        <label>বিকাশ/বাইনান্স</label><input type="text" id="admin_bkash">  
-        <button class="btn-main" onclick="updateWallets()">নম্বর সেভ করুন</button>  
-    </div>
+            
     
     <!-- withdraw-list এখানে রাখুন -->
     <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
@@ -624,44 +617,15 @@ textarea {
 </div>  
 </div>  
 
-    <div id="account" class="page-section">
+   <div id="account" class="page-section">
+    
+    <!-- পেন্ডিং টাস্ক ক্লেইম -->
     <div class="premium-card">
-    <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং টাস্ক ক্লেইম (এডমিন এপ্রুভাল প্রয়োজন)</div>
-    <div id="pending-claims-list">লোড হচ্ছে...</div>
+        <div class="card-title"><i class="fas fa-clock"></i> পেন্ডিং টাস্ক ক্লেইম (এডমিন এপ্রুভাল প্রয়োজন)</div>
+        <div id="pending-claims-list">লোড হচ্ছে...</div>
     </div>
 
-        <!-- 🆕 পপআপ অ্যাড কন্ট্রোল - Full Ads Control কার্ডের ভিতরে যোগ করুন -->
-<hr style="margin:15px 0; border-color:#334155">
-
-<div class="card-title" style="margin-top:15px;"><i class="fas fa-window-popup"></i> পপআপ অ্যাড কন্ট্রোল</div>
-
-<label>পপআপ টাইটেল</label>
-<div style="display: flex; gap: 10px;">
-    <input type="text" id="popup_ad_title" style="flex:1;">
-    <button onclick="clearField('popup_ad_title', 'popup_ad_title')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-</div>
-
-<label>পপআপ বিবরণ</label>
-<div style="display: flex; gap: 10px;">
-    <textarea id="popup_ad_desc" rows="3" style="flex:1;"></textarea>
-    <button onclick="clearField('popup_ad_desc', 'popup_ad_desc')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px;">🗑️</button>
-</div>
-
-<label>পপআপ ইমেজ URL</label>
-<div style="display: flex; gap: 10px;">
-    <input type="text" id="popup_ad_image" style="flex:1;">
-    <button onclick="clearField('popup_ad_image', 'popup_ad_image')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-</div>
-
-<label>পপআপ সক্রিয় করুন</label>
-<select id="popup_ad_enabled">
-    <option value="true">ON (দেখাবে)</option>
-    <option value="false">OFF (দেখাবে না)</option>
-</select>
-
-<button class="btn-main" onclick="updatePopupSettings()" style="margin-top: 15px;">💾 পপআপ সেভ করুন</button>
-        
-    <!-- Balance Edit -->
+    <!-- ব্যালেন্স এডিট -->
     <div class="premium-card">  
         <div class="card-title"><i class="fas fa-user-edit"></i> ব্যালেন্স এডিট (ম্যানুয়াল)</div>  
         <input type="text" id="target-uid" placeholder="ইউজার UID বা ফোন">  
@@ -672,27 +636,28 @@ textarea {
         <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>  
     </div>  
 
-    <!-- Users Session List -->
-<div class="premium-card">  
-    <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
-    
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-        <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
-        <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
-        <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
+    <!-- ইউজার সেশন লিস্ট -->
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
+            <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
+            <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
+        </div>
+
+        <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
     </div>
 
-    <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
-</div>
-
-    <!-- Ads Control -->
+    <!-- Ads Control (ব্যানার + পপআপ) -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-ad"></i> Full Ads Control</div>
+        <div class="card-title"><i class="fas fa-ad"></i> ফুল অ্যাডস কন্ট্রোল</div>
 
-        <label>Banner Ad Image URL</label>
+        <!-- ব্যানার অ্যাড সেটিংস -->
+        <label>ব্যানার অ্যাড ইমেজ URL</label>
         <input type="text" id="banner_ad_image">
 
-        <label>Banner Ad Enable</label>
+        <label>ব্যানার অ্যাড সক্রিয় করুন</label>
         <select id="banner_ad_enabled">
             <option value="true">ON</option>
             <option value="false">OFF</option>
@@ -700,29 +665,45 @@ textarea {
 
         <hr style="margin:15px 0; border-color:#334155">
 
-        <label>Popup Ad Title</label>
-        <input type="text" id="popup_ad_title">
+        <!-- পপআপ অ্যাড সেটিংস -->
+        <div class="card-title" style="margin-top: 5px; font-size: 14px;"><i class="fas fa-window-popup"></i> পপআপ অ্যাড কন্ট্রোল</div>
 
-        <label>Popup Ad Description</label>
-        <textarea id="popup_ad_desc" rows="3"></textarea>
+        <label>পপআপ টাইটেল</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="popup_ad_title" style="flex:1;">
+            <button onclick="clearField('popup_ad_title', 'popup_ad_title')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
 
-        <label>Popup Ad Image URL</label>
-        <input type="text" id="popup_ad_image">
+        <label>পপআপ বিবরণ</label>
+        <div style="display: flex; gap: 10px;">
+            <textarea id="popup_ad_desc" rows="3" style="flex:1;"></textarea>
+            <button onclick="clearField('popup_ad_desc', 'popup_ad_desc')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px;">🗑️</button>
+        </div>
 
-        <label>Popup Ad Enable</label>
+        <label>পপআপ ইমেজ URL</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="popup_ad_image" style="flex:1;">
+            <button onclick="clearField('popup_ad_image', 'popup_ad_image')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+
+        <label>পপআপ সক্রিয় করুন</label>
         <select id="popup_ad_enabled">
-            <option value="true">ON</option>
-            <option value="false">OFF</option>
+            <option value="true">ON (দেখাবে)</option>
+            <option value="false">OFF (দেখাবে না)</option>
         </select>
+
+        <button class="btn-main" onclick="updatePopupSettings()" style="margin-top: 15px;">💾 পপআপ সেভ করুন</button>
     </div>
- </div>
+    
+</div>
+
 <nav class="bottom-nav">  
     <i class="fas fa-home active" data-tab="dashboard" onclick="openTab(this)"></i>  
     <i class="fas fa-tasks" data-tab="task" onclick="openTab(this)"></i>  
     <i class="fas fa-chart-line" data-tab="trading" onclick="openTab(this)"></i>  
     <i class="fas fa-wallet" data-tab="wallet" onclick="openTab(this)"></i>  
     <i class="fas fa-user-cog" data-tab="account" onclick="openTab(this)"></i>  
-</nav>
+</nav> 
 
 </body>
 
