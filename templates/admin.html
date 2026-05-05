@@ -1458,19 +1458,18 @@ async function updatePopupSettings() {
     };
     
     try {
-        const res = await fetch('/api/admin/update_popup', {
+        const res = await fetch('/api/admin/update_settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify(popupData)
         });
-        
         const result = await res.json();
-        
         if (res.ok && result.success) {
-            alert('✅ পপআপ সেটিংস আপডেট হয়েছে');
+            alert('✅ পপআপ সেটিংস সেভ হয়েছে');
             await loadAdminStats();
-            await loadPopupData();
+            // এডমিন প্যানেলে প্রিভিউ দেখাতে চাইলে:
+            // await loadPopupData();
         } else {
             alert('❌ আপডেট ব্যর্থ: ' + (result.error || 'Unknown error'));
         }
@@ -1478,8 +1477,7 @@ async function updatePopupSettings() {
         console.error(err);
         alert('❌ সার্ভার এরর: ' + err.message);
     }
-    }
-    
+}
 </script>
     
 </body>
