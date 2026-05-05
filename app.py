@@ -1292,6 +1292,35 @@ def admin_clear_field():
         {"$set": {field_name: ""}}
     )
     return jsonify({"success": True})
+
+// পপআপ সেটিংস আপডেট করার এন্ডপয়েন্ট
+app.post('/api/admin/update_popup', async (req, res) => {
+    try {
+        const { popup_ad_title, popup_ad_desc, popup_ad_image, popup_ad_enabled } = req.body;
+        
+        // আপনার ডাটাবেজ আপডেট করুন (MongoDB উদাহরণ)
+        const config = await Config.findOne();
+        if (config) {
+            config.popup_ad_title = popup_ad_title;
+            config.popup_ad_desc = popup_ad_desc;
+            config.popup_ad_image = popup_ad_image;
+            config.popup_ad_enabled = popup_ad_enabled;
+            await config.save();
+        } else {
+            await Config.create({
+                popup_ad_title,
+                popup_ad_desc, 
+                popup_ad_image,
+                popup_ad_enabled
+            });
+        }
+        
+        res.json({ success: true });
+    } catch(error) {
+        console.error('Popup update error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
         
 # ================= RUN =================
 if __name__ == "__main__":
