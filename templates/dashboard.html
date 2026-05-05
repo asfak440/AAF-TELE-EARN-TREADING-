@@ -356,17 +356,27 @@ async function handleAutoJoin() {
 async function verifyJoin() {
     const btn = document.getElementById('verify-btn');
     if (!btn) return;
+    const originalText = btn.innerText;
     btn.innerText = "VERIFYING...";
     btn.disabled = true;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 সেকেন্ড টাইমআউট
+    
     try {
-        const res = await fetch('/api/verify_join', { method: 'POST', credentials: "include" });
+        const res = await fetch('/api/verify_join', {
+            method: 'POST',
+            credentials: "include",
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         const data = await res.json();
+        
         if (data.success) {
             triggerPopup("✅ চ্যানেল ভেরিফাইড!");
-            initDashboard();
+            await initDashboard();  // UI রিফ্রেশ
         } else {
-            // শুধুমাত্র চ্যানেল লিংক থাকলেই খোলা হবে, না হলে মেসেজ দেখাবে
-            if (data.channel && data.channel.trim() !== "") {
+            if (data.channel && data.channel.trim()) {
                 window.open(data.channel, "_blank");
                 triggerPopup("❌ চ্যানেলে জয়েন করে আবার ভেরিফাই করুন");
             } else {
@@ -374,13 +384,21 @@ async function verifyJoin() {
             }
         }
     } catch (error) {
+        clearTimeout(timeoutId);
         console.error(error);
-        triggerPopup("সার্ভার ত্রুটি, আবার চেষ্টা করুন");
+        if (error.name === 'AbortError') {
+            triggerPopup("⏰ সার্ভার সাড়া দিচ্ছে না, আবার চেষ্টা করুন");
+        } else {
+            triggerPopup("❌ সার্ভার ত্রুটি, আবার চেষ্টা করুন");
+        }
+    } finally {
+        // নিশ্চিতভাবে বাটন রিস্টোর
+        if (btn) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
     }
-    btn.innerText = "VERIFY MEMBERSHIP";
-    btn.disabled = false;
 }
-    
     
 // ================= POPUP =================
 async function loadPopupData() {
@@ -513,24 +531,6 @@ function renderUI(user, admin) {
   }
 }
 
-    // পপ-আপ/পপ-আন্ডার অ্যাড রেন্ডার (যেকোনো স্ক্রিপ্ট ভিত্তিক)
-if (admin.popup_ad_code && admin.popup_ad_code.trim() !== "") {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = admin.popup_ad_code;
-    
-    // স্ক্রিপ্ট ট্যাগগুলো আলাদা করে রান করানো
-    const scripts = tempDiv.getElementsByTagName('script');
-    for (let script of scripts) {
-        const newScript = document.createElement('script');
-        if (script.src) {
-            newScript.src = script.src;
-        } else {
-            newScript.textContent = script.textContent;
-        }
-        document.body.appendChild(newScript);  // document.body-তে যোগ করলে পপআপ কাজ করবে
-    }
-}
-// হেল্পার ফাংশন: স্ক্রিপ্ট HTML এক্সিকিউট করবে
 function executeScriptHTML(html, targetElement) {
   targetElement.innerHTML = "";
   const tempDiv = document.createElement('div');
