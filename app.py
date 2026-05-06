@@ -530,8 +530,6 @@ def claim_task():
     if not fb_ref:
         return jsonify({"blocked": True, "message": "Firebase not configured"})
 
-    # device/ip/account চেক (যদি চালু থাকে) – আপনার আগের কোড থেকে নিয়ে নিন
-    # এখানে সংক্ষেপে দিচ্ছি
     admin = get_admin_config()
     rules = admin.get("task_rules", {})
     device_check = rules.get("device_check", True)
@@ -576,7 +574,6 @@ def claim_task():
 
     requires_approval = task.get("requires_approval", False)
 
-    # একটি ক্লেইম রেকর্ড তৈরি করুন (MongoDB তে)
     claim_id = task_claims_col.insert_one({
         "telegram_id": telegram_id,
         "task_id": task_id,
@@ -585,24 +582,27 @@ def claim_task():
         "reward": task.get("reward", 0),
         "currency": task.get("currency", "cash"),
         "requires_approval": requires_approval,
-        "status": "pending",  # pending, approved, rejected
+        "status": "pending",
         "created_at": datetime.utcnow()
     }).inserted_id
 
     if requires_approval:
-        # টাকা এখন দেওয়া হবে না, এডমিন অনুমোদনের অপেক্ষায় থাকবে
         return jsonify({"blocked": False, "message": "টাস্ক ক্লেইম করা হয়েছে। এডমিন অনুমোদন দিলে ব্যালেন্স যোগ হবে।"})
     else:
-        # সরাসরি টাকা দিন (পুরনো পদ্ধতি)
-reward_amount = task.get("reward", 0)
-currency_type = task.get("currency", "cash")
-if currency_type == "aaf":
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward_amount}})
-    msg = f"Received {reward_amount} AAF"
-else:
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward_amount}})
-    msg = f"Received ৳{reward_amount}"
-users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+        reward_amount = task.get("reward", 0)
+        currency_type = task.get("currency", "cash")
+        if currency_type == "aaf":
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward_amount}})
+            msg = f"Received {reward_amount} AAF"
+        else:
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward_amount}})
+            msg = f"Received ৳{reward_amount}"
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+        if device_check:
+            fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
+        task_claims_col.update_one({"_id": claim_id}, {"$set": {"status": "approved"}})
+        return jsonify({"blocked": False, "message": msg}) করে 
+    
 
 @app.route("/api/admin/task/save", methods=["POST"])
 @login_required
@@ -666,6 +666,28 @@ def live_candle():
         return jsonify(last)
     return jsonify({"time": int(datetime.utcnow().timestamp()), "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
 
+
+
+# ================= API: WALLET =================
+@app.route("/api/wallet/deposit", methods=["POST"])
+@login_required
+def deposit():
+    data = request.json
+    telegram_id = data.get("telegram_id")
+    amount = data.get("amount")
+    trx = data.get("trx")
+    method = data.get("method", "Nagad")
+    deposits_col.insert_one({
+        "telegram_id": telegram_id,
+        "amount": amount,
+        "trx": trx,
+        "method": method,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    })
+    return jsonify({"message": "Deposit request sent"})
+
+
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
 def execute_trade():
@@ -692,11 +714,16 @@ def execute_trade():
         fee_amount = taka * fee_percent / 100
         admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
         trades_col.insert_one({
-        "telegram_id": telegram_id, "type": "sell", "taka": taka, "coin": coin,
-        "price": price, "fee": fee_amount, "timestamp": datetime.utcnow()
-})
-        
-        return jsonify({"message": f"Sold {coin})
+            "telegram_id": telegram_id,
+            "type": "buy",
+            "taka": taka,
+            "coin": coin,
+            "price": price,
+            "fee": fee_amount,
+            "timestamp": datetime.utcnow()
+        })
+        return jsonify({"message": f"Bought {coin} AAF successfully"})
+
     elif trade_type == "sell":
         if user.get("aaf", 0) < coin:
             return jsonify({"message": "Insufficient AAF"})
@@ -706,33 +733,18 @@ def execute_trade():
         users_col.update_one({"_id": user["_id"]}, {"$set": {"cash": new_cash, "aaf": new_aaf}})
         fee_amount = taka * fee_percent / 100
         admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
-            "telegram_id": telegram_id, "type": "sell", "taka": taka, "coin": coin,
-            "price": price, "fee": fee_amount, "timestamp": datetime.utcnow()
+        trades_col.insert_one({
+            "telegram_id": telegram_id,
+            "type": "sell",
+            "taka": taka,
+            "coin": coin,
+            "price": price,
+            "fee": fee_amount,
+            "timestamp": datetime.utcnow()
         })
         return jsonify({"message": f"Sold {coin} AAF successfully"})
+
     return jsonify({"message": "Invalid type"})
-
-
-    
-
-# ================= API: WALLET =================
-@app.route("/api/wallet/deposit", methods=["POST"])
-@login_required
-def deposit():
-    data = request.json
-    telegram_id = data.get("telegram_id")
-    amount = data.get("amount")
-    trx = data.get("trx")
-    method = data.get("method", "Nagad")
-    deposits_col.insert_one({
-        "telegram_id": telegram_id,
-        "amount": amount,
-        "trx": trx,
-        "method": method,
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    })
-    return jsonify({"message": "Deposit request sent"})
 
 @app.route("/api/wallet/withdraw", methods=["POST"])
 @login_required
