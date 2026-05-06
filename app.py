@@ -49,8 +49,7 @@ deposits_col = db_mongo["deposits"]
 withdraws_col = db_mongo["withdraws"]
 trades_col = db_mongo["trades"]
 task_claims_col = db_mongo["task_claims"]
-milestones_col = db_mongo["milestones"] 
-user_milestone_claims_col = db_mongo["user_milestone_claims"]
+
 # ================= FIREBASE =================
 if not firebase_admin._apps:
     if os.path.exists(FIREBASE_KEY_PATH):
