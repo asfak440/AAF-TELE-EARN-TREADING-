@@ -159,13 +159,7 @@
             <i class="fas fa-exclamation-triangle"></i> বোনাস আনলক করতে অফিশিয়াল চ্যানেলে জয়েন করুন!
         </div>
 
-        <div class="bonus-card" id="bonus-section">
-            <h3>MILESTONE: <span id="t-done">0</span> / <span id="t-target">10</span></h3>
-            <p id="bonus-msg" style="font-size: 9px; color: var(--text-gray); margin: 0;">প্রগ্রেস পূর্ণ হলে এক্সট্রা AAF কয়েন পাবেন</p>
-            <div class="progress-bar"><div class="progress-fill" id="t-progress"></div></div>
-            <div id="extra-milestones" style="margin-bottom: 15px;"></div>
-        </div>
-
+        
         <div id="main-task-list">
             <div style="text-align:center; padding:40px; color:var(--text-gray); font-size: 11px;">
                 <i class="fas fa-spinner fa-spin" style="margin-right: 5px;"></i> এএএফ ইঞ্জিন লোড হচ্ছে...
@@ -286,14 +280,6 @@ function updateBalance(cash, coin){
   if (coinEl) coinEl.innerText = parseFloat(coin || 0).toFixed(2);
 }
 
-// ===== MILESTONE =====
-function updateMilestone(done, target){
-  const d = done % target;
-  document.getElementById('t-done').innerText = d;
-  document.getElementById('t-target').innerText = target;
-  document.getElementById('t-progress').style.width =
-    `${(d/target)*100}%`;
-}
 
 // ===== RENDER TASKS =====
 function renderTasks(tasks){
