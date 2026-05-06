@@ -549,6 +549,24 @@ textarea {
         <button class="btn-main" onclick="saveGlobalDefaults()">ডিফল্ট সংরক্ষণ</button>
     </div>
 
+        <!-- ==================== মাইলেসটোন ও ইনবক্স সেকশন ==================== -->
+<div class="premium-card">
+    <div class="card-title"><i class="fas fa-flag-checkered"></i> মাইলেসটোন / বোনাস কন্ট্রোল</div>
+    
+    <div class="row">
+        <div><label>টার্গেট (যেমন ১০ টাস্ক)</label><input type="number" id="ms_target" placeholder="সংখ্যা"></div>
+        <div><label>রিওয়ার্ড টাইপ</label><select id="ms_reward_type"><option value="bdt">BDT</option><option value="aaf">AAF</option></select></div>
+        <div><label>রিওয়ার্ড পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
+    </div>
+    <div class="row">
+        <div><label>মেয়াদ (দিন, খালি থাকলে লাইফটাইম)</label><input type="number" id="ms_days"></div>
+        <div><label>মাইলেসটোন টাইপ</label><select id="ms_type"><option value="task">টাস্ক</option><option value="referral">রেফারেল</option><option value="deposit">ডিপোজিট</option></select></div>
+        <div><label>সক্রিয়</label><select id="ms_active"><option value="true">হ্যাঁ</option><option value="false">না</option></select></div>
+    </div>
+    <button class="btn-main" onclick="saveMilestone()">📌 মাইলেসটোন সেভ করুন</button>
+    
+</div>
+
 </div>
     
     <!-- Trading Section -->  
