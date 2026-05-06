@@ -451,68 +451,49 @@ textarea {
     
 </div>  
     
-    <!-- Task Management Section -->  
-<div id="task" class="page-section">  
-    <!-- নতুন টাস্ক যোগ করার ফর্ম (এতে রিমুভ বাটন লাগবে না, কারণ এটা কনফিগ নয়) -->
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>  
-        <input type="text" id="title" placeholder="টাস্ক টাইটেল">  
-        <input type="text" id="link" placeholder="টাস্ক লিংক">  
-        <div class="row">  
-            <input type="number" id="reward" placeholder="পুরস্কার (Amount)">  
-            <select id="currency"><option value="bdt">BDT</option><option value="aaf">AAF</option></select>  
-        </div>  
-        <div class="row">  
-            <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">  
-            <select id="type"><option value="video">Video</option><option value="link">Link Join</option></select>  
-        </div>  
+    <div id="task" class="page-section">
+
+    <!-- ১. নতুন টাস্ক যোগ করুন -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>
+        <input type="text" id="title" placeholder="টাস্ক টাইটেল">
+        <input type="text" id="link" placeholder="টাস্ক লিংক (URL)">
+        <div class="row">
+            <input type="number" id="reward" placeholder="পুরস্কার (Amount)">
+            <select id="currency">
+                <option value="bdt">BDT (টাকা)</option>
+                <option value="aaf">AAF (কয়েন)</option>
+            </select>
+        </div>
+        <div class="row">
+            <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">
+            <select id="type">
+                <option value="video">ভিডিও দেখুন</option>
+                <option value="link">লিংক ভিজিট</option>
+            </select>
+        </div>
         <div class="row">
             <div>
-                <label>টাস্ক মেয়াদ (ঘণ্টা)</label>
+                <label>টাস্ক মেয়াদ (ঘণ্টা)</label>
                 <input type="number" id="expiry_hours" value="168" min="1" max="8760">
-                <small>ডিফল্ট ব্যবহার করলে খালি রাখুন</small>
+                <small>শুধু এই টাস্কের জন্য – খালি রাখলে গ্লোবাল সেটিংস ব্যবহার হবে</small>
+            </div>
+            <div>
+                <label>এডমিন অ্যাপ্রুভাল প্রয়োজন?</label>
+                <input type="checkbox" id="requires_approval">
+                <small>চেক করলে ক্লেইম করার পর অনুমোদন দিতে হবে</small>
             </div>
         </div>
-        <button class="btn-main" onclick="saveTask()">সেভ টাস্ক</button>  
-    </div>  
+        <button class="btn-main" onclick="saveTask()">💾 টাস্ক সেভ করুন</button>
+    </div>
 
-    <!-- টাস্ক লিস্ট দেখানোর জায়গা -->
-    <div id="admin-task-list" class="premium-card">লুড হচ্ছে...</div>
-
-    <!-- টাস্ক পেজের এড ও বোনাস সেটিং (এখানে রিমুভ বাটন যুক্ত) -->
+    <!-- ২. টাস্ক লিস্ট -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-bullhorn"></i> Task Page Ads & Bonus</div>
-        
-        <!-- বোনাস টার্গেট -->
-        <label>বোনাস টার্গেট (কত টাস্কে বোনাস)</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="number" id="bonus_target" style="flex:1;">
-            <button onclick="clearField('bonus_target', 'bonus_target')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-        </div>
+        <div class="card-title"><i class="fas fa-list"></i> টাস্ক লিস্ট</div>
+        <div id="admin-task-list">লোড হচ্ছে...</div>
+    </div>
 
-        <!-- Task Banner Ad Image URL -->
-        <label>Task Banner Ad Image URL</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="task_banner_ad" style="flex:1;">
-            <button onclick="clearField('task_banner_ad', 'task_banner_ad')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-        </div>
-
-        <!-- Task Popup Ad Text -->
-        <label>Task Popup Ad Text</label>
-        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
-            <textarea id="task_popup_ad" rows="3" style="flex:1;"></textarea>
-            <button onclick="clearField('task_popup_ad', 'task_popup_ad')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
-        </div>
-    </div>  
-
-    <!-- Strict Protection (অপশনাল, ডাটাবেজে strict_protection ফিল্ড না থাকায় রিমুভ বাটন না দেওয়াই ভালো) -->
-    <label>Strict Protection (1 Device = 1 Time)</label>
-    <select id="strict_protection">
-        <option value="false">OFF</option>
-        <option value="true">ON</option>
-    </select>
-
-    <!-- টাস্ক ক্লেইম সুরক্ষা নিয়ম (এখানে ডিফল্ট টাস্ক মেয়াদে রিমুভ বাটন) -->
+    <!-- ৩. টাস্ক ক্লেইম সুরক্ষা নিয়ম (গ্লোবাল) -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-shield-alt"></i> টাস্ক ক্লেইম সুরক্ষা নিয়ম</div>
         <div class="row">
@@ -524,19 +505,10 @@ textarea {
                 </select>
             </div>
             <div>
-                <label>আইপি ঘন্টাভিত্তিক চেক</label>
-                <select id="task_rule_ip">
-                    <option value="true">চালু</option>
-                    <option value="false">বন্ধ</option>
-                </select>
+                <label>আইপি লিমিট (প্রতি ঘন্টায়)</label>
+                <input type="number" id="ip_limit_per_hour" value="5" min="1" max="100">
             </div>
             <div>
-
-                <div>
-                <label>আইপি লিমিট (প্রতি ঘন্টা)</label>
-                <input type="number" id="ip_limit_per_hour" value="5" min="1" max="100">
-                </div>
-                
                 <label>অ্যাকাউন্ট চেক (একই অ্যাকাউন্ট একবার)</label>
                 <select id="task_rule_account">
                     <option value="true">চালু</option>
@@ -546,28 +518,16 @@ textarea {
         </div>
         <div class="row">
             <div>
-                <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" id="default_task_expiry_hours" value="168" min="1" max="8760" style="flex:1;">
-                    <button onclick="clearField('default_task_expiry_hours', 'default_task_expiry_hours')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-                </div>
+                <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
+                <input type="number" id="default_task_expiry_hours" value="168">
+                <small>যেসব টাস্কে আলাদা মেয়াদ দেওয়া নেই, তাদের জন্য</small>
             </div>
         </div>
         <button class="btn-main" onclick="updateServerSettings()">নিয়ম সংরক্ষণ করুন</button>
     </div>
 
-    <!-- এডমিন এপ্রুভাল প্রয়োজন (চেকবক্স রিসেট করার জন্য বাটন) -->
-    <div class="row">
-        <div>
-            <label>এডমিন এপ্রুভাল প্রয়োজন?</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="checkbox" id="requires_approval">
-                <button onclick="clearCheckbox('requires_approval')" style="background:#da3633; color:white; border:none; padding:4px 10px; border-radius:6px;">🗑️ রিসেট</button>
-            </div>
-            <small>চেক করলে ইউজার টাকা পাবে এডমিন অনুমোদন দেওয়ার পর</small>
-        </div>
-    </div>
 </div>
+
     
     <!-- Trading Section -->  
     <div id="trading" class="page-section">  
