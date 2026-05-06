@@ -594,18 +594,15 @@ def claim_task():
         return jsonify({"blocked": False, "message": "টাস্ক ক্লেইম করা হয়েছে। এডমিন অনুমোদন দিলে ব্যালেন্স যোগ হবে।"})
     else:
         # সরাসরি টাকা দিন (পুরনো পদ্ধতি)
-        if currency == "aaf":
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
-            msg = f"Received {reward} AAF"
-        else:
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
-            msg = f"Received ৳{reward}"
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-        if device_check:
-            fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
-        task_claims_col.update_one({"_id": claim_id}, {"$set": {"status": "approved"}})
-        return jsonify({"blocked": False, "message": msg})
-
+reward_amount = task.get("reward", 0)
+currency_type = task.get("currency", "cash")
+if currency_type == "aaf":
+    users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward_amount}})
+    msg = f"Received {reward_amount} AAF"
+else:
+    users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward_amount}})
+    msg = f"Received ৳{reward_amount}"
+users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
 
 @app.route("/api/admin/task/save", methods=["POST"])
 @login_required
@@ -695,10 +692,11 @@ def execute_trade():
         fee_amount = taka * fee_percent / 100
         admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
         trades_col.insert_one({
-            "telegram_id": telegram_id, "type": "buy", "taka": taka, "coin": coin,
-            "price": price, "fee": fee_amount, "timestamp": datetime.utcnow()
-        })
-        return jsonify({"message": f"Bought {coin} AAF successfully"})
+        "telegram_id": telegram_id, "type": "sell", "taka": taka, "coin": coin,
+        "price": price, "fee": fee_amount, "timestamp": datetime.utcnow()
+})
+        
+        return jsonify({"message": f"Sold {coin})
     elif trade_type == "sell":
         if user.get("aaf", 0) < coin:
             return jsonify({"message": "Insufficient AAF"})
@@ -1020,7 +1018,7 @@ def admin_config():
         "bonus_target": admin.get("bonus_target", 5),
         "task_rules": admin.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
-        "default_task_expiry_hours": admin.get("default_task_expiry_hours", 168),
+        "default_task_expiry_hours": admin.get("default_task_expiry_hours": 168,),
         "wallet": admin.get("wallet", {"nagad": "", "bkash": ""}),
         "popup_ad_title": popup.get("title", ""),
         "popup_ad_desc": popup.get("desc", ""),
@@ -1367,7 +1365,7 @@ def user_milestones():
         return jsonify({"milestones": []})
 
     # টাস্ক কমপ্লিট কাউন্ট (ধরে নিচ্ছি claimed = True)
-    task_count = tasks_col.count_documents({"user_id": uid, "claimed": True})
+    task_count = task_claims_col.count_documents({"telegram_id": user["telegram_id"], "status": "approved"})
     referral_count = user.get("refer_count", 0)
     deposit_total = user.get("total_deposit", 0)
 
