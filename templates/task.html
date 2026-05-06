@@ -200,17 +200,17 @@
         }
         .btn-claim:active { transform: scale(0.97); }
 
-        /* নেভিগেশন ডক */
-        .dock-container { position: fixed; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 2000; padding: 0 10px; box-sizing: border-box; }
+         /* নেভিগেশন ডক */
+        .dock-container { position: fixed; bottom: 20px;  width: 100%; display: flex; justify-content: center; z-index: 2000; 
         .dock-nav { 
-            width: 100%; max-width: 420px; height: 70px; background: rgba(15, 23, 42, 0.96); 
+            width: 90%; max-width: 400px; height: 70px; background: rgba(15, 23, 42, 0.95); 
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex; 
-            justify-content: space-around; align-items: center; backdrop-filter: blur(25px);
-            box-shadow: 0 -8px 30px rgba(0,0,0,0.4);
+            justify-content: space-around; align-items: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        .nav-item { color: var(--text-gray); text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 9px; transition: 0.2s; flex: 1; text-align: center; }
-        .nav-item i { font-size: 20px; margin-bottom: 4px; display: block; }
-        .nav-item.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); font-weight: 600; }
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 10px; text-align: center; transition: 0.3s; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); text-shadow: var(--neon-shadow); }
     </style>
 </head>
 <body>
