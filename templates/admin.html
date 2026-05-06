@@ -453,81 +453,103 @@ textarea {
     
     <div id="task" class="page-section">
 
-    <!-- ১. নতুন টাস্ক যোগ করুন -->
+    <!-- ১. নতুন টাস্ক যোগ করার ফর্ম -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-plus"></i> নতুন টাস্ক যোগ করুন</div>
-        <input type="text" id="title" placeholder="টাস্ক টাইটেল">
-        <input type="text" id="link" placeholder="টাস্ক লিংক (URL)">
+        <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
+
+        <!-- টাস্কের সাধারণ তথ্য -->
+        <input type="text" id="task_title" placeholder="টাস্কের শিরোনাম (যেমন: ফেসবুক পোস্ট লাইক)">
+        <input type="url" id="task_link" placeholder="টাস্ক লিংক (URL)">
+
         <div class="row">
-            <input type="number" id="reward" placeholder="পুরস্কার (Amount)">
-            <select id="currency">
+            <input type="number" id="task_reward" placeholder="পুরস্কার (Amount)">
+            <select id="task_currency">
                 <option value="bdt">BDT (টাকা)</option>
                 <option value="aaf">AAF (কয়েন)</option>
             </select>
         </div>
+
         <div class="row">
-            <input type="number" id="timer" placeholder="টাইমার (সেকেন্ড)">
-            <select id="type">
+            <input type="number" id="task_timer" placeholder="টাইমার (সেকেন্ড)" value="30">
+            <select id="task_type">
                 <option value="video">ভিডিও দেখুন</option>
                 <option value="link">লিংক ভিজিট</option>
+                <option value="like">লাইক দিন</option>
+                <option value="comment">কমেন্ট করুন</option>
             </select>
         </div>
+
         <div class="row">
             <div>
-                <label>টাস্ক মেয়াদ (ঘণ্টা)</label>
-                <input type="number" id="expiry_hours" value="168" min="1" max="8760">
-                <small>শুধু এই টাস্কের জন্য – খালি রাখলে গ্লোবাল সেটিংস ব্যবহার হবে</small>
+                <label>মেয়াদ (ঘণ্টা) – খালি থাকলে ডিফল্ট ব্যবহার হবে</label>
+                <input type="number" id="task_expiry_hours" placeholder="যেমন 72" min="1" max="8760">
             </div>
             <div>
-                <label>এডমিন অ্যাপ্রুভাল প্রয়োজন?</label>
-                <input type="checkbox" id="requires_approval">
-                <small>চেক করলে ক্লেইম করার পর অনুমোদন দিতে হবে</small>
+                <label>অ্যাডমিন অ্যাপ্রুভাল প্রয়োজন?</label>
+                <input type="checkbox" id="task_requires_approval">
+                <small>চেক করলে ইউজার ক্লেইম করার পর অনুমোদন দিতে হবে</small>
             </div>
         </div>
-        <button class="btn-main" onclick="saveTask()">💾 টাস্ক সেভ করুন</button>
-    </div>
 
-    <!-- ২. টাস্ক লিস্ট -->
-    <div class="premium-card">
-        <div class="card-title"><i class="fas fa-list"></i> টাস্ক লিস্ট</div>
-        <div id="admin-task-list">লোড হচ্ছে...</div>
-    </div>
-
-    <!-- ৩. টাস্ক ক্লেইম সুরক্ষা নিয়ম (গ্লোবাল) -->
-    <div class="premium-card">
-        <div class="card-title"><i class="fas fa-shield-alt"></i> টাস্ক ক্লেইম সুরক্ষা নিয়ম</div>
+        <!-- ভেরিফিকেশন রুলস (এই টাস্কের জন্য আলাদা) -->
+        <div class="card-title" style="font-size:14px; margin-top:15px;"><i class="fas fa-shield-alt"></i> ভেরিফিকেশন (প্রতি টাস্কের জন্য আলাদা)</div>
         <div class="row">
             <div>
                 <label>ডিভাইস চেক (একই ডিভাইস একবার)</label>
-                <select id="task_rule_device">
-                    <option value="true">চালু</option>
-                    <option value="false">বন্ধ</option>
+                <select id="task_device_check">
+                    <option value="true">✅ চালু (একই ডিভাইস থেকে একবার)</option>
+                    <option value="false">❌ বন্ধ</option>
                 </select>
             </div>
             <div>
-                <label>আইপি লিমিট (প্রতি ঘন্টায়)</label>
-                <input type="number" id="ip_limit_per_hour" value="5" min="1" max="100">
+                <label>আইপি চেক (একই আইপি একবার)</label>
+                <select id="task_ip_check">
+                    <option value="true">✅ চালু (একই আইপি থেকে একবার)</option>
+                    <option value="false">❌ বন্ধ</option>
+                </select>
             </div>
             <div>
                 <label>অ্যাকাউন্ট চেক (একই অ্যাকাউন্ট একবার)</label>
-                <select id="task_rule_account">
-                    <option value="true">চালু</option>
-                    <option value="false">বন্ধ</option>
+                <select id="task_account_check">
+                    <option value="true">✅ চালু</option>
+                    <option value="false">❌ বন্ধ</option>
                 </select>
             </div>
         </div>
+
+        <!-- এডমিন এপ্রুভাল হলে প্রমান নির্দেশনা -->
+        <div id="proof_instruction_box" style="display: none; margin-top: 10px;">
+            <label>প্রমান জমা দেওয়ার নির্দেশনা (ইউজারকে কী দেখাতে হবে?)</label>
+            <textarea id="task_proof_instruction" rows="3" placeholder="যেমন: স্ক্রিনশট আপলোড করুন, লিংক দিন ইত্যাদি"></textarea>
+            <small>ইউজার টাস্ক ক্লেইম করলে এই নির্দেশনা দেখাবে</small>
+        </div>
+
+        <button class="btn-main" onclick="createNewTask()" style="margin-top: 20px;">📌 টাস্ক তৈরি করুন</button>
+    </div>
+
+    <!-- ২. টাস্ক লিস্ট (এখানে সব টাস্ক দেখা যাবে) -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-list-ul"></i> টাস্ক লিস্ট</div>
+        <div id="admin-task-list">লোড হচ্ছে...</div>
+    </div>
+
+    <!-- ৩. গ্লোবাল ডিফল্ট (ঐচ্ছিক) – শুধুমাত্র ডিফল্ট ভ্যালু সেট করতে -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-cog"></i> গ্লোবাল ডিফল্ট সেটিংস</div>
         <div class="row">
             <div>
                 <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
-                <input type="number" id="default_task_expiry_hours" value="168">
-                <small>যেসব টাস্কে আলাদা মেয়াদ দেওয়া নেই, তাদের জন্য</small>
+                <input type="number" id="global_default_expiry" value="168">
+            </div>
+            <div>
+                <label>আইপি লিমিট (প্রতি ঘণ্টায় সর্বোচ্চ ক্লেইম)</label>
+                <input type="number" id="global_ip_limit" value="5">
             </div>
         </div>
-        <button class="btn-main" onclick="updateServerSettings()">নিয়ম সংরক্ষণ করুন</button>
+        <button class="btn-main" onclick="saveGlobalDefaults()">ডিফল্ট সংরক্ষণ</button>
     </div>
 
 </div>
-
     
     <!-- Trading Section -->  
     <div id="trading" class="page-section">  
@@ -826,18 +848,152 @@ function escapeHtml(str) {
     });
 }
 /* ================= TASKS ================= */
-
-// টাস্ক লোড API থেকে
-async function loadTasks(){
-  const res = await fetch(`${API}/api/admin/tasks`, { credentials:'include' });
-  const d = await res.json();
-  const box = document.getElementById('admin-task-list');
-  if(!box) return;
-  box.innerHTML = "";
-  (d.tasks || []).forEach(t=>{
-    box.innerHTML += `<div>${t.title} | ${t.reward} <button onclick="deleteTask('${t.id}')">Delete</button></div>`;
-  });
+// নতুন টাস্ক তৈরি
+async function createNewTask() {
+    const payload = {
+        title: document.getElementById('task_title').value,
+        link: document.getElementById('task_link').value,
+        reward: parseFloat(document.getElementById('task_reward').value),
+        currency: document.getElementById('task_currency').value,
+        timer: parseInt(document.getElementById('task_timer').value),
+        type: document.getElementById('task_type').value,
+        expiry_hours: parseInt(document.getElementById('task_expiry_hours').value) || null,
+        requires_approval: document.getElementById('task_requires_approval').checked,
+        device_check: document.getElementById('task_device_check').value === 'true',
+        ip_check: document.getElementById('task_ip_check').value === 'true',
+        account_check: document.getElementById('task_account_check').value === 'true',
+        proof_instruction: document.getElementById('task_proof_instruction').value
+    };
+    try {
+        const res = await fetch('/api/admin/task/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ টাস্ক তৈরি হয়েছে');
+            clearTaskForm();
+            loadTasks(); // লিস্ট রিফ্রেশ
+        } else {
+            alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ সার্ভার এরর');
+    }
 }
+
+// টাস্ক লিস্ট লোড করা (আপডেটেড)
+async function loadTasks() {
+    try {
+        const res = await fetch(`${API}/api/admin/tasks`, { credentials: 'include' });
+        const d = await res.json();
+        const box = document.getElementById('admin-task-list');
+        if (!box) return;
+        if (!d.tasks || d.tasks.length === 0) {
+            box.innerHTML = '<div>কোনো টাস্ক নেই। "নতুন টাস্ক যোগ করুন" ফর্ম ব্যবহার করুন।</div>';
+            return;
+        }
+        let html = '<table style="width:100%; border-collapse:collapse;">';
+        html += '<thead><tr><th>টাইটেল</th><th>রিওয়ার্ড</th><th>টাইমার</th><th>মেয়াদ</th><th>এপ্রুভাল</th><th>ডিভাইস</th><th>আইপি</th><th>অ্যাকাউন্ট</th><th>অ্যাকশন</th></tr></thead><tbody>';
+        d.tasks.forEach(t => {
+            html += `<tr>
+                <td>${escapeHtml(t.title)}</td>
+                <td>${t.reward} ${t.currency === 'bdt' ? '৳' : 'AAF'}</td>
+                <td>${t.timer} সেকেন্ড</td>
+                <td>${t.expiry_hours ? t.expiry_hours+' ঘণ্টা' : 'ডিফল্ট'}</td>
+                <td>${t.requires_approval ? '✅ হ্যাঁ' : '❌ না'}</td>
+                <td>${t.device_check ? '✅ চালু' : '❌ বন্ধ'}</td>
+                <td>${t.ip_check ? '✅ চালু' : '❌ বন্ধ'}</td>
+                <td>${t.account_check ? '✅ চালু' : '❌ বন্ধ'}</td>
+                <td><button onclick="deleteTask('${t.id}')">🗑️ ডিলিট</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        box.innerHTML = html;
+    } catch(e) {
+        console.error(e);
+        document.getElementById('admin-task-list').innerHTML = '<div>লোড করতে ব্যর্থ</div>';
+    }
+}
+
+// টাস্ক ডিলিট
+async function deleteTask(taskId) {
+    if (!confirm("টাস্ক ডিলিট করতে চান?")) return;
+    try {
+        const res = await fetch(`${API}/api/admin/task/delete`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({ task_id: taskId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ টাস্ক ডিলিট করা হয়েছে");
+            loadTasks();
+        } else {
+            alert("❌ ডিলিট করতে ব্যর্থ: " + (data.error || "Unknown error"));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("সার্ভার এরর");
+    }
+}
+
+// ফর্ম ক্লিয়ার
+function clearTaskForm() {
+    document.getElementById('task_title').value = '';
+    document.getElementById('task_link').value = '';
+    document.getElementById('task_reward').value = '';
+    document.getElementById('task_currency').value = 'bdt';
+    document.getElementById('task_timer').value = '30';
+    document.getElementById('task_type').value = 'video';
+    document.getElementById('task_expiry_hours').value = '';
+    document.getElementById('task_requires_approval').checked = false;
+    document.getElementById('task_device_check').value = 'true';
+    document.getElementById('task_ip_check').value = 'true';
+    document.getElementById('task_account_check').value = 'true';
+    document.getElementById('task_proof_instruction').value = '';
+    toggleProofBox();
+}
+
+// এডমিন এপ্রুভাল চেকবক্সের উপর নির্ভর করে প্রমান বক্স দেখানো/লুকানো
+function toggleProofBox() {
+    const isApproval = document.getElementById('task_requires_approval').checked;
+    const box = document.getElementById('proof_instruction_box');
+    if (box) box.style.display = isApproval ? 'block' : 'none';
+}
+
+// গ্লোবাল ডিফল্ট সেভ
+async function saveGlobalDefaults() {
+    const defaults = {
+        default_task_expiry_hours: parseInt(document.getElementById('global_default_expiry').value),
+        ip_limit_per_hour: parseInt(document.getElementById('global_ip_limit').value)
+    };
+    try {
+        const res = await fetch('/api/admin/update_settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify(defaults)
+        });
+        const data = await res.json();
+        if (data.success) alert('✅ ডিফল্ট সেভ হয়েছে');
+        else alert('❌ ব্যর্থ');
+    } catch(e) { alert('এরর'); }
+}
+
+// ইভেন্ট লিসেনার: চেকবক্স টগল করলে প্রমান বক্স দেখাবে/লুকাবে
+document.getElementById('task_requires_approval')?.addEventListener('change', toggleProofBox);
+
+// পেজ লোডে টাস্ক লিস্ট লোড এবং ফর্ম রিসেট
+window.addEventListener('DOMContentLoaded', () => {
+    loadTasks();
+    clearTaskForm();
+});
+
 
 // টাস্ক সেভ API তে
 async function saveTask(){
@@ -858,31 +1014,7 @@ async function saveTask(){
 }
 
 
-    async function deleteTask(taskId) {
-    if (!confirm("টাস্ক ডিলিট করতে চান?")) return;
-    try {
-        const res = await fetch(`${API}/api/admin/task/delete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ task_id: taskId })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("✅ টাস্ক ডিলিট করা হয়েছে");
-            loadTasks();
-        } else {
-            alert("❌ ডিলিট করতে ব্যর্থ: " + (data.error || "Unknown error"));
-        }
-    } catch (err) {
-        console.error(err);
-        alert("সার্ভার এরর");
-    }
-    }
-
-// বাকি ফাংশন (loadUsers, loadWithdraws, approveWithdraw, initAdmin, openTab) আগের মতোই থাকবে
-
-
+    
 /* ================= ADS ============ধোন===== */
 async function loadAds(){
   const r = await fetch(`${API}/api/admin/ads`, {credentials:'include'});
