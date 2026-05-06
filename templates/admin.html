@@ -566,38 +566,27 @@ textarea {
         </div>  
     </div>  
 
-    <!-- Wallet Section -->  
-    <div id="wallet" class="page-section">  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>  
-            <label>নগদ নম্বর</label><input type="text" id="admin_nagad">  
-            <label>বিকাশ/বাইনান্স</label><input type="text" id="admin_bkash">  
-            <button class="btn-main" onclick="updateWallets()">নম্বর সেভ করুন</button>  
-        </div>  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>  
-            <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div> 
-            <div class="premium-card">
-    <div class="card-title"><i class="fas fa-bullhorn"></i> Wallet Popup Ad</div>
-    <textarea id="wallet_popup_ad" rows="3" placeholder="ওয়ালেট পেজ পপআপ অ্যাড"></textarea>
-</div> 
-
-            
-    
-    <!-- withdraw-list এখানে রাখুন -->
-    <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
-    
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>  
-        <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div> 
+    <!-- Wallet Section (সঠিক) -->
+<div id="wallet" class="page-section">
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>
+        <label>নগদ নম্বর</label><input type="text" id="admin_nagad">
+        <label>বিকাশ/বাইনান্স</label><input type="text" id="admin_bkash">
+        <button class="btn-main" onclick="updateWallets()">নম্বর সেভ করুন</button>
     </div>
-    
+
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-history"></i> পেন্ডিং ডিপোজিট রিকোয়েস্ট</div>
+        <div id="pending-list-view">পেন্ডিং ডাটা নেই।</div>
+    </div>
+
+    <div id="withdraw-list" class="premium-card">লোড হচ্ছে...</div>
+
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-bullhorn"></i> Wallet Popup Ad</div>
         <textarea id="wallet_popup_ad" rows="3" placeholder="ওয়ালেট পেজ পপআপ অ্যাড"></textarea>
-    </div> 
-</div>  
-</div>  
+    </div>
+</div>
 
    <div id="account" class="page-section">
     
@@ -994,24 +983,6 @@ window.addEventListener('DOMContentLoaded', () => {
     clearTaskForm();
 });
 
-
-// টাস্ক সেভ API তে
-async function saveTask(){
-  const payload = {
-    title: document.getElementById('title').value,
-    link: document.getElementById('link').value,
-    reward: parseFloat(document.getElementById('reward').value),
-    timer: parseInt(document.getElementById('timer').value),
-    type: document.getElementById('type').value,
-    expiry_hours: parseInt(document.getElementById('expiry_hours').value) || null,   // ← কমা যোগ করুন
-    requires_approval: document.getElementById('requires_approval').checked
-  };
-  await fetch(`${API}/api/admin/task/save`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-    body: JSON.stringify(payload)
-  });
-  loadTasks();
-}
 
 
     
