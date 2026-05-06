@@ -49,7 +49,8 @@ deposits_col = db_mongo["deposits"]
 withdraws_col = db_mongo["withdraws"]
 trades_col = db_mongo["trades"]
 task_claims_col = db_mongo["task_claims"]
-milestones_col = db["milestones"]  
+milestones_col = db_mongo["milestones"] 
+user_milestone_claims_col = db_mongo["user_milestone_claims"]
 # ================= FIREBASE =================
 if not firebase_admin._apps:
     if os.path.exists(FIREBASE_KEY_PATH):
@@ -714,7 +715,9 @@ def execute_trade():
     return jsonify({"message": "Invalid type"})
 
 
+
 # ================== মাইলেসটোন অ্যাডমিন এন্ডপয়েন্ট ==================
+
 @app.route('/api/admin/milestone/save', methods=['POST'])
 @login_required
 def save_milestone():
@@ -728,7 +731,7 @@ def save_milestone():
         "active": data['active'],
         "created_at": datetime.utcnow()
     }
-    milestones_col.insert_one(milestone)
+    milestones_col.insert_one(milestone)   # আপনার কালেকশন milestones_col
     return jsonify({"success": True})
 
 @app.route('/api/admin/milestones', methods=['GET'])
@@ -747,6 +750,7 @@ def delete_milestone():
     return jsonify({"success": True})
 
 # ================== ইউজার মাইলেসটোন এন্ডপয়েন্ট ==================
+
 @app.route('/api/user/milestones', methods=['GET'])
 @login_required
 def user_milestones():
@@ -756,13 +760,12 @@ def user_milestones():
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         return jsonify({"milestones": []})
-    
-    # ----- অগ্রগতি গণনা -----
-    # টাস্ক কতগুলো ক্লেইম হয়েছে (claimed=True ধরে নিচ্ছি)
+
+    # টাস্ক কমপ্লিট কাউন্ট (assumed `claimed` is True)
     task_count = tasks_col.count_documents({"user_id": uid, "claimed": True})
     referral_count = user.get("refer_count", 0)
     deposit_total = user.get("total_deposit", 0)
-    
+
     milestones = list(milestones_col.find({"active": True}))
     result = []
     for m in milestones:
@@ -770,12 +773,13 @@ def user_milestones():
             progress = task_count
         elif m['type'] == 'referral':
             progress = referral_count
-        else:
+        else:   # deposit
             progress = deposit_total
-        
+
         achieved = progress >= m['target']
+        # ক্লেইম করা হয়েছে কিনা চেক
         already_claimed = user_milestone_claims.find_one({"user_id": uid, "milestone_id": str(m['_id'])}) is not None
-        
+
         result.append({
             "id": str(m['_id']),
             "type": m['type'],
@@ -798,39 +802,39 @@ def claim_milestone():
     data = request.json
     milestone_id = data.get('milestone_id')
     if not milestone_id:
-        return jsonify({"success": False, "error": "Milestone ID missing"})
-    
+        return jsonify({"success": False, "error": "Missing milestone_id"})
+
     milestone = milestones_col.find_one({"_id": ObjectId(milestone_id), "active": True})
     if not milestone:
         return jsonify({"success": False, "error": "Milestone not found"})
-    
+
     # ডুপ্লিকেট চেক
     if user_milestone_claims.find_one({"user_id": uid, "milestone_id": milestone_id}):
         return jsonify({"success": False, "error": "Already claimed"})
-    
-    # প্রগ্রেস পুনরায় যাচাই
+
+    # ইউজারের বর্তমান প্রগ্রেস পুনঃগণনা
     user = users_col.find_one({"_id": ObjectId(uid)})
     task_count = tasks_col.count_documents({"user_id": uid, "claimed": True})
     referral_count = user.get("refer_count", 0)
     deposit_total = user.get("total_deposit", 0)
-    
+
     if milestone['type'] == 'task':
         progress = task_count
     elif milestone['type'] == 'referral':
         progress = referral_count
     else:
         progress = deposit_total
-    
+
     if progress < milestone['target']:
         return jsonify({"success": False, "error": "Target not reached"})
-    
-    # বোনাস প্রদান
+
+    # বোনাস যোগ করা
     if milestone['reward_type'] == 'bdt':
         users_col.update_one({"_id": ObjectId(uid)}, {"$inc": {"cash": milestone['reward_amount']}})
     else:
         users_col.update_one({"_id": ObjectId(uid)}, {"$inc": {"aaf": milestone['reward_amount']}})
-    
-    # রেকর্ড সেভ
+
+    # ক্লেইম রেকর্ড সেভ
     user_milestone_claims.insert_one({
         "user_id": uid,
         "milestone_id": milestone_id,
