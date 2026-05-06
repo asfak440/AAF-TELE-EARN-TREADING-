@@ -708,7 +708,6 @@ def execute_trade():
         users_col.update_one({"_id": user["_id"]}, {"$set": {"cash": new_cash, "aaf": new_aaf}})
         fee_amount = taka * fee_percent / 100
         admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
-      app.route('/api/user/milestones')  trades_col.insert_one({
             "telegram_id": telegram_id, "type": "sell", "taka": taka, "coin": coin,
             "price": price, "fee": fee_amount, "timestamp": datetime.utcnow()
         })
@@ -1419,7 +1418,7 @@ def claim_milestone():
 
     # ইউজারের বর্তমান প্রগ্রেস পুনঃগণনা
     user = users_col.find_one({"_id": ObjectId(uid)})
-    task_count = tasks_col.count_documents({"user_id": uid, "claimed": True})
+    task_count = task_claims_col.count_documents({"telegram_id": user["telegram_id"], "status": "approved"})
     referral_count = user.get("refer_count", 0)
     deposit_total = user.get("total_deposit", 0)
 
