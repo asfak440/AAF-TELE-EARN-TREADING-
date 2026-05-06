@@ -130,6 +130,7 @@
             <h3>MILESTONE: <span id="t-done">0</span> / <span id="t-target">10</span></h3>
             <p id="bonus-msg" style="font-size: 9px; color: var(--text-gray); margin: 0;">প্রগ্রেস পূর্ণ হলে এক্সট্রা AAF কয়েন পাবেন</p>
             <div class="progress-bar"><div class="progress-fill" id="t-progress"></div></div>
+            <div id="extra-milestones" style="margin-bottom: 15px;"></div>
         </div>
 
         <div id="main-task-list">
@@ -199,13 +200,16 @@ async function initTaskPage(){
   } catch(err){ console.log("Task Init Error", err); }
 }
 
-// renderTaskUI - tasks প্যারামিটার নিবে
 function renderTaskUI(user, admin, tasks){
   updateBalance(user.cash, user.aaf);
   USER_JOINED = user.is_joined;
   document.getElementById('join-warning').style.display = USER_JOINED ? 'none':'flex';
   updateMilestone(user.tasks_done, admin.bonus_target);
-  renderTasks(tasks);   // tasks ব্যবহার করুন, admin.tasks না
+  renderTasks(tasks);
+  
+  // ⭐⭐⭐ নিচের লাইনটি যোগ করুন
+  renderMilestones();   // নতুন মাইলেস্টোন লিস্ট দেখাবে
+
   if(admin.task_banner_ad && admin.task_banner_ad.trim() !== ""){
     injectSafeAdHTML(admin.task_banner_ad);
   }
@@ -344,6 +348,60 @@ async function claimTask(id){
   }
 }
 
+
+    // ========== নতুন মাইলেস্টোন ফিচার (এডমিন প্যানেলের সাথে সংযুক্ত) ==========
+async function renderMilestones() {
+    const container = document.getElementById('extra-milestones');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/user/milestones', { credentials: 'include' });
+        const data = await res.json();
+        const milestones = data.milestones || [];
+        if (milestones.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = `<div class="bonus-card" style="margin-top:0;">
+                        <h3>🎯 স্পেশাল মাইলেস্টোন বোনাস</h3>
+                        <div id="milestone-list-area">`;
+        for (let m of milestones) {
+            let percent = (m.progress / m.target) * 100;
+            let status = m.already_claimed ? '✅ ক্লেইম করা হয়েছে' : (m.achieved ? '🎉 ক্লেইম করুন!' : `${m.progress}/${m.target}`);
+            let claimBtn = (m.achieved && !m.already_claimed) ? `<button class="btn-claim" style="margin-top:8px; background:#ffaa00; color:#000;" onclick="claimMilestone('${m.id}')">বোনাস নিন</button>` : '';
+            html += `
+                <div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px 0;">
+                    <div><strong>${m.type === 'task' ? '📋 টাস্ক' : m.type === 'referral' ? '👥 রেফারেল' : '💰 ডিপোজিট'}</strong> – লক্ষ্য ${m.target}</div>
+                    <div>পুরস্কার: ${m.reward_amount} ${m.reward_type === 'bdt' ? '৳' : 'AAF'}</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${percent}%;"></div></div>
+                    <div>${status}</div>
+                    ${claimBtn}
+                </div>
+            `;
+        }
+        html += `</div></div>`;
+        container.innerHTML = html;
+    } catch(e) { console.error(e); }
+}
+
+async function claimMilestone(milestoneId) {
+    try {
+        const res = await fetch('/api/user/claim_milestone', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({ milestone_id: milestoneId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ বোনাস আপনার ওয়ালেটে জমা হয়েছে!');
+            renderMilestones();   // রিফ্রেশ
+            initTaskPage();       // ব্যালেন্স আপডেট
+        } else {
+            alert('❌ ' + (data.error || 'ক্লেইম সম্ভব নয়'));
+        }
+    } catch(e) { alert('সার্ভার ত্রুটি'); }
+}
+    
 // ===== 6H POPUP AD =====
 function showTimedAd(adText){
   const TG_ID = getTG();
@@ -356,6 +414,7 @@ function showTimedAd(adText){
     localStorage.setItem(key, Date.now());
   }
 }
+    
     </script>
 </body>
 </html>
