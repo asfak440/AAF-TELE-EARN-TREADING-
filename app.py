@@ -49,6 +49,7 @@ deposits_col = db_mongo["deposits"]
 withdraws_col = db_mongo["withdraws"]
 trades_col = db_mongo["trades"]
 task_claims_col = db_mongo["task_claims"]
+milestones_col = db["milestones"]  
 # ================= FIREBASE =================
 if not firebase_admin._apps:
     if os.path.exists(FIREBASE_KEY_PATH):
@@ -711,6 +712,40 @@ def execute_trade():
         })
         return jsonify({"message": f"Sold {coin} AAF successfully"})
     return jsonify({"message": "Invalid type"})
+
+
+
+
+@app.route('/api/admin/milestone/save', methods=['POST'])
+@login_required
+def save_milestone():
+    data = request.json
+    milestone = {
+        "target": data['target'],
+        "reward_type": data['reward_type'],
+        "reward_amount": data['reward_amount'],
+        "days": data.get('days'),
+        "type": data['type'],
+        "active": data['active'],
+        "created_at": datetime.utcnow()
+    }
+    milestones_col.insert_one(milestone)
+    return jsonify({"success": True})
+
+@app.route('/api/admin/milestones', methods=['GET'])
+@login_required
+def get_milestones():
+    milestones = list(milestones_col.find({}))
+    for m in milestones:
+        m['_id'] = str(m['_id'])
+    return jsonify({"milestones": milestones})
+
+@app.route('/api/admin/milestone/delete', methods=['POST'])
+@login_required
+def delete_milestone():
+    data = request.json
+    milestones_col.delete_one({"_id": ObjectId(data['id'])})
+    return jsonify({"success": True})
 
 # ================= API: WALLET =================
 @app.route("/api/wallet/deposit", methods=["POST"])
