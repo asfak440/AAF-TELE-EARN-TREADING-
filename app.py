@@ -600,7 +600,7 @@ def claim_task():
         if device_check:
             fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
         task_claims_col.update_one({"_id": claim_id}, {"$set": {"status": "approved"}})
-        return jsonify({"blocked": False, "message": msg}) করে 
+        return jsonify({"blocked": False, "message": msg})
     
 
 @app.route("/api/admin/task/save", methods=["POST"])
