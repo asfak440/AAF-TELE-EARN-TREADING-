@@ -107,14 +107,13 @@ def get_admin_config():
             "min_trades": 5,
             "ip_limit": "off",
             "extra_users": 0,
-            # ========== নিচের লাইনগুলো যোগ করুন ==========
             "task_rules": {
                 "device_check": True,
                 "ip_check": False,
                 "account_check": True
             },
             "ip_limit_per_hour": 5,
-            "default_task_expiry_days": 7
+            "default_task_expiry_hours": 168,
         }
         admin_config_col.insert_one(doc)
     
