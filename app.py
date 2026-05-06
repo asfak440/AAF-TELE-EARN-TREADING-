@@ -1030,7 +1030,7 @@ def admin_config():
         "bonus_target": admin.get("bonus_target", 5),
         "task_rules": admin.get("task_rules", {"device_check": True, "ip_check": False, "account_check": True}),
         "ip_limit_per_hour": admin.get("ip_limit_per_hour", 5),
-        "default_task_expiry_hours": admin.get("default_task_expiry_hours": 168,),
+        "default_task_expiry_hours": admin.get("default_task_expiry_hours", 168,),
         "wallet": admin.get("wallet", {"nagad": "", "bkash": ""}),
         "popup_ad_title": popup.get("title", ""),
         "popup_ad_desc": popup.get("desc", ""),
