@@ -99,7 +99,26 @@
     font-size: 8px !important;
 }
 
-
+.dock-container { 
+    position: fixed; 
+    bottom: 20px; 
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    z-index: 2000; 
+}
+.dock-nav { 
+    width: 90%; 
+    max-width: 400px; 
+    height: 70px; 
+    background: rgba(15, 23, 42, 0.95); 
+    border-radius: 35px; 
+    border: 1px solid var(--glass-border); 
+    display: flex; 
+    justify-content: space-around; 
+    align-items: center; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
 /* ========== এনিমেশন নোটিফিকেশন ========== */
 .notification-toast {
     position: fixed;
@@ -404,6 +423,7 @@ function startTask(id, url, sec, type){
       clearInterval(interval);
       timerSpan.remove();
       btn.innerText = "✅ VERIFY";
+      btn.disabled = false;   // ← এই লাইনটি যোগ করুন
       btn.onclick = () => verifyTask(id, type);
     } else {
       const mins = Math.floor(remaining / 60);
