@@ -114,7 +114,7 @@ def get_admin_config():
                 "account_check": True
             },
             "ip_limit_per_hour": 5,
-            "default_task_expiry_hours": 168,
+            "default_task_expiry_hours": 168
         }
         admin_config_col.insert_one(doc)
     
@@ -127,7 +127,7 @@ def get_admin_config():
         doc["ip_limit_per_hour"] = 5
         need_update = True
     if "default_task_expiry_hours" not in doc:
-        doc["default_task_expiry_hours"] = 168
+        doc["default_task_expiry_hours"] = 168,
         need_update = True
 
     if need_update:
@@ -277,11 +277,6 @@ def chat_viewer():
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_panel"))
     return render_template("chat_viewer.html")
-
-@app.route('/monetag-verification.html')
-def serve_monetag_file():
-    with open('static/monetag-verification.html', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'text/html'}
 
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
