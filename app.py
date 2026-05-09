@@ -528,18 +528,33 @@ def claim_task():
     if not fb_ref:
         return jsonify({"blocked": True, "message": "Firebase not configured"})
 
+    # টাস্ক ডাটা ফায়ারবেস থেকে আনুন
+    task = fb_ref.child(f"tasks/{task_id}").get()
+    if not task:
+        return jsonify({"blocked": False, "message": "Task not found"})
+
+    user = users_col.find_one({"telegram_id": telegram_id})
+    if not user:
+        return jsonify({"blocked": False, "message": "User not found"})
+
+    # ========== টাস্কের নিজস্ব রুলস নিন, না থাকলে গ্লোবাল সেটিংস ==========
     admin = get_admin_config()
-    rules = admin.get("task_rules", {})
-    device_check = rules.get("device_check", True)
-    ip_check = rules.get("ip_check", False)
-    account_check = rules.get("account_check", True)
+    global_rules = admin.get("task_rules", {})
+    
+    device_check = task.get("device_check", global_rules.get("device_check", True))
+    ip_check = task.get("ip_check", global_rules.get("ip_check", False))
+    account_check = task.get("account_check", global_rules.get("account_check", True))
     ip_limit = admin.get("ip_limit_per_hour", 5)
 
+    # ডিভাইস চেক
     if device_check:
         device_key = f"device_tasks/{task_id}/{device_id}"
         if fb_ref.child(device_key).get():
             return jsonify({"blocked": True, "message": "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"})
+        else:
+            fb_ref.child(device_key).set(True)
 
+    # আইপি চেক (প্রতি ঘন্টা লিমিট)
     if ip_check:
         ip_key = f"ip_tasks/{task_id}/{user_ip}"
         ip_data = fb_ref.child(ip_key).get()
@@ -556,50 +571,196 @@ def claim_task():
         else:
             fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
 
+    # অ্যাকাউন্ট চেক
     if account_check:
         user_key = f"user_tasks/{telegram_id}/{task_id}"
         if fb_ref.child(user_key).get():
             return jsonify({"blocked": True, "message": "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"})
         fb_ref.child(user_key).set(True)
 
-    task = fb_ref.child(f"tasks/{task_id}").get()
-    if not task:
-        return jsonify({"blocked": False, "message": "Task not found"})
+    # ডুপ্লিকেট ক্লেইম চেক (MongoDB)
+    existing = task_claims_col.find_one({"telegram_id": telegram_id, "task_id": task_id})
+    if existing:
+        return jsonify({"blocked": True, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।"})
 
-    user = users_col.find_one({"telegram_id": telegram_id})
-    if not user:
-        return jsonify({"blocked": False, "message": "User not found"})
-
+    # টাকা/কয়েন প্রদান
     requires_approval = task.get("requires_approval", False)
-
-    claim_id = task_claims_col.insert_one({
-        "telegram_id": telegram_id,
-        "task_id": task_id,
-        "device_id": device_id,
-        "ip": user_ip,
-        "reward": task.get("reward", 0),
-        "currency": task.get("currency", "cash"),
-        "requires_approval": requires_approval,
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    }).inserted_id
+    reward = task.get("reward", 0)
+    currency = task.get("currency", "cash")
 
     if requires_approval:
+        task_claims_col.insert_one({
+            "telegram_id": telegram_id,
+            "task_id": task_id,
+            "device_id": device_id,
+            "ip": user_ip,
+            "reward": reward,
+            "currency": currency,
+            "requires_approval": True,
+            "status": "pending",
+            "created_at": datetime.utcnow()
+        })
         return jsonify({"blocked": False, "message": "টাস্ক ক্লেইম করা হয়েছে। এডমিন অনুমোদন দিলে ব্যালেন্স যোগ হবে।"})
     else:
-        reward_amount = task.get("reward", 0)
-        currency_type = task.get("currency", "cash")
-        if currency_type == "aaf":
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward_amount}})
-            msg = f"Received {reward_amount} AAF"
+        if currency == "aaf":
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
+            msg = f"Received {reward} AAF"
         else:
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward_amount}})
-            msg = f"Received ৳{reward_amount}"
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
+            msg = f"Received ৳{reward}"
         users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-        if device_check:
-            fb_ref.child(f"device_tasks/{task_id}/{device_id}").set(True)
-        task_claims_col.update_one({"_id": claim_id}, {"$set": {"status": "approved"}})
+        task_claims_col.insert_one({
+            "telegram_id": telegram_id,
+            "task_id": task_id,
+            "device_id": device_id,
+            "ip": user_ip,
+            "reward": reward,
+            "currency": currency,
+            "requires_approval": False,
+            "status": "approved",
+            "created_at": datetime.utcnow()
+        })
         return jsonify({"blocked": False, "message": msg})
+
+# ========== হেল্পার ফাংশন ==========
+def check_task_restrictions(user, task, device_id, ip_address):
+    """ডিভাইস, আইপি, অ্যাকাউন্ট চেক করে। ব্লক হলে (True, message) রিটার্ন করে"""
+    admin = get_admin_config()
+    # টাস্কের নিজস্ব রুলস নিন, না থাকলে গ্লোবাল
+    global_rules = admin.get("task_rules", {})
+    device_check = task.get("device_check", global_rules.get("device_check", True))
+    ip_check = task.get("ip_check", global_rules.get("ip_check", False))
+    account_check = task.get("account_check", global_rules.get("account_check", True))
+    ip_limit = admin.get("ip_limit_per_hour", 5)
+    
+    if device_check and device_id:
+        device_key = f"device_tasks/{task['id']}/{device_id}"
+        if fb_ref and fb_ref.child(device_key).get():
+            return True, "এই ডিভাইস ইতিমধ্যে টাস্ক ক্লেইম করেছে।"
+    
+    if ip_check and ip_address:
+        ip_key = f"ip_tasks/{task['id']}/{ip_address}"
+        ip_data = fb_ref.child(ip_key).get() if fb_ref else None
+        now_ts = datetime.utcnow().timestamp()
+        if ip_data:
+            count = ip_data.get("count", 0)
+            last_ts = ip_data.get("timestamp", 0)
+            if now_ts - last_ts < 3600:
+                if count >= ip_limit:
+                    return True, f"আইপি থেকে প্রতি ঘন্টায় সর্বোচ্চ {ip_limit} বার ক্লেইম করা যাবে।"
+                else:
+                    fb_ref.child(ip_key).update({"count": count + 1})
+            else:
+                fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
+        else:
+            fb_ref.child(ip_key).set({"count": 1, "timestamp": now_ts})
+    
+    if account_check:
+        user_key = f"user_tasks/{user['telegram_id']}/{task['id']}"
+        if fb_ref and fb_ref.child(user_key).get():
+            return True, "আপনি ইতিমধ্যে এই টাস্ক ক্লেইম করেছেন।"
+    
+    return False, ""
+
+# ========== টেলিগ্রাম চ্যানেল জয়েন ভেরিফিকেশন ==========
+@app.route("/api/user/tasks/verify_channel", methods=["POST"])
+@login_required
+def verify_channel_task():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"})
+    data = request.json
+    task_id = data.get("task_id")
+    device_id = data.get("device_id")
+    task = fb_ref.child(f"tasks/{task_id}").get() if fb_ref else None
+    if not task:
+        return jsonify({"success": False, "message": "Task not found"})
+    
+    # ডুপ্লিকেট চেক
+    if task_claims_col.find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
+        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।"})
+    
+    # ডিভাইস/আইপি/অ্যাকাউন্ট চেক
+    blocked, msg = check_task_restrictions(user, task, device_id, request.remote_addr)
+    if blocked:
+        return jsonify({"success": False, "message": msg})
+    
+    # চ্যানেল জয়েন ভেরিফিকেশন
+    channel = task.get("link", "").strip()
+    if not channel.startswith("@"):
+        channel = "@" + channel
+    bot_token = get_admin_config().get("bot_token")
+    if not bot_token:
+        return jsonify({"success": False, "message": "বট টোকেন সেট করা নেই।"})
+    
+    import requests
+    url = f"https://api.telegram.org/bot{bot_token}/getChatMember?chat_id={channel}&user_id={user['telegram_id']}"
+    try:
+        resp = requests.get(url, timeout=10).json()
+        if not resp.get("ok") or resp["result"]["status"] not in ("member","administrator","creator"):
+            return jsonify({"success": False, "message": "আপনি এখনো চ্যানেলে জয়েন করেননি।"})
+    except:
+        return jsonify({"success": False, "message": "সার্ভার ত্রুটি, আবার চেষ্টা করুন।"})
+    
+    # টাকা প্রদান
+    reward = task.get("reward", 0)
+    currency = task.get("currency", "cash")
+    if currency == "aaf":
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
+        msg = f"Received {reward} AAF"
+    else:
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
+        msg = f"Received ৳{reward}"
+    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+    task_claims_col.insert_one({
+        "telegram_id": user["telegram_id"],
+        "task_id": task_id,
+        "status": "approved"
+    })
+    return jsonify({"success": True, "message": msg})
+
+# ========== ডিপ লিংক টাস্ক ভেরিফিকেশন ==========
+@app.route("/api/user/tasks/verify_deeplink", methods=["POST"])
+@login_required
+def verify_deeplink_task():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"})
+    data = request.json
+    task_id = data.get("task_id")
+    device_id = data.get("device_id")
+    task = fb_ref.child(f"tasks/{task_id}").get() if fb_ref else None
+    if not task:
+        return jsonify({"success": False, "message": "Task not found"})
+    
+    if task_claims_col.find_one({"telegram_id": user["telegram_id"], "task_id": task_id}):
+        return jsonify({"success": False, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।"})
+    
+    blocked, msg = check_task_restrictions(user, task, device_id, request.remote_addr)
+    if blocked:
+        return jsonify({"success": False, "message": msg})
+    
+    record = deeplink_clicks_col.find_one({"telegram_id": user["telegram_id"], "task_id": f"task_{task_id}"})
+    if not record:
+        return jsonify({"success": False, "message": "আপনি এখনো নির্দিষ্ট লিংকে ক্লিক করেননি। লিংকে ক্লিক করে আবার VERIFY চাপুন।"})
+    
+    reward = task.get("reward", 0)
+    currency = task.get("currency", "cash")
+    if currency == "aaf":
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
+        msg = f"Received {reward} AAF"
+    else:
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
+        msg = f"Received ৳{reward}"
+    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+    task_claims_col.insert_one({
+        "telegram_id": user["telegram_id"],
+        "task_id": task_id,
+        "status": "approved"
+    })
+    return jsonify({"success": True, "message": msg})
     
 
 @app.route("/api/admin/task/save", methods=["POST"])
@@ -613,7 +774,6 @@ def admin_save_task():
     task_id = secrets.token_hex(4)
     admin = get_admin_config()
     
-    # ডিফল্ট ঘন্টা অ্যাডমিন কনফিগ থেকে নিন (যদি সেট না থাকে তবে 168)
     default_hours = admin.get("default_task_expiry_hours", 168)
     expiry_hours = int(data.get("expiry_hours", default_hours))
     expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
@@ -628,7 +788,11 @@ def admin_save_task():
         "currency": data.get("currency", "cash"),
         "expires_at": expires_at,
         "created_at": datetime.utcnow().isoformat(),
-        "requires_approval": data.get("requires_approval", False)
+        "requires_approval": data.get("requires_approval", False),
+        # ========== নতুন ফিল্ড ==========
+        "device_check": data.get("device_check", True),
+        "ip_check": data.get("ip_check", False),
+        "account_check": data.get("account_check", True)
     }
     fb_ref.child(f"tasks/{task_id}").set(task_data)
     return jsonify({"success": True})
@@ -1453,6 +1617,22 @@ def claim_milestone():
         "claimed_at": datetime.utcnow()
     })
     return jsonify({"success": True})
+
+@bot.message_handler(commands=['start'])
+def start_handler(message):
+    text = message.text
+    if text.startswith('/start task_'):
+        task_id = text.split('_')[1]
+        user_id = message.from_user.id
+        # ডিপ লিংক ক্লিক রেকর্ড করুন
+        deeplink_clicks_col.update_one(
+            {"telegram_id": str(user_id), "task_id": f"task_{task_id}"},
+            {"$set": {"clicked_at": datetime.utcnow()}},
+            upsert=True
+        )
+        bot.reply_to(message, "✅ আপনার ক্লিক রেকর্ড করা হয়েছে। এখন টাস্ক পেজে ফিরে VERIFY করুন।")
+    else:
+        bot.reply_to(message, "স্বাগতম! টাস্ক লিংক ব্যবহার করুন।")
 
 # ================= RUN =================
 if __name__ == "__main__":
