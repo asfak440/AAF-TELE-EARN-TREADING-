@@ -100,7 +100,57 @@
 }
 
 
-
+/* ========== এনিমেশন নোটিফিকেশন ========== */
+.notification-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    backdrop-filter: blur(12px);
+    border-radius: 40px;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+    pointer-events: none;
+    max-width: 85%;
+    font-family: 'Rajdhani', monospace;
+}
+.notification-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.notification-toast.success {
+    border-left: 5px solid #00ff88;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+}
+.notification-toast.error {
+    border-left: 5px solid #ff0055;
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.2);
+}
+.notification-toast.warning {
+    border-left: 5px solid #ffaa00;
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);
+}
+.notification-toast.info {
+    border-left: 5px solid #00f2fe;
+    box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+}
+.notification-icon {
+    font-size: 20px;
+}
+.notification-text {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #fff;
+        }
 
         body { 
             background: var(--bg); color: var(--text-main); 
@@ -300,10 +350,8 @@ function renderTaskUI(user, admin, tasks, milestones){
   updateBalance(user.cash, user.aaf);
   USER_JOINED = user.is_joined;
   document.getElementById('join-warning').style.display = USER_JOINED ? 'none':'flex';
-  
-  renderMilestones(milestones);   // নতুন মাইলস্টোন রেন্ডার
+  renderMilestones(milestones);
   renderTasks(tasks);
-  
   if(admin.banner_ad_code && admin.banner_ad_code.trim() !== ""){
     injectSafeAdHTML(admin.banner_ad_code);
   }
@@ -317,63 +365,104 @@ function updateBalance(cash, coin){
   if (coinEl) coinEl.innerText = parseFloat(coin || 0).toFixed(2);
 }
 
+// ========== renderTasks with type ==========
 function renderTasks(tasks){
   const list = document.getElementById('main-task-list');
   list.innerHTML = "";
-  tasks.forEach(t=>{
-    const locked = t.is_device_used;
+  tasks.forEach(t => {
     const reward = t.currency === 'aaf' ? `AAF ${t.reward}` : `৳${t.reward}`;
     list.innerHTML += `
-      <div class="task-card ${locked?'locked':''}">
+      <div class="task-card">
         <div class="task-top">
-          <div class="task-icon">
-            <i class="fas ${t.type==='video'?'fa-play':'fa-link'}"></i>
-          </div>
+          <div class="task-icon"><i class="fas fa-tasks"></i></div>
           <div class="task-info">
             <h4>${escapeHtml(t.title)}</h4>
-            <p>${locked?'DEVICE ALREADY USED':`Required Time: ${t.timer}s`}</p>
+            <p>${t.description || 'কাজ শেষ করে VERIFY করুন'}</p>
           </div>
           <div class="reward-tag">${reward}</div>
         </div>
-        <button class="btn-claim" id="btn-${t.id}" ${locked?'disabled':''} onclick="startTask('${t.id}','${t.link}',${t.timer})">
-          ${locked?'ALREADY CLAIMED':'START EARNING'}
+        <button class="btn-claim" id="btn-${t.id}" onclick="startTask('${t.id}','${t.link}',${t.timer},'${t.type}')">
+          START EARNING
         </button>
-      </div>`;
+      </div>
+    `;
   });
 }
 
-function startTask(id, url, sec){
+// ========== Universal startTask with type ==========
+function startTask(id, url, sec, type){
   if(!USER_JOINED && !confirm("Join না করলে Bonus পাবেন না. চালাবেন?")) return;
-  window.open(url,'_blank');
+  window.open(url, '_blank');
   const btn = document.getElementById(`btn-${id}`);
   btn.disabled = true;
-  let t = sec;
-  const timer = setInterval(()=>{
-    btn.innerText = `WAIT ${t}s`;
-    if(t<=0){
-      clearInterval(timer);
-      btn.innerText="VERIFYING...";
-      claimTask(id);
+  let remaining = sec;
+  const timerSpan = document.createElement('div');
+  timerSpan.style.cssText = 'font-size:10px; color:var(--gold); margin-top:5px;';
+  btn.parentNode.appendChild(timerSpan);
+  const interval = setInterval(() => {
+    if(remaining <= 0){
+      clearInterval(interval);
+      timerSpan.remove();
+      btn.innerText = "✅ VERIFY";
+      btn.onclick = () => verifyTask(id, type);
+    } else {
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      timerSpan.innerText = `অপেক্ষা করুন: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      remaining--;
     }
-    t--;
-  },1000);
+  }, 1000);
 }
 
-async function claimTask(id){
-  const TG_ID = getTG();
-  try{
-    const r = await fetch(`${API}/api/user/tasks/claim`,{
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ telegram_id: TG_ID, task_id: id, device_id: DEVICE_ID })
+// ========== Universal verifyTask (replaces claimTask) ==========
+async function verifyTask(taskId, type){
+  let endpoint = '/api/user/tasks/claim';
+  if(type === 'telegram_channel') endpoint = '/api/user/tasks/verify_channel';
+  else if(type === 'telegram_deeplink') endpoint = '/api/user/tasks/verify_deeplink';
+  
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ task_id: taskId, device_id: DEVICE_ID })
     });
-    const d = await r.json();
-    if(d.blocked) alert("⚠️ "+d.message);
-    else alert(d.message);
+    const data = await res.json();
+    if(data.redirect) {
+        showAnimatedNotification("সেশন শেষ, পুনরায় লগইন করুন", "warning");
+        setTimeout(() => window.location.href = data.redirect, 1500);
+    }
+    else if(data.success) showAnimatedNotification(data.message, "success");
+    else showAnimatedNotification(data.message, "error");
     initTaskPage();
-  } catch(e){ alert("Server Busy"); }
+  } catch(e){ 
+      showAnimatedNotification("সার্ভার ত্রুটি", "error");
+  }
 }
 
+// ========== Animated Notification ==========
+function showAnimatedNotification(message, type = 'info', duration = 3000) {
+    let icon = '';
+    if (type === 'success') icon = '✅';
+    else if (type === 'error') icon = '❌';
+    else if (type === 'warning') icon = '⚠️';
+    else icon = 'ℹ️';
+    
+    const toast = document.createElement('div');
+    toast.className = `notification-toast ${type}`;
+    toast.innerHTML = `
+        <div class="notification-icon">${icon}</div>
+        <div class="notification-text">${escapeHtml(message)}</div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
+}
+
+// ========== Other existing functions (kept as is) ==========
 function injectSafeAdHTML(htmlString) {
   const container = document.getElementById('banner-ad');
   if (!container) return;
@@ -427,7 +516,7 @@ function escapeHtml(str) {
   });
 }
 
-// ================== মাইলস্টোন রেন্ডার ও ক্লেইম ==================
+// ================== Milestone Functions ==================
 function renderMilestones(milestones) {
   const container = document.getElementById('milestones-container');
   if (!container) return;
@@ -473,13 +562,13 @@ async function claimMilestone(milestoneId) {
       });
       const data = await res.json();
       if (data.success) {
-          alert('✅ বোনাস আপনার ওয়ালেটে জমা হয়েছে!');
-          initTaskPage(); // সম্পূর্ণ পেজ রিফ্রেশ
+          showAnimatedNotification('বোনাস আপনার ওয়ালেটে জমা হয়েছে!', 'success');
+          initTaskPage();
       } else {
-          alert('❌ ' + (data.error || 'বোনাস নেওয়া যায়নি'));
+          showAnimatedNotification(data.error || 'বোনাস নেওয়া যায়নি', 'error');
       }
   } catch(e) {
-      alert('সার্ভার ত্রুটি');
+      showAnimatedNotification('সার্ভার ত্রুটি', 'error');
   }
 }
 </script>
