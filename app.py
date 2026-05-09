@@ -118,23 +118,24 @@ def get_admin_config():
         }
         admin_config_col.insert_one(doc)
     
+    # ========== নিচের অংশটুকু ফাংশনের ভিতরেই থাকবে (ইন্ডেন্টেশন ঠিক করুন) ==========
     need_update = False
     if "task_rules" not in doc:
-    doc["task_rules"] = {"device_check": True, "ip_check": False, "account_check": True}
-    need_update = True
+        doc["task_rules"] = {"device_check": True, "ip_check": False, "account_check": True}
+        need_update = True
     if "ip_limit_per_hour" not in doc:
-    doc["ip_limit_per_hour"] = 5
-    need_update = True
+        doc["ip_limit_per_hour"] = 5
+        need_update = True
     if "default_task_expiry_hours" not in doc:
-    doc["default_task_expiry_hours"] = 168
-    need_update = True
+        doc["default_task_expiry_hours"] = 168
+        need_update = True
 
     if need_update:
-    admin_config_col.update_one({"_id": "global"}, {"$set": {
-        "task_rules": doc["task_rules"],
-        "ip_limit_per_hour": doc["ip_limit_per_hour"],
-        "default_task_expiry_hours": doc["default_task_expiry_hours"]
-    }})
+        admin_config_col.update_one({"_id": "global"}, {"$set": {
+            "task_rules": doc["task_rules"],
+            "ip_limit_per_hour": doc["ip_limit_per_hour"],
+            "default_task_expiry_hours": doc["default_task_expiry_hours"]
+        }})
     
     return doc
 
