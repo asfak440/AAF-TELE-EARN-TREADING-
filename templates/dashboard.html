@@ -271,7 +271,7 @@
         </div>
 </div>
 
-        <!-- ৪.রেফার লিংক -->
+        #রেফার লিংক 
         <div class="premium-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div>
@@ -281,6 +281,13 @@
         </div>
         <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">📋 COPY LINK</button>
     </div>
+
+    <!-- 🆕 প্রতি রেফারের বোনাস দেখানোর জায়গা -->
+    <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 12px; text-align: center;">
+        <span style="font-size: 10px; color: var(--text-gray);">প্রতি রেফারের বোনাস: </span>
+        <span id="refer-bonus-amount" style="font-size: 12px; font-weight: bold; color: var(--active-green);">লোড হচ্ছে...</span>
+    </div>
+
     <input type="text" id="referLinkInput" readonly 
            style="width:100%; background:#000; border:1px solid var(--border); padding:10px; border-radius:10px; color:#fff; font-size:12px;" 
            placeholder="আপনার রেফার লিংক এখানে দেখাবে">
@@ -594,7 +601,7 @@ function renderUI(user, admin) {
   if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
   if (joinCard) joinCard.classList.toggle('connected', joined);
 
-  // 🆕 ব্যানার অ্যাড (স্ক্রিপ্ট সাপোর্ট সহ)
+  // ব্যানার অ্যাড রেন্ডার
   const bannerBox = document.getElementById('banner-ad');
   if (bannerBox) {
     const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
@@ -604,7 +611,14 @@ function renderUI(user, admin) {
       bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
     }
   }
-}
+
+  // 🆕 রেফার বোনাস দেখানো (HTML-এ যুক্ত করা স্প্যানটি আপডেট)
+  const bonusSpan = document.getElementById('refer-bonus-amount');
+  if (bonusSpan) {
+      const bonusAmount = admin.referral_bonus || 0;
+      bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
+  }
+ }
 
 function executeScriptHTML(html, targetElement) {
   targetElement.innerHTML = "";
@@ -660,6 +674,8 @@ async function checkChannelMembership() {
     smartInterval(checkChannelMembership, 15000);
     loadPopupData();             // ← রাখুন
 });
+
+    
 
     
 </script>
