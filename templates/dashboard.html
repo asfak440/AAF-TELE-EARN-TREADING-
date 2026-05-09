@@ -675,7 +675,17 @@ async function checkChannelMembership() {
     loadPopupData();             // ← রাখুন
 });
 
-    
+    // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
+function triggerPopup(message) {
+    const bar = document.getElementById('active-user-bar');
+    const text = document.getElementById('popup-text');
+    if (!bar || !text) return;
+    text.innerText = message;
+    bar.style.display = "flex";
+    setTimeout(() => {
+        bar.style.display = "none";
+    }, 3000);
+    }
 
     
 </script>
