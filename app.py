@@ -1619,21 +1619,6 @@ def claim_milestone():
     })
     return jsonify({"success": True})
 
-@bot.message_handler(commands=['start'])
-def start_handler(message):
-    text = message.text
-    if text.startswith('/start task_'):
-        task_id = text.split('_')[1]
-        user_id = message.from_user.id
-        # ডিপ লিংক ক্লিক রেকর্ড করুন
-        deeplink_clicks_col.update_one(
-            {"telegram_id": str(user_id), "task_id": f"task_{task_id}"},
-            {"$set": {"clicked_at": datetime.utcnow()}},
-            upsert=True
-        )
-        bot.reply_to(message, "✅ আপনার ক্লিক রেকর্ড করা হয়েছে। এখন টাস্ক পেজে ফিরে VERIFY করুন।")
-    else:
-        bot.reply_to(message, "স্বাগতম! টাস্ক লিংক ব্যবহার করুন।")
 
 # ================= RUN =================
 if __name__ == "__main__":
