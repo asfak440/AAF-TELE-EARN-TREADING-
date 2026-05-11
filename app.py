@@ -168,34 +168,46 @@ temp_otp_data = {}
 
 # Background thread for live price simulation
 current_price = 1.0
+
 def update_price_loop():
     global current_price
+    last_candle_minute = None
     while True:
         try:
+            # 1. প্রাইস র‍্যান্ডম আপডেট
             change = random.uniform(-0.005, 0.005)
             current_price += change
             current_price = max(0.5, min(2.5, current_price))
             admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": datetime.utcnow()}})
+            
             now = datetime.utcnow()
-            candle = {
-                "time": int(now.timestamp()),
-                "open": current_price - change,
-                "high": current_price + abs(change)*0.5,
-                "low": current_price - abs(change)*0.5,
-                "close": current_price,
-                "ts": now.isoformat()
-            }
-            if fb_ref:
-                fb_ref.child("candle_history").push(candle)
-                if now.minute == 0 and now.second < 5:
-                    cutoff = (now - timedelta(days=30)).timestamp()
-                    old = fb_ref.child("candle_history").order_by_child("time").end_at(cutoff).get()
-                    if old:
-                        for key in old:
-                            fb_ref.child(f"candle_history/{key}").delete()
-        except:
-            pass
-        threading.Event().wait(2)
+            current_minute = now.replace(second=0, microsecond=0)
+            
+            # 2. প্রতি মিনিটের শুরুতে নতুন ক্যান্ডেল তৈরি করুন
+            if last_candle_minute != current_minute:
+                candle = {
+                    "time": int(current_minute.timestamp()),
+                    "open": current_price,
+                    "high": current_price,
+                    "low": current_price,
+                    "close": current_price,
+                    "ts": now.isoformat()
+                }
+                if fb_ref:
+                    fb_ref.child("candle_history").push(candle)
+                last_candle_minute = current_minute
+                
+            # 3. প্রতি ঘন্টার শুরুতে পুরনো ডাটা ডিলিট (ঐচ্ছিক)
+            if now.minute == 0 and now.second < 5:
+                cutoff = (now - timedelta(days=30)).timestamp()
+                old = fb_ref.child("candle_history").order_by_child("time").end_at(cutoff).get()
+                if old:
+                    for key in old:
+                        fb_ref.child(f"candle_history/{key}").delete()
+                        
+        except Exception as e:
+            print(f"Price loop error: {e}")
+        time.sleep(2)   # প্রতি ২ সেকেন্ডে প্রাইস আপডেট হয়, কিন্তু ক্যান্ডেল প্রতি মিনিটে তৈরি হয়
 
 threading.Thread(target=update_price_loop, daemon=True).start()
 
@@ -820,11 +832,13 @@ def live_candle():
         return jsonify({"time": int(datetime.utcnow().timestamp()), "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
     candles = fb_ref.child("candle_history").order_by_key().limit_to_last(1).get()
     if candles:
-        last = list(candles.values())[0]
-        return jsonify(last)
+        last_key = list(candles.keys())[-1]
+        candle = candles[last_key]
+        # 🔥 নিশ্চিত করুন যে time ফিল্ড integer হয়
+        if 'time' in candle:
+            candle['time'] = int(candle['time'])
+        return jsonify(candle)
     return jsonify({"time": int(datetime.utcnow().timestamp()), "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
-
-
 
 # ================= API: WALLET =================
 @app.route("/api/wallet/deposit", methods=["POST"])
