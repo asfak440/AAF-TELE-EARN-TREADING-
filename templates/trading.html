@@ -216,20 +216,18 @@ function getTG(){
 
 // ================= CHART =================
 function initChart() {
-  chart = LightweightCharts.createChart(
-    document.getElementById('chart-container'),
-    {
-      layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
-      timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-    }
-  );
+  chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+    layout: { backgroundColor: '#000', textColor: '#94a3b8', fontSize: 10 },
+    timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+  });
   candleSeries = chart.addCandlestickSeries();
   
   // ✅ মক ডাটা – যাতে চার্ট খালি না থাকে
+  const now = Math.floor(Date.now() / 1000);
   candleSeries.setData([
-    { time: Math.floor(Date.now()/1000) - 120, open: 1.00, high: 1.05, low: 0.98, close: 1.02 },
-    { time: Math.floor(Date.now()/1000) - 60, open: 1.02, high: 1.04, low: 1.01, close: 1.03 },
-    { time: Math.floor(Date.now()/1000), open: 1.03, high: 1.06, low: 1.02, close: 1.05 }
+    { time: now - 120, open: 1.00, high: 1.05, low: 0.98, close: 1.02 },
+    { time: now - 60, open: 1.02, high: 1.04, low: 1.01, close: 1.03 },
+    { time: now, open: 1.03, high: 1.06, low: 1.02, close: 1.05 }
   ]);
 }
 // ================= MARKET ENGINE (API থেকে প্রাইস ও ক্যান্ডেল) =================
