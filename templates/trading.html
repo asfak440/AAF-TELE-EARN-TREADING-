@@ -261,17 +261,29 @@ async function fetchMarketData() {
     lastPrice = priceData.price;
     document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
     if (fallbackInterval) { clearInterval(fallbackInterval); fallbackInterval = null; }
+    
     const candleRes = await fetch(`${API}/api/market/live-candle`);
     const candle = await candleRes.json();
-    if (candle && candle.time && candle.open && candle.high && candle.low && candle.close) {
-      candleSeries.update(candle);
-    } else throw new Error("Invalid candle");
+    
+    // ✅ নিশ্চিত করুন সময় integer ও সব প্রপার্টি আছে
+    if (candle && candle.time) {
+      candle.time = Number(candle.time);
+      if (candle.open && candle.high && candle.low && candle.close) {
+        candleSeries.update(candle);
+      } else {
+        console.warn("Invalid candle data", candle);
+        throw new Error("Invalid candle");
+      }
+    } else {
+      throw new Error("No candle data");
+    }
+    
   } catch(e) {
     console.warn("মার্কেট ডাটা পাইনি, ফলব্যাক চালু", e);
     if (!fallbackInterval) startFallback();
   }
   calculateLogic();
-}
+          }
 
 function startFallback() {
   if (fallbackInterval) clearInterval(fallbackInterval);
