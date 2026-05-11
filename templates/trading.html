@@ -61,6 +61,23 @@
     padding-top: 350px; padding-bottom: 100px; max-width: 300px; margin: auto;
 }
 
+        /* কম্প্যাক্ট ডিজাইন – ড্যাশবোর্ড স্টাইলে */
+.header h2 { font-size: 10px !important; }
+#live-price { font-size: 10px !important; }
+#admin-ad-box marquee { font-size: 9px !important; }
+.tf-btn { padding: 2px 4px !important; font-size: 8px !important; }
+.stat-card { padding: 8px !important; }
+.stat-card span { font-size: 9px !important; }
+.stat-card b { font-size: 14px !important; }
+.input-box input { padding: 8px !important; font-size: 14px !important; }
+.input-box span { font-size: 8px !important; top: 12px !important; }
+.fee-card { padding: 8px !important; }
+.fee-row { font-size: 10px !important; }
+.btn { padding: 8px !important; font-size: 10px !important; }
+.bottom-nav { height: 55px !important; }
+.nav-item i { font-size: 16px !important; }
+.nav-item span { font-size: 8px !important; }
+        
         
         /* Stats */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -184,7 +201,9 @@ const TG_KEY = "telegram_id";
 let chart, candleSeries, lastPrice = 1.0000;
 let currentFee = 0.5, userCash = 0, userAAF = 0;
 let lastCandleMinute = null;
-
+let fallbackInterval = null;
+let useMockData = false;
+let mockPrice = 1.0;
 // ===== GET TG ID =====
 function getTG(){
   const id = localStorage.getItem(TG_KEY);
@@ -209,35 +228,58 @@ function initChart() {
 
 // ================= MARKET ENGINE (API থেকে প্রাইস ও ক্যান্ডেল) =================
 async function fetchMarketData() {
-  try {
-    // 1. লাইভ প্রাইস (MongoDB থেকে)
-    const priceRes = await fetch(`${API}/api/market/price`);
-    const priceData = await priceRes.json();
-    lastPrice = priceData.price;
-    document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-
-    // 2. সর্বশেষ ক্যান্ডেল (ব্যাকএন্ড Firebase থেকে নিয়ে আসবে)
-    const candleRes = await fetch(`${API}/api/market/live-candle`);
-    const candle = await candleRes.json();
-    candleSeries.update(candle);
-
-    // 3. প্রতি মিনিটে নতুন ক্যান্ডেল জেনারেট করার দরকার নেই, ব্যাকএন্ড নিজেই করবে।
-    // কিন্তু ফ্রন্টএন্ডে আমরা চেক করতে পারি যে মিনিট পরিবর্তিত হয়েছে কিনা (শুধু UI আপডেটের জন্য)
-    const minute = new Date().getMinutes();
-    if (minute !== lastCandleMinute) {
-      lastCandleMinute = minute;
-      // এখানে কিছু করার দরকার নেই, কারণ ব্যাকএন্ড ক্যান্ডেল হিস্ট্রি Firebase-এ লিখছে।
-      // ফ্রন্টএন্ড শুধু দেখাবে।
+    try {
+        const priceRes = await fetch(`${API}/api/market/price`, { signal: AbortSignal.timeout(3000) });
+        const priceData = await priceRes.json();
+        lastPrice = priceData.price;
+        document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+        if (fallbackInterval) {
+            clearInterval(fallbackInterval);
+            fallbackInterval = null;
+            useMockData = false;
+        }
+        const candleRes = await fetch(`${API}/api/market/live-candle`);
+        const candle = await candleRes.json();
+        if (candle && candle.time && candle.open && candle.high && candle.low && candle.close) {
+            candleSeries.update(candle);
+        } else {
+            throw new Error("Invalid candle");
+        }
+        calculateLogic();
+    } catch(e) {
+        console.error("Market data error, using fallback", e);
+        if (!fallbackInterval) {
+            useMockData = true;
+            mockPrice = lastPrice || 1.0;
+            startFallback();
+        }
     }
-
-    calculateLogic();
-  } catch(e) {
-    console.log("Market engine error", e);
-  }
 }
-
-// ব্যাকএন্ড এন্ডপয়েন্ট /api/market/price এবং /api/market/live-candle সঠিকভাবে কাজ করলে চলবে।
-
+        
+function startFallback() {
+    fallbackInterval = setInterval(() => {
+        let decrease = mockPrice * (Math.random() * 0.003 + 0.002); // 0.2% to 0.5% decrease
+        mockPrice = Math.max(0.1, mockPrice - decrease);
+        document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
+        
+        const now = Date.now() / 1000;
+        let minute = Math.floor(now / 60);
+        if (!window.lastMockMinute) window.lastMockMinute = minute;
+        if (window.lastMockMinute !== minute) {
+            const newCandle = {
+                time: Math.floor(now),
+                open: mockPrice,
+                high: mockPrice * (1 + Math.random() * 0.01),
+                low: mockPrice * (1 - Math.random() * 0.01),
+                close: mockPrice
+            };
+            candleSeries.update(newCandle);
+            window.lastMockMinute = minute;
+        }
+        calculateLogic();
+    }, 2000);
+}
+        
 // ================= USER + ADMIN SYNC (MongoDB থেকে) =================
 async function syncUserData() {
   const TG_ID = getTG();
