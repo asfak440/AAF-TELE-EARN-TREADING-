@@ -267,38 +267,36 @@ async function fetchMarketData() {
     }
 }
 
-
 function startFallback() {
-  if (fallbackInterval) clearInterval(fallbackInterval);
-  fallbackInterval = setInterval(() => {
-    let randomChange = (Math.random() - 0.5) * 0.02;
-    mockPrice += randomChange;
-    mockPrice = Math.max(0.5, Math.min(2.5, mockPrice));
-    document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
-    
-    const now = Math.floor(Date.now() / 1000);
-    // প্রতি 30 সেকেন্ডে নতুন ক্যান্ডেল (মিনিট নয়)
-    if (!window.lastMockTime || (now - window.lastMockTime) >= 30) {
-      const newCandle = {
-        time: now,
-        open: mockPrice,
-        high: mockPrice * (1 + Math.random() * 0.01),
-        low: mockPrice * (1 - Math.random() * 0.01),
-        close: mockPrice
-      };
-      if (candleSeries) candleSeries.update(newCandle);
-      window.lastMockTime = now;
-    }
-    calculateLogic();
-  }, 3000);
+    if (fallbackInterval) clearInterval(fallbackInterval);
+    mockPrice = lastPrice || 1.0;
+    fallbackInterval = setInterval(() => {
+        let change = (Math.random() - 0.5) * 0.02;
+        mockPrice += change;
+        mockPrice = Math.max(0.5, Math.min(2.5, mockPrice));
+        document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
+        // প্রতি 15 সেকেন্ডে একটি নতুন ক্যান্ডেল তৈরি
+        const now = Math.floor(Date.now() / 1000);
+        if (!window._lastCandleTime || (now - window._lastCandleTime) > 15) {
+            const newCandle = {
+                time: now,
+                open: mockPrice,
+                high: mockPrice * (1 + Math.random() * 0.015),
+                low: mockPrice * (1 - Math.random() * 0.015),
+                close: mockPrice
+            };
+            if (candleSeries) candleSeries.update(newCandle);
+            window._lastCandleTime = now;
+        }
+    }, 2000);
 }
-        
+
 // ================= USER + ADMIN SYNC (MongoDB থেকে) =================
 async function syncUserData() {
   const TG_ID = getTG();
   console.log("Fetching user data for TG_ID:", TG_ID);
   try {
-    const r = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: "include" });
+    const r = await fetch(`${API}/api/user/me`, { credentials: "include" });
     const res = await r.json();
     console.log("API response:", res);
     
