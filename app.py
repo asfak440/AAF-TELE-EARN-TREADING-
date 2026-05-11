@@ -866,6 +866,8 @@ def execute_trade():
     data = request.json
     telegram_id = data.get("telegram_id")
     trade_type = data.get("type")
+    if trade_type:
+        trade_type = trade_type.lower()   # ← এই লাইনটি যোগ করুন
     taka = data.get("taka", 0)
     coin = data.get("coin", 0)
     price = data.get("price", 0)
