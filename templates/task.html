@@ -436,7 +436,7 @@ function startTask(id, url, sec, type){
 
 // ========== Universal verifyTask (replaces claimTask) ==========
 async function verifyTask(taskId, type){
-    const TG_ID = getTG();   // localStorage থেকে telegram_id নেওয়া
+    const TG_ID = getTG();
     let endpoint = '/api/user/tasks/claim';
     if(type === 'telegram_channel') endpoint = '/api/user/tasks/verify_channel';
     else if(type === 'telegram_deeplink') endpoint = '/api/user/tasks/verify_deeplink';
@@ -447,24 +447,31 @@ async function verifyTask(taskId, type){
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({ 
-                telegram_id: TG_ID,    // ← এই লাইনটি আগে ছিল না
+                telegram_id: TG_ID,
                 task_id: taskId, 
                 device_id: DEVICE_ID 
             })
         });
         const data = await res.json();
+        
         if(data.redirect) {
             showAnimatedNotification("সেশন শেষ, পুনরায় লগইন করুন", "warning");
             setTimeout(() => window.location.href = data.redirect, 1500);
         }
-        else if(data.success) showAnimatedNotification(data.message, "success");
-        else showAnimatedNotification(data.message, "error");
+        else if(data.success) {
+            showAnimatedNotification(data.message, "success");
+        }
+        else if(data.blocked) {
+            showAnimatedNotification(data.message, "error");
+        }
+        else {
+            showAnimatedNotification(data.message || "ভেরিফিকেশন ব্যর্থ", "error");
+        }
         initTaskPage();
     } catch(e){ 
         showAnimatedNotification("সার্ভার ত্রুটি", "error");
     }
 }
-
 // ========== Animated Notification ==========
 function showAnimatedNotification(message, type = 'info', duration = 3000) {
     let icon = '';
@@ -597,7 +604,27 @@ async function claimMilestone(milestoneId) {
   }
 }
 
-    console.log(typeof startTask, typeof verifyTask);
+    function showAnimatedNotification(message, type = 'info', duration = 3000) {
+    let icon = '';
+    if (type === 'success') icon = '✅';
+    else if (type === 'error') icon = '❌';
+    else if (type === 'warning') icon = '⚠️';
+    else icon = 'ℹ️';
+    
+    const toast = document.createElement('div');
+    toast.className = `notification-toast ${type}`;
+    toast.innerHTML = `
+        <div class="notification-icon">${icon}</div>
+        <div class="notification-text">${escapeHtml(message)}</div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
+}
+
 </script>
 </body>
     </html>
