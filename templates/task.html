@@ -436,28 +436,33 @@ function startTask(id, url, sec, type){
 
 // ========== Universal verifyTask (replaces claimTask) ==========
 async function verifyTask(taskId, type){
-  let endpoint = '/api/user/tasks/claim';
-  if(type === 'telegram_channel') endpoint = '/api/user/tasks/verify_channel';
-  else if(type === 'telegram_deeplink') endpoint = '/api/user/tasks/verify_deeplink';
-  
-  try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ task_id: taskId, device_id: DEVICE_ID })
-    });
-    const data = await res.json();
-    if(data.redirect) {
-        showAnimatedNotification("সেশন শেষ, পুনরায় লগইন করুন", "warning");
-        setTimeout(() => window.location.href = data.redirect, 1500);
+    const TG_ID = getTG();   // localStorage থেকে telegram_id নেওয়া
+    let endpoint = '/api/user/tasks/claim';
+    if(type === 'telegram_channel') endpoint = '/api/user/tasks/verify_channel';
+    else if(type === 'telegram_deeplink') endpoint = '/api/user/tasks/verify_deeplink';
+    
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                telegram_id: TG_ID,    // ← এই লাইনটি আগে ছিল না
+                task_id: taskId, 
+                device_id: DEVICE_ID 
+            })
+        });
+        const data = await res.json();
+        if(data.redirect) {
+            showAnimatedNotification("সেশন শেষ, পুনরায় লগইন করুন", "warning");
+            setTimeout(() => window.location.href = data.redirect, 1500);
+        }
+        else if(data.success) showAnimatedNotification(data.message, "success");
+        else showAnimatedNotification(data.message, "error");
+        initTaskPage();
+    } catch(e){ 
+        showAnimatedNotification("সার্ভার ত্রুটি", "error");
     }
-    else if(data.success) showAnimatedNotification(data.message, "success");
-    else showAnimatedNotification(data.message, "error");
-    initTaskPage();
-  } catch(e){ 
-      showAnimatedNotification("সার্ভার ত্রুটি", "error");
-  }
 }
 
 // ========== Animated Notification ==========
