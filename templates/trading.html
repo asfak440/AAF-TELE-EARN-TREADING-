@@ -33,6 +33,13 @@
             overflow-x: hidden;
         }
 
+        .container { 
+    padding-top: 280px; 
+    padding-bottom: 100px; 
+    max-width: 300px; 
+    margin: auto;
+        }
+
     /* হেডার, অ্যাড এবং চার্ট স্থির করার ম্যাজিক কোড */
         .header { 
     position: fixed; top: 0; left: 0; width: 95%; height: 30px;
@@ -259,56 +266,69 @@ async function fetchMarketData() {
         }
     }
 }
-        
+
+
 function startFallback() {
-    fallbackInterval = setInterval(() => {
-        let decrease = mockPrice * (Math.random() * 0.003 + 0.002); // 0.2% to 0.5% decrease
-        mockPrice = Math.max(0.1, mockPrice - decrease);
-        document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
-        
-        const now = Date.now() / 1000;
-        let minute = Math.floor(now / 60);
-        if (!window.lastMockMinute) window.lastMockMinute = minute;
-        if (window.lastMockMinute !== minute) {
-            const newCandle = {
-                time: Math.floor(now),
-                open: mockPrice,
-                high: mockPrice * (1 + Math.random() * 0.01),
-                low: mockPrice * (1 - Math.random() * 0.01),
-                close: mockPrice
-            };
-            candleSeries.update(newCandle);
-            window.lastMockMinute = minute;
-        }
-        calculateLogic();
-    }, 2000);
+  if (fallbackInterval) clearInterval(fallbackInterval);
+  fallbackInterval = setInterval(() => {
+    let randomChange = (Math.random() - 0.5) * 0.02;
+    mockPrice += randomChange;
+    mockPrice = Math.max(0.5, Math.min(2.5, mockPrice));
+    document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
+    
+    const now = Math.floor(Date.now() / 1000);
+    // প্রতি 30 সেকেন্ডে নতুন ক্যান্ডেল (মিনিট নয়)
+    if (!window.lastMockTime || (now - window.lastMockTime) >= 30) {
+      const newCandle = {
+        time: now,
+        open: mockPrice,
+        high: mockPrice * (1 + Math.random() * 0.01),
+        low: mockPrice * (1 - Math.random() * 0.01),
+        close: mockPrice
+      };
+      if (candleSeries) candleSeries.update(newCandle);
+      window.lastMockTime = now;
+    }
+    calculateLogic();
+  }, 3000);
 }
         
 // ================= USER + ADMIN SYNC (MongoDB থেকে) =================
 async function syncUserData() {
   const TG_ID = getTG();
+  console.log("Fetching user data for TG_ID:", TG_ID);
   try {
     const r = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: "include" });
     const res = await r.json();
-    if (res.status !== "success") return;
+    console.log("API response:", res);
+    
+    if (res.status !== "success") {
+      console.error("API status not success:", res);
+      return;
+    }
 
     const user = res.user;
     const admin = res.admin;
+    
+    console.log("User cash:", user.cash, "AAF:", user.aaf);
 
     userCash = user.cash || 0;
     userAAF = user.aaf || 0;
     currentFee = admin.trading_fee || 0.5;
 
-    userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
-    userAafEl.innerText = userAAF.toFixed(2);
-    feePercEl.innerText = currentFee;
+    document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+    document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+    document.getElementById('fee-perc').innerText = currentFee;
 
-    lockOverlay.style.display = user.is_joined ? 'none' : 'flex';
-    adminAdText.innerText = admin.trading_ad_text || "Welcome to Trading";
+    const lockOverlay = document.getElementById('lock-overlay');
+    if (lockOverlay) lockOverlay.style.display = user.is_joined ? 'none' : 'flex';
+    
+    const adminAdText = document.getElementById('admin-ad-text');
+    if (adminAdText) adminAdText.innerText = admin.trading_ad_text || "Welcome to Trading";
 
     calculateLogic();
   } catch(e) {
-    console.log("Sync error", e);
+    console.error("Sync error:", e);
   }
 }
 
@@ -347,15 +367,18 @@ function calculateLogic() {
 // ================= TRADE EXECUTE =================
 async function executeTrade(type) {
   const TG_ID = getTG();
+  // ✅ lowercase করে পাঠান
+  const tradeType = type.toLowerCase();
+  
   try {
     const r = await fetch(`${API}/api/trade/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         telegram_id: TG_ID,
-        type,
-        taka: parseFloat(tkIn.value),
-        coin: parseFloat(coIn.value),
+        type: tradeType,   // ← lowercase
+        taka: parseFloat(tkIn.value) || 0,
+        coin: parseFloat(coIn.value) || 0,
         price: lastPrice
       })
     });
@@ -363,7 +386,7 @@ async function executeTrade(type) {
     alert(d.message);
     syncUserData();
   } catch(e) {
-    alert("Trade error");
+    alert("Trade error: " + e.message);
   }
 }
 
