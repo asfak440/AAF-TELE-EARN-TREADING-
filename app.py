@@ -838,32 +838,53 @@ def admin_delete_task():
 @app.route("/api/candles")
 def get_candles():
     if not fb_ref:
-        return jsonify({"candles": []})
-    try:
-        print("🔍 Fetching candles from candle_history...")
-        candles_data = fb_ref.child("candle_history").order_by_key().get()
-        candles_list = []
-        if candles_data:
-            for key, candle in candles_data.items():
-                if candle and isinstance(candle, dict):
-                    try:
-                        candles_list.append({
-                            "time": int(candle.get("time", 0)),
-                            "open": float(candle.get("open", 1.0)),
-                            "high": float(candle.get("high", 1.0)),
-                            "low": float(candle.get("low", 1.0)),
-                            "close": float(candle.get("close", 1.0))
-                        })
-                    except:
-                        continue
-            candles_list.sort(key=lambda x: x["time"])
-            print(f"✅ Returned {len(candles_list)} candles")
-        else:
-            print("⚠️ candle_history is empty")
-        return jsonify({"candles": candles_list})
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        return jsonify({"candles": []})
+        # Firebase না থাকলে Mock ডাটা
+        candles = []
+        base = int(datetime.utcnow().timestamp()) - 380
+        for i in range(30):
+            candles.append({
+                "time": base + i * 20,
+                "open": 1.0 + (i * 0.01),
+                "high": 1.05 + (i * 0.01),
+                "low": 0.98 + (i * 0.01),
+                "close": 1.02 + (i * 0.01)
+            })
+        return jsonify({"candles": candles})
+    
+    # Firebase থেকে ক্যান্ডেল আনার চেষ্টা
+    data = fb_ref.child("candle_history").order_by_key().get()
+    if not data:
+        data = fb_ref.child("candles/minutes").get()
+    
+    candles = []
+    if data:
+        for key, val in data.items():
+            if val and isinstance(val, dict):
+                try:
+                    candles.append({
+                        "time": int(val.get('time', 0)),
+                        "open": float(val.get('open', 1.0)),
+                        "high": float(val.get('high', 1.0)),
+                        "low": float(val.get('low', 1.0)),
+                        "close": float(val.get('close', 1.0))
+                    })
+                except:
+                    continue
+        candles.sort(key=lambda x: x['time'])
+    
+    # যদি কোনো ক্যান্ডেল না থাকে, Mock ডাটা
+    if not candles:
+        base = int(datetime.utcnow().timestamp()) - 380
+        for i in range(30):
+            candles.append({
+                "time": base + i * 20,
+                "open": 1.0 + (i * 0.01),
+                "high": 1.05 + (i * 0.01),
+                "low": 0.98 + (i * 0.01),
+                "close": 1.02 + (i * 0.01)
+            })
+    
+    return jsonify({"candles": candles})
 
 @app.route("/api/market/live-candle")
 def live_candle():
