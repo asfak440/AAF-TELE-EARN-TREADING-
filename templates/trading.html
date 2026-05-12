@@ -401,14 +401,12 @@ candleSeries = chart.addCandlestickSeries({
     sellBtn.onclick = () => executeTrade('SELL');
 
     window.addEventListener('load', () => {
-    setTimeout(() => {
-        initChart();
-        }, 300);
-        syncUserData();
-        fetchMarketData();
-        setInterval(fetchMarketData, 5000);   // প্রতি 5 সেকেন্ডে প্রাইস/ক্যান্ডেল আপডেট
-        setInterval(syncUserData, 10000);     // প্রতি 10 সেকেন্ডে ব্যালেন্স আপডেট (দ্রুত)
-    });
+    initChart();
+    syncUserData();
+    fetchMarketData();
+    setInterval(fetchMarketData, 5000);
+    setInterval(syncUserData, 10000);
+});
 </script>
 </body>
     </html>
