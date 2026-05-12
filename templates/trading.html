@@ -114,24 +114,36 @@
         let fallbackInterval = null;
 
         function initChart() {
-            const container = document.getElementById('chart-container');
-            if (!container) return;
-            container.style.height = '240px';
-            container.style.width = '100%';
-            chart = LightweightCharts.createChart(container, {
-                layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
-                timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-                width: container.clientWidth,
-                height: 240
-            });
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00ff88', downColor: '#ff3366', borderVisible: false
-            });
-            window.addEventListener('resize', () => {
-                chart.applyOptions({ width: container.clientWidth });
-                chart.timeScale().fitContent();
-            });
+    const container = document.getElementById('chart-container');
+    if (!container) return;
+    
+    // কন্টেইনার পরিষ্কার করে নিন যেন ডুপ্লিকেট না হয়
+    container.innerHTML = ''; 
+
+    chart = LightweightCharts.createChart(container, {
+        layout: { 
+            backgroundColor: '#000000', 
+            textColor: '#d1d4dc',
+        },
+        grid: {
+            vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
+            horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+        },
+        width: container.offsetWidth,
+        height: 250,
+        timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+        },
+    });
+
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a', downColor: '#ef5350', 
+        borderVisible: false,
+        wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+    });
         }
+        
 
         async function loadHistoricalCandles() {
     console.log("🔄 লোডিং ঐতিহাসিক ক্যান্ডেল...");
