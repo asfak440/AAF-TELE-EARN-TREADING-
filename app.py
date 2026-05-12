@@ -840,7 +840,7 @@ def get_candles():
     if not fb_ref:
         return jsonify({"candles": []})
     try:
-        # সঠিক পাথ: candle_history (যেখানে থ্রেড ক্যান্ডেল সেভ করে)
+        print("🔍 Fetching candles from candle_history...")
         candles_data = fb_ref.child("candle_history").order_by_key().get()
         candles_list = []
         if candles_data:
@@ -854,51 +854,47 @@ def get_candles():
                             "low": float(candle.get("low", 1.0)),
                             "close": float(candle.get("close", 1.0))
                         })
-                    except (ValueError, TypeError):
+                    except:
                         continue
             candles_list.sort(key=lambda x: x["time"])
-            print(f"✅ {len(candles_list)} ক্যান্ডেল লোড হয়েছে (candle_history)")
+            print(f"✅ Returned {len(candles_list)} candles")
         else:
-            print("⚠️ এখনো কোনো ক্যান্ডেল জমেনি, কিছু মিনিট অপেক্ষা করুন")
+            print("⚠️ candle_history is empty")
         return jsonify({"candles": candles_list})
     except Exception as e:
-        print(f"❌ Candles API error: {e}")
+        print(f"❌ Error: {e}")
         return jsonify({"candles": []})
+
+@app.route("/api/market/live-candle")
+def live_candle():
+    if not fb_ref:
+        now = int(datetime.utcnow().timestamp())
+        return jsonify({"time": now, "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
+    try:
+        candles = fb_ref.child("candle_history").order_by_key().limit_to_last(1).get()
+        if candles:
+            last_key = list(candles.keys())[-1]
+            candle = candles[last_key]
+            return jsonify({
+                "time": int(candle.get("time", 0)),
+                "open": float(candle.get("open", 1.0)),
+                "high": float(candle.get("high", 1.0)),
+                "low": float(candle.get("low", 1.0)),
+                "close": float(candle.get("close", 1.0))
+            })
+    except Exception as e:
+        print(f"Live candle error: {e}")
+    now = int(datetime.utcnow().timestamp())
+    return jsonify({"time": now, "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
 
 @app.route("/api/market/price")
 def market_price():
     admin = get_admin_config()
     price = admin.get("live_price", 1.0)
-    if price == 0:
+    if price <= 0:
         price = 1.0
     return jsonify({"price": price})
 
-@app.route("/api/market/live-candle")
-def live_candle():
-    try:
-        now = datetime.utcnow()
-        current_minute = now.replace(second=0, microsecond=0).isoformat()
-        if fb_ref:
-            last_candle = fb_ref.child(f"candles/minutes/{current_minute}").get()
-            if last_candle and "time" in last_candle:
-                return jsonify(last_candle)
-        # ফায়ারবেজে না থাকলে ডামি ক্যান্ডেল
-        return jsonify({
-            "time": int(now.timestamp()),
-            "open": current_price,
-            "high": current_price + 0.01,
-            "low": current_price - 0.01,
-            "close": current_price
-        })
-    except Exception as e:
-        print(f"Live candle error: {e}")
-        return jsonify({
-            "time": 0,
-            "open": 1.0,
-            "high": 1.0,
-            "low": 1.0,
-            "close": 1.0
-        })
 
 
 @app.route("/api/trade/execute", methods=["POST"])
