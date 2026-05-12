@@ -840,17 +840,23 @@ def get_candles():
     if not fb_ref:
         return jsonify({"candles": []})
     try:
-        # এখানে পাথ ঠিক করুন
         candles_data = fb_ref.child("candles/minutes").get()
         candles_list = []
         if candles_data:
             for key, candle in candles_data.items():
-                if candle and all(k in candle for k in ["time", "open", "high", "low", "close"]):
-                    candles_list.append(candle)
+                if candle and isinstance(candle, dict) and "time" in candle:
+                    candles_list.append({
+                        "time": candle["time"],
+                        "open": candle["open"],
+                        "high": candle["high"],
+                        "low": candle["low"],
+                        "close": candle["close"]
+                    })
             candles_list.sort(key=lambda x: x["time"])
+            print(f"✅ {len(candles_list)} candles loaded from Firebase")
         return jsonify({"candles": candles_list})
     except Exception as e:
-        print(f"Error fetching candles: {e}")
+        print(f"❌ Candles API error: {e}")
         return jsonify({"candles": []})
 
 
@@ -862,20 +868,28 @@ def market_price():
         price = 1.0
     return jsonify({"price": price})
 
-@app.route("/api/market/live-candle")
+    @app.route("/api/market/live-candle")
 def live_candle():
-    # এখানে লাইভ ক্যান্ডেল তৈরি করুন সবথেকে সহজ উপায়ে
-    now = int(datetime.utcnow().timestamp())
-    # বর্তমান চলমান ক্যান্ডেলের জন্য ডামি ডাটা
-    # আপনি চাইলে এখানে আপনার update_price_loop ফাংশনের চলমান ডাটা ব্যবহার করতে পারেন
-    dummy_candle = {
-        "time": now,
-        "open": current_price,
-        "high": current_price,
-        "low": current_price,
-        "close": current_price
-    }
-    return jsonify(dummy_candle)
+    try:
+        # বর্তমান মিনিটের জন্য সর্বশেষ ক্যান্ডেল (Firebase থেকে)
+        now = datetime.utcnow()
+        current_minute = now.replace(second=0, microsecond=0).isoformat()
+        if fb_ref:
+            last_candle = fb_ref.child(f"candles/minutes/{current_minute}").get()
+            if last_candle and "time" in last_candle:
+                return jsonify(last_candle)
+        # যদি না পাওয়া যায়, তাহলে একটা ডামি ক্যান্ডেল তৈরি করুন
+        return jsonify({
+            "time": int(now.timestamp()),
+            "open": current_price,
+            "high": current_price + 0.01,
+            "low": current_price - 0.01,
+            "close": current_price
+        })
+    except Exception as e:
+        print(f"Live candle error: {e}")
+        return jsonify({"time": 0, "open": 1, "high": 1, "low": 1, "close": 1})
+
 
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
