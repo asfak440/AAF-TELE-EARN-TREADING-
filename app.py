@@ -169,47 +169,52 @@ temp_otp_data = {}
 # Background thread for live price simulation
 current_price = 1.0
 
+# এই কোডটি app.py-তে আপনার বিদ্যমান update_price_loop() ফাংশনটিকে প্রতিস্থাপন করবে।
 def update_price_loop():
     global current_price
     last_candle_minute = None
     while True:
         try:
-            # 1. প্রাইস র‍্যান্ডম আপডেট
+            now = datetime.utcnow()
+            current_minute = now.replace(second=0, microsecond=0)
+            # ১. লাইভ প্রাইস র‍্যান্ডম আপডেট
             change = random.uniform(-0.005, 0.005)
             current_price += change
             current_price = max(0.5, min(2.5, current_price))
-            admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": datetime.utcnow()}})
-            
-            now = datetime.utcnow()
-            current_minute = now.replace(second=0, microsecond=0)
-            
-            # 2. প্রতি মিনিটের শুরুতে নতুন ক্যান্ডেল তৈরি করুন
-            if last_candle_minute != current_minute:
-                candle = {
-                    "time": int(current_minute.timestamp()),
-                    "open": current_price,
-                    "high": current_price,
-                    "low": current_price,
-                    "close": current_price,
-                    "ts": now.isoformat()
-                }
-                if fb_ref:
-                    fb_ref.child("candle_history").push(candle)
-                last_candle_minute = current_minute
-                
-            # 3. প্রতি ঘন্টার শুরুতে পুরনো ডাটা ডিলিট (ঐচ্ছিক)
-            if now.minute == 0 and now.second < 5:
-                cutoff = (now - timedelta(days=30)).timestamp()
-                old = fb_ref.child("candle_history").order_by_child("time").end_at(cutoff).get()
-                if old:
-                    for key in old:
-                        fb_ref.child(f"candle_history/{key}").delete()
-                        
-        except Exception as e:
-            print(f"Price loop error: {e}")
-        time.sleep(2)   # প্রতি ২ সেকেন্ডে প্রাইস আপডেট হয়, কিন্তু ক্যান্ডেল প্রতি মিনিটে তৈরি হয়
 
-threading.Thread(target=update_price_loop, daemon=True).start()
+            # ২. প্রতি মিনিটের শুরুতে মিনিটের ক্যান্ডেল তৈরী এবং Firebase-এ সেভ
+            if last_candle_minute != current_minute:
+                if last_candle_minute is not None:
+                    # মিনিট শেষ হয়ে গেলে, ঐ মিনিটের OHLC ডাটা ফায়ারবেসে সেভ করুন
+                    candle_ref = fb_ref.child(f"candles/minutes/{last_candle_minute.isoformat()}")
+                    candle_ref.set({
+                        "time": int(last_candle_minute.timestamp()),
+                        "open": candle_open,
+                        "high": candle_high,
+                        "low": candle_low,
+                        "close": candle_close
+                    })
+                    print(f"Candle saved for {last_candle_minute}")
+
+                # নতুন মিনিটের জন্য ভ্যারিয়েবল রিসেট করুন
+                candle_open = current_price
+                candle_high = current_price
+                candle_low = current_price
+                candle_close = current_price
+                last_candle_minute = current_minute
+            else:
+                # একই মিনিটের মধ্যে চলমান ক্যান্ডেল আপডেট করুন
+                candle_high = max(candle_high, current_price)
+                candle_low = min(candle_low, current_price)
+                candle_close = current_price
+
+            # ৩. MongoDB-তে লাইভ প্রাইস আপডেট
+            admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": now}})
+
+            time.sleep(1) # প্রতি সেকেন্ডে প্রাইস আপডেট
+        except Exception as e:
+            print(f"Price update error: {e}")
+            time.sleep(5)
 
 # ================= LOGIN REQUIRED DECORATOR =================
 def login_required(f):
@@ -820,6 +825,27 @@ def admin_delete_task():
     return jsonify({"error": "Firebase not configured"}), 500
 
 # ================= API: TRADING =================
+@app.route("/api/candles")
+def get_candles():
+    timeframe = request.args.get("timeframe", "minutes")
+    if not fb_ref:
+        return jsonify({"candles": []})
+    
+    try:
+        candles_data = fb_ref.child(f"candles/{timeframe}").get()
+        candles_list = []
+        if candles_data:
+            for key, candle in candles_data.items():
+                if candle and all(k in candle for k in ["time", "open", "high", "low", "close"]):
+                    candles_list.append(candle)
+            # টাইম স্ট্যাম্প অনুযায়ী সাজানো
+            candles_list.sort(key=lambda x: x["time"])
+        return jsonify({"candles": candles_list})
+    except Exception as e:
+        print(f"Error fetching candles: {e}")
+        return jsonify({"candles": []})
+
+
 @app.route("/api/market/price")
 def market_price():
     admin = get_admin_config()
