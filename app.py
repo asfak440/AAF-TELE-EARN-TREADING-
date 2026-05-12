@@ -840,20 +840,27 @@ def get_candles():
     if not fb_ref:
         return jsonify({"candles": []})
     try:
-        candles_data = fb_ref.child("candles/minutes").get()
+        # candle_history পাথ থেকে সব ক্যান্ডেল নিন
+        candles_data = fb_ref.child("candle_history").order_by_key().get()
         candles_list = []
         if candles_data:
             for key, candle in candles_data.items():
-                if candle and isinstance(candle, dict) and "time" in candle:
-                    candles_list.append({
-                        "time": candle["time"],
-                        "open": candle["open"],
-                        "high": candle["high"],
-                        "low": candle["low"],
-                        "close": candle["close"]
-                    })
+                if candle and isinstance(candle, dict):
+                    # নিশ্চিত করুন সময় integer ও open/high/low/close সংখ্যা
+                    try:
+                        candles_list.append({
+                            "time": int(candle.get("time", 0)),
+                            "open": float(candle.get("open", 1.0)),
+                            "high": float(candle.get("high", 1.0)),
+                            "low": float(candle.get("low", 1.0)),
+                            "close": float(candle.get("close", 1.0))
+                        })
+                    except (ValueError, TypeError):
+                        continue
             candles_list.sort(key=lambda x: x["time"])
-            print(f"✅ {len(candles_list)} candles loaded from Firebase")
+            print(f"✅ {len(candles_list)} candles loaded from candle_history")
+        else:
+            print("⚠️ No candles found in candle_history")
         return jsonify({"candles": candles_list})
     except Exception as e:
         print(f"❌ Candles API error: {e}")
