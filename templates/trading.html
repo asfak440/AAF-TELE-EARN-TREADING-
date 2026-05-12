@@ -197,11 +197,13 @@
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
     </nav>
 <script>
-    const API = window.location.origin;
-let chart, candleSeries, lastPrice = 1.0;
-let userCash = 0, userAAF = 0, currentFee = 0.5;
-let fallbackInterval = null;
-let mockPrice = 1.0;
+
+    
+const API = window.location.origin;
+    let chart, candleSeries, lastPrice = 1.0;
+    let userCash = 0, userAAF = 0, currentFee = 0.5;
+    let fallbackInterval = null;
+    let mockPrice = 1.0;
 
 function getTG() {
     const id = localStorage.getItem("telegram_id");
@@ -265,7 +267,7 @@ async function fetchMarketData() {
     try {
         const priceRes = await fetch(`${API}/api/market/price`, { signal: AbortSignal.timeout(3000) });
         const priceData = await priceRes.json();
-        if (priceData && typeof priceData.price === 'number') {
+        if (priceData && typeof priceData.price === 'number' && priceData.price > 0) {
             lastPrice = priceData.price;
             document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
             if (fallbackInterval) {
@@ -313,7 +315,7 @@ function startFallback() {
                 low: mockPrice * (1 - Math.random() * 0.02),
                 close: mockPrice
             };
-            candleSeries.update(newCandle);
+            if (candleSeries) candleSeries.update(newCandle);
             lastCandleTime = now;
         }
     }, 2000);
@@ -378,8 +380,7 @@ window.addEventListener('load', () => {
     fetchMarketData();
     setInterval(fetchMarketData, 5000);
     setInterval(syncUserData, 10000);
-});
-    
+});  
 </script>
 </body>
     </html>
