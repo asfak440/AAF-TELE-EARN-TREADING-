@@ -23,11 +23,14 @@
         #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
         #chart-container { width: 100%; height: 100%; }
         
+        /* CRITICAL: Hide TradingView Logo */
+        .tv-lightweight-charts-logo { display: none !important; }
+
         /* Theme Toggle Button Over Logo */
         #chart-theme-toggle { 
             position: absolute; left: 10px; bottom: 10px; z-index: 3001; 
-            padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
-            background: #1e293b; color: white; font-size: 10px; font-weight: bold;
+            padding: 4px px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
+            background: #1e293b; color: white; display: flex; align-items: center; gap: 6px;
         }
 
         /* Responsive UI Elements */
@@ -49,10 +52,15 @@
         .fee-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
         .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; }
         .buy { background: var(--green); color: #000; }
         .sell { background: var(--red); color: #fff; }
         .btn:disabled { opacity: 0.3; filter: grayscale(1); }
+        .btn:active { transform: scale(0.95); }
+
+        /* Dashboard-Style Notification Bar */
+        #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.4s forwards; }
+        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 80px; opacity: 1; } }
 
         .bottom-nav { position: fixed; bottom: 15px; left: 5%; width: 90%; height: 60px; background: rgba(15,23,42,0.95); backdrop-filter: blur(15px); border-radius: 30px; border: 1px solid rgba(0,242,254,0.2); display: flex; justify-content: space-around; align-items: center; z-index: 2000; }
         .nav-item { text-decoration: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; }
@@ -62,17 +70,12 @@
     </style>
 </head>
 <body>
-    <!-- পপ-আপ বার (ড্যাশবোর্ডের মতো) -->
-<div id="active-user-bar" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.5s forwards;">
-    <i class="fas fa-bolt" style="color: #00ff88;"></i>
-    <span id="popup-text" style="font-size: 12px; font-weight: bold; color: #fff;"></span>
-</div>
+    <!-- Notification Bar -->
+    <div id="active-user-bar">
+        <i class="fas fa-bolt" style="color: var(--cyan);"></i>
+        <span id="popup-text" style="font-size: 12px; color: #fff; font-weight: bold;"></span>
+    </div>
 
-<!-- এনিমেশন স্টাইল -->
-<style>
-@keyframes slideDown { from { top: -50px; } to { top: 80px; } }
-</style>
-    
     <header class="header">
         <h2 style="font-size: 12px; margin: 0;">AAF TRADING</h2>
         <span id="live-price" style="font-size: 12px; color: var(--green);">৳ 0.0000</span>
@@ -89,15 +92,16 @@
         <button class="tf-btn">1H</button>
         <button class="tf-btn">4H</button>
         <button class="tf-btn">1D</button>
+        
     </div>
-
-    <div id="chart-wrapper">
-        <div id="chart-theme-toggle">
-            <img src="IMG_20260513_040838_796.jpg" alt="AAF Logo" style="width: 25px; height: auto; border-radius: 2px;">
-            <span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold; font-family: 'Rajdhani';">DARK</span>
-        </div>
-        <div id="chart-container"></div>
+<div id="chart-wrapper">
+    <div id="chart-theme-toggle">
+        <img src="/static/logo.png" alt="AAF" style="width: 20px; height: 20px; border-radius: 3px;">
+        <span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold; font-family: 'Rajdhani';">DARK</span>
     </div>
+    <div id="chart-container"></div>
+</div>
+    
 
     <div class="container">
         <div class="stat-grid">
@@ -138,6 +142,14 @@
         let chart, candleSeries, lastPrice = 1.0;
         let userCash = 0, userAAF = 0, currentFee = 0.5;
         let isDarkMode = true;
+
+        // Custom Notification Function
+        function triggerPopup(msg) {
+            const bar = document.getElementById('active-user-bar');
+            document.getElementById('popup-text').innerText = msg;
+            bar.style.display = "flex";
+            setTimeout(() => { bar.style.display = "none"; }, 3000);
+        }
 
         function initChart() {
             const container = document.getElementById('chart-container');
@@ -207,78 +219,90 @@
             } catch(e) {}
         }
 
-        // ১. ইউজার ডাটা সিঙ্ক করার ফাংশন
-async function syncUserData() {
-    try {
-        // ড্যাশবোর্ড কোড অনুযায়ী এখানে 'telegram_id' ব্যবহার করা হয়েছে
-        const token = localStorage.getItem('telegram_id'); 
-        
-        if (!token) {
-            console.error("লগইন টোকেন (telegram_id) পাওয়া যায়নি।");
-            return;
+        async function syncUserData() {
+            try {
+                const token = localStorage.getItem('token'); 
+                const res = await fetch(`${API}/api/user/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`, 
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    userCash = data.user.cash || 0;
+                    userAAF = data.user.aaf || 0;
+                    currentFee = data.admin.trading_fee || 0.5;
+                    document.getElementById('fee-perc').innerText = currentFee;
+                    document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text;
+                    document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+                    document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+                    calculate(); 
+                }
+            } catch(e) { console.error("Data Sync Error", e); }
         }
-        
-        const res = await fetch(`${API}/api/user/me`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            // সেশন এবং কুকি সাপোর্ট করার জন্য এটি গুরুত্বপূর্ণ
-            credentials: "include" 
-        });
-        
-        const data = await res.json();
-        
-        if (data.status === "success") {
-            userCash = data.user.cash || 0;
-            userAAF = data.user.aaf || 0;
-            currentFee = data.admin.trading_fee || 0.5;
-            
-            // UI আপডেট
-            document.getElementById('fee-perc').innerText = currentFee;
-            const adEl = document.getElementById('admin-ad-text');
-            if(adEl) adEl.innerText = data.admin.trading_ad_text || "Welcome to Trading";
-            
-            document.getElementById('user-cash').innerText = `৳ ${parseFloat(userCash).toFixed(2)}`;
-            document.getElementById('user-aaf').innerText = parseFloat(userAAF).toFixed(2);
-            
-            // ক্যালকুলেশন আপডেট
-            calculate(); 
-        } else if (data.message === "session_expired") {
-            alert("সেশন শেষ হয়ে গেছে, দয়া করে আবার লগইন করুন।");
-            window.location.href = "/login";
-        }
-    } catch(e) {
-        console.error("ডাটা সিঙ্ক করতে সমস্যা হয়েছে:", e);
-    }
-}
 
-// ২. ট্রেড এক্সিকিউট করার ফাংশন
-async function executeTrade(type) {
-    // ... আপনার আগের কোড ...
-    
-    // উদাহরন: যদি ইউজার জয়েন না থাকে বা ব্যালেন্স কম থাকে
-    if (userCash < totalCost) {
-        triggerPopup("❌ আপনার ব্যালেন্স অপর্যাপ্ত!"); // এখানে অ্যানিমেশন আসবে
-        return;
-    }
+        const tkIn = document.getElementById('taka-input');
+        const coIn = document.getElementById('coin-input');
+        const buyBtn = document.getElementById('buy-btn');
+        const sellBtn = document.getElementById('sell-btn');
 
-    try {
-        const res = await fetch(`${API}/api/trade/execute`, { ... });
-        const data = await res.json();
-        
-        if(data.status === "success") {
-            triggerPopup("✅ ট্রেড সফল হয়েছে!"); // এখানেও অ্যানিমেশন আসবে
-        } else {
-            triggerPopup("❌ " + data.message); 
+        function calculate() {
+            let tk = parseFloat(tkIn.value) || 0;
+            let fee = tk * currentFee / 100;
+            let total = tk + fee;
+            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+            document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
+            buyBtn.disabled = !(tk >= 10 && total <= userCash);
+            sellBtn.disabled = !(parseFloat(coIn.value) <= userAAF && parseFloat(coIn.value) > 0);
         }
-        syncUserData(); 
-    } catch(e) { 
-        triggerPopup("❌ সার্ভার কানেকশন এরর!"); 
-    }
-}
-        
-        
+
+        tkIn.oninput = () => { coIn.value = (tkIn.value / lastPrice).toFixed(4); calculate(); };
+        coIn.oninput = () => { tkIn.value = (coIn.value * lastPrice).toFixed(2); calculate(); };
+
+        async function executeTrade(type) {
+            const token = localStorage.getItem('token');
+            const takaVal = parseFloat(tkIn.value);
+            const coinVal = parseFloat(coIn.value);
+            if (!takaVal || takaVal <= 0) {
+                triggerPopup("❌ সঠিক পরিমাণ লিখুন");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/api/trade/execute`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ type: type.toLowerCase(), taka: takaVal, coin: coinVal, price: lastPrice })
+                });
+                const data = await res.json();
+                if(data.status === "success") {
+                    triggerPopup("✅ ট্রেড সফল হয়েছে!");
+                } else {
+                    triggerPopup("❌ " + data.message); 
+                }
+                syncUserData(); 
+            } catch(e) { triggerPopup("❌ সার্ভার কানেকশন এরর!"); }
+        }
+
+        buyBtn.onclick = () => executeTrade('BUY');
+        sellBtn.onclick = () => executeTrade('SELL');
+
+        document.getElementById('chart-theme-toggle').onclick = function() {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                chart.applyOptions({ layout: { background: { color: '#000000' }, textColor: '#d1d4dc' } });
+                this.innerHTML = `<img src="IMG_20260513_040838_796.jpg" alt="AAF Logo" style="width: 20px; height: 20px; border-radius: 3px;"><span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold; font-family: 'Rajdhani';">DARK</span>`;
+                this.style.background = "#1e293b";
+            } else {
+                chart.applyOptions({ layout: { background: { color: '#ffffff' }, textColor: '#191919' } });
+                this.innerHTML = `<img src="IMG_20260513_040838_796.jpg" alt="AAF Logo" style="width: 20px; height: 20px; border-radius: 3px;"><span id="theme-status" style="font-size: 9px; color: #191919; font-weight: bold; font-family: 'Rajdhani';">LIGHT</span>`;
+                this.style.background = "#f1f5f9";
+                this.style.color = "#000";
+            }
+        };
+
         window.onload = () => {
             initChart();
             loadHistoricalCandles();
@@ -288,19 +312,7 @@ async function executeTrade(type) {
             setInterval(fetchLiveCandle, 10000);
             setInterval(syncUserData, 30000);
         };
-
-        function triggerPopup(message) {
-    const bar = document.getElementById('active-user-bar');
-    const text = document.getElementById('popup-text');
-    if (!bar || !text) return;
-    text.innerText = message;
-    bar.style.display = "flex";
-    setTimeout(() => {
-        bar.style.display = "none";
-    }, 3000); // ৩ সেকেন্ড পর অটো চলে যাবে
-        }
-        
     </script>
 </body>
 </html>
-    
+        
