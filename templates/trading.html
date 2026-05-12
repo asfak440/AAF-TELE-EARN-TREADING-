@@ -62,6 +62,17 @@
     </style>
 </head>
 <body>
+    <!-- পপ-আপ বার (ড্যাশবোর্ডের মতো) -->
+<div id="active-user-bar" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.5s forwards;">
+    <i class="fas fa-bolt" style="color: #00ff88;"></i>
+    <span id="popup-text" style="font-size: 12px; font-weight: bold; color: #fff;"></span>
+</div>
+
+<!-- এনিমেশন স্টাইল -->
+<style>
+@keyframes slideDown { from { top: -50px; } to { top: 80px; } }
+</style>
+    
     <header class="header">
         <h2 style="font-size: 12px; margin: 0;">AAF TRADING</h2>
         <span id="live-price" style="font-size: 12px; color: var(--green);">৳ 0.0000</span>
@@ -196,118 +207,78 @@
             } catch(e) {}
         }
 
-        // নতুন syncUserData ফাংশন টোকেন সহ
-        async function syncUserData() {
-            try {
-                const token = localStorage.getItem('token'); 
-                
-                const res = await fetch(`${API}/api/user/me`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`, 
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = await res.json();
-                
-                if (data.status === "success") {
-                    userCash = data.user.cash || 0;
-                    userAAF = data.user.aaf || 0;
-                    currentFee = data.admin.trading_fee || 0.5;
-                    
-                    document.getElementById('fee-perc').innerText = currentFee;
-                    document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text;
-                    document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
-                    document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-                    
-                    calculate(); 
-                } else if (data.message === "User not found") {
-                    console.error("ইউজার সেশন পাওয়া যায়নি। দয়া করে আবার লগইন করুন।");
-                }
-            } catch(e) {
-                console.error("ডাটা সিঙ্ক করতে সমস্যা হয়েছে:", e);
-            }
+        // ১. ইউজার ডাটা সিঙ্ক করার ফাংশন
+async function syncUserData() {
+    try {
+        // ড্যাশবোর্ড কোড অনুযায়ী এখানে 'telegram_id' ব্যবহার করা হয়েছে
+        const token = localStorage.getItem('telegram_id'); 
+        
+        if (!token) {
+            console.error("লগইন টোকেন (telegram_id) পাওয়া যায়নি।");
+            return;
         }
-
-        // Calculation Logic
-        const tkIn = document.getElementById('taka-input');
-        const coIn = document.getElementById('coin-input');
-        const buyBtn = document.getElementById('buy-btn');
-        const sellBtn = document.getElementById('sell-btn');
-
-        function calculate() {
-            let tk = parseFloat(tkIn.value) || 0;
-            let fee = tk * currentFee / 100;
-            let total = tk + fee;
-            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-            document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
-            buyBtn.disabled = !(tk >= 10 && total <= userCash);
-            sellBtn.disabled = !(parseFloat(coIn.value) <= userAAF && parseFloat(coIn.value) > 0);
-        }
-
-        tkIn.oninput = () => { coIn.value = (tkIn.value / lastPrice).toFixed(4); calculate(); };
-        coIn.oninput = () => { tkIn.value = (coIn.value * lastPrice).toFixed(2); calculate(); };
-
-        // নতুন executeTrade ফাংশন টোকেন সহ
-        async function executeTrade(type) {
-            const token = localStorage.getItem('token');
+        
+        const res = await fetch(`${API}/api/user/me`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // সেশন এবং কুকি সাপোর্ট করার জন্য এটি গুরুত্বপূর্ণ
+            credentials: "include" 
+        });
+        
+        const data = await res.json();
+        
+        if (data.status === "success") {
+            userCash = data.user.cash || 0;
+            userAAF = data.user.aaf || 0;
+            currentFee = data.admin.trading_fee || 0.5;
             
-            const takaVal = parseFloat(tkIn.value);
-            const coinVal = parseFloat(coIn.value);
+            // UI আপডেট
+            document.getElementById('fee-perc').innerText = currentFee;
+            const adEl = document.getElementById('admin-ad-text');
+            if(adEl) adEl.innerText = data.admin.trading_ad_text || "Welcome to Trading";
             
-            if (!takaVal || takaVal <= 0) {
-                alert("সঠিক পরিমাণ লিখুন");
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API}/api/trade/execute`, {
-                    method: 'POST', 
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
-                    },
-                    body: JSON.stringify({
-                        type: type.toLowerCase(),
-                        taka: takaVal,
-                        coin: coinVal,
-                        price: lastPrice
-                    })
-                });
-                
-                const data = await res.json();
-                
-                if(data.status === "success") {
-                    alert("ট্রেড সফল হয়েছে!");
-                } else {
-                    alert(data.message); 
-                }
-                
-                syncUserData(); 
-            } catch(e) { 
-                alert("সার্ভার কানেকশন এরর!"); 
-            }
+            document.getElementById('user-cash').innerText = `৳ ${parseFloat(userCash).toFixed(2)}`;
+            document.getElementById('user-aaf').innerText = parseFloat(userAAF).toFixed(2);
+            
+            // ক্যালকুলেশন আপডেট
+            calculate(); 
+        } else if (data.message === "session_expired") {
+            alert("সেশন শেষ হয়ে গেছে, দয়া করে আবার লগইন করুন।");
+            window.location.href = "/login";
         }
+    } catch(e) {
+        console.error("ডাটা সিঙ্ক করতে সমস্যা হয়েছে:", e);
+    }
+}
 
-        buyBtn.onclick = () => executeTrade('BUY');
-        sellBtn.onclick = () => executeTrade('SELL');
+// ২. ট্রেড এক্সিকিউট করার ফাংশন
+async function executeTrade(type) {
+    // ... আপনার আগের কোড ...
+    
+    // উদাহরন: যদি ইউজার জয়েন না থাকে বা ব্যালেন্স কম থাকে
+    if (userCash < totalCost) {
+        triggerPopup("❌ আপনার ব্যালেন্স অপর্যাপ্ত!"); // এখানে অ্যানিমেশন আসবে
+        return;
+    }
 
-        // Theme Toggle
-        document.getElementById('chart-theme-toggle').onclick = function() {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                chart.applyOptions({ layout: { background: { color: '#000000' }, textColor: '#d1d4dc' } });
-                this.innerHTML = `<img src="IMG_20260513_040838_796.jpg" alt="AAF Logo" style="width: 25px; height: auto; border-radius: 2px;"><span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold; font-family: 'Rajdhani';">DARK</span>`;
-                this.style.background = "#1e293b";
-            } else {
-                chart.applyOptions({ layout: { background: { color: '#ffffff' }, textColor: '#191919' } });
-                this.innerHTML = `<img src="IMG_20260513_040838_796.jpg" alt="AAF Logo" style="width: 25px; height: auto; border-radius: 2px;"><span id="theme-status" style="font-size: 9px; color: #191919; font-weight: bold; font-family: 'Rajdhani';">LIGHT</span>`;
-                this.style.background = "#f1f5f9";
-                this.style.color = "#000";
-            }
-        };
-
+    try {
+        const res = await fetch(`${API}/api/trade/execute`, { ... });
+        const data = await res.json();
+        
+        if(data.status === "success") {
+            triggerPopup("✅ ট্রেড সফল হয়েছে!"); // এখানেও অ্যানিমেশন আসবে
+        } else {
+            triggerPopup("❌ " + data.message); 
+        }
+        syncUserData(); 
+    } catch(e) { 
+        triggerPopup("❌ সার্ভার কানেকশন এরর!"); 
+    }
+}
+        
+        
         window.onload = () => {
             initChart();
             loadHistoricalCandles();
@@ -317,6 +288,18 @@
             setInterval(fetchLiveCandle, 10000);
             setInterval(syncUserData, 30000);
         };
+
+        function triggerPopup(message) {
+    const bar = document.getElementById('active-user-bar');
+    const text = document.getElementById('popup-text');
+    if (!bar || !text) return;
+    text.innerText = message;
+    bar.style.display = "flex";
+    setTimeout(() => {
+        bar.style.display = "none";
+    }, 3000); // ৩ সেকেন্ড পর অটো চলে যাবে
+        }
+        
     </script>
 </body>
 </html>
