@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vconsole"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&display=swap');
@@ -33,53 +34,50 @@
             overflow-x: hidden;
         }
 
-
-
-    /* হেডার, অ্যাড এবং চার্ট স্থির করার ম্যাজিক কোড */
+        /* হেডার, অ্যাড এবং চার্ট স্থির করার কোড */
         .header { 
-    position: fixed; top: 0; left: 0; width: 95%; height: 30px;
-    z-index: 3000; background: #0f172a; display: flex; 
-    justify-content: space-between; align-items: center; padding: 0 10px;
-}
-#admin-ad-box {
-    position: fixed; top: 30px; left: 0; width: 100%; height: 20px;
-    background: #1e293b; z-index: 2999; display: flex; align-items: center;
-}
-.tf-bar { 
-    position: fixed; top: 50px; left: 0; width: 100%; height: 15px;
-    z-index: 2998; background: #000; display: flex; gap: 4px; padding: 5px;
-}
-.tf-btn { 
-    background: #1e293b; border: 1px solid rgba(255,255,255,0.1); 
-    color: #94a3b8; padding: 4px 5px; border-radius: 2px; 
-    font-size: 10px; cursor: pointer; white-space: nowrap;
-}
-.tf-btn.active { border-color: #00f2fe; color: #00f2fe; background: rgba(0, 242, 254, 0.1); }
-#chart-container { 
-    position: fixed; top: 70px; left: 0; width: 100%; height: 250px; 
-    z-index: 2997; background: #000;
-}
-.container { 
-    padding-top: 320px; padding-bottom: 100px; max-width: 330px; margin: auto;
-}
+            position: fixed; top: 0; left: 0; width: 95%; height: 30px;
+            z-index: 3000; background: #0f172a; display: flex; 
+            justify-content: space-between; align-items: center; padding: 0 10px;
+        }
+        #admin-ad-box {
+            position: fixed; top: 30px; left: 0; width: 100%; height: 20px;
+            background: #1e293b; z-index: 2999; display: flex; align-items: center;
+        }
+        .tf-bar { 
+            position: fixed; top: 50px; left: 0; width: 100%; height: 15px;
+            z-index: 2998; background: #000; display: flex; gap: 4px; padding: 5px;
+        }
+        .tf-btn { 
+            background: #1e293b; border: 1px solid rgba(255,255,255,0.1); 
+            color: #94a3b8; padding: 4px 5px; border-radius: 2px; 
+            font-size: 10px; cursor: pointer; white-space: nowrap;
+        }
+        .tf-btn.active { border-color: #00f2fe; color: #00f2fe; background: rgba(0, 242, 254, 0.1); }
+        #chart-container { 
+            position: fixed; top: 70px; left: 0; width: 100%; height: 250px; 
+            z-index: 2997; background: #000;
+        }
+        .container { 
+            padding-top: 320px; padding-bottom: 100px; max-width: 330px; margin: auto;
+        }
 
         /* কম্প্যাক্ট ডিজাইন – ড্যাশবোর্ড স্টাইলে */
-.header h2 { font-size: 10px !important; }
-#live-price { font-size: 10px !important; }
-#admin-ad-box marquee { font-size: 9px !important; }
-.tf-btn { padding: 2px 4px !important; font-size: 8px !important; }
-.stat-card { padding: 8px !important; }
-.stat-card span { font-size: 9px !important; }
-.stat-card b { font-size: 14px !important; }
-.input-box input { padding: 8px !important; font-size: 14px !important; }
-.input-box span { font-size: 8px !important; top: 12px !important; }
-.fee-card { padding: 8px !important; }
-.fee-row { font-size: 10px !important; }
-.btn { padding: 8px !important; font-size: 10px !important; }
-.bottom-nav { height: 55px !important; }
-.nav-item i { font-size: 16px !important; }
-.nav-item span { font-size: 8px !important; }
-        
+        .header h2 { font-size: 10px !important; }
+        #live-price { font-size: 10px !important; }
+        #admin-ad-box marquee { font-size: 9px !important; }
+        .tf-btn { padding: 2px 4px !important; font-size: 8px !important; }
+        .stat-card { padding: 8px !important; }
+        .stat-card span { font-size: 9px !important; }
+        .stat-card b { font-size: 14px !important; }
+        .input-box input { padding: 8px !important; font-size: 14px !important; }
+        .input-box span { font-size: 8px !important; top: 12px !important; }
+        .fee-card { padding: 8px !important; }
+        .fee-row { font-size: 10px !important; }
+        .btn { padding: 8px !important; font-size: 10px !important; }
+        .bottom-nav { height: 55px !important; }
+        .nav-item i { font-size: 16px !important; }
+        .nav-item span { font-size: 8px !important; }
         
         /* Stats */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -89,7 +87,6 @@
 
         /* Trade Box & Lock Overlay */
         .trade-box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); position: relative; overflow: hidden; }
-        
         #lock-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.98); z-index: 500;
@@ -141,9 +138,9 @@
     </header>
     
     <div id="admin-ad-box">
-    <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 12px; width: 100%;">
-        অ্যাডমিন প্যানেল থেকে ঘোষণা এখানে লোড হবে...
-    </marquee>
+        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 12px; width: 100%;">
+            অ্যাডমিন প্যানেল থেকে ঘোষণা এখানে লোড হবে...
+        </marquee>
     </div>
 
     <div class="tf-bar" id="timeframe-bar">
@@ -172,7 +169,7 @@
 
             <div class="input-group">
                 <div class="input-box"><input type="number" id="taka-input" placeholder="0.00"><span>BDT</span></div>
-            <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
                 <div class="input-box"><input type="number" id="coin-input" placeholder="0.00"><span>AAF</span></div>
             </div>
             
@@ -183,8 +180,8 @@
             </div>
 
             <div class="btn-group">
-                <button id="buy-btn" class="btn buy" onclick="executeTrade('BUY')">BUY SPOT</button>
-                <button id="sell-btn" class="btn sell" onclick="executeTrade('SELL')">SELL SPOT</button>
+                <button id="buy-btn" class="btn buy">BUY SPOT</button>
+                <button id="sell-btn" class="btn sell">SELL SPOT</button>
             </div>
         </div>
     </div>
@@ -197,23 +194,21 @@
         <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i><span>Profile</span></a>
     </nav>
 
-    <script src="https://cdn.jsdelivr.net/npm/vconsole"></script>
     <script>
-      var vConsole = new VConsole();
-    <script>
-        // ======================= ব্যাকএন্ডের api/candles ব্যবহার করে চার্ট তৈরি =======================
+        // ডিবাগ কনসোল (VConsole)
+        var vConsole = new VConsole();
+
+        // ======================= সমন্বিত ট্রেডিং লজিক (কার্যকরী) =======================
         const API = window.location.origin;
         let chart, candleSeries, lastPrice = 1.0;
         let userCash = 0, userAAF = 0, currentFee = 0.5;
         let fallbackInterval = null;
 
-        // চার্ট ইনিশিয়ালাইজ
         function initChart() {
             const container = document.getElementById('chart-container');
             if (!container) return;
             container.style.height = '240px';
             container.style.width = '100%';
-            container.style.display = 'block';
             chart = LightweightCharts.createChart(container, {
                 layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
                 timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
@@ -229,34 +224,40 @@
             });
         }
 
-        // ঐতিহাসিক ক্যান্ডেল ডাটা লোড (আপনার ব্যাকএন্ডের /api/candles ব্যবহার করে)
+        // 🔹 মূল ফাংশন: /api/candles থেকে ঐতিহাসিক ক্যান্ডেল লোড
         async function loadHistoricalCandles() {
             try {
                 const res = await fetch(`${API}/api/candles`);
                 const data = await res.json();
-                if (data.candles && data.candles.length) {
-                    // নিশ্চিত করুন ক্যান্ডেলের ফরম্যাট { time, open, high, low, close }
-                    candleSeries.setData(data.candles);
-                    chart.timeScale().fitContent();
-                    console.log(`হিস্টরিক্যাল ক্যান্ডেল লোড হয়েছে: ${data.candles.length} টি`);
-                    return true;
+                console.log("📊 Historical candles response:", data);
+                if (data.candles && Array.isArray(data.candles) && data.candles.length > 0) {
+                    const valid = data.candles.every(c => c.time && typeof c.open === 'number' && typeof c.high === 'number' && typeof c.low === 'number' && typeof c.close === 'number');
+                    if (valid) {
+                        candleSeries.setData(data.candles);
+                        chart.timeScale().fitContent();
+                        console.log(`✅ ঐতিহাসিক ক্যান্ডেল লোড সফল: ${data.candles.length} টি`);
+                        return true;
+                    } else {
+                        console.warn("ক্যান্ডেল ডাটার ফরম্যাট ভুল", data.candles[0]);
+                        throw new Error("Invalid candle format");
+                    }
                 } else {
-                    throw new Error("No candles");
+                    throw new Error("No candles array");
                 }
             } catch(e) {
-                console.warn("হিস্টরিক্যাল ডাটা লোড ব্যর্থ, মক ডাটা ব্যবহার করা হচ্ছে", e);
-                // ব্যাকএন্ড কাজ না করলে মক ডাটা দেখান (যাতে চার্ট ফাঁকা না থাকে)
+                console.error("❌ /api/candles ব্যর্থ:", e);
+                // মক ডাটা দেখান (চার্ট ফাঁকা রাখবেন না)
                 const now = Math.floor(Date.now() / 1000);
                 const baseTime = now - 380;
-                const candlesticks = [];
+                const mockCandles = [];
                 let lastClose = 1.20;
-                for (let i = 0; i < 20; i++) {
+                for (let i = 0; i < 25; i++) {
                     let open = lastClose;
                     let high = open + (Math.random() * 0.06);
                     let low = open - (Math.random() * 0.05);
                     let close = (high + low) / 2 + (Math.random() * 0.02 - 0.01);
                     close = Math.min(high, Math.max(low, close));
-                    candlesticks.push({
+                    mockCandles.push({
                         time: baseTime + (i * 20),
                         open: parseFloat(open.toFixed(4)),
                         high: parseFloat(high.toFixed(4)),
@@ -265,30 +266,30 @@
                     });
                     lastClose = close;
                 }
-                candleSeries.setData(candlesticks);
+                candleSeries.setData(mockCandles);
                 chart.timeScale().fitContent();
+                console.log("⚠️ মক ক্যান্ডেল ব্যবহার করা হয়েছে (ব্যাকএন্ড ডাউন)");
                 return false;
             }
         }
 
-        // লাইভ ক্যান্ডেল আপডেট (শুধু সর্বশেষ ক্যান্ডেল)
         async function fetchLiveCandle() {
             try {
                 const res = await fetch(`${API}/api/market/live-candle`);
                 const candle = await res.json();
-                if (candle && candle.time && !isNaN(candle.open)) {
+                if (candle && candle.time && typeof candle.open === 'number') {
                     candleSeries.update({
                         time: Number(candle.time),
-                        open: parseFloat(candle.open),
-                        high: parseFloat(candle.high),
-                        low: parseFloat(candle.low),
-                        close: parseFloat(candle.close)
+                        open: candle.open,
+                        high: candle.high,
+                        low: candle.low,
+                        close: candle.close
                     });
+                    console.log("🕯️ লাইভ ক্যান্ডেল আপডেট:", candle.time);
                 }
-            } catch(e) { console.warn("লাইভ ক্যান্ডেল ফেচ ব্যর্থ", e); }
+            } catch(e) { console.warn("লাইভ ক্যান্ডেল ব্যর্থ", e); }
         }
 
-        // লাইভ প্রাইস আপডেট
         async function fetchPrice() {
             try {
                 const res = await fetch(`${API}/api/market/price`);
@@ -298,7 +299,7 @@
                     document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
                     if (fallbackInterval) { clearInterval(fallbackInterval); fallbackInterval = null; }
                 } else {
-                    throw new Error("Invalid price");
+                    throw new Error("No price");
                 }
             } catch(e) {
                 console.warn("প্রাইস ফেচ ব্যর্থ, ফলব্যাক শুরু", e);
@@ -306,7 +307,6 @@
             }
         }
 
-        // ফলব্যাক প্রাইস সিমুলেশন
         function startFallback() {
             if (fallbackInterval) clearInterval(fallbackInterval);
             let mockPrice = lastPrice || 1.0;
@@ -318,7 +318,6 @@
             }, 2000);
         }
 
-        // ইউজার ব্যালেন্স সিঙ্ক
         async function syncUserData() {
             try {
                 const res = await fetch(`${API}/api/user/me`, { credentials: "include" });
@@ -331,7 +330,7 @@
                     document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text || "Welcome to Trading";
                 } else throw new Error("No user");
             } catch(e) {
-                console.warn("ব্যালেন্স সিঙ্ক ব্যর্থ, মক ডাটা ব্যবহার", e);
+                console.warn("ব্যালেন্স সিঙ্ক ব্যর্থ, মক ডাটা", e);
                 userCash = 100.00; userAAF = 50.00;
             }
             document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
@@ -339,7 +338,6 @@
             calculateLogic();
         }
 
-        // ক্যালকুলেশন ও বাটন সক্রিয়তা
         const tkIn = document.getElementById('taka-input');
         const coIn = document.getElementById('coin-input');
         const buyBtn = document.getElementById('buy-btn');
@@ -364,16 +362,13 @@
             calculateLogic();
         };
 
-        // ট্রেড এক্সিকিউট
         async function executeTrade(type) {
             const side = type.toLowerCase();
             if (side === 'buy' && buyBtn.disabled) return alert("পর্যাপ্ত টাকা নেই (সর্বনিম্ন ১০ টাকা)");
             if (side === 'sell' && sellBtn.disabled) return alert("পর্যাপ্ত AAF নেই");
             try {
                 const res = await fetch(`${API}/api/trade/execute`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                     body: JSON.stringify({
                         telegram_id: localStorage.getItem('telegram_id'),
                         type: side,
@@ -385,8 +380,7 @@
                 const data = await res.json();
                 alert(data.message);
                 await syncUserData();
-                tkIn.value = '';
-                coIn.value = '';
+                tkIn.value = ''; coIn.value = '';
                 calculateLogic();
             } catch(e) { alert("ট্রেড ব্যর্থ: " + e.message); }
         }
@@ -394,16 +388,15 @@
         buyBtn.onclick = () => executeTrade('BUY');
         sellBtn.onclick = () => executeTrade('SELL');
 
-        // পেজ লোড হলে সব শুরু
         window.addEventListener('load', async () => {
             initChart();
-            await loadHistoricalCandles();   // চার্টে ক্যান্ডেল দেখাবে
+            await loadHistoricalCandles();   // চার্ট লোড (হিস্টরি)
             await syncUserData();
             await fetchPrice();
             await fetchLiveCandle();
             setInterval(fetchPrice, 5000);
             setInterval(fetchLiveCandle, 10000);
-            setInterval(syncUserData, 15000);
+            setInterval(syncUserData, 20000);
         });
     </script>
 </body>
