@@ -220,14 +220,21 @@
         container.style.width = '100%';
 
         chart = LightweightCharts.createChart(container, {
-            layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
-            timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-            width: container.clientWidth,
-            height: 240
-        });
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#00ff88', downColor: '#ff3366', borderVisible: false
-        });
+    layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
+    timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+    autoSize: true
+});
+
+// 👇 এখানে বসবে
+new ResizeObserver(() => {
+    chart.timeScale().fitContent();
+}).observe(container);
+
+candleSeries = chart.addCandlestickSeries({
+    upColor: '#00ff88',
+    downColor: '#ff3366',
+    borderVisible: false
+});
 
         // প্রাথমিক মক ক্যান্ডেল (যাতে চার্ট খালি না থাকে)
         const now = Math.floor(Date.now() / 1000);
@@ -243,7 +250,7 @@
             chart.applyOptions({ width: container.clientWidth });
             chart.timeScale().fitContent();
         });
-                }
+    }
 
     async function syncUserData() {
         try {
