@@ -173,10 +173,16 @@ current_price = 1.0
 def update_price_loop():
     global current_price
     last_candle_minute = None
+    candle_open = current_price  # এখানে ভ্যারিয়েবল তৈরি করুন
+    candle_high = current_price
+    candle_low = current_price
+    candle_close = current_price
+
     while True:
         try:
             now = datetime.utcnow()
             current_minute = now.replace(second=0, microsecond=0)
+
             # ১. লাইভ প্রাইস র‍্যান্ডম আপডেট
             change = random.uniform(-0.005, 0.005)
             current_price += change
@@ -186,15 +192,16 @@ def update_price_loop():
             if last_candle_minute != current_minute:
                 if last_candle_minute is not None:
                     # মিনিট শেষ হয়ে গেলে, ঐ মিনিটের OHLC ডাটা ফায়ারবেসে সেভ করুন
-                    candle_ref = fb_ref.child(f"candles/minutes/{last_candle_minute.isoformat()}")
-                    candle_ref.set({
-                        "time": int(last_candle_minute.timestamp()),
-                        "open": candle_open,
-                        "high": candle_high,
-                        "low": candle_low,
-                        "close": candle_close
-                    })
-                    print(f"Candle saved for {last_candle_minute}")
+                    if fb_ref:
+                        candle_ref = fb_ref.child(f"candles/minutes/{last_candle_minute.isoformat()}")
+                        candle_ref.set({
+                            "time": int(last_candle_minute.timestamp()),
+                            "open": candle_open,
+                            "high": candle_high,
+                            "low": candle_low,
+                            "close": candle_close
+                        })
+                        print(f"Candle saved for {last_candle_minute}")
 
                 # নতুন মিনিটের জন্য ভ্যারিয়েবল রিসেট করুন
                 candle_open = current_price
@@ -203,7 +210,7 @@ def update_price_loop():
                 candle_close = current_price
                 last_candle_minute = current_minute
             else:
-                # একই মিনিটের মধ্যে চলমান ক্যান্ডেল আপডেট করুন
+                # একই মিনিটের মধ্যে চলমান ক্যান্ডেল আপডেট করুন (শুধু মেমরিতে)
                 candle_high = max(candle_high, current_price)
                 candle_low = min(candle_low, current_price)
                 candle_close = current_price
@@ -215,6 +222,9 @@ def update_price_loop():
         except Exception as e:
             print(f"Price update error: {e}")
             time.sleep(5)
+
+# ব্যাকগ্রাউন্ডে প্রাইস আপডেট লুপ চালু করুন
+threading.Thread(target=update_price_loop, daemon=True).start()
 
 # ================= LOGIN REQUIRED DECORATOR =================
 def login_required(f):
@@ -827,18 +837,16 @@ def admin_delete_task():
 # ================= API: TRADING =================
 @app.route("/api/candles")
 def get_candles():
-    timeframe = request.args.get("timeframe", "minutes")
     if not fb_ref:
         return jsonify({"candles": []})
-    
     try:
-        candles_data = fb_ref.child(f"candles/{timeframe}").get()
+        # এখানে পাথ ঠিক করুন
+        candles_data = fb_ref.child("candles/minutes").get()
         candles_list = []
         if candles_data:
             for key, candle in candles_data.items():
                 if candle and all(k in candle for k in ["time", "open", "high", "low", "close"]):
                     candles_list.append(candle)
-            # টাইম স্ট্যাম্প অনুযায়ী সাজানো
             candles_list.sort(key=lambda x: x["time"])
         return jsonify({"candles": candles_list})
     except Exception as e:
@@ -856,54 +864,18 @@ def market_price():
 
 @app.route("/api/market/live-candle")
 def live_candle():
-    # সবার আগে একটি ডিফল্ট ভালো ক্যান্ডেল
+    # এখানে লাইভ ক্যান্ডেল তৈরি করুন সবথেকে সহজ উপায়ে
     now = int(datetime.utcnow().timestamp())
-    default_candle = {
+    # বর্তমান চলমান ক্যান্ডেলের জন্য ডামি ডাটা
+    # আপনি চাইলে এখানে আপনার update_price_loop ফাংশনের চলমান ডাটা ব্যবহার করতে পারেন
+    dummy_candle = {
         "time": now,
-        "open": 1.02,
-        "high": 1.05,
-        "low": 1.00,
-        "close": 1.03
+        "open": current_price,
+        "high": current_price,
+        "low": current_price,
+        "close": current_price
     }
-    try:
-        if not fb_ref:
-            return jsonify(default_candle)
-        candles = fb_ref.child("candle_history").order_by_key().limit_to_last(1).get()
-        if candles:
-            last_key = list(candles.keys())[-1]
-            candle = candles[last_key]
-            # নিরাপদে সব ফিল্ড বের করা
-            return jsonify({
-                "time": int(candle.get('time', now)),
-                "open": float(candle.get('open', 1.0)),
-                "high": float(candle.get('high', 1.0)),
-                "low": float(candle.get('low', 1.0)),
-                "close": float(candle.get('close', 1.0))
-            })
-        else:
-            return jsonify(default_candle)
-    except Exception as e:
-        print(f"Live candle error: {e}")
-        return jsonify(default_candle)
-# ================= API: WALLET =================
-@app.route("/api/wallet/deposit", methods=["POST"])
-@login_required
-def deposit():
-    data = request.json
-    telegram_id = data.get("telegram_id")
-    amount = data.get("amount")
-    trx = data.get("trx")
-    method = data.get("method", "Nagad")
-    deposits_col.insert_one({
-        "telegram_id": telegram_id,
-        "amount": amount,
-        "trx": trx,
-        "method": method,
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    })
-    return jsonify({"message": "Deposit request sent"})
-
+    return jsonify(dummy_candle)
 
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
@@ -964,6 +936,28 @@ def execute_trade():
         return jsonify({"message": f"Sold {coin} AAF successfully"})
 
     return jsonify({"message": "Invalid type"})
+    
+# ================= API: WALLET =================
+@app.route("/api/wallet/deposit", methods=["POST"])
+@login_required
+def deposit():
+    data = request.json
+    telegram_id = data.get("telegram_id")
+    amount = data.get("amount")
+    trx = data.get("trx")
+    method = data.get("method", "Nagad")
+    deposits_col.insert_one({
+        "telegram_id": telegram_id,
+        "amount": amount,
+        "trx": trx,
+        "method": method,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    })
+    return jsonify({"message": "Deposit request sent"})
+
+
+
 
 @app.route("/api/wallet/withdraw", methods=["POST"])
 @login_required
