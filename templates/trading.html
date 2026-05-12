@@ -200,70 +200,51 @@
     <script src="https://cdn.jsdelivr.net/npm/vconsole"></script>
     <script>
       var vConsole = new VConsole();
-    </script>
-
     <script>
     const API = window.location.origin;
     let chart, candleSeries, lastPrice = 1.0;
-    let userCash = 100.00, userAAF = 50.00, currentFee = 0.5, minTradeAmount = 10;
-    let tradingEnabled = true;
-    let fallbackInterval = null;
-    let mockPrice = 1.0;
+    let userCash = 0, userAAF = 0, currentFee = 0.5, minTradeAmount = 10, tradingEnabled = true;
+    let fallbackInterval = null, mockPrice = 1.0;
     let historicalLoaded = false;
-    let candleDataSet = false;      // চার্টে কোনো ডাটা সেট হয়েছে কিনা
 
-    // Firebase রিয়েলটাইম লিসেনার (অ্যাডমিন কনফিগ)
+    // Firebase admin realtime config (ঐচ্ছিক)
     if (typeof firebase !== 'undefined' && firebase.database) {
         try {
             const db = firebase.database();
-            const adminConfigRef = db.ref('admin/config');
-            adminConfigRef.on('value', (snap) => {
+            db.ref('admin/config').on('value', snap => {
                 const cfg = snap.val();
                 if (cfg) {
-                    if (cfg.trading_enabled !== undefined) tradingEnabled = cfg.trading_enabled;
-                    if (cfg.trading_fee !== undefined) currentFee = cfg.trading_fee;
-                    if (cfg.min_trade_amount !== undefined) minTradeAmount = cfg.min_trade_amount;
-                    if (cfg.message) document.getElementById('admin-ad-text').innerText = cfg.message;
+                    tradingEnabled = cfg.trading_enabled ?? tradingEnabled;
+                    currentFee = cfg.trading_fee ?? currentFee;
+                    minTradeAmount = cfg.min_trade_amount ?? minTradeAmount;
                     document.getElementById('fee-perc').innerText = currentFee;
-                    const lockDiv = document.getElementById('lock-overlay');
-                    if (lockDiv) lockDiv.style.display = tradingEnabled ? 'none' : 'flex';
+                    if (cfg.message) document.getElementById('admin-ad-text').innerText = cfg.message;
+                    document.getElementById('lock-overlay').style.display = tradingEnabled ? 'none' : 'flex';
                     calculateLogic();
                 }
             });
-        } catch(e) { console.warn("Firebase লিসেনার সেটআপ ব্যর্থ", e); }
+        } catch(e) { console.warn("Firebase রুলস error", e); }
     }
 
-    function getTG() {
-        const id = localStorage.getItem("telegram_id");
-        if (!id) { alert("Login required"); location.href = "/login"; }
-        return id;
-    }
-
+    // চার্ট ইনিশিয়ালাইজ
     function initChart() {
         const container = document.getElementById('chart-container');
         if (!container) return;
-        container.style.height = '240px';
-        container.style.width = '100%';
-        container.style.display = 'block';
+        container.style.height = '260px';
         chart = LightweightCharts.createChart(container, {
-            layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
-            timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
             width: container.clientWidth,
-            height: 240
+            height: 260,
+            layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
+            timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#1e293b' }
         });
         candleSeries = chart.addCandlestickSeries({
-            upColor: '#00ff88', downColor: '#ff3366', borderVisible: false
+            upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false, wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
         });
+        window.addEventListener('resize', () => chart.applyOptions({ width: container.clientWidth }));
         chart.timeScale().fitContent();
-        window.addEventListener('resize', () => {
-            if (chart) {
-                chart.applyOptions({ width: container.clientWidth });
-                setTimeout(() => chart.timeScale().fitContent(), 100);
-            }
-        });
     }
 
-    // ইতিহাস লোড ফাংশন (পুনরায় কলযোগ্য)
+    // হিস্টরিক্যাল ক্যান্ডেল লোড
     async function loadHistoricalCandles() {
         try {
             const res = await fetch(`${API}/api/candles?timeframe=minutes`);
@@ -271,22 +252,62 @@
             if (data.candles && data.candles.length) {
                 const sorted = data.candles.sort((a,b) => a.time - b.time);
                 candleSeries.setData(sorted);
-                console.log(`${sorted.length} টি ঐতিহাসিক ক্যান্ডেল লোড হয়েছে`);
+                console.log(`${sorted.length} ঐতিহাসিক ক্যান্ডেল লোড হয়েছে`);
                 historicalLoaded = true;
-                candleDataSet = true;
                 chart.timeScale().fitContent();
             } else {
-                console.log("কোন ঐতিহাসিক ডাটা নেই, লাইভ ক্যান্ডেল অপেক্ষা করছে");
+                console.log("কোন ঐতিহাসিক ক্যান্ডেল নেই");
                 historicalLoaded = false;
-                candleDataSet = false;
             }
+        } catch(e) { console.error("হিস্টরি লোড ব্যর্থ:", e); historicalLoaded = false; }
+    }
+
+    // লাইভ ক্যান্ডেল আপডেট
+    async function fetchLiveCandle() {
+        try {
+            const res = await fetch(`${API}/api/market/live-candle`);
+            const candle = await res.json();
+            if (candle && candle.time && !isNaN(candle.open)) {
+                const newCandle = { time: Number(candle.time), open: candle.open, high: candle.high, low: candle.low, close: candle.close };
+                if (!historicalLoaded) {
+                    candleSeries.setData([newCandle]);
+                    historicalLoaded = true;
+                } else {
+                    candleSeries.update(newCandle);
+                }
+            }
+        } catch(e) { console.warn("লাইভ ক্যান্ডেল ফেচ ব্যর্থ", e); }
+    }
+
+    // লাইভ প্রাইস আপডেট
+    async function fetchPrice() {
+        try {
+            const res = await fetch(`${API}/api/market/price`);
+            const data = await res.json();
+            if (data.price && data.price > 0) {
+                lastPrice = data.price;
+                document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+                if (fallbackInterval) clearInterval(fallbackInterval), fallbackInterval = null;
+            } else throw new Error("invalid price");
         } catch(e) {
-            console.warn("হিস্টরি লোড ব্যর্থ:", e);
-            historicalLoaded = false;
-            candleDataSet = false;
+            console.warn("প্রাইস ফেচ ব্যর্থ, ফলব্যাক শুরু", e);
+            if (!fallbackInterval) startFallback();
         }
     }
 
+    // ফলব্যাক (যখন API ডাউন)
+    function startFallback() {
+        if (fallbackInterval) clearInterval(fallbackInterval);
+        mockPrice = lastPrice || 1.0;
+        fallbackInterval = setInterval(() => {
+            mockPrice += (Math.random() - 0.5) * 0.02;
+            mockPrice = Math.min(2.5, Math.max(0.5, mockPrice));
+            document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
+            lastPrice = mockPrice;
+        }, 2000);
+    }
+
+    // ইউজার ব্যালেন্স সিঙ্ক
     async function syncUserData() {
         try {
             const res = await fetch(`${API}/api/user/me`, { credentials: "include" });
@@ -298,113 +319,22 @@
                     currentFee = data.admin.trading_fee ?? currentFee;
                     minTradeAmount = data.admin.min_trade_amount ?? minTradeAmount;
                     tradingEnabled = data.admin.trading_enabled ?? tradingEnabled;
+                    document.getElementById('fee-perc').innerText = currentFee;
                     if (data.admin.message) document.getElementById('admin-ad-text').innerText = data.admin.message;
+                    document.getElementById('lock-overlay').style.display = tradingEnabled ? 'none' : 'flex';
                 }
-            } else throw new Error("API error");
-        } catch(e) {
-            console.warn("ব্যাকএন্ড ব্যালেন্স পাইনি, মক ডাটা রেখেছি", e);
-        }
+            } else throw new Error("No user");
+        } catch(e) { console.warn("ব্যালেন্স সিঙ্ক ব্যর্থ", e); }
         document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
         document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-        document.getElementById('fee-perc').innerText = currentFee;
-        const lockDiv = document.getElementById('lock-overlay');
-        if (lockDiv) lockDiv.style.display = tradingEnabled ? 'none' : 'flex';
         calculateLogic();
     }
 
-    // মূল মার্কেট ডাটা ফেচ – এবার হ্যান্ডলিং উন্নত
-    async function fetchMarketData() {
-        try {
-            const priceRes = await fetch(`${API}/api/market/price`, { signal: AbortSignal.timeout(3000) });
-            const priceData = await priceRes.json();
-            if (priceData && typeof priceData.price === 'number' && priceData.price > 0) {
-                lastPrice = priceData.price;
-                document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-                // API সফল হলে ফলব্যাক বন্ধ
-                if (fallbackInterval) {
-                    clearInterval(fallbackInterval);
-                    fallbackInterval = null;
-                }
-            } else throw new Error("No price");
-
-            const candleRes = await fetch(`${API}/api/market/live-candle`);
-            const candle = await candleRes.json();
-            if (candle && candle.time && !isNaN(candle.open) && !isNaN(candle.high) && !isNaN(candle.low) && !isNaN(candle.close)) {
-                const newCandle = {
-                    time: Number(candle.time),
-                    open: parseFloat(candle.open),
-                    high: parseFloat(candle.high),
-                    low: parseFloat(candle.low),
-                    close: parseFloat(candle.close)
-                };
-                // যদি ইতিহাস না লোড হয়, তাহলে আগে ইতিহাস আনার চেষ্টা কর
-                if (!historicalLoaded) {
-                    await loadHistoricalCandles();
-                    // ইতিহাস লোড হওয়ার পর এই কল পুনরায় run করবে? আমরা এই ফাংশনকে recurse করব না।
-                    // বরং নিচে চার্ট আপডেট করার চেষ্টা চলবে।
-                }
-                // এখন চার্টে ডাটা আছে কিনা দেখি
-                if (!candleDataSet && candleSeries) {
-                    // প্রথম ক্যান্ডেল বসান
-                    candleSeries.setData([newCandle]);
-                    candleDataSet = true;
-                    console.log("প্রথম লাইভ ক্যান্ডেল সেট করা হয়েছে");
-                } else if (candleSeries) {
-                    candleSeries.update(newCandle);
-                }
-                // fitContent শুধুমাত্র প্রথমবার বা ইতিহাস লোডের সময় করেছি, এখানে করব না (যাতে জুম নষ্ট না হয়)
-            } else throw new Error("Invalid candle");
-        } catch(e) {
-            console.warn("মার্কেট ডাটা পাইনি, ফলব্যাক চালু", e);
-            if (!fallbackInterval) startFallback();
-        }
-        calculateLogic();
-    }
-
-    function startFallback() {
-        if (fallbackInterval) clearInterval(fallbackInterval);
-        mockPrice = lastPrice || 1.0;
-        let lastCandleTime = Math.floor(Date.now() / 1000);
-        // যদি চার্টে কোনো ডাটা না থাকে, একটি ডামি ক্যান্ডেল সেট কর
-        if (!candleDataSet && candleSeries) {
-            const now = Math.floor(Date.now() / 1000);
-            candleSeries.setData([{
-                time: now,
-                open: mockPrice,
-                high: mockPrice,
-                low: mockPrice,
-                close: mockPrice
-            }]);
-            candleDataSet = true;
-            historicalLoaded = false; // ফলব্যাক মোডে ইতিহাস লোড নেই
-            chart.timeScale().fitContent();
-        }
-        fallbackInterval = setInterval(() => {
-            mockPrice += (Math.random() - 0.5) * 0.02;
-            mockPrice = Math.min(2.5, Math.max(0.5, mockPrice));
-            document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
-            lastPrice = mockPrice;
-            const now = Math.floor(Date.now() / 1000);
-            if (now - lastCandleTime >= 15) {
-                const newCandle = {
-                    time: now,
-                    open: mockPrice,
-                    high: mockPrice * (1 + Math.random() * 0.02),
-                    low: mockPrice * (1 - Math.random() * 0.02),
-                    close: mockPrice
-                };
-                if (candleSeries) candleSeries.update(newCandle);
-                lastCandleTime = now;
-                // ফলব্যাকে fitContent করলে ব্যবহারকারীর জুম নষ্ট হবে, তাই করব না
-            }
-        }, 2000);
-    }
-
+    // ট্রেড ক্যালকুলেশন
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
     const buyBtn = document.getElementById('buy-btn');
     const sellBtn = document.getElementById('sell-btn');
-
     function calculateLogic() {
         let tk = parseFloat(tkIn.value) || 0;
         let fee = tk * currentFee / 100;
@@ -412,28 +342,22 @@
         document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
         document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
         buyBtn.disabled = !(tradingEnabled && tk >= minTradeAmount && total <= userCash);
-        sellBtn.disabled = !(tradingEnabled && parseFloat(coIn.value) <= userAAF);
+        sellBtn.disabled = !(tradingEnabled && (parseFloat(coIn.value) || 0) <= userAAF);
+        document.getElementById('balance-warning').innerText = (tk >= minTradeAmount && total > userCash) ? "পর্যাপ্ত ব্যালেন্স নেই" : "";
     }
 
-    tkIn.oninput = () => {
-        if (lastPrice) coIn.value = (tkIn.value / lastPrice).toFixed(4);
-        calculateLogic();
-    };
-    coIn.oninput = () => {
-        if (lastPrice) tkIn.value = (coIn.value * lastPrice).toFixed(2);
-        calculateLogic();
-    };
+    tkIn.oninput = () => { if (lastPrice) coIn.value = (tkIn.value / lastPrice).toFixed(4); calculateLogic(); };
+    coIn.oninput = () => { if (lastPrice) tkIn.value = (coIn.value * lastPrice).toFixed(2); calculateLogic(); };
 
+    // ট্রেড এক্সিকিউট
     async function executeTrade(type) {
         const side = type.toLowerCase();
-        if (!tradingEnabled) return alert("ট্রেডিং বন্ধ আছে, পরে চেষ্টা করুন।");
-        if (side === 'buy' && buyBtn.disabled) return alert(`পর্যাপ্ত টাকা নেই (সর্বনিম্ন ${minTradeAmount} টাকা)`);
+        if (!tradingEnabled) return alert("ট্রেডিং বন্ধ রয়েছে");
+        if (side === 'buy' && buyBtn.disabled) return alert(`সর্বনিম্ন ${minTradeAmount} টাকা বা পর্যাপ্ত ব্যালেন্স নেই`);
         if (side === 'sell' && sellBtn.disabled) return alert("পর্যাপ্ত AAF নেই");
         try {
             const res = await fetch(`${API}/api/trade/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                 body: JSON.stringify({
                     telegram_id: localStorage.getItem('telegram_id'),
                     type: side,
@@ -445,23 +369,24 @@
             const data = await res.json();
             alert(data.message);
             await syncUserData();
-            tkIn.value = '';
-            coIn.value = '';
-            calculateLogic();
-        } catch(e) { alert("ট্রেড ব্যর্থ: " + e.message); }
+            tkIn.value = ''; coIn.value = ''; calculateLogic();
+        } catch(e) { alert("ট্রেড ব্যর্থ"); }
     }
+    buyBtn.onclick = () => executeTrade('buy');
+    sellBtn.onclick = () => executeTrade('sell');
 
-    buyBtn.onclick = () => executeTrade('BUY');
-    sellBtn.onclick = () => executeTrade('SELL');
-
-    window.addEventListener('load', async () => {
+    // পেজ লোড
+    window.addEventListener('load', () => {
         initChart();
-        await loadHistoricalCandles();   // ইতিহাস লোড চেষ্টা
-        await syncUserData();
-        await fetchMarketData();          // লাইভ ডাটা নিবে
-        setInterval(fetchMarketData, 10000);
+        loadHistoricalCandles();
+        syncUserData();
+        fetchPrice();
+        fetchLiveCandle();
+        setInterval(fetchPrice, 5000);
+        setInterval(fetchLiveCandle, 10000);
         setInterval(syncUserData, 15000);
     });
- </script>
- </body>
-     </html>
+</script>
+</body>
+</html>
+    
