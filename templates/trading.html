@@ -198,202 +198,186 @@
     </nav>
 <script>
     const API = window.location.origin;
-    const TG_KEY = "telegram_id";
+let chart, candleSeries, lastPrice = 1.0;
+let userCash = 0, userAAF = 0, currentFee = 0.5;
+let fallbackInterval = null;
+let mockPrice = 1.0;
 
-    let chart, candleSeries, lastPrice = 1.0;
-    let userCash = 0, userAAF = 0, currentFee = 0.5;
-    let fallbackInterval = null;
-    let mockPrice = 1.0;
-    let lastFallbackCandleTime = null;
+function getTG() {
+    const id = localStorage.getItem("telegram_id");
+    if (!id) { alert("Login required"); location.href = "/login"; }
+    return id;
+}
 
-    function getTG() {
-        const id = localStorage.getItem(TG_KEY);
-        if (!id) { alert("Login required"); location.href = "/login"; }
-        return id;
-    }
-
-    function initChart() {
+function initChart() {
     const container = document.getElementById('chart-container');
     if (!container) return;
-
+    container.style.height = '240px';
+    container.style.width = '100%';
+    container.style.display = 'block';
     chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 240,
         layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
-        timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 }
+        timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
+        width: container.clientWidth,
+        height: 240
     });
-
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#00ff88',
-        downColor: '#ff3366',
-        borderVisible: false
+        upColor: '#00ff88', downColor: '#ff3366', borderVisible: false
     });
-
     const now = Math.floor(Date.now() / 1000);
     candleSeries.setData([
         { time: now - 120, open: 1.00, high: 1.05, low: 0.98, close: 1.02 },
         { time: now - 60, open: 1.02, high: 1.04, low: 1.01, close: 1.03 },
         { time: now, open: 1.03, high: 1.06, low: 1.02, close: 1.05 }
     ]);
-
     chart.timeScale().fitContent();
-    }
-    
-    async function syncUserData() {
-        try {
-            const res = await fetch(`${API}/api/user/me`, { credentials: "include" });
-            const data = await res.json();
-            if (data.status === "success") {
-                userCash = data.user.cash || 0;
-                userAAF = data.user.aaf || 0;
-                currentFee = data.admin.trading_fee || 0.5;
-                document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
-                document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-                document.getElementById('fee-perc').innerText = currentFee;
-                document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text || "Welcome to Trading";
-                // চ্যানেল জয়েন স্ট্যাটাস যদি লক ওভারলে থাকে, সেটাও আপডেট করতে পারেন
-                const lockDiv = document.getElementById('lock-overlay');
-                if (lockDiv) lockDiv.style.display = data.user.is_joined ? 'none' : 'flex';
-            } else throw new Error("Invalid response");
-        } catch(e) {
-            console.warn("ব্যাকএন্ড ব্যালেন্স পাইনি, মক ডাটা দেখাচ্ছি", e);
-            userCash = 100.00; userAAF = 50.00;
+    window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.clientWidth });
+        chart.timeScale().fitContent();
+    });
+}
+
+async function syncUserData() {
+    try {
+        const res = await fetch(`${API}/api/user/me`, { credentials: "include" });
+        const data = await res.json();
+        if (data.status === "success") {
+            userCash = data.user.cash || 0;
+            userAAF = data.user.aaf || 0;
+            currentFee = data.admin.trading_fee || 0.5;
             document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
             document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+            document.getElementById('fee-perc').innerText = currentFee;
+            document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text || "Welcome to Trading";
+            const lockDiv = document.getElementById('lock-overlay');
+            if (lockDiv) lockDiv.style.display = data.user.is_joined ? 'none' : 'flex';
+        } else throw new Error("Invalid response");
+    } catch(e) {
+        console.warn("ব্যাকএন্ড ব্যালেন্স পাইনি, মক ডাটা দেখাচ্ছি", e);
+        userCash = 100.00; userAAF = 50.00;
+        document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+        document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+    }
+    calculateLogic();
+}
+
+async function fetchMarketData() {
+    try {
+        const priceRes = await fetch(`${API}/api/market/price`, { signal: AbortSignal.timeout(3000) });
+        const priceData = await priceRes.json();
+        if (priceData && typeof priceData.price === 'number') {
+            lastPrice = priceData.price;
+            document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+            if (fallbackInterval) {
+                clearInterval(fallbackInterval);
+                fallbackInterval = null;
+            }
+        } else {
+            throw new Error("No price");
         }
-        calculateLogic();
-    }
-
-    async function fetchMarketData() {
-        try {
-            // 1. লাইভ প্রাইস আনা
-            const priceRes = await fetch(`${API}/api/market/price`, { signal: AbortSignal.timeout(3000) });
-            const priceData = await priceRes.json();
-            if (priceData && typeof priceData.price === 'number') {
-                lastPrice = priceData.price;
-                document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-                // ব্যাকএন্ড কাজ করলে ফলব্যাক বন্ধ
-                if (fallbackInterval) {
-                    clearInterval(fallbackInterval);
-                    fallbackInterval = null;
-                }
-            } else {
-                throw new Error("No price from backend");
-            }
-
-            // 2. লাইভ ক্যান্ডেল আনা
-            const candleRes = await fetch(`${API}/api/market/live-candle`);
-            const candle = await candleRes.json();
-            if (candle && candle.time && !isNaN(candle.open) && !isNaN(candle.high) && !isNaN(candle.low) && !isNaN(candle.close)) {
-                candleSeries.update({
-                    time: Number(candle.time),
-                    open: parseFloat(candle.open),
-                    high: parseFloat(candle.high),
-                    low: parseFloat(candle.low),
-                    close: parseFloat(candle.close)
-                });
-            } else {
-                throw new Error("Invalid candle");
-            }
-        } catch(e) {
-            console.warn("মার্কেট ডাটা পাইনি, ফলব্যাক চালু", e);
-            if (!fallbackInterval) startFallback();
-        }
-        calculateLogic();
-    }
-
-    function startFallback() {
-        if (fallbackInterval) clearInterval(fallbackInterval);
-        mockPrice = lastPrice || 1.0;
-        let lastCandleTime = Date.now() / 1000;
-        fallbackInterval = setInterval(() => {
-            // এলোমেলো মূল্য পরিবর্তন (প্রতি ২ সেকেন্ডে)
-            mockPrice += (Math.random() - 0.5) * 0.02;
-            mockPrice = Math.min(2.5, Math.max(0.5, mockPrice));
-            document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
-            lastPrice = mockPrice;
-
-            const now = Date.now() / 1000;
-            // প্রতি ১৫ সেকেন্ডে একটি নতুন ক্যান্ডেল তৈরি
-            if (now - lastCandleTime >= 15) {
-                const newCandle = {
-                    time: Math.floor(now),
-                    open: mockPrice,
-                    high: mockPrice * (1 + Math.random() * 0.02),
-                    low: mockPrice * (1 - Math.random() * 0.02),
-                    close: mockPrice
-                };
-                candleSeries.update(newCandle);
-                lastCandleTime = now;
-            }
-        }, 2000);
-    }
-
-    // ইনপুট ও ক্যালকুলেশন
-    const tkIn = document.getElementById('taka-input');
-    const coIn = document.getElementById('coin-input');
-    const buyBtn = document.getElementById('buy-btn');
-    const sellBtn = document.getElementById('sell-btn');
-
-    function calculateLogic() {
-        let tk = parseFloat(tkIn.value) || 0;
-        let fee = tk * currentFee / 100;
-        let total = tk + fee;
-        document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-        document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
-        buyBtn.disabled = !(tk >= 10 && total <= userCash);
-        sellBtn.disabled = !(parseFloat(coIn.value) <= userAAF);
-    }
-
-    tkIn.oninput = () => {
-        if (lastPrice) coIn.value = (tkIn.value / lastPrice).toFixed(4);
-        calculateLogic();
-    };
-    coIn.oninput = () => {
-        if (lastPrice) tkIn.value = (coIn.value * lastPrice).toFixed(2);
-        calculateLogic();
-    };
-
-    async function executeTrade(type) {
-        const side = type.toLowerCase();
-        if (side === 'buy' && buyBtn.disabled) return alert("পর্যাপ্ত টাকা নেই (সর্বনিম্ন ১০ টাকা)");
-        if (side === 'sell' && sellBtn.disabled) return alert("পর্যাপ্ত AAF নেই");
-        try {
-            const res = await fetch(`${API}/api/trade/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    telegram_id: getTG(),
-                    type: side,
-                    taka: parseFloat(tkIn.value) || 0,
-                    coin: parseFloat(coIn.value) || 0,
-                    price: lastPrice
-                })
+        const candleRes = await fetch(`${API}/api/market/live-candle`);
+        const candle = await candleRes.json();
+        if (candle && candle.time && !isNaN(candle.open) && !isNaN(candle.high) && !isNaN(candle.low) && !isNaN(candle.close)) {
+            candleSeries.update({
+                time: Number(candle.time),
+                open: parseFloat(candle.open),
+                high: parseFloat(candle.high),
+                low: parseFloat(candle.low),
+                close: parseFloat(candle.close)
             });
-            const data = await res.json();
-            alert(data.message);
-            // ট্রেডের পর সাথে সাথে ব্যালেন্স আপডেট করুন
-            await syncUserData();
-            // ফর্ম ইনপুট রিসেট করা ভালো
-            tkIn.value = '';
-            coIn.value = '';
-            calculateLogic();
-        } catch(e) {
-            alert("ট্রেড ব্যর্থ: " + e.message);
+        } else {
+            throw new Error("Invalid candle");
         }
+    } catch(e) {
+        console.warn("মার্কেট ডাটা পাইনি, ফলব্যাক চালু", e);
+        if (!fallbackInterval) startFallback();
     }
+    calculateLogic();
+}
 
-    buyBtn.onclick = () => executeTrade('BUY');
-    sellBtn.onclick = () => executeTrade('SELL');
- window.addEventListener('load', () => {
-    setTimeout(() => {
-        initChart();          // চার্ট তৈরি হবে
-        syncUserData();      // তারপর ব্যালেন্স আপডেট
-        fetchMarketData();   // তারপর প্রাইস ও ক্যান্ডেল আনা
-        setInterval(fetchMarketData, 5000);
-        setInterval(syncUserData, 10000);
-    }, 300);
+function startFallback() {
+    if (fallbackInterval) clearInterval(fallbackInterval);
+    mockPrice = lastPrice || 1.0;
+    let lastCandleTime = Date.now() / 1000;
+    fallbackInterval = setInterval(() => {
+        mockPrice += (Math.random() - 0.5) * 0.02;
+        mockPrice = Math.min(2.5, Math.max(0.5, mockPrice));
+        document.getElementById('live-price').innerText = `৳ ${mockPrice.toFixed(4)}`;
+        lastPrice = mockPrice;
+        const now = Date.now() / 1000;
+        if (now - lastCandleTime >= 15) {
+            const newCandle = {
+                time: Math.floor(now),
+                open: mockPrice,
+                high: mockPrice * (1 + Math.random() * 0.02),
+                low: mockPrice * (1 - Math.random() * 0.02),
+                close: mockPrice
+            };
+            candleSeries.update(newCandle);
+            lastCandleTime = now;
+        }
+    }, 2000);
+}
+
+const tkIn = document.getElementById('taka-input');
+const coIn = document.getElementById('coin-input');
+const buyBtn = document.getElementById('buy-btn');
+const sellBtn = document.getElementById('sell-btn');
+
+function calculateLogic() {
+    let tk = parseFloat(tkIn.value) || 0;
+    let fee = tk * currentFee / 100;
+    let total = tk + fee;
+    document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+    document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
+    buyBtn.disabled = !(tk >= 10 && total <= userCash);
+    sellBtn.disabled = !(parseFloat(coIn.value) <= userAAF);
+}
+
+tkIn.oninput = () => {
+    if (lastPrice) coIn.value = (tkIn.value / lastPrice).toFixed(4);
+    calculateLogic();
+};
+coIn.oninput = () => {
+    if (lastPrice) tkIn.value = (coIn.value * lastPrice).toFixed(2);
+    calculateLogic();
+};
+
+async function executeTrade(type) {
+    const side = type.toLowerCase();
+    if (side === 'buy' && buyBtn.disabled) return alert("পর্যাপ্ত টাকা নেই (সর্বনিম্ন ১০ টাকা)");
+    if (side === 'sell' && sellBtn.disabled) return alert("পর্যাপ্ত AAF নেই");
+    try {
+        const res = await fetch(`${API}/api/trade/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                telegram_id: localStorage.getItem('telegram_id'),
+                type: side,
+                taka: parseFloat(tkIn.value) || 0,
+                coin: parseFloat(coIn.value) || 0,
+                price: lastPrice
+            })
+        });
+        const data = await res.json();
+        alert(data.message);
+        await syncUserData();
+        tkIn.value = '';
+        coIn.value = '';
+        calculateLogic();
+    } catch(e) { alert("ট্রেড ব্যর্থ: " + e.message); }
+}
+
+buyBtn.onclick = () => executeTrade('BUY');
+sellBtn.onclick = () => executeTrade('SELL');
+
+window.addEventListener('load', () => {
+    initChart();
+    syncUserData();
+    fetchMarketData();
+    setInterval(fetchMarketData, 5000);
+    setInterval(syncUserData, 10000);
 });
     
 </script>
