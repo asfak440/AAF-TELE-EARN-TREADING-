@@ -797,7 +797,6 @@ def admin_save_task():
         "expires_at": expires_at,
         "created_at": datetime.utcnow().isoformat(),
         "requires_approval": data.get("requires_approval", False),
-        # ========== নতুন ফিল্ড ==========
         "device_check": data.get("device_check", True),
         "ip_check": data.get("ip_check", False),
         "account_check": data.get("account_check", True)
@@ -824,22 +823,42 @@ def admin_delete_task():
 @app.route("/api/market/price")
 def market_price():
     admin = get_admin_config()
-    return jsonify({"price": admin.get("live_price", 1.0)})
+    price = admin.get("live_price", 1.0)
+    if price == 0:
+        price = 1.0
+    return jsonify({"price": price})
 
 @app.route("/api/market/live-candle")
 def live_candle():
-    if not fb_ref:
-        return jsonify({"time": int(datetime.utcnow().timestamp()), "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
-    candles = fb_ref.child("candle_history").order_by_key().limit_to_last(1).get()
-    if candles:
-        last_key = list(candles.keys())[-1]
-        candle = candles[last_key]
-        # 🔥 নিশ্চিত করুন যে time ফিল্ড integer হয়
-        if 'time' in candle:
-            candle['time'] = int(candle['time'])
-        return jsonify(candle)
-    return jsonify({"time": int(datetime.utcnow().timestamp()), "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0})
-
+    # সবার আগে একটি ডিফল্ট ভালো ক্যান্ডেল
+    now = int(datetime.utcnow().timestamp())
+    default_candle = {
+        "time": now,
+        "open": 1.02,
+        "high": 1.05,
+        "low": 1.00,
+        "close": 1.03
+    }
+    try:
+        if not fb_ref:
+            return jsonify(default_candle)
+        candles = fb_ref.child("candle_history").order_by_key().limit_to_last(1).get()
+        if candles:
+            last_key = list(candles.keys())[-1]
+            candle = candles[last_key]
+            # নিরাপদে সব ফিল্ড বের করা
+            return jsonify({
+                "time": int(candle.get('time', now)),
+                "open": float(candle.get('open', 1.0)),
+                "high": float(candle.get('high', 1.0)),
+                "low": float(candle.get('low', 1.0)),
+                "close": float(candle.get('close', 1.0))
+            })
+        else:
+            return jsonify(default_candle)
+    except Exception as e:
+        print(f"Live candle error: {e}")
+        return jsonify(default_candle)
 # ================= API: WALLET =================
 @app.route("/api/wallet/deposit", methods=["POST"])
 @login_required
