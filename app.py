@@ -840,13 +840,12 @@ def get_candles():
     if not fb_ref:
         return jsonify({"candles": []})
     try:
-        # candle_history পাথ থেকে সব ক্যান্ডেল নিন
+        # সঠিক পাথ: candle_history (যেখানে থ্রেড ক্যান্ডেল সেভ করে)
         candles_data = fb_ref.child("candle_history").order_by_key().get()
         candles_list = []
         if candles_data:
             for key, candle in candles_data.items():
                 if candle and isinstance(candle, dict):
-                    # নিশ্চিত করুন সময় integer ও open/high/low/close সংখ্যা
                     try:
                         candles_list.append({
                             "time": int(candle.get("time", 0)),
@@ -858,14 +857,13 @@ def get_candles():
                     except (ValueError, TypeError):
                         continue
             candles_list.sort(key=lambda x: x["time"])
-            print(f"✅ {len(candles_list)} candles loaded from candle_history")
+            print(f"✅ {len(candles_list)} ক্যান্ডেল লোড হয়েছে (candle_history)")
         else:
-            print("⚠️ No candles found in candle_history")
+            print("⚠️ এখনো কোনো ক্যান্ডেল জমেনি, কিছু মিনিট অপেক্ষা করুন")
         return jsonify({"candles": candles_list})
     except Exception as e:
         print(f"❌ Candles API error: {e}")
         return jsonify({"candles": []})
-
 
 @app.route("/api/market/price")
 def market_price():
