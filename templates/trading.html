@@ -134,36 +134,51 @@
         }
 
         async function loadHistoricalCandles() {
-            try {
-                const res = await fetch(`${API}/api/candles`);
-                const data = await res.json();
-                if (data.candles && Array.isArray(data.candles) && data.candles.length > 0) {
-                    candleSeries.setData(data.candles);
-                    chart.timeScale().fitContent();
-                    console.log(`✅ ${data.candles.length} ঐতিহাসিক ক্যান্ডেল লোড হয়েছে`);
-                    return true;
-                }
-                throw new Error("No candles");
-            } catch(e) {
-                console.warn("হিস্টরি লোড ব্যর্থ, মক ডাটা তৈরি হচ্ছে", e);
-                const now = Math.floor(Date.now() / 1000);
-                const base = now - 380;
-                const mock = [];
-                let last = 1.20;
-                for (let i = 0; i < 25; i++) {
-                    let open = last;
-                    let high = open + Math.random() * 0.06;
-                    let low = open - Math.random() * 0.05;
-                    let close = (high + low) / 2 + (Math.random() - 0.5) * 0.02;
-                    close = Math.min(high, Math.max(low, close));
-                    mock.push({ time: base + i*20, open, high, low, close });
-                    last = close;
-                }
-                candleSeries.setData(mock);
-                chart.timeScale().fitContent();
-                return false;
-            }
+    console.log("🔄 লোডিং ঐতিহাসিক ক্যান্ডেল...");
+    try {
+        const res = await fetch(`${API}/api/candles`);
+        const data = await res.json();
+        console.log("📥 API রেসপন্স:", data);
+        
+        if (data.candles && Array.isArray(data.candles) && data.candles.length > 0) {
+            console.log(`✅ আসল ক্যান্ডেল পাওয়া গেছে: ${data.candles.length} টি`);
+            candleSeries.setData(data.candles);
+            chart.timeScale().fitContent();
+            return true;
         }
+        
+        console.warn("⚠️ কোনো আসল ক্যান্ডেল নেই, মক ডাটা তৈরি করা হচ্ছে...");
+        throw new Error("No candles");
+    } catch(e) {
+        console.error("❌ ক্যান্ডেল লোড ব্যর্থ:", e);
+        
+        // মক ডাটা (চার্ট ফাঁকা রাখতে)
+        const now = Math.floor(Date.now() / 1000);
+        const base = now - 380;
+        const mock = [];
+        let last = 1.20;
+        for (let i = 0; i < 25; i++) {
+            let open = last;
+            let high = open + Math.random() * 0.06;
+            let low = open - Math.random() * 0.05;
+            let close = (high + low) / 2 + (Math.random() - 0.5) * 0.02;
+            close = Math.min(high, Math.max(low, close));
+            mock.push({
+                time: base + i * 20,
+                open: parseFloat(open.toFixed(4)),
+                high: parseFloat(high.toFixed(4)),
+                low: parseFloat(low.toFixed(4)),
+                close: parseFloat(close.toFixed(4))
+            });
+            last = close;
+        }
+        candleSeries.setData(mock);
+        chart.timeScale().fitContent();
+        console.log("🎨 মক ক্যান্ডেল চার্টে বসানো হয়েছে");
+        return false;
+    }
+        }
+        
 
         async function fetchLiveCandle() {
             try {
