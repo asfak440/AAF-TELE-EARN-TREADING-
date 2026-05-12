@@ -213,45 +213,32 @@
     }
 
     function initChart() {
-        const container = document.getElementById('chart-container');
-        if (!container) return;
-        container.style.height = '240px';
-        container.style.display = 'block';
-        container.style.width = '100%';
+    const container = document.getElementById('chart-container');
+    if (!container) return;
 
-        chart = LightweightCharts.createChart(container, {
-    layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
-    timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 },
-    autoSize: true
-});
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: 240,
+        layout: { backgroundColor: '#000', textColor: '#ccc', fontSize: 10 },
+        timeScale: { timeVisible: true, rightOffset: 12, barSpacing: 8 }
+    });
 
-// 👇 এখানে বসবে
-new ResizeObserver(() => {
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#00ff88',
+        downColor: '#ff3366',
+        borderVisible: false
+    });
+
+    const now = Math.floor(Date.now() / 1000);
+    candleSeries.setData([
+        { time: now - 120, open: 1.00, high: 1.05, low: 0.98, close: 1.02 },
+        { time: now - 60, open: 1.02, high: 1.04, low: 1.01, close: 1.03 },
+        { time: now, open: 1.03, high: 1.06, low: 1.02, close: 1.05 }
+    ]);
+
     chart.timeScale().fitContent();
-}).observe(container);
-
-candleSeries = chart.addCandlestickSeries({
-    upColor: '#00ff88',
-    downColor: '#ff3366',
-    borderVisible: false
-});
-
-        // প্রাথমিক মক ক্যান্ডেল (যাতে চার্ট খালি না থাকে)
-        const now = Math.floor(Date.now() / 1000);
-        candleSeries.setData([
-            { time: now - 120, open: 1.00, high: 1.05, low: 0.98, close: 1.02 },
-            { time: now - 60, open: 1.02, high: 1.04, low: 1.01, close: 1.03 },
-            { time: now, open: 1.03, high: 1.06, low: 1.02, close: 1.05 }
-        ]);
-        lastFallbackCandleTime = now;
-        chart.timeScale().fitContent();
-
-        window.addEventListener('resize', () => {
-            chart.applyOptions({ width: container.clientWidth });
-            chart.timeScale().fitContent();
-        });
     }
-
+    
     async function syncUserData() {
         try {
             const res = await fetch(`${API}/api/user/me`, { credentials: "include" });
@@ -399,14 +386,16 @@ candleSeries = chart.addCandlestickSeries({
 
     buyBtn.onclick = () => executeTrade('BUY');
     sellBtn.onclick = () => executeTrade('SELL');
-
-    window.addEventListener('load', () => {
-    initChart();
-    syncUserData();
-    fetchMarketData();
-    setInterval(fetchMarketData, 5000);
-    setInterval(syncUserData, 10000);
+ window.addEventListener('load', () => {
+    setTimeout(() => {
+        initChart();          // চার্ট তৈরি হবে
+        syncUserData();      // তারপর ব্যালেন্স আপডেট
+        fetchMarketData();   // তারপর প্রাইস ও ক্যান্ডেল আনা
+        setInterval(fetchMarketData, 5000);
+        setInterval(syncUserData, 10000);
+    }, 300);
 });
+    
 </script>
 </body>
     </html>
