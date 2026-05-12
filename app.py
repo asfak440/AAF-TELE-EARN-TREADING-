@@ -868,17 +868,16 @@ def market_price():
         price = 1.0
     return jsonify({"price": price})
 
-    @app.route("/api/market/live-candle")
+@app.route("/api/market/live-candle")
 def live_candle():
     try:
-        # বর্তমান মিনিটের জন্য সর্বশেষ ক্যান্ডেল (Firebase থেকে)
         now = datetime.utcnow()
         current_minute = now.replace(second=0, microsecond=0).isoformat()
         if fb_ref:
             last_candle = fb_ref.child(f"candles/minutes/{current_minute}").get()
             if last_candle and "time" in last_candle:
                 return jsonify(last_candle)
-        # যদি না পাওয়া যায়, তাহলে একটা ডামি ক্যান্ডেল তৈরি করুন
+        # ফায়ারবেজে না থাকলে ডামি ক্যান্ডেল
         return jsonify({
             "time": int(now.timestamp()),
             "open": current_price,
@@ -888,7 +887,13 @@ def live_candle():
         })
     except Exception as e:
         print(f"Live candle error: {e}")
-        return jsonify({"time": 0, "open": 1, "high": 1, "low": 1, "close": 1})
+        return jsonify({
+            "time": 0,
+            "open": 1.0,
+            "high": 1.0,
+            "low": 1.0,
+            "close": 1.0
+        })
 
 
 @app.route("/api/trade/execute", methods=["POST"])
