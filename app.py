@@ -838,20 +838,20 @@ def admin_delete_task():
 @app.route("/api/candles")
 def get_candles():
     if not fb_ref:
-        # Firebase না থাকলে Mock ডাটা
+        # Firebase না থাকলে Mock ডাটা (আগের মতোই থাকবে)
         candles = []
-        base = int(datetime.utcnow().timestamp()) - 380
+        base = int(datetime.utcnow().timestamp()) - 600
         for i in range(30):
             candles.append({
-                "time": base + i * 20,
-                "open": 1.0 + (i * 0.01),
-                "high": 1.05 + (i * 0.01),
-                "low": 0.98 + (i * 0.01),
-                "close": 1.02 + (i * 0.01)
+                "time": base + (i * 20),
+                "open": 1.0 + (i * 0.001),
+                "high": 1.005 + (i * 0.001),
+                "low": 0.998 + (i * 0.001),
+                "close": 1.002 + (i * 0.001)
             })
         return jsonify({"candles": candles})
     
-    # Firebase থেকে ক্যান্ডেল আনার চেষ্টা
+    # Firebase থেকে ডেটা আনা
     data = fb_ref.child("candle_history").order_by_key().get()
     if not data:
         data = fb_ref.child("candles/minutes").get()
@@ -861,8 +861,14 @@ def get_candles():
         for key, val in data.items():
             if val and isinstance(val, dict):
                 try:
+                    # ১. টাইমস্ট্যাম্প যদি ফ্লোট আকারে থাকে (যেমন ১২৩.৪৫) তবে int সরাসরি কাজ না-ও করতে পারে
+                    # তাই প্রথমে float এ নিয়ে তারপর int এ নেওয়া নিরাপদ।
+                    t = int(float(val.get('time', 0)))
+                    
+                    if t == 0: continue # ইনভ্যালিড টাইম বাদ দিন
+
                     candles.append({
-                        "time": int(val.get('time', 0)),
+                        "time": t,
                         "open": float(val.get('open', 1.0)),
                         "high": float(val.get('high', 1.0)),
                         "low": float(val.get('low', 1.0)),
@@ -870,21 +876,33 @@ def get_candles():
                     })
                 except:
                     continue
+        
+        # ২. চার্ট সর্টিং ছাড়া ডেটা দেখালে লাইব্রেরি ক্রাশ করে
         candles.sort(key=lambda x: x['time'])
+
+    # ৩. সবচাইতে গুরুত্বপূর্ণ: যদি একই 'time' এর একাধিক ক্যান্ডেল থাকে, চার্ট আসবে না
+    # ডুপ্লিকেট টাইম রিমুভ করার জন্য নিচের অংশটুকু কাজ করবে
+    seen_times = set()
+    unique_candles = []
+    for c in candles:
+        if c['time'] not in seen_times:
+            unique_candles.append(c)
+            seen_times.add(c['time'])
     
-    # যদি কোনো ক্যান্ডেল না থাকে, Mock ডাটা
-    if not candles:
-        base = int(datetime.utcnow().timestamp()) - 380
+    # যদি ডেটা না থাকে তবেই মক ডেটা দিন
+    if not unique_candles:
+        base = int(datetime.utcnow().timestamp()) - 600
         for i in range(30):
-            candles.append({
-                "time": base + i * 20,
+            unique_candles.append({
+                "time": base + (i * 20),
                 "open": 1.0 + (i * 0.01),
                 "high": 1.05 + (i * 0.01),
                 "low": 0.98 + (i * 0.01),
                 "close": 1.02 + (i * 0.01)
             })
     
-    return jsonify({"candles": candles})
+    return jsonify({"candles": unique_candles})
+    
 
 @app.route("/api/market/live-candle")
 def live_candle():
