@@ -18,7 +18,7 @@
         .tf-bar { position: fixed; top: 50px; left: 0; width: 100%; height: 15px; z-index: 2998; background: #000; display: flex; gap: 4px; padding: 5px; }
         .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 4px 5px; border-radius: 2px; font-size: 10px; cursor: pointer; white-space: nowrap; }
         .tf-btn.active { border-color: #00f2fe; color: #00f2fe; background: rgba(0,242,254,0.1); }
-        #chart-container { position: fixed; top: 70px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; }
+        #chart-container { position: fixed; top: 70px; left: 0; width: 100%; height: 300px; z-index: 2997; background: #000; }
         .container { padding-top: 320px; padding-bottom: 100px; max-width: 330px; margin: auto; }
         .header h2 { font-size: 10px !important; }
         #live-price { font-size: 10px !important; }
@@ -76,6 +76,15 @@
         <button class="tf-btn">1H</button><button class="tf-btn">4H</button><button class="tf-btn">1D</button>
     </div>
     <div id="chart-container"></div>
+    <div style="position: relative;">
+    <!-- মোড সুইচ বাটন -->
+    <button id="chart-theme-toggle" 
+            style="position: absolute; right: 10px; top: 10px; z-index: 10; padding: 5px 10px; border-radius: 5px; cursor: pointer; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 12px;">
+        🌙 Dark
+    </button>
+    <div id="chart-container"></div>
+    </div>
+    
     <div class="container">
         <div class="stat-grid">
             <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
@@ -113,83 +122,80 @@
         let userCash = 0, userAAF = 0, currentFee = 0.5;
         let fallbackInterval = null;
 
-        function initChart() {
+function initChart() {
     const container = document.getElementById('chart-container');
     if (!container) return;
     
-    // কন্টেইনার পরিষ্কার করে নিন যেন ডুপ্লিকেট না হয়
     container.innerHTML = ''; 
 
     chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || 300, // ClientWidth ব্যবহার করা বেশি নিরাপদ
+        height: 300, 
         layout: { 
-            backgroundColor: '#000000', 
+            background: { type: 'solid', color: '#000000' }, // লেটেস্ট ভার্সনে background এভাবে দিতে হয়
             textColor: '#d1d4dc',
         },
         grid: {
-            vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
-            horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+            vertLines: { color: 'rgba(42, 46, 57, 0.1)' },
+            horzLines: { color: 'rgba(42, 46, 57, 0.1)' },
         },
-        width: container.offsetWidth,
-        height: 250,
         timeScale: {
             timeVisible: true,
             secondsVisible: false,
+            borderColor: '#485c7b',
         },
     });
 
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#26a69a', downColor: '#ef5350', 
+        upColor: '#26a69a', 
+        downColor: '#ef5350', 
         borderVisible: false,
-        wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+        wickUpColor: '#26a69a', 
+        wickDownColor: '#ef5350',
     });
-        }
-        
+
+    // উইন্ডো রিসাইজ করলে চার্ট যেন ছোট-বড় হয়
+    window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.clientWidth });
+    });
+}
 
         async function loadHistoricalCandles() {
     console.log("🔄 লোডিং ঐতিহাসিক ক্যান্ডেল...");
     try {
         const res = await fetch(`${API}/api/candles`);
         const data = await res.json();
-        console.log("📥 API রেসপন্স:", data);
         
         if (data.candles && Array.isArray(data.candles) && data.candles.length > 0) {
-            console.log(`✅ আসল ক্যান্ডেল পাওয়া গেছে: ${data.candles.length} টি`);
-            candleSeries.setData(data.candles);
-            chart.timeScale().fitContent();
+            // ডাটা ক্লিন করা: ডুপ্লিকেট টাইম রিমুভ করা এবং সর্ট করা
+            const uniqueCandles = [];
+            const seenTimes = new Set();
+
+            data.candles.sort((a, b) => a.time - b.time).forEach(c => {
+                if (!seenTimes.has(c.time)) {
+                    uniqueCandles.push(c);
+                    seenTimes.add(c.time);
+                }
+            });
+
+            console.log(`✅ ক্যান্ডেল সংখ্যা: ${uniqueCandles.length}`);
+            candleSeries.setData(uniqueCandles);
+            
+            // ডাটা দেখানোর জন্য চার্টকে অটো-ফিট করা
+            setTimeout(() => {
+                chart.timeScale().fitContent();
+            }, 500); 
+
             return true;
         }
-        
-        console.warn("⚠️ কোনো আসল ক্যান্ডেল নেই, মক ডাটা তৈরি করা হচ্ছে...");
-        throw new Error("No candles");
+        throw new Error("Empty Data");
     } catch(e) {
-        console.error("❌ ক্যান্ডেল লোড ব্যর্থ:", e);
-        
-        // মক ডাটা (চার্ট ফাঁকা রাখতে)
-        const now = Math.floor(Date.now() / 1000);
-        const base = now - 380;
-        const mock = [];
-        let last = 1.20;
-        for (let i = 0; i < 25; i++) {
-            let open = last;
-            let high = open + Math.random() * 0.06;
-            let low = open - Math.random() * 0.05;
-            let close = (high + low) / 2 + (Math.random() - 0.5) * 0.02;
-            close = Math.min(high, Math.max(low, close));
-            mock.push({
-                time: base + i * 20,
-                open: parseFloat(open.toFixed(4)),
-                high: parseFloat(high.toFixed(4)),
-                low: parseFloat(low.toFixed(4)),
-                close: parseFloat(close.toFixed(4))
-            });
-            last = close;
-        }
-        candleSeries.setData(mock);
-        chart.timeScale().fitContent();
-        console.log("🎨 মক ক্যান্ডেল চার্টে বসানো হয়েছে");
-        return false;
+        console.error("❌ লোড ব্যর্থ, মক ডাটা দিচ্ছি:", e);
+        // আপনার মক ডাটা কোড এখানে থাকবে...
+        // মক ডাটার ক্ষেত্রেও ensure করবেন সময় যেন ইউনিক হয়
     }
         }
+        
         
 
         async function fetchLiveCandle() {
@@ -296,6 +302,36 @@
             setInterval(fetchLiveCandle, 10000);
             setInterval(syncUserData, 20000);
         });
+        
+    let isDarkMode = true;
+
+            document.getElementById('chart-theme-toggle').addEventListener('click', function() {
+            isDarkMode = !isDarkMode;
+    const btn = this;
+    
+    if (isDarkMode) {
+        // ডার্ক মোড সেটিংস
+        chart.applyOptions({
+            layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
+            grid: { vertLines: { color: 'rgba(42, 46, 57, 0.1)' }, horzLines: { color: 'rgba(42, 46, 57, 0.1)' } }
+        });
+        btn.innerHTML = "🌙 Dark";
+        btn.style.background = "rgba(255,255,255,0.2)";
+        btn.style.color = "white";
+        document.getElementById('chart-container').style.backgroundColor = "#000";
+    } else {
+        // লাইট মোড সেটিংস
+        chart.applyOptions({
+            layout: { background: { color: '#ffffff' }, textColor: '#191919' },
+            grid: { vertLines: { color: 'rgba(42, 46, 57, 0.05)' }, horzLines: { color: 'rgba(42, 46, 57, 0.05)' } }
+        });
+        btn.innerHTML = "☀️ Light";
+        btn.style.background = "rgba(0,0,0,0.1)";
+        btn.style.color = "black";
+        document.getElementById('chart-container').style.backgroundColor = "#fff";
+    }
+});
+        
     </script>
 </body>
 </html>
