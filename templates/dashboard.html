@@ -1,693 +1,265 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAF Master Dashboard v18.0 Pro - Cyberpunk Edition</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>AAF Trading | Pro Terminal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
+        
         :root {
-            --bg: #020617;
-            --glass-card: rgba(15, 23, 42, 0.75);
+            --bg: #05080d; --card: #0f172a; --border: rgba(255,255,255,0.05);
+            --cyan: #00f2fe; --green: #00ffa3; --red: #ff3366; --text: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.1);
-            --primary: #00f2fe; 
-            --active-green: #00ff88;
-            --danger: #ff0055;
-            --gold: #ffaa00;
-            --text-muted: #94a3b8;
-            --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-        }
-
-        body { 
-            background: var(--bg); color: #f1f5f9; 
-            font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding-bottom: 110px;
-            background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
-            overflow-x: hidden;
-        }
-
-        /* ড্যাশবোর্ড কম্প্যাক্ট – সবকিছু ছোট */
-.premium-card {
-    padding: 10px !important;
-    margin-bottom: 10px !important;
-}
-.card-title {
-    font-size: 12px !important;
-    margin-bottom: 8px !important;
-}
-.grid-3 .stat-box {
-    padding: 6px 2px !important;
-}
-.stat-box i {
-    font-size: 14px !important;
-}
-.stat-box h4 {
-    font-size: 7px !important;
-}
-.stat-box p {
-    font-size: 9px !important;
-}
-.action-btn {
-    height: 65px !important;
-    font-size: 8px !important;
-    gap: 5px !important;
-}
-.action-btn i {
-    font-size: 16px !important;
-}
-.header-bal-box {
-    padding: 4px 8px !important;
-}
-.header-bal-box div {
-    font-size: 9px !important;
-}
-#u-name {
-    font-size: 11px !important;
-}
-#u-id {
-    font-size: 8px !important;
-}
-.join-card .btn-join {
-    padding: 6px 12px !important;
-    font-size: 9px !important;
-}
-#verify-btn {
-    padding: 8px !important;
-    font-size: 9px !important;
-}
-
-        /* ব্যানার বক্সের ভেতরের সব কন্টেন্ট সেন্টার করতে */
-.banner-ad-box {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-.banner-ad-box > * {
-    max-width: 100% !important;
-    margin: 0 auto !important;
-    text-align: center !important;
-}
-.banner-ad-box {
-    height: 60px !important;
-    margin: 10px 0 !important;
-}
-.dock-nav {
-    height: 55px !important;
-}
-.nav-item i {
-    font-size: 16px !important;
-}
-.nav-item span {
-    font-size: 8px !important;
-}
-
-        /* ১. হেডার ও প্রোফাইল সেকশন */
-        .nav-header { 
-            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(25px);
-            padding: 5px; display: flex; justify-content: space-between; align-items: center; 
-            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--glass-border);
         }
         
-        .u-info h2 { font-size: 14px; margin: 0; color: var(--primary); font-family: 'Syncopate'; text-transform: uppercase; }
-        .u-info span { font-size: 10px; color: var(--active-green); font-weight: bold; }
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
+        
+        /* Fixed Headers */
+        .header { position: fixed; top: 0; left: 0; width: 100%; height: 35px; z-index: 3000; background: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; border-bottom: 1px solid var(--border); }
+        #admin-ad-box { position: fixed; top: 35px; left: 0; width: 100%; height: 25px; background: #1e293b; z-index: 2999; display: flex; align-items: center; }
+        .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
+        
+        /* Chart Section */
+        #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
+        #chart-container { width: 100%; height: 100% !important; min-height: 250px; }
+        .tv-lightweight-charts-logo { display: none !important; }
 
-        .header-bal-box {
-            background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 15px;
-            border: 1px solid var(--glass-border); text-align: right;
-        }
-        .header-bal-box div { font-family: 'Syncopate'; font-size: 12px; font-weight: bold; }
-
-        #status-dot {
-            width: 12px; height: 12px; border-radius: 50%;
-            transition: 0.5s; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .dot-online { background: var(--active-green) !important; box-shadow: 0 0 15px var(--active-green) !important; animation: pulse 2s infinite; }
-        .dot-offline { background: var(--danger) !important; box-shadow: 0 0 15px var(--danger) !important; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* কার্ড স্টাইল */
-        .premium-card {
-            background: var(--glass-card); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 15px; margin-bottom: 15px;
+        #chart-theme-toggle { 
+            position: absolute; left: 10px; bottom: 10px; z-index: 3001; 
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
+            background: #1e293b; color: white; display: flex; align-items: center; gap: 6px;
         }
 
-        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
+        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,254,0.1); }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-card span { font-size: 10px; color: var(--text); display: block; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: #fff; }
+        
+        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
+        .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+        .input-box { flex: 1; position: relative; }
+        .input-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
+        
+        .fee-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; }
+        .buy { background: var(--green); color: #000; }
+        .sell { background: var(--red); color: #fff; }
+        .btn:disabled { opacity: 0.3; filter: grayscale(1); }
 
-        /* ২. গ্লোবাল সার্ভার স্ট্যাটাস */
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .stat-box { text-align: center; padding: 12px 5px; }
-        .stat-box i { font-size: 18px; margin-bottom: 5px; color: var(--primary); }
-        .stat-box h4 { font-size: 8px; color: #94a3b8; margin: 0; text-transform: uppercase; }
-        .stat-box p { font-size: 10px; font-family: 'Syncopate'; margin: 5px 0 0; }
+        #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.4s forwards; }
+        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 80px; opacity: 1; } }
 
-        /* ৩. অ্যাকশন গ্রিড */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
-        .action-btn {
-            height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: 18px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03);
-            cursor: pointer; transition: 0.3s; font-family: 'Syncopate'; font-size: 10px; gap: 8px;
-        }
-        .action-btn:active { transform: scale(0.95); }
-        .btn-dep { color: var(--active-green); border-color: rgba(0, 255, 136, 0.3); }
-        .btn-wit { color: var(--primary); border-color: rgba(0, 242, 254, 0.3); }
-
-        /* ৫. একটিভ ইউজার বার */
-        #active-user-bar {
-            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-            width: 90%; background: rgba(0, 255, 136, 0.2); border: 1px solid var(--active-green);
-            padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 999;
-            backdrop-filter: blur(10px); animation: slideDown 0.5s forwards;
-        }
-        @keyframes slideDown { from { top: -50px; } to { top: 80px; } }
-
-        /* ৬. কমিউনিটি জয়েন কার্ড */
-        .join-card { border-left: 5px solid var(--danger); transition: 0.5s; }
-        .join-card.connected { border-left-color: var(--active-green); }
-        .btn-join {
-            background: var(--danger); border: none; padding: 10px 20px; border-radius: 10px;
-            color: #fff; font-weight: bold; cursor: pointer; font-family: 'Rajdhani';
-        }
-
-        /* ৭. ডক নেভিগেশন */
-        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 2000; }
+        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 5000; }
         .dock-nav {
-            width: 90%; max-width: 400px; height: 70px; background: rgba(15, 23, 42, 0.95);
+            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex;
             justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
         }
-        .nav-item { color: #94a3b8; text-decoration: none; font-size: 10px; text-align: center; transition: 0.3s; }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
-        .nav-item.active { color: var(--primary); text-shadow: var(--neon-shadow); }
-
-        .banner-ad-box { width: 100%; height: 65px; border-radius: 15px; overflow: hidden; margin: 15px 0; border: 1px dashed var(--glass-border); }
- </style>
-    
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; transition: 0.3s; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
+        .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
+    </style>
 </head>
 <body>
-
-    <!-- ৫. একটিভ ইউজার বার (পপ-আপ) -->
     <div id="active-user-bar">
-        <i class="fas fa-bolt" style="color: var(--active-green);"></i>
-        <span id="popup-text" style="font-size: 12px; font-weight: bold; color: #fff;"></span>
+        <i class="fas fa-bolt" style="color: var(--cyan);"></i>
+        <span id="popup-text" style="font-size: 12px; color: #fff; font-weight: bold;"></span>
     </div>
 
-    <!-- ১. হেডার সেকশন -->
-    <header class="nav-header">
-        <div class="u-info">
-            <h2 id="u-name">Load..</h2>
-            <span>ID: <span id="u-id">000000</span></span>
-        </div>
-
-        <div class="header-bal-box" style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
-            <div style="text-align: center;">
-                <small style="font-size: 8px; color: #94a3b8; display: block;">CASH</small>
-                <div style="color: var(--active-green); font-size: 11px;">৳ <span id="h-cash">0.00</span></div>
-            </div>
-            <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
-            <div style="text-align: center;">
-                <small style="font-size: 8px; color: #94a3b8; display: block;">AAF</small>
-                <div style="color: var(--gold); font-size: 11px;"><span id="h-aaf">0.00</span></div>
-            </div>
-        </div>
-        
-        <div id="status-dot" class="dot-offline"></div>
+    <header class="header">
+        <h2 style="font-size: 10px; margin: 0; font-family: 'Syncopate';">AAF TRADING</h2>
+        <span id="live-price" style="font-size: 12px; color: var(--green); font-family: 'Rajdhani';">৳ 0.0000</span>
     </header>
 
+    <div id="admin-ad-box">
+        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 10px;">Loading announcements...</marquee>
+    </div>
+
+    <div class="tf-bar">
+        <button class="tf-btn active">1M</button>
+        <button class="tf-btn">5M</button>
+        <button class="tf-btn">15M</button>
+        <button class="tf-btn">1H</button>
+        <button class="tf-btn">4H</button>
+        <button class="tf-btn">1D</button>
+    </div>
+
+    <div id="chart-wrapper">
+        <div id="chart-theme-toggle">
+            <img src="/static/logo.png" alt="AAF" id="toggle-logo" style="width: 20px; height: 20px; border-radius: 3px;" onerror="this.src='https://via.placeholder.com/20'">
+            <span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold;">DARK</span>
+        </div>
+        <div id="chart-container"></div>
+    </div>
+
     <div class="container">
-        
-        <!-- ২. গ্লোবাল সার্ভার স্ট্যাটাস -->
-        <div class="premium-card grid-3">
-            <div class="stat-box">
-                <i class="fas fa-vault"></i>
-                <h4>Server Income</h4>
-                <p id="srv-income">৳ 0</p>
+        <div class="stat-grid">
+            <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
+            <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
+        </div>
+
+        <div class="trade-box">
+            <div class="input-group">
+                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00"><span>BDT</span></div>
+                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+                <div class="input-box"><input type="number" id="coin-input" placeholder="0.00"><span>AAF</span></div>
             </div>
-            <div class="stat-box">
-                <i class="fas fa-chart-line"></i>
-                <h4>Trading</h4>
-                <p id="srv-trade">৳ 0</p>
+            <div class="fee-card">
+                <div class="fee-row"><span>ফি (<span id="fee-perc">0.5</span>%):</span><b id="fee-amount">৳ 0.00</b></div>
+                <div class="fee-row"><span>মোট খরচ:</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div>
             </div>
-            <div class="stat-box">
-                <i class="fas fa-users"></i>
-                <h4>Users</h4>
-                <p id="srv-users">0</p>
+            <div class="btn-group">
+                <button id="buy-btn" class="btn buy">BUY SPOT</button>
+                <button id="sell-btn" class="btn sell">SELL SPOT</button>
             </div>
         </div>
-
-        <!-- ৩. অ্যাকশন গ্রিড -->
-        <div class="action-grid">
-            <a href="wallet?page=deposit" style="text-decoration: none; color: inherit;">
-                <div class="action-btn btn-dep">
-                    <i class="fas fa-plus-circle"></i> DEPOSIT
-                </div>
-            </a>
-
-            <a href="wallet?page=withdraw" style="text-decoration: none; color: inherit;">
-                <div class="action-btn btn-wit">
-                    <i class="fas fa-wallet"></i> WITHDRAW
-                </div>
-            </a>
-
-            <a href="wallet?page=transfer" style="text-decoration: none; color: inherit;">
-                <div class="action-btn" style="color: var(--gold);">
-                    <i class="fas fa-exchange-alt"></i> TRANSFER
-                </div>
-            </a>
-
-            <a href="trading" style="text-decoration: none; color: inherit;">
-                <div class="action-btn" style="color: var(--danger);">
-                    <i class="fas fa-sync"></i> CONVERT
-                </div>
-            </a>
-        </div>
-        <!-- ৫. অ্যাডভার্টাইজমেন্ট -->
-        <div class="banner-ad-box" id="banner-ad">
-        <div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">
-        ADVERTISEMENT SPACE
-        </div>
-</div>
-
-        
-        <div class="premium-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <div>
-            <h4 style="font-size: 10px; color: var(--text-muted); margin: 0;">REFER CENTER</h4>
-            <p id="refer-msg" style="font-size: 11px; margin: 5px 0; color: var(--gold);">আপনার বন্ধুদের ইনভাইট করুন</p>
-            <b id="my-refs" style="font-family: 'Syncopate';">0 REFERRED</b>
-        </div>
-        <button onclick="copyReferLink()" style="background: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">📋 COPY LINK</button>
     </div>
 
-    <!-- 🆕 প্রতি রেফারের বোনাস দেখানোর জায়গা -->
-    <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 12px; text-align: center;">
-        <span style="font-size: 10px; color: var(--text-gray);">প্রতি রেফারের বোনাস: </span>
-        <span id="refer-bonus-amount" style="font-size: 12px; font-weight: bold; color: var(--active-green);">লোড হচ্ছে...</span>
-    </div>
-
-    <input type="text" id="referLinkInput" readonly 
-           style="width:94%; background:#000; border:1px solid var(--border); padding:10px; border-radius:10px; color:#fff; font-size:12px;" 
-           placeholder="আপনার রেফার লিংক এখানে দেখাবে">
-        </div>
-
-        <!-- রেফারেল লিস্ট বাটন (আপডেট করা হয়েছে) -->
-        <a href="refer_list" style="text-decoration: none; color: inherit;">
-            <div class="premium-card" style="cursor: pointer; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-users-cog" style="font-size: 10px; color: var(--gold);"></i>
-                    <div>
-                        <h4 style="font-size: 11px; margin: 0;">REFERRAL LIST</h4>
-                        <p id="refer-count-status" style="color: var(--active-green); font-size: 9px; margin: 0;">মেম্বার লিস্ট দেখুন</p>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
-            </div>
-        </a>
-
-        <!-- পেমেন্ট হিস্ট্রি বাটন (আপডেট করা হয়েছে) -->
-        <a href="payment_history" style="text-decoration: none; color: inherit;">
-            <div class="premium-card" style="cursor: pointer; border: 1px solid rgba(0, 242, 254, 0.3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-history" style="font-size: 18px; color: var(--primary);"></i>
-                    <div>
-                        <h4 এটা: 11px; margin: 0;">PAYMENT HISTORY</h4>
-                        <p style="color: var(--primary); font-size: 9px; margin: 0;">লেনদেনের ইতিহাস</p>
-                    </div>
-                </div>
-                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5;"></i>
-            </div>
-        </a>
-        
-        
-
-        <!-- ৬. কমিউনিটি জয়েন কার্ড -->
-        <div class="premium-card join-card" id="join-container">
-            <div style="flex:1">
-                <small id="join-label" style="color: var(--text-muted);">COMMUNITY STATUS</small>
-                <b id="join-status" style="display:block; font-family:'Syncopate'; margin-top:5px; font-size: 14px; color: var(--danger);">OFFLINE</b>
-                <p id="join-info" style="font-size: 11px; margin: 5px 0; color: #ccc;">চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!</p>
-            </div>
-            <!-- এখন এটি সরাসরি ব্যাকএন্ডে রিকোয়েস্ট পাঠাবে -->
-            <button class="btn-join" id="join-btn" onclick="handleAutoJoin()">OFF🚀LINE</button>
-            <button onclick="verifyJoin()" id="verify-btn" style="display:block; background:#00f2fe; border:1px solid #00f2fe; color:#000; margin-top:10px; width:100%; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">✅ VERIFY MEMBERSHIP</button>
-            </div>
-
-    </div>
-
-     <!-- ৭. ডক নেভিগেশন বার -->
     <div class="dock-container">
         <nav class="dock-nav">
-            <a href="/dashboard" class="nav-item active"><i class="fas fa-house"></i>Home</a>
+            <a href="/dashboard" class="nav-item"><i class="fas fa-house"></i>Home</a>
             <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-            <a href="/trading" class="nav-item"><i class="fas fa-chart-line"></i>Trading</a>
+            <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i>Trading</a>
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
     </div>
-<script>
-// ================= GLOBAL =================
-const TG_KEY = "telegram_id";
-const API = window.location.origin;
 
-function getTG(){
-  const id = localStorage.getItem(TG_KEY);
-  if(!id){
-    location.href="/login";
-  }
-  return id;
-}
+    <script>
+        const API = window.location.origin;
+        let chart, candleSeries, lastPrice = 1.0;
+        let userCash = 0, userAAF = 0, currentFee = 0.5;
+        let isDarkMode = true;
 
-// ================= SAFE INTERVAL =================
-function smartInterval(fn, time){
-  let t;
-  function start(){ t = setInterval(fn, time); }
-  function stop(){ clearInterval(t); }
-
-  document.addEventListener("visibilitychange", ()=>{
-    document.hidden ? stop() : start();
-  });
-
-  start();
-}
-
-// ================= INIT DASHBOARD =================
-async function initDashboard() {
-  try {
-    const response = await fetch(`/api/user/me`, { credentials: "include" });
-    if (!response.ok) throw new Error("Network Error");
-    const data = await response.json();
-    if (data.status === "success") {
-      renderUI(data.user, data.admin);
-      const linkInput = document.getElementById('referLinkInput');
-      if (linkInput && data.user.telegram_id) {
-        linkInput.value = `${window.location.origin}/login?ref=${data.user.telegram_id}`;
-      }
-    } else if (data.message === "session_expired") {
-      localStorage.removeItem("telegram_id");
-      location.href = "/login";
-    }
-  } catch (err) {
-    triggerPopup("Server Connection Error");
-  }
-}
-
-// ================= ACTION HANDLER =================
-function handleAction(type) {
-  checkTimedInterstitial();
-
-  let target = "";
-  if (type.includes('=')) {
-    let parts = type.split('=');
-    target = parts[0] + ".html?page=" + parts[1];
-  } else {
-    target = type + ".html";
-  }
-
-  location.href = target;
-}
-
-// ================= JOIN =================
-async function handleAutoJoin() {
-    const btn = document.getElementById('join-btn');
-    if (!btn) return;
-    btn.innerText = "JOINING...";
-    btn.disabled = true;
-    try {
-        const res = await fetch('/api/silent_join', { method: 'POST', credentials: "include" });
-        const data = await res.json();
-        if (data.success) {
-            triggerPopup("✅ চ্যানেল জয়েন সফল!");
-            initDashboard(); // UI রিফ্রেশ (বাটন লুকাবে, স্ট্যাটাস অনলাইন হবে)
-        } else {
-            // ব্যাকএন্ড যদি কখনো false দেয়, তখন চ্যানেল লিংক খোলার চেষ্টা
-            if (data.channel) window.open(data.channel, "_blank");
-            triggerPopup("❌ চ্যানেলে জয়েন করুন, তারপর আবার চেষ্টা করুন");
+        function triggerPopup(msg) {
+            const bar = document.getElementById('active-user-bar');
+            document.getElementById('popup-text').innerText = msg;
+            bar.style.display = "flex";
+            setTimeout(() => { bar.style.display = "none"; }, 4000);
         }
-    } catch (error) {
-        console.error(error);
-        triggerPopup("সার্ভার এরর");
-    }
-    btn.innerText = "JOIN NOW";
-    btn.disabled = false;
-}
 
-// ============ verifyjoin =====================
-async function verifyJoin() {
-    const btn = document.getElementById('verify-btn');
-    if (!btn) return;
-    const originalText = btn.innerText;
-    btn.innerText = "VERIFYING...";
-    btn.disabled = true;
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 সেকেন্ড টাইমআউট
-    
-    try {
-        const res = await fetch('/api/verify_join', {
-            method: 'POST',
-            credentials: "include",
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        const data = await res.json();
-        
-        if (data.success) {
-            triggerPopup("✅ চ্যানেল ভেরিফাইড!");
-            await initDashboard();  // UI রিফ্রেশ
-        } else {
-            if (data.channel && data.channel.trim()) {
-                window.open(data.channel, "_blank");
-                triggerPopup("❌ চ্যানেলে জয়েন করে আবার ভেরিফাই করুন");
-            } else {
-                triggerPopup("❌ ভেরিফিকেশন ব্যর্থ: " + (data.message || "অজানা ত্রুটি"));
-            }
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            if (!container) return;
+            container.innerHTML = ''; 
+
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: 250,
+                layout: { background: { type: 'solid', color: '#000000' }, textColor: '#d1d4dc' },
+                grid: { vertLines: { visible: false }, horzLines: { color: 'rgba(42, 46, 57, 0.1)' } },
+                timeScale: { borderColor: '#485c7b' },
+            });
+
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#26a69a', downColor: '#ef5350', 
+                borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+            });
         }
-    } catch (error) {
-        clearTimeout(timeoutId);
-        console.error(error);
-        if (error.name === 'AbortError') {
-            triggerPopup("⏰ সার্ভার সাড়া দিচ্ছে না, আবার চেষ্টা করুন");
-        } else {
-            triggerPopup("❌ সার্ভার ত্রুটি, আবার চেষ্টা করুন");
+
+        async function loadHistoricalCandles() {
+            try {
+                const res = await fetch(`${API}/api/candles`);
+                const data = await res.json();
+                if (data.candles) {
+                    candleSeries.setData(data.candles);
+                    chart.timeScale().fitContent();
+                }
+            } catch(e) { console.log("Chart data connection failed."); }
         }
-    } finally {
-        // নিশ্চিতভাবে বাটন রিস্টোর
-        if (btn) {
-            btn.innerText = originalText;
-            btn.disabled = false;
+
+        async function fetchPrice() {
+            try {
+                const res = await fetch(`${API}/api/market/price`);
+                const data = await res.json();
+                if (data.price) {
+                    lastPrice = data.price;
+                    document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+                }
+            } catch(e) {}
         }
-    }
-}
-    
-// ================= POPUP =================
-async function loadPopupData() {
-    try {
-        const res = await fetch('/api/admin/config');
-        const data = await res.json();
-        
-        const enabled = data.popup_ad_enabled === true;
-        const title = data.popup_ad_title || '📢 নতুন অফার!';
-        const desc = data.popup_ad_desc || '';
-        const image = data.popup_ad_image || '';
-        
-        let html = `<h3 style="color: #00f2fe;">${escapeHtml(title)}</h3>`;
-        if (image) html += `<img src="${image}" style="width:100%; border-radius:10px; margin:10px 0;">`;
-        if (desc) html += `<p>${escapeHtml(desc)}</p>`;
-        document.getElementById('popup-content').innerHTML = html;
-        
-        if (enabled) {
-            const shown = localStorage.getItem('popup_shown_today') === new Date().toDateString();
-            if (!shown) {
-                setTimeout(() => {
-                    document.getElementById('popup-display').style.display = 'block';
-                }, 2000);
-            }
+
+        async function syncUserData() {
+            try {
+                const token = localStorage.getItem('token'); 
+                if(!token) return;
+                const res = await fetch(`${API}/api/user/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    userCash = data.user.cash || 0;
+                    userAAF = data.user.aaf || 0;
+                    currentFee = data.admin.trading_fee || 0.5;
+                    document.getElementById('fee-perc').innerText = currentFee;
+                    document.getElementById('admin-ad-text').innerText = data.admin.trading_ad_text;
+                    document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+                    document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+                    calculate(); // ব্যালেন্স সিঙ্ক হওয়ার পর বাটন স্টেট আপডেট
+                }
+            } catch(e) {}
         }
-    } catch(e) { console.error(e); }
-}
 
-function closePopup() {
-    document.getElementById('popup-display').style.display = 'none';
-    localStorage.setItem('popup_shown_today', new Date().toDateString());
-}
+        const tkIn = document.getElementById('taka-input');
+        const coIn = document.getElementById('coin-input');
+        const buyBtn = document.getElementById('buy-btn');
+        const sellBtn = document.getElementById('sell-btn');
 
-// পেজ লোড হলে
-window.addEventListener('DOMContentLoaded', loadPopupData);
-
-function copyReferLink() {
-    const tg = localStorage.getItem(TG_KEY);
-    if (!tg) {
-        triggerPopup("আপনি লগইন নাই!");
-        return;
-    }
-    const referLink = `${window.location.origin}/login?ref=${tg}`;
-    
-    // ইনপুট ফিল্ডে দেখান
-    const input = document.getElementById('referLinkInput');
-    if (input) input.value = referLink;
-    
-    // কপি করুন
-    navigator.clipboard.writeText(referLink).then(() => {
-        triggerPopup("✅ রেফার লিংক কপি হয়েছে!");
-    }).catch(() => {
-        triggerPopup("❌ কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
-    });
-}
-
-    function createPopupContainer() {
-    if (document.getElementById('popup-display')) return;
-    
-    const popupDiv = document.createElement('div');
-    popupDiv.id = 'popup-display';
-    popupDiv.style.cssText = `
-        display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: #0d111c; border: 2px solid #00f2fe; border-radius: 20px; padding: 20px;
-        z-index: 10000; width: 350px; max-width: 90%; box-shadow: 0 0 30px rgba(0,242,254,0.3);
-    `;
-    popupDiv.innerHTML = `
-        <div style="text-align: right;">
-            <button onclick="closePopup()" style="background:none; border:none; color:#ff5555; font-size:20px; cursor:pointer;">✕</button>
-        </div>
-        <div id="popup-content"></div>
-    `;
-    document.body.appendChild(popupDiv);
-    }
-
-// ================= INIT =================
-window.addEventListener('load', ()=>{
-  initDashboard();
-  smartInterval(initDashboard,15000);
-});
-
-
-// ================= UI RENDER =================
-function renderUI(user, admin) {
-  const setText = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = val;
-  };
-
-  // পূর্ণ নাম দেখানো
-  const nameElement = document.getElementById('u-name');
-  if (nameElement) {
-    let fullName = '';
-    if (user.first_name) fullName += user.first_name;
-    if (user.last_name) fullName += ' ' + user.last_name;
-    fullName = fullName.trim() || user.username || 'USER';
-    nameElement.innerText = fullName.toUpperCase();
-  }
-
-  setText('u-id', ": " + user.telegram_id);
-  setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
-  setText('h-aaf', user.aaf || 0);
-  setText('srv-income', '৳ ' + (admin.server_income || 0));
-  setText('srv-trade', '৳ ' + (admin.server_trading || 0));
-  setText('srv-users', admin.total_users || 0);
-  setText('my-refs', (user.refer_count || 0) + " REFERRED");
-
-  const joined = user.is_joined;
-  const dot = document.getElementById('status-dot');
-  const joinBtn = document.getElementById('join-btn');
-  const joinStatus = document.getElementById('join-status');
-  const joinInfo = document.getElementById('join-info');
-  const joinCard = document.getElementById('join-container');
-
-  if (dot) dot.className = joined ? 'dot-online' : 'dot-offline';
-  if (joinBtn) joinBtn.style.display = joined ? 'none' : 'block';
-  if (joinStatus) joinStatus.innerText = joined ? 'ONLINE' : 'OFFLINE';
-  if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
-  if (joinCard) joinCard.classList.toggle('connected', joined);
-
-  // ব্যানার অ্যাড রেন্ডার
-  const bannerBox = document.getElementById('banner-ad');
-  if (bannerBox) {
-    const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
-    if (adCode !== "") {
-      executeScriptHTML(adCode, bannerBox);
-    } else {
-      bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
-    }
-  }
-
-  // 🆕 রেফার বোনাস দেখানো (HTML-এ যুক্ত করা স্প্যানটি আপডেট)
-  const bonusSpan = document.getElementById('refer-bonus-amount');
-  if (bonusSpan) {
-      const bonusAmount = admin.referral_bonus || 0;
-      bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
-  }
- }
-
-function executeScriptHTML(html, targetElement) {
-  targetElement.innerHTML = "";
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-
-  // স্ক্রিপ্টগুলো আলাদা করে রান করানো
-  const scripts = tempDiv.getElementsByTagName('script');
-  for (let script of scripts) {
-    const newScript = document.createElement('script');
-    if (script.src) {
-      newScript.src = script.src;
-    } else {
-      newScript.textContent = script.textContent;
-    }
-    targetElement.appendChild(newScript);
-  }
-
-  // বাকি HTML (ইফ্রেম, ইমেজ, ডিভি) বসানো
-  const otherNodes = Array.from(tempDiv.childNodes).filter(n => n.nodeType !== 1 || n.tagName !== 'SCRIPT');
-  for (let node of otherNodes) {
-    targetElement.appendChild(node.cloneNode(true));
-  }
-    }
-
-    // চ্যানেলের সদস্যপদ চেক করার ফাংশন
-async function checkChannelMembership() {
-    try {
-        const res = await fetch('/api/check_membership', { 
-            credentials: "include",
-            cache: 'no-store'
-        });
-        const data = await res.json();
-        
-        // ব্যাকএন্ড যা বলবে তাই বিশ্বাস করে পুরো UI আপডেট করি
-        // সঠিক স্ট্যাটাস পেতে initDashboard() কল করি
-        if (data.is_member === false) {
-            // অফলাইন হলে বাটন দেখানোর প্রয়োজন হতে পারে
-            initDashboard();
-        } else if (data.is_member === true) {
-            // অনলাইন হলে UI ঠিক রাখি
-            initDashboard();
+        function calculate() {
+            let tk = parseFloat(tkIn.value) || 0;
+            let co = parseFloat(coIn.value) || 0;
+            let fee = tk * currentFee / 100;
+            let total = tk + fee;
+            
+            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+            document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
+            
+            // বাটন স্টেট আপডেট
+            buyBtn.disabled = !(tk >= 10 && total <= userCash);
+            sellBtn.disabled = !(co > 0 && co <= userAAF);
         }
-    } catch(e) {
-        console.error("Membership check failed", e);
-    }
- }
 
- window.addEventListener('load', ()=>{
-    createPopupContainer();      // ← যোগ করুন
-    initDashboard();
-    smartInterval(initDashboard, 15000);
-    smartInterval(checkChannelMembership, 15000);
-    loadPopupData();             // ← রাখুন
-});
+        tkIn.oninput = () => { coIn.value = (tkIn.value / lastPrice).toFixed(4); calculate(); };
+        coIn.oninput = () => { tkIn.value = (coIn.value * lastPrice).toFixed(2); calculate(); };
 
-    // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
-function triggerPopup(message) {
-    const bar = document.getElementById('active-user-bar');
-    const text = document.getElementById('popup-text');
-    if (!bar || !text) return;
-    text.innerText = message;
-    bar.style.display = "flex";
-    setTimeout(() => {
-        bar.style.display = "none";
-    }, 3000);
-    }
+        window.onload = () => {
+            initChart();
+            loadHistoricalCandles();
+            syncUserData();
+            fetchPrice();
+            
+            // থিম টগল লজিক
+            document.getElementById('chart-theme-toggle').onclick = function() {
+                isDarkMode = !isDarkMode;
+                const themeStatus = document.getElementById('theme-status');
+                
+                if (isDarkMode) {
+                    chart.applyOptions({ layout: { background: { color: '#000000' }, textColor: '#d1d4dc' } });
+                    this.style.background = "#1e293b";
+                    themeStatus.innerText = "DARK";
+                    themeStatus.style.color = "#94a3b8";
+                } else {
+                    chart.applyOptions({ layout: { background: { color: '#ffffff' }, textColor: '#191919' } });
+                    this.style.background = "#f1f5f9";
+                    themeStatus.innerText = "LIGHT";
+                    themeStatus.style.color = "#000";
+                }
+            };
 
-    
-</script>
-
+            setInterval(fetchPrice, 5000);
+            setInterval(syncUserData, 30000);
+        };
+    </script>
+</body>
 </html>
