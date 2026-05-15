@@ -142,6 +142,8 @@ let chart, candleSeries, lastPrice = 1.0;
 let userCash = 0, userAAF = 0, currentFee = 0.5;
 let isDarkMode = true;
 let candles = [];
+let adminData = {};
+    
 
 // ১. ডাটা সিঙ্ক ফাংশন (Error Handling সহ)
 async function syncTradingData() {
@@ -149,35 +151,33 @@ async function syncTradingData() {
         const res = await fetch('/api/user/me', {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache' },
-            credentials: "include" 
+            credentials: "include"
         });
-        
-        if (!res.ok) throw new Error("Server not responding");
-        const data = await res.json();
-        
-        if (data.status === "success") {
-            const u = data.user;
-            const a = data.admin;
 
-            // ভ্যালুগুলো সংখ্যায় রূপান্তর নিশ্চিত করা
-            lastPrice = parseFloat(a.server_trading) || 1.0;
+        if (!res.ok) throw new Error("Server not responding");
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+            const u = data.user || {};
+            const a = data.admin || {};
+
+            adminData = a;
+
+            lastPrice = parseFloat(a.live_price ?? a.server_trading) || 1.0;
             userCash = parseFloat(u.cash) || 0;
             userAAF = parseFloat(u.aaf) || 0;
             currentFee = parseFloat(a.trading_fee) || 0.5;
 
-            // UI আপডেট
             updateUI();
-            
-            // চার্ট আপডেট
             updateChart(lastPrice);
-            calculate(); 
+            calculate();
         }
-    } catch(e) { 
+    } catch (e) {
         console.error("Sync Error:", e);
-        // এপিআই কাজ না করলে অন্তত ডিফল্ট প্রাইস দিয়ে চার্ট সচল রাখা
         updateChart(lastPrice);
     }
-}
+    }
 
     // এই ফাংশনটি আপনার কোডে যোগ করুন চার্ট ডাটা লোড করার জন্য
 async function loadChartHistory() {
@@ -194,27 +194,24 @@ async function loadChartHistory() {
     }
 }
 
-// আপনার বর্তমান window.onload বা DOMContentLoaded এর ভেতরে এটি কল করুন
-document.addEventListener('DOMContentLoaded', () => {
-    initChart();
-    loadChartHistory(); // ← এই লাইনটি অবশ্যই যোগ করবেন
-    syncTradingData();
-    setInterval(syncTradingData, 3000);
-});
-    
-
 // ২. UI এলিমেন্ট আপডেট
 function updateUI() {
-    if(document.getElementById('live-price')) document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-    if(document.getElementById('user-cash')) document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
-    if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-    if(document.getElementById('fee-perc')) document.getElementById('fee-perc').innerText = currentFee;
-    
+    const livePriceEl = document.getElementById('live-price');
+    const userCashEl = document.getElementById('user-cash');
+    const userAafEl = document.getElementById('user-aaf');
+    const feePercEl = document.getElementById('fee-perc');
     const adText = document.getElementById('admin-ad-text');
-    if(adText) {
-        adText.innerText = (typeof admin !== 'undefined' && admin.trading_ad_text) ? admin.trading_ad_text : "Market is Live | Trade Responsibly";
+
+    if (livePriceEl) livePriceEl.innerText = `৳ ${lastPrice.toFixed(4)}`;
+    if (userCashEl) userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
+    if (userAafEl) userAafEl.innerText = userAAF.toFixed(2);
+    if (feePercEl) feePercEl.innerText = currentFee;
+
+    if (adText) {
+        adText.innerText = adminData.trading_ad_text || "Market is Live | Trade Responsibly";
     }
 }
+    
 
 // ৩. চার্ট সেটআপ
 function initChart() {
@@ -353,6 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
     
-<script>
+</script>
 </body>
 </html>
