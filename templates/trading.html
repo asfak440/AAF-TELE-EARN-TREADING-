@@ -141,8 +141,9 @@
 let chart, candleSeries, lastPrice = 1.0;
 let userCash = 0, userAAF = 0, currentFee = 0.5;
 let isDarkMode = true;
+let candles = [];
 
-// ডাটা সিঙ্ক ফাংশন
+// ১. ডাটা সিঙ্ক ফাংশন (সার্ভার থেকে ব্যালেন্স ও প্রাইস আনা)
 async function syncTradingData() {
     try {
         const res = await fetch('/api/user/me', {
@@ -157,11 +158,13 @@ async function syncTradingData() {
             const u = data.user;
             const a = data.admin;
 
-            lastPrice = parseFloat(a.server_trading || 1.0);
-            userCash = parseFloat(u.cash || 0);
-            userAAF = parseFloat(u.aaf || 0);
-            currentFee = parseFloat(a.trading_fee || 0.5);
+            // ভ্যালু আপডেট (String থেকে Number এ কনভার্ট নিশ্চিত করা)
+            lastPrice = parseFloat(a.server_trading) || 1.0;
+            userCash = parseFloat(u.cash) || 0;
+            userAAF = parseFloat(u.aaf) || 0;
+            currentFee = parseFloat(a.trading_fee) || 0.5;
 
+            // UI আপডেট
             document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
             document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
             document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
@@ -172,12 +175,14 @@ async function syncTradingData() {
             }
 
             updateChart(lastPrice);
-            calculate(); 
+            calculate(); // ডেটা আসার পর বাটন চেক করা
         }
-    } catch(e) { console.error("Sync Error:", e); }
+    } catch(e) { 
+        console.error("Sync Error:", e); 
+    }
 }
 
-// চার্ট সেটআপ
+// ২. চার্ট সেটআপ (TradingView Lightweight Chart)
 function initChart() {
     const container = document.getElementById('chart-container');
     if (!container) return;
@@ -186,61 +191,88 @@ function initChart() {
     chart = LightweightCharts.createChart(container, {
         width: container.offsetWidth,
         height: 250,
-        layout: { background: { type: 'solid', color: '#000000' }, textColor: '#d1d4dc' },
-        grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
+        layout: { 
+            background: { type: 'solid', color: '#000000' }, 
+            textColor: '#d1d4dc' 
+        },
+        grid: { 
+            vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, 
+            horzLines: { color: 'rgba(255, 255, 255, 0.05)' } 
+        },
         timeScale: { borderColor: '#485c7b', timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     });
 
     candleSeries = chart.addCandlestickSeries({
         upColor: '#00ffa3', downColor: '#ff3366', 
         borderVisible: false, wickUpColor: '#00ffa3', wickDownColor: '#ff3366',
     });
+
+    // রেসপনসিভ চার্ট
+    window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.offsetWidth });
+    });
 }
 
-// ক্যান্ডেল মুভমেন্ট
-let candles = [];
+// ৩. ক্যান্ডেল মুভমেন্ট (রিয়েল টাইম আপডেট)
 function updateChart(price) {
-    const t = Math.floor(Date.now() / 1000);
-    const mt = t - (t % 60);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const minuteTimestamp = currentTime - (currentTime % 60);
 
     if (candles.length === 0) {
-        for (let i = 25; i >= 1; i--) {
-            candles.push({ time: mt-(i*60), open: price, high: price+0.002, low: price-0.002, close: price });
+        // শুরুতে কিছু ফেক হিস্টোরিকাল ডাটা তৈরি করা (যাতে চার্ট খালি না দেখায়)
+        for (let i = 50; i >= 1; i--) {
+            let p = price + (Math.random() - 0.5) * 0.01;
+            candles.push({ 
+                time: minuteTimestamp - (i * 60), 
+                open: p, high: p + 0.002, low: p - 0.002, close: p 
+            });
         }
         candleSeries.setData(candles);
     }
 
     candleSeries.update({
-        time: mt,
-        open: candles[candles.length-1]?.close || price,
-        high: price + 0.001,
-        low: price - 0.001,
+        time: minuteTimestamp,
+        open: candles[candles.length - 1]?.close || price,
+        high: Math.max(price, (candles[candles.length - 1]?.high || price)),
+        low: Math.min(price, (candles[candles.length - 1]?.low || price)),
         close: price
     });
 }
 
-// ক্যালকুলেশন
+// ৪. ক্যালকুলেশন এবং বাটন এনাবল/ডিজেবল লজিক
 function calculate() {
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
-    if(!tkIn || !coIn) return;
+    const buyBtn = document.getElementById('buy-btn');
+    const sellBtn = document.getElementById('sell-btn');
 
-    let tk = parseFloat(tkIn.value) || 0;
-    let fee = (tk * currentFee) / 100;
-    let total = tk + fee;
+    let tkValue = parseFloat(tkIn.value) || 0;
+    let coValue = parseFloat(coIn.value) || 0;
+
+    // ফি হিসাব
+    let fee = (tkValue * currentFee) / 100;
+    let totalTakaRequired = tkValue + fee;
     
     document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-    document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
-    
-    document.getElementById('buy-btn').disabled = (tk < 10 || total > userCash);
-    document.getElementById('sell-btn').disabled = (parseFloat(coIn.value) <= 0 || parseFloat(coIn.value) > userAAF);
+    document.getElementById('total-cost').innerText = `৳ ${totalTakaRequired.toFixed(2)}`;
+
+    // BUY বাটন চেক (মিনিমাম ১০ টাকা এবং অ্যাকাউন্টে টাকা থাকতে হবে)
+    buyBtn.disabled = (tkValue < 10 || totalTakaRequired > userCash);
+
+    // SELL বাটন চেক (কয়েন থাকতে হবে এবং ব্যালেন্সের চেয়ে বেশি সেল করা যাবে না)
+    sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
 }
 
-// ট্রেড এক্সিকিউট
+// ৫. ট্রেড এক্সিকিউট (BUY/SELL বাটন ক্লিক করলে যা হবে)
 async function executeTrade(type) {
     const tk = parseFloat(document.getElementById('taka-input').value);
     const co = parseFloat(document.getElementById('coin-input').value);
-    if (!tk || tk <= 0) return;
+
+    if (!tk || tk <= 0) {
+        alert("সঠিক পরিমাণ লিখুন!");
+        return;
+    }
 
     try {
         const res = await fetch('/api/trade/execute', {
@@ -251,38 +283,63 @@ async function executeTrade(type) {
         });
         const d = await res.json();
         
+        // পপআপ মেসেজ দেখানো
         const bar = document.getElementById('active-user-bar');
-        document.getElementById('popup-text').innerText = d.message;
+        const text = document.getElementById('popup-text');
+        text.innerText = d.message;
         bar.style.display = "flex";
+        
         setTimeout(() => { bar.style.display = "none"; }, 3000);
         
+        // ট্রেড শেষে দ্রুত ডাটা আপডেট করা
         syncTradingData(); 
-    } catch(e) { console.error("Trade Error", e); }
+        document.getElementById('taka-input').value = "";
+        document.getElementById('coin-input').value = "";
+    } catch(e) { 
+        console.error("Trade Error", e); 
+    }
 }
 
+// ৬. পেজ লোড হওয়ার পর ইনিশিয়ালাইজেশন
 window.onload = () => {
     initChart();
     syncTradingData();
-    setInterval(syncTradingData, 2000);
+    
+    // প্রতি ৩ সেকেন্ড পরপর অটো সিঙ্ক
+    setInterval(syncTradingData, 3000);
 
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
-    if(tkIn && coIn) {
-        tkIn.oninput = () => { coIn.value = (tkIn.value / lastPrice).toFixed(4); calculate(); };
-        coIn.oninput = () => { tkIn.value = (coIn.value * lastPrice).toFixed(2); calculate(); };
-    }
 
+    // ইনপুট বক্সের রিয়েল-টাইম কানেকশন
+    tkIn.addEventListener('input', () => {
+        coIn.value = (parseFloat(tkIn.value) / lastPrice).toFixed(4);
+        if (tkIn.value === "") coIn.value = "";
+        calculate();
+    });
+
+    coIn.addEventListener('input', () => {
+        tkIn.value = (parseFloat(coIn.value) * lastPrice).toFixed(2);
+        if (coIn.value === "") tkIn.value = "";
+        calculate();
+    });
+
+    // থিম টগল (ডার্ক/লাইট মোড)
     const themeBtn = document.getElementById('chart-theme-toggle');
     if (themeBtn) {
         themeBtn.onclick = function() {
             isDarkMode = !isDarkMode;
             chart.applyOptions({
-                layout: { background: { color: isDarkMode ? '#000000' : '#ffffff' }, textColor: isDarkMode ? '#d1d4dc' : '#191919' }
+                layout: { 
+                    background: { color: isDarkMode ? '#000000' : '#ffffff' }, 
+                    textColor: isDarkMode ? '#d1d4dc' : '#191919' 
+                }
             });
             document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
         };
     }
 };
+    
 </script>
     
 </body>
