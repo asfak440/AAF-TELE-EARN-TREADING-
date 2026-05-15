@@ -179,6 +179,30 @@ async function syncTradingData() {
     }
 }
 
+    // এই ফাংশনটি আপনার কোডে যোগ করুন চার্ট ডাটা লোড করার জন্য
+async function loadChartHistory() {
+    try {
+        const res = await fetch('/api/candles');
+        const data = await res.json();
+        
+        if (data.candles && data.candles.length > 0) {
+            candles = data.candles; // গ্লোবাল ক্যান্ডেল অ্যারে আপডেট
+            candleSeries.setData(candles); // চার্টে ডাটা বসানো
+        }
+    } catch (e) {
+        console.error("Chart history load failed:", e);
+    }
+}
+
+// আপনার বর্তমান window.onload বা DOMContentLoaded এর ভেতরে এটি কল করুন
+document.addEventListener('DOMContentLoaded', () => {
+    initChart();
+    loadChartHistory(); // ← এই লাইনটি অবশ্যই যোগ করবেন
+    syncTradingData();
+    setInterval(syncTradingData, 3000);
+});
+    
+
 // ২. UI এলিমেন্ট আপডেট
 function updateUI() {
     if(document.getElementById('live-price')) document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
