@@ -181,14 +181,13 @@ async function syncTradingData() {
 
 // ২. UI এলিমেন্ট আপডেট
 function updateUI() {
-    document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
-    document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
-    document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
-    document.getElementById('fee-perc').innerText = currentFee;
+    if(document.getElementById('live-price')) document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
+    if(document.getElementById('user-cash')) document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
+    if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
+    if(document.getElementById('fee-perc')) document.getElementById('fee-perc').innerText = currentFee;
     
     const adText = document.getElementById('admin-ad-text');
     if(adText) {
-        // সার্ভার থেকে আসা অ্যাড টেক্সট বা ডিফল্ট মেসেজ
         adText.innerText = (typeof admin !== 'undefined' && admin.trading_ad_text) ? admin.trading_ad_text : "Market is Live | Trade Responsibly";
     }
 }
@@ -196,7 +195,7 @@ function updateUI() {
 // ৩. চার্ট সেটআপ
 function initChart() {
     const container = document.getElementById('chart-container');
-    if (!container) return;
+    if (!container || typeof LightweightCharts === 'undefined') return; // লাইব্রেরি না থাকলে সেফটি এক্সিট
     container.innerHTML = ''; 
 
     chart = LightweightCharts.createChart(container, {
@@ -213,7 +212,7 @@ function initChart() {
     });
 
     window.addEventListener('resize', () => {
-        chart.applyOptions({ width: container.offsetWidth });
+        if(chart) chart.applyOptions({ width: container.offsetWidth });
     });
 }
 
@@ -248,24 +247,30 @@ function calculate() {
     const buyBtn = document.getElementById('buy-btn');
     const sellBtn = document.getElementById('sell-btn');
 
+    if(!tkIn || !coIn) return; // এলিমেন্ট না থাকলে ক্যালকুলেশন স্কিপ করবে (ক্র্যাশ করবে না)
+
     let tkValue = parseFloat(tkIn.value) || 0;
     let coValue = parseFloat(coIn.value) || 0;
     
     let fee = (tkValue * currentFee) / 100;
     let total = tkValue + fee;
     
-    document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-    document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
+    if(document.getElementById('fee-amount')) document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+    if(document.getElementById('total-cost')) document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
     
-    // বাটন এনাবল/ডিজেবল
-    buyBtn.disabled = (tkValue < 10 || total > userCash);
-    sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
+    // বাটন এনাবল/ডিজেবল (এলিমেন্ট থাকলে তবেই কাজ করবে)
+    if(buyBtn) buyBtn.disabled = (tkValue < 10 || total > userCash);
+    if(sellBtn) sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
 }
 
 // ৬. ট্রেড এক্সিকিউট
 async function executeTrade(type) {
-    const tk = parseFloat(document.getElementById('taka-input').value);
-    const co = parseFloat(document.getElementById('coin-input').value);
+    const tkIn = document.getElementById('taka-input');
+    const coIn = document.getElementById('coin-input');
+    if(!tkIn || !coIn) return;
+
+    const tk = parseFloat(tkIn.value);
+    const co = parseFloat(coIn.value);
     if (!tk || tk <= 0) return;
 
     try {
@@ -289,8 +294,8 @@ async function executeTrade(type) {
     } catch(e) { console.error("Trade Error", e); }
 }
 
-// লোড হওয়ার পর কল
-window.onload = () => {
+// লোড হওয়ার পর কল (DOMContentLoaded ব্যবহার করা হয়েছে যাতে দ্রুত রান হয়)
+document.addEventListener('DOMContentLoaded', () => {
     initChart();
     syncTradingData();
     setInterval(syncTradingData, 3000);
@@ -300,11 +305,11 @@ window.onload = () => {
 
     if (tkIn && coIn) {
         tkIn.addEventListener('input', () => {
-            coIn.value = (tkIn.value / lastPrice).toFixed(4);
+            coIn.value = tkIn.value ? (tkIn.value / lastPrice).toFixed(4) : "";
             calculate();
         });
         coIn.addEventListener('input', () => {
-            tkIn.value = (coIn.value * lastPrice).toFixed(2);
+            tkIn.value = coIn.value ? (coIn.value * lastPrice).toFixed(2) : "";
             calculate();
         });
     }
@@ -312,17 +317,18 @@ window.onload = () => {
     const themeBtn = document.getElementById('chart-theme-toggle');
     if (themeBtn) {
         themeBtn.onclick = function() {
+            if(!chart) return; // চার্ট লোড না হলে থিম চেঞ্জ স্কিপ করবে
             isDarkMode = !isDarkMode;
             chart.applyOptions({
                 layout: { background: { color: isDarkMode ? '#000000' : '#ffffff' }, textColor: isDarkMode ? '#d1d4dc' : '#191919' }
             });
-            document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
+            if(document.getElementById('theme-status')) {
+                document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
+            }
         };
     }
-};
+});
     
-            
 <script>
-    
 </body>
 </html>
