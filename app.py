@@ -946,32 +946,55 @@ def market_price():
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
 def execute_trade():
-    data = request.json
-    telegram_id = data.get("telegram_id")
-    trade_type = data.get("type")
-    if trade_type:
-        trade_type = trade_type.lower()   # ← এই লাইনটি যোগ করুন
-    taka = data.get("taka", 0)
-    coin = data.get("coin", 0)
-    price = data.get("price", 0)
+    data = request.get_json(silent=True) or {}
 
-    user = users_col.find_one({"telegram_id": telegram_id})
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "session_expired"}), 401
+
+    trade_type = str(data.get("type", "")).lower().strip()
+    taka = float(data.get("taka", 0) or 0)
+    coin = float(data.get("coin", 0) or 0)
+    price = float(data.get("price", 0) or 0)
+
+    user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
-        return jsonify({"message": "User not found"})
-    admin = get_admin_config()
-    fee_percent = admin.get("trading_fee", 0.5)
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    admin = get_admin_config() or {}
+    fee_percent = float(admin.get("trading_fee", 0.5) or 0.5)
+
+    if price <= 0:
+        return jsonify({"status": "error", "message": "Invalid price"}), 400
 
     if trade_type == "buy":
+        if taka <= 0:
+            return jsonify({"status": "error", "message": "Invalid taka amount"}), 400
+
+        if coin <= 0:
+            coin = taka / price
+
         total_cost = taka + (taka * fee_percent / 100)
-        if user.get("cash", 0) < total_cost:
-            return jsonify({"message": "Insufficient cash"})
-        new_cash = user["cash"] - total_cost
-        new_aaf = user.get("aaf", 0) + coin
-        users_col.update_one({"_id": user["_id"]}, {"$set": {"cash": new_cash, "aaf": new_aaf}})
+
+        if float(user.get("cash", 0)) < total_cost:
+            return jsonify({"status": "error", "message": "Insufficient cash"}), 400
+
+        new_cash = float(user.get("cash", 0)) - total_cost
+        new_aaf = float(user.get("aaf", 0)) + coin
         fee_amount = taka * fee_percent / 100
-        admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
+
+        users_col.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"cash": new_cash, "aaf": new_aaf}}
+        )
+
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$inc": {"server_income": fee_amount}}
+        )
+
         trades_col.insert_one({
-            "telegram_id": telegram_id,
+            "telegram_id": user.get("telegram_id"),
             "type": "buy",
             "taka": taka,
             "coin": coin,
@@ -979,19 +1002,37 @@ def execute_trade():
             "fee": fee_amount,
             "timestamp": datetime.utcnow()
         })
-        return jsonify({"message": f"Bought {coin} AAF successfully"})
+
+        return jsonify({"status": "success", "message": f"Bought {coin:.4f} AAF successfully"})
 
     elif trade_type == "sell":
-        if user.get("aaf", 0) < coin:
-            return jsonify({"message": "Insufficient AAF"})
-        total_receive = taka - (taka * fee_percent / 100)
-        new_cash = user["cash"] + total_receive
-        new_aaf = user["aaf"] - coin
-        users_col.update_one({"_id": user["_id"]}, {"$set": {"cash": new_cash, "aaf": new_aaf}})
+        if coin <= 0:
+            return jsonify({"status": "error", "message": "Invalid coin amount"}), 400
+
+        if taka <= 0:
+            taka = coin * price
+
+        if float(user.get("aaf", 0)) < coin:
+            return jsonify({"status": "error", "message": "Insufficient AAF"}), 400
+
         fee_amount = taka * fee_percent / 100
-        admin_config_col.update_one({"_id": "global"}, {"$inc": {"server_income": fee_amount}})
+        total_receive = taka - fee_amount
+
+        new_cash = float(user.get("cash", 0)) + total_receive
+        new_aaf = float(user.get("aaf", 0)) - coin
+
+        users_col.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"cash": new_cash, "aaf": new_aaf}}
+        )
+
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$inc": {"server_income": fee_amount}}
+        )
+
         trades_col.insert_one({
-            "telegram_id": telegram_id,
+            "telegram_id": user.get("telegram_id"),
             "type": "sell",
             "taka": taka,
             "coin": coin,
@@ -999,30 +1040,10 @@ def execute_trade():
             "fee": fee_amount,
             "timestamp": datetime.utcnow()
         })
-        return jsonify({"message": f"Sold {coin} AAF successfully"})
 
-    return jsonify({"message": "Invalid type"})
-    
-# ================= API: WALLET =================
-@app.route("/api/wallet/deposit", methods=["POST"])
-@login_required
-def deposit():
-    data = request.json
-    telegram_id = data.get("telegram_id")
-    amount = data.get("amount")
-    trx = data.get("trx")
-    method = data.get("method", "Nagad")
-    deposits_col.insert_one({
-        "telegram_id": telegram_id,
-        "amount": amount,
-        "trx": trx,
-        "method": method,
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    })
-    return jsonify({"message": "Deposit request sent"})
+        return jsonify({"status": "success", "message": f"Sold {coin:.4f} AAF successfully"})
 
-
+    return jsonify({"status": "error", "message": "Invalid type"}), 400
 
 
 @app.route("/api/wallet/withdraw", methods=["POST"])
