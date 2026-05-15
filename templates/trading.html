@@ -138,15 +138,14 @@
 
 
 <script>
-const API = window.location.origin;
 let chart, candleSeries, lastPrice = 1.0;
 let userCash = 0, userAAF = 0, currentFee = 0.5;
 let isDarkMode = true;
 
-// ১. ডাটা সিঙ্ক ফাংশন (ড্যাশবোর্ডের মতো দ্রুত করার জন্য)
+// ডাটা সিঙ্ক ফাংশন
 async function syncTradingData() {
     try {
-        const res = await fetch(`${API}/api/user/me`, {
+        const res = await fetch('/api/user/me', {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache' },
             credentials: "include" 
@@ -155,34 +154,30 @@ async function syncTradingData() {
         const data = await res.json();
         
         if (data.status === "success") {
-            const user = data.user;
-            const admin = data.admin;
+            const u = data.user;
+            const a = data.admin;
 
-            // ডাটা ম্যাপ করা
-            lastPrice = parseFloat(admin.server_trading || admin.market_price || 1.0);
-            userCash = parseFloat(user.cash || 0);
-            userAAF = parseFloat(user.aaf || 0);
-            currentFee = parseFloat(admin.trading_fee || 0.5);
+            lastPrice = parseFloat(a.server_trading || 1.0);
+            userCash = parseFloat(u.cash || 0);
+            userAAF = parseFloat(u.aaf || 0);
+            currentFee = parseFloat(a.trading_fee || 0.5);
 
-            // স্ক্রিন আপডেট
             document.getElementById('live-price').innerText = `৳ ${lastPrice.toFixed(4)}`;
             document.getElementById('user-cash').innerText = `৳ ${userCash.toFixed(2)}`;
             document.getElementById('user-aaf').innerText = userAAF.toFixed(2);
             document.getElementById('fee-perc').innerText = currentFee;
             
-            const adText = document.getElementById('admin-ad-text');
-            if(adText) adText.innerText = admin.trading_ad_text || "Welcome to AAF Trading";
+            if(document.getElementById('admin-ad-text')) {
+                document.getElementById('admin-ad-text').innerText = a.trading_ad_text || "Welcome to AAF Trading";
+            }
 
-            // চার্ট ও ক্যালকুলেশন সিঙ্ক
-            updateChartCandles(lastPrice);
+            updateChart(lastPrice);
             calculate(); 
         }
-    } catch(e) { 
-        console.error("Sync Error:", e); 
-    }
+    } catch(e) { console.error("Sync Error:", e); }
 }
 
-// ২. চার্ট ইনিশিয়ালাইজেশন
+// চার্ট সেটআপ
 function initChart() {
     const container = document.getElementById('chart-container');
     if (!container) return;
@@ -191,14 +186,8 @@ function initChart() {
     chart = LightweightCharts.createChart(container, {
         width: container.offsetWidth,
         height: 250,
-        layout: { 
-            background: { type: 'solid', color: '#000000' }, 
-            textColor: '#d1d4dc' 
-        },
-        grid: { 
-            vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, 
-            horzLines: { color: 'rgba(255, 255, 255, 0.05)' } 
-        },
+        layout: { background: { type: 'solid', color: '#000000' }, textColor: '#d1d4dc' },
+        grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
         timeScale: { borderColor: '#485c7b', timeVisible: true },
     });
 
@@ -206,46 +195,31 @@ function initChart() {
         upColor: '#00ffa3', downColor: '#ff3366', 
         borderVisible: false, wickUpColor: '#00ffa3', wickDownColor: '#ff3366',
     });
-
-    window.addEventListener('resize', () => {
-        chart.applyOptions({ width: container.offsetWidth });
-    });
 }
 
-// ৩. লাইভ ক্যান্ডেল জেনারেটর
-let generatedCandles = [];
-function updateChartCandles(currentPrice) {
-    const now = Math.floor(Date.now() / 1000);
-    const currentMinuteTime = now - (now % 60); 
+// ক্যান্ডেল মুভমেন্ট
+let candles = [];
+function updateChart(price) {
+    const t = Math.floor(Date.now() / 1000);
+    const mt = t - (t % 60);
 
-    if (generatedCandles.length === 0) {
-        let basePrice = currentPrice;
-        for (let i = 50; i >= 1; i--) {
-            let mockTime = currentMinuteTime - (i * 60);
-            let change = (Math.random() - 0.5) * 0.005;
-            generatedCandles.push({
-                time: mockTime,
-                open: basePrice + change,
-                high: basePrice + Math.abs(change) + 0.002,
-                low: basePrice - Math.abs(change) - 0.002,
-                close: basePrice
-            });
-            basePrice = basePrice + change;
+    if (candles.length === 0) {
+        for (let i = 25; i >= 1; i--) {
+            candles.push({ time: mt-(i*60), open: price, high: price+0.002, low: price-0.002, close: price });
         }
-        candleSeries.setData(generatedCandles);
-        chart.timeScale().fitContent();
+        candleSeries.setData(candles);
     }
 
     candleSeries.update({
-        time: currentMinuteTime,
-        open: generatedCandles[generatedCandles.length - 1]?.close || currentPrice,
-        high: currentPrice + 0.001,
-        low: currentPrice - 0.001,
-        close: currentPrice
+        time: mt,
+        open: candles[candles.length-1]?.close || price,
+        high: price + 0.001,
+        low: price - 0.001,
+        close: price
     });
 }
 
-// ৪. ক্যালকুলেশন লজিক
+// ক্যালকুলেশন
 function calculate() {
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
@@ -262,82 +236,54 @@ function calculate() {
     document.getElementById('sell-btn').disabled = (parseFloat(coIn.value) <= 0 || parseFloat(coIn.value) > userAAF);
 }
 
-// ৫. ট্রেড এক্সিকিউট ফাংশন
+// ট্রেড এক্সিকিউট
 async function executeTrade(type) {
-    const tkVal = parseFloat(document.getElementById('taka-input').value);
-    const coVal = parseFloat(document.getElementById('coin-input').value);
-    
-    if (!tkVal || tkVal <= 0) return;
+    const tk = parseFloat(document.getElementById('taka-input').value);
+    const co = parseFloat(document.getElementById('coin-input').value);
+    if (!tk || tk <= 0) return;
 
     try {
-        const res = await fetch(`${API}/api/trade/execute`, {
-            method: 'POST', 
+        const res = await fetch('/api/trade/execute', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: type,
-                taka: tkVal,
-                coin: coVal,
-                price: lastPrice
-            }),
+            body: JSON.stringify({ type, taka: tk, coin: co, price: lastPrice }),
             credentials: "include"
         });
+        const d = await res.json();
         
-        const data = await res.json();
         const bar = document.getElementById('active-user-bar');
-        document.getElementById('popup-text').innerText = data.message;
+        document.getElementById('popup-text').innerText = d.message;
         bar.style.display = "flex";
         setTimeout(() => { bar.style.display = "none"; }, 3000);
         
         syncTradingData(); 
-    } catch(e) { console.error("Trade Error:", e); }
+    } catch(e) { console.error("Trade Error", e); }
 }
 
-// ৬. পেজ লোড এবং ইভেন্ট লিসেনার
 window.onload = () => {
     initChart();
     syncTradingData();
-    setInterval(syncTradingData, 2000); // ২ সেকেন্ড পর পর আপডেট
+    setInterval(syncTradingData, 2000);
 
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
-    
     if(tkIn && coIn) {
-        tkIn.oninput = () => { 
-            if(lastPrice > 0) coIn.value = (tkIn.value / lastPrice).toFixed(4); 
-            calculate(); 
-        };
-        coIn.oninput = () => { 
-            tkIn.value = (coIn.value * lastPrice).toFixed(2); 
-            calculate(); 
-        };
+        tkIn.oninput = () => { coIn.value = (tkIn.value / lastPrice).toFixed(4); calculate(); };
+        coIn.oninput = () => { tkIn.value = (coIn.value * lastPrice).toFixed(2); calculate(); };
     }
 
-    // থিম টগল লজিক
     const themeBtn = document.getElementById('chart-theme-toggle');
     if (themeBtn) {
         themeBtn.onclick = function() {
             isDarkMode = !isDarkMode;
-            const ts = document.getElementById('theme-status');
-            if (isDarkMode) {
-                chart.applyOptions({
-                    layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
-                    grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } }
-                });
-                this.style.background = "#1e293b";
-                if(ts) ts.innerText = "DARK";
-            } else {
-                chart.applyOptions({
-                    layout: { background: { color: '#ffffff' }, textColor: '#191919' },
-                    grid: { vertLines: { color: 'rgba(0, 0, 0, 0.05)' }, horzLines: { color: 'rgba(0, 0, 0, 0.05)' } }
-                });
-                this.style.background = "#f1f5f9";
-                if(ts) ts.innerText = "LIGHT";
-            }
+            chart.applyOptions({
+                layout: { background: { color: isDarkMode ? '#000000' : '#ffffff' }, textColor: isDarkMode ? '#d1d4dc' : '#191919' }
+            });
+            document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
         };
     }
 };
-
-    
 </script>
+    
 </body>
 </html>
