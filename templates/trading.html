@@ -121,7 +121,7 @@
             </div>
             <div class="btn-group">
                 <button id="buy-btn" class="btn buy" onclick="executeTrade('buy')">BUY SPOT</button>
-                <button id="sell-btn" class="btn sell" onclick="executeTrade('sell')">SELL SPOT</button>
+            <button id="sell-btn" class="btn sell" onclick="executeTrade('sell')">SELL SPOT</button>
             </div>
         </div>
     </div>
@@ -137,15 +137,13 @@
     </div>
 
 
-<script>
+    <script>
 let chart, candleSeries, lastPrice = 1.0;
 let userCash = 0, userAAF = 0, currentFee = 0.5;
 let isDarkMode = true;
 let candles = [];
 let adminData = {};
-    
 
-// ১. ডাটা সিঙ্ক ফাংশন (Error Handling সহ)
 async function syncTradingData() {
     try {
         const res = await fetch('/api/user/me', {
@@ -177,24 +175,22 @@ async function syncTradingData() {
         console.error("Sync Error:", e);
         updateChart(lastPrice);
     }
-    }
+}
 
-    // এই ফাংশনটি আপনার কোডে যোগ করুন চার্ট ডাটা লোড করার জন্য
 async function loadChartHistory() {
     try {
         const res = await fetch('/api/candles');
         const data = await res.json();
         
         if (data.candles && data.candles.length > 0) {
-            candles = data.candles; // গ্লোবাল ক্যান্ডেল অ্যারে আপডেট
-            candleSeries.setData(candles); // চার্টে ডাটা বসানো
+            candles = data.candles;
+            candleSeries.setData(candles);
         }
     } catch (e) {
         console.error("Chart history load failed:", e);
     }
 }
 
-// ২. UI এলিমেন্ট আপডেট
 function updateUI() {
     const livePriceEl = document.getElementById('live-price');
     const userCashEl = document.getElementById('user-cash');
@@ -211,12 +207,10 @@ function updateUI() {
         adText.innerText = adminData.trading_ad_text || "Market is Live | Trade Responsibly";
     }
 }
-    
 
-// ৩. চার্ট সেটআপ
 function initChart() {
     const container = document.getElementById('chart-container');
-    if (!container || typeof LightweightCharts === 'undefined') return; // লাইব্রেরি না থাকলে সেফটি এক্সিট
+    if (!container || typeof LightweightCharts === 'undefined') return;
     container.innerHTML = ''; 
 
     chart = LightweightCharts.createChart(container, {
@@ -237,14 +231,12 @@ function initChart() {
     });
 }
 
-// ৪. ক্যান্ডেল মুভমেন্ট
 function updateChart(price) {
     if (!candleSeries) return;
     const t = Math.floor(Date.now() / 1000);
     const mt = t - (t % 60);
 
     if (candles.length === 0) {
-        // লোডিংয়ের শুরুতে কিছু ডামি ক্যান্ডেল তৈরি করা যাতে স্ক্রিন কালো না থাকে
         for (let i = 50; i >= 1; i--) {
             let p = price + (Math.random() - 0.5) * 0.02;
             candles.push({ time: mt - (i * 60), open: p, high: p + 0.005, low: p - 0.005, close: p });
@@ -261,30 +253,27 @@ function updateChart(price) {
     });
 }
 
-// ৫. ক্যালকুলেশন
 function calculate() {
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
     const buyBtn = document.getElementById('buy-btn');
     const sellBtn = document.getElementById('sell-btn');
 
-    if(!tkIn || !coIn) return; // এলিমেন্ট না থাকলে ক্যালকুলেশন স্কিপ করবে (ক্র্যাশ করবে না)
+    if(!tkIn || !coIn) return;
 
     let tkValue = parseFloat(tkIn.value) || 0;
     let coValue = parseFloat(coIn.value) || 0;
-    
+
     let fee = (tkValue * currentFee) / 100;
     let total = tkValue + fee;
-    
-    if(document.getElementById('fee-amount')) document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-    if(document.getElementById('total-cost')) document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
-    
-    // বাটন এনাবল/ডিজেবল (এলিমেন্ট থাকলে তবেই কাজ করবে)
-    if(buyBtn) buyBtn.disabled = (tkValue < 10 || total > userCash);
-    if(sellBtn) sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
+
+    document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
+    document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
+
+    buyBtn.disabled = (tkValue < 10 || total > userCash);
+    sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
 }
 
-// ৬. ট্রেড এক্সিকিউট
 async function executeTrade(type) {
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
@@ -302,7 +291,7 @@ async function executeTrade(type) {
             credentials: "include"
         });
         const d = await res.json();
-        
+
         const bar = document.getElementById('active-user-bar');
         const popupText = document.getElementById('popup-text');
         if (bar && popupText) {
@@ -310,16 +299,16 @@ async function executeTrade(type) {
             bar.style.display = "flex";
             setTimeout(() => { bar.style.display = "none"; }, 3000);
         }
-        
+
         syncTradingData(); 
     } catch(e) { console.error("Trade Error", e); }
 }
 
-// লোড হওয়ার পর কল (DOMContentLoaded ব্যবহার করা হয়েছে যাতে দ্রুত রান হয়)
 document.addEventListener('DOMContentLoaded', () => {
     initChart();
     syncTradingData();
     setInterval(syncTradingData, 3000);
+    loadChartHistory();  // Call to load chart history
 
     const tkIn = document.getElementById('taka-input');
     const coIn = document.getElementById('coin-input');
@@ -338,18 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeBtn = document.getElementById('chart-theme-toggle');
     if (themeBtn) {
         themeBtn.onclick = function() {
-            if(!chart) return; // চার্ট লোড না হলে থিম চেঞ্জ স্কিপ করবে
+            if(!chart) return;
             isDarkMode = !isDarkMode;
             chart.applyOptions({
                 layout: { background: { color: isDarkMode ? '#000000' : '#ffffff' }, textColor: isDarkMode ? '#d1d4dc' : '#191919' }
             });
-            if(document.getElementById('theme-status')) {
-                document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
-            }
+            document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
         };
     }
 });
-    
 </script>
 </body>
 </html>
