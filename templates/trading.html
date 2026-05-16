@@ -17,12 +17,10 @@
         
         body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
         
-        /* Fixed Headers */
         .header { position: fixed; top: 0; left: 0; width: 100%; height: 35px; z-index: 3000; background: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; border-bottom: 1px solid var(--border); }
         #admin-ad-box { position: fixed; top: 35px; left: 0; width: 100%; height: 25px; background: #1e293b; z-index: 2999; display: flex; align-items: center; }
         .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
         
-        /* Chart Section */
         #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
         #chart-container { width: 100%; height: 100% !important; min-height: 250px; }
         .tv-lightweight-charts-logo { display: none !important; }
@@ -31,10 +29,11 @@
             position: absolute; left: 10px; bottom: 10px; z-index: 3001; 
             padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
             background: #1e293b; color: white; display: flex; align-items: center; gap: 6px;
+            font-size: 9px;
         }
 
         .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
-        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s; }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,254,0.1); }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -54,7 +53,7 @@
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; }
         .buy { background: var(--green); color: #000; }
         .sell { background: var(--red); color: #fff; }
-        .btn:disabled { opacity: 0.3; filter: grayscale(1); }
+        .btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
 
         #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.4s forwards; }
         @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 80px; opacity: 1; } }
@@ -69,6 +68,11 @@
         .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; transition: 0.3s; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
         .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
         .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
+        
+        .loading-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--cyan); animation: spin 0.6s linear infinite; margin-right: 5px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        button:disabled .loading-spinner { display: inline-block; }
     </style>
 </head>
 <body>
@@ -83,22 +87,22 @@
     </header>
 
     <div id="admin-ad-box">
-        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 10px;">Loading announcements...</marquee>
+        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 10px;">লোড হচ্ছে...</marquee>
     </div>
 
     <div class="tf-bar">
-        <button class="tf-btn active">1M</button>
-        <button class="tf-btn">5M</button>
-        <button class="tf-btn">15M</button>
-        <button class="tf-btn">1H</button>
-        <button class="tf-btn">4H</button>
-        <button class="tf-btn">1D</button>
+        <button class="tf-btn" data-tf="1">1M</button>
+        <button class="tf-btn" data-tf="5">5M</button>
+        <button class="tf-btn" data-tf="15">15M</button>
+        <button class="tf-btn" data-tf="60">1H</button>
+        <button class="tf-btn" data-tf="240">4H</button>
+        <button class="tf-btn" data-tf="1440">1D</button>
     </div>
 
     <div id="chart-wrapper">
         <div id="chart-theme-toggle">
-            <img src="/static/logo.png" alt="AAF" id="toggle-logo" style="width: 20px; height: 20px; border-radius: 3px;" onerror="this.src='https://via.placeholder.com/20'">
-            <span id="theme-status" style="font-size: 9px; color: #94a3b8; font-weight: bold;">DARK</span>
+            <i class="fas fa-moon"></i>
+            <span id="theme-status">DARK</span>
         </div>
         <div id="chart-container"></div>
     </div>
@@ -111,17 +115,17 @@
 
         <div class="trade-box">
             <div class="input-group">
-                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00"><span>BDT</span></div>
+                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div>
                 <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
-                <div class="input-box"><input type="number" id="coin-input" placeholder="0.00"><span>AAF</span></div>
+                <div class="input-box"><input type="number" id="coin-input" placeholder="0.00" step="any"><span>AAF</span></div>
             </div>
             <div class="fee-card">
                 <div class="fee-row"><span>ফি (<span id="fee-perc">0.5</span>%):</span><b id="fee-amount">৳ 0.00</b></div>
                 <div class="fee-row"><span>মোট খরচ:</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div>
             </div>
             <div class="btn-group">
-                <button id="buy-btn" class="btn buy" onclick="executeTrade('buy')">BUY SPOT</button>
-            <button id="sell-btn" class="btn sell" onclick="executeTrade('sell')">SELL SPOT</button>
+                <button id="buy-btn" class="btn buy">BUY SPOT</button>
+                <button id="sell-btn" class="btn sell">SELL SPOT</button>
             </div>
         </div>
     </div>
@@ -136,206 +140,427 @@
         </nav>
     </div>
 
-
     <script>
-let chart, candleSeries, lastPrice = 1.0;
-let userCash = 0, userAAF = 0, currentFee = 0.5;
-let isDarkMode = true;
-let candles = [];
-let adminData = {};
-
-async function syncTradingData() {
-    try {
-        const res = await fetch('/api/user/me', {
-            method: 'GET',
-            headers: { 'Cache-Control': 'no-cache' },
-            credentials: "include"
-        });
-
-        if (!res.ok) throw new Error("Server not responding");
-
-        const data = await res.json();
-
-        if (data.status === "success") {
-            const u = data.user || {};
-            const a = data.admin || {};
-
-            adminData = a;
-
-            lastPrice = parseFloat(a.live_price ?? a.server_trading) || 1.0;
-            userCash = parseFloat(u.cash) || 0;
-            userAAF = parseFloat(u.aaf) || 0;
-            currentFee = parseFloat(a.trading_fee) || 0.5;
-
-            updateUI();
-            updateChart(lastPrice);
-            calculate();
-        }
-    } catch (e) {
-        console.error("Sync Error:", e);
-        updateChart(lastPrice);
-    }
-}
-
-async function loadChartHistory() {
-    try {
-        const res = await fetch('/api/candles');
-        const data = await res.json();
+        // ==================== GLOBAL VARIABLES ====================
+        let chart = null;
+        let candleSeries = null;
+        let currentCandles = [];
+        let lastPrice = 1.0;
+        let userCash = 0;
+        let userAAF = 0;
+        let currentFee = 0.5;
+        let isDarkMode = true;
+        let currentTimeframe = 1;
+        let isProcessing = false;
         
-        if (data.candles && data.candles.length > 0) {
-            candles = data.candles;
-            candleSeries.setData(candles);
+        // Cache for different timeframes
+        let candlesCache = {};
+        
+        // ==================== API CALLS (Your Backend Endpoints) ====================
+        
+        // Main user data sync
+        async function syncUserData() {
+            try {
+                const response = await fetch('/api/user/me', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    const user = data.user || {};
+                    const admin = data.admin || {};
+                    
+                    userCash = parseFloat(user.cash) || 0;
+                    userAAF = parseFloat(user.aaf) || 0;
+                    lastPrice = parseFloat(admin.live_price) || 1.0;
+                    currentFee = parseFloat(admin.trading_fee) || 0.5;
+                    
+                    // Update UI
+                    document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
+                    document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
+                    document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
+                    document.getElementById('fee-perc').innerHTML = currentFee;
+                    
+                    const adText = admin.trading_ad_text || "🚀 AAF Pro Trading | বাজারে লিকুইডিটি প্রচুর | সতর্কতার সাথে ট্রেড করুন";
+                    document.getElementById('admin-ad-text').innerHTML = adText;
+                    
+                    // Recalculate trade cost
+                    calculateTradeCost();
+                    
+                    // Update chart with new price
+                    if (candleSeries && lastPrice > 0) {
+                        updateChartWithPrice(lastPrice);
+                    }
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+            }
+            return false;
         }
-    } catch (e) {
-        console.error("Chart history load failed:", e);
-    }
-}
-
-function updateUI() {
-    const livePriceEl = document.getElementById('live-price');
-    const userCashEl = document.getElementById('user-cash');
-    const userAafEl = document.getElementById('user-aaf');
-    const feePercEl = document.getElementById('fee-perc');
-    const adText = document.getElementById('admin-ad-text');
-
-    if (livePriceEl) livePriceEl.innerText = `৳ ${lastPrice.toFixed(4)}`;
-    if (userCashEl) userCashEl.innerText = `৳ ${userCash.toFixed(2)}`;
-    if (userAafEl) userAafEl.innerText = userAAF.toFixed(2);
-    if (feePercEl) feePercEl.innerText = currentFee;
-
-    if (adText) {
-        adText.innerText = adminData.trading_ad_text || "Market is Live | Trade Responsibly";
-    }
-}
-
-function initChart() {
-    const container = document.getElementById('chart-container');
-    if (!container || typeof LightweightCharts === 'undefined') return;
-    container.innerHTML = ''; 
-
-    chart = LightweightCharts.createChart(container, {
-        width: container.offsetWidth,
-        height: 250,
-        layout: { background: { type: 'solid', color: '#000000' }, textColor: '#d1d4dc' },
-        grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
-        timeScale: { borderColor: '#485c7b', timeVisible: true },
-    });
-
-    candleSeries = chart.addCandlestickSeries({
-        upColor: '#00ffa3', downColor: '#ff3366', 
-        borderVisible: false, wickUpColor: '#00ffa3', wickDownColor: '#ff3366',
-    });
-
-    window.addEventListener('resize', () => {
-        if(chart) chart.applyOptions({ width: container.offsetWidth });
-    });
-}
-
-function updateChart(price) {
-    if (!candleSeries) return;
-    const t = Math.floor(Date.now() / 1000);
-    const mt = t - (t % 60);
-
-    if (candles.length === 0) {
-        for (let i = 50; i >= 1; i--) {
-            let p = price + (Math.random() - 0.5) * 0.02;
-            candles.push({ time: mt - (i * 60), open: p, high: p + 0.005, low: p - 0.005, close: p });
+        
+        // Load chart candles from your backend
+        async function loadCandles(timeframe = currentTimeframe) {
+            try {
+                const cacheKey = timeframe;
+                if (candlesCache[cacheKey] && candlesCache[cacheKey].length > 0) {
+                    currentCandles = [...candlesCache[cacheKey]];
+                    if (candleSeries) {
+                        candleSeries.setData(currentCandles);
+                    }
+                    return;
+                }
+                
+                const response = await fetch('/api/candles', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load candles');
+                
+                const data = await response.json();
+                let candles = data.candles || [];
+                
+                // Remove duplicates and sort
+                const uniqueTimes = new Set();
+                const uniqueCandles = [];
+                for (const c of candles) {
+                    if (!uniqueTimes.has(c.time)) {
+                        uniqueTimes.add(c.time);
+                        uniqueCandles.push({
+                            time: c.time,
+                            open: parseFloat(c.open),
+                            high: parseFloat(c.high),
+                            low: parseFloat(c.low),
+                            close: parseFloat(c.close)
+                        });
+                    }
+                }
+                uniqueCandles.sort((a, b) => a.time - b.time);
+                
+                candlesCache[cacheKey] = uniqueCandles;
+                currentCandles = [...uniqueCandles];
+                
+                if (candleSeries) {
+                    candleSeries.setData(currentCandles);
+                }
+            } catch (error) {
+                console.error('Load candles error:', error);
+                // Generate fallback mock data if API fails
+                generateMockCandles(timeframe);
+            }
         }
-        candleSeries.setData(candles);
-    }
-
-    candleSeries.update({
-        time: mt,
-        open: candles[candles.length - 1]?.close || price,
-        high: Math.max(price, price + 0.001),
-        low: Math.min(price, price - 0.001),
-        close: price
-    });
-}
-
-function calculate() {
-    const tkIn = document.getElementById('taka-input');
-    const coIn = document.getElementById('coin-input');
-    const buyBtn = document.getElementById('buy-btn');
-    const sellBtn = document.getElementById('sell-btn');
-
-    if(!tkIn || !coIn) return;
-
-    let tkValue = parseFloat(tkIn.value) || 0;
-    let coValue = parseFloat(coIn.value) || 0;
-
-    let fee = (tkValue * currentFee) / 100;
-    let total = tkValue + fee;
-
-    document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(2)}`;
-    document.getElementById('total-cost').innerText = `৳ ${total.toFixed(2)}`;
-
-    buyBtn.disabled = (tkValue < 10 || total > userCash);
-    sellBtn.disabled = (coValue <= 0 || coValue > userAAF);
-}
-
-async function executeTrade(type) {
-    const tkIn = document.getElementById('taka-input');
-    const coIn = document.getElementById('coin-input');
-    if(!tkIn || !coIn) return;
-
-    const tk = parseFloat(tkIn.value);
-    const co = parseFloat(coIn.value);
-    if (!tk || tk <= 0) return;
-
-    try {
-        const res = await fetch('/api/trade/execute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, taka: tk, coin: co, price: lastPrice }),
-            credentials: "include"
-        });
-        const d = await res.json();
-
-        const bar = document.getElementById('active-user-bar');
-        const popupText = document.getElementById('popup-text');
-        if (bar && popupText) {
-            popupText.innerText = d.message;
-            bar.style.display = "flex";
-            setTimeout(() => { bar.style.display = "none"; }, 3000);
+        
+        // Fallback: generate mock candles
+        function generateMockCandles(timeframe) {
+            const mockCandles = [];
+            const now = Math.floor(Date.now() / 1000);
+            const interval = timeframe * 60;
+            let basePrice = lastPrice || 1.0;
+            
+            for (let i = 100; i >= 0; i--) {
+                const time = now - (i * interval);
+                const change = (Math.random() - 0.5) * 0.02;
+                const close = basePrice * (1 + change);
+                mockCandles.push({
+                    time: time,
+                    open: basePrice,
+                    high: Math.max(basePrice, close) * (1 + Math.random() * 0.005),
+                    low: Math.min(basePrice, close) * (1 - Math.random() * 0.005),
+                    close: close
+                });
+                basePrice = close;
+            }
+            currentCandles = mockCandles;
+            if (candleSeries) candleSeries.setData(currentCandles);
         }
-
-        syncTradingData(); 
-    } catch(e) { console.error("Trade Error", e); }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    initChart();
-    syncTradingData();
-    setInterval(syncTradingData, 3000);
-    loadChartHistory();  // Call to load chart history
-
-    const tkIn = document.getElementById('taka-input');
-    const coIn = document.getElementById('coin-input');
-
-    if (tkIn && coIn) {
-        tkIn.addEventListener('input', () => {
-            coIn.value = tkIn.value ? (tkIn.value / lastPrice).toFixed(4) : "";
-            calculate();
-        });
-        coIn.addEventListener('input', () => {
-            tkIn.value = coIn.value ? (coIn.value * lastPrice).toFixed(2) : "";
-            calculate();
-        });
-    }
-
-    const themeBtn = document.getElementById('chart-theme-toggle');
-    if (themeBtn) {
-        themeBtn.onclick = function() {
-            if(!chart) return;
-            isDarkMode = !isDarkMode;
-            chart.applyOptions({
-                layout: { background: { color: isDarkMode ? '#000000' : '#ffffff' }, textColor: isDarkMode ? '#d1d4dc' : '#191919' }
+        
+        // Update chart with new price tick
+        function updateChartWithPrice(price) {
+            if (!candleSeries) return;
+            
+            const now = Math.floor(Date.now() / 1000);
+            const intervalSeconds = currentTimeframe * 60;
+            const currentCandleTime = Math.floor(now / intervalSeconds) * intervalSeconds;
+            
+            if (currentCandles.length === 0) {
+                generateMockCandles(currentTimeframe);
+            }
+            
+            const lastCandle = currentCandles[currentCandles.length - 1];
+            
+            if (!lastCandle || lastCandle.time !== currentCandleTime) {
+                // Create new candle
+                const newCandle = {
+                    time: currentCandleTime,
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price
+                };
+                currentCandles.push(newCandle);
+                candleSeries.setData(currentCandles);
+            } else {
+                // Update existing candle
+                lastCandle.high = Math.max(lastCandle.high, price);
+                lastCandle.low = Math.min(lastCandle.low, price);
+                lastCandle.close = price;
+                candleSeries.update(lastCandle);
+            }
+        }
+        
+        // Execute trade
+        async function executeTrade(type) {
+            if (isProcessing) {
+                showPopup("⏳ দয়া করে অপেক্ষা করুন, আগের লেনদেন প্রসেসিং হচ্ছে...");
+                return;
+            }
+            
+            let takaAmount = parseFloat(document.getElementById('taka-input').value) || 0;
+            let coinAmount = parseFloat(document.getElementById('coin-input').value) || 0;
+            
+            // Validate based on trade type
+            if (type === 'buy') {
+                if (takaAmount < 10) {
+                    showPopup("❌ ন্যূনতম ১০ টাকা ট্রেড করতে হবে!");
+                    return;
+                }
+                const fee = (takaAmount * currentFee) / 100;
+                const totalCost = takaAmount + fee;
+                if (totalCost > userCash) {
+                    showPopup(`❌ পর্যাপ্ত টাকা নেই! প্রয়োজন: ৳${totalCost.toFixed(2)}, আপনার ব্যালেন্স: ৳${userCash.toFixed(2)}`);
+                    return;
+                }
+                if (coinAmount <= 0) {
+                    coinAmount = takaAmount / lastPrice;
+                }
+            } else if (type === 'sell') {
+                if (coinAmount <= 0) {
+                    showPopup("❌ সেল করার জন্য সঠিক পরিমাণ কয়েন দিন!");
+                    return;
+                }
+                if (coinAmount > userAAF) {
+                    showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF আছে, আপনি ${coinAmount.toFixed(4)} সেল করতে পারবেন না!`);
+                    return;
+                }
+                if (takaAmount <= 0) {
+                    takaAmount = coinAmount * lastPrice;
+                }
+            }
+            
+            isProcessing = true;
+            const buyBtn = document.getElementById('buy-btn');
+            const sellBtn = document.getElementById('sell-btn');
+            buyBtn.disabled = true;
+            sellBtn.disabled = true;
+            buyBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
+            sellBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
+            
+            try {
+                const response = await fetch('/api/trade/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        type: type,
+                        taka: takaAmount,
+                        coin: coinAmount,
+                        price: lastPrice
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showPopup(`✅ ${data.message}`);
+                    // Clear inputs
+                    document.getElementById('taka-input').value = '';
+                    document.getElementById('coin-input').value = '';
+                    // Refresh user data
+                    await syncUserData();
+                } else {
+                    showPopup(`❌ ${data.message || 'ট্রেড ব্যর্থ হয়েছে!'}`);
+                }
+            } catch (error) {
+                console.error('Trade error:', error);
+                showPopup(`❌ সার্ভার ত্রুটি! পরে আবার চেষ্টা করুন।`);
+            } finally {
+                isProcessing = false;
+                buyBtn.disabled = false;
+                sellBtn.disabled = false;
+                buyBtn.innerHTML = 'BUY SPOT';
+                sellBtn.innerHTML = 'SELL SPOT';
+                calculateTradeCost();
+            }
+        }
+        
+        // Calculate fee and enable/disable buttons
+        function calculateTradeCost() {
+            let takaValue = parseFloat(document.getElementById('taka-input').value) || 0;
+            let coinValue = parseFloat(document.getElementById('coin-input').value) || 0;
+            
+            // Auto-calculate coin if taka is entered
+            if (document.activeElement === document.getElementById('taka-input') && takaValue > 0) {
+                coinValue = takaValue / lastPrice;
+                document.getElementById('coin-input').value = coinValue.toFixed(4);
+            }
+            // Auto-calculate taka if coin is entered
+            else if (document.activeElement === document.getElementById('coin-input') && coinValue > 0) {
+                takaValue = coinValue * lastPrice;
+                document.getElementById('taka-input').value = takaValue.toFixed(2);
+            }
+            
+            const fee = (takaValue * currentFee) / 100;
+            const totalCost = takaValue + fee;
+            
+            document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
+            document.getElementById('total-cost').innerHTML = `৳ ${totalCost.toFixed(2)}`;
+            
+            const buyBtn = document.getElementById('buy-btn');
+            const sellBtn = document.getElementById('sell-btn');
+            
+            // Buy button validation
+            if (takaValue < 10 || totalCost > userCash) {
+                buyBtn.disabled = true;
+            } else {
+                buyBtn.disabled = false;
+            }
+            
+            // Sell button validation
+            if (coinValue <= 0 || coinValue > userAAF) {
+                sellBtn.disabled = true;
+            } else {
+                sellBtn.disabled = false;
+            }
+        }
+        
+        // Show popup message
+        function showPopup(message) {
+            const bar = document.getElementById('active-user-bar');
+            const text = document.getElementById('popup-text');
+            text.innerText = message;
+            bar.style.display = 'flex';
+            setTimeout(() => {
+                bar.style.display = 'none';
+            }, 4000);
+        }
+        
+        // Change timeframe
+        async function setTimeframe(minutes) {
+            currentTimeframe = minutes;
+            // Update active button style
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                if (parseInt(btn.getAttribute('data-tf')) === minutes) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
-            document.getElementById('theme-status').innerText = isDarkMode ? "DARK" : "LIGHT";
+            await loadCandles(minutes);
+        }
+        
+        // Initialize chart
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            chart = LightweightCharts.createChart(container, {
+                width: container.offsetWidth,
+                height: 250,
+                layout: {
+                    background: { type: 'solid', color: '#000000' },
+                    textColor: '#d1d4dc',
+                    fontSize: 10
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                timeScale: {
+                    borderColor: '#485c7b',
+                    timeVisible: true,
+                    secondsVisible: currentTimeframe < 60
+                },
+                rightPriceScale: { borderColor: '#485c7b' },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+            });
+            
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ffa3',
+                downColor: '#ff3366',
+                borderVisible: false,
+                wickUpColor: '#00ffa3',
+                wickDownColor: '#ff3366',
+                borderColor: '#00ffa3'
+            });
+            
+            window.addEventListener('resize', () => {
+                if (chart) chart.applyOptions({ width: container.offsetWidth });
+            });
+        }
+        
+        // Theme toggle
+        function setupThemeToggle() {
+            const btn = document.getElementById('chart-theme-toggle');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    if (!chart) return;
+                    isDarkMode = !isDarkMode;
+                    chart.applyOptions({
+                        layout: {
+                            background: { color: isDarkMode ? '#000000' : '#ffffff' },
+                            textColor: isDarkMode ? '#d1d4dc' : '#191919'
+                        }
+                    });
+                    document.getElementById('theme-status').innerHTML = isDarkMode ? 'DARK' : 'LIGHT';
+                    document.getElementById('chart-theme-toggle').innerHTML = isDarkMode ? '<i class="fas fa-moon"></i> DARK' : '<i class="fas fa-sun"></i> LIGHT';
+                });
+            }
+        }
+        
+        // ==================== EVENT LISTENERS ====================
+        document.getElementById('taka-input').addEventListener('input', calculateTradeCost);
+        document.getElementById('coin-input').addEventListener('input', calculateTradeCost);
+        document.getElementById('buy-btn').addEventListener('click', () => executeTrade('buy'));
+        document.getElementById('sell-btn').addEventListener('click', () => executeTrade('sell'));
+        
+        // Timeframe buttons
+        document.querySelectorAll('.tf-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tf = parseInt(btn.getAttribute('data-tf'));
+                if (!isNaN(tf)) setTimeframe(tf);
+            });
+        });
+        
+        // ==================== INITIALIZATION ====================
+        window.onload = async () => {
+            initChart();
+            setupThemeToggle();
+            
+            // Load initial data
+            await syncUserData();
+            await loadCandles(1);
+            
+            // Set active timeframe button
+            document.querySelector('.tf-btn[data-tf="1"]').classList.add('active');
+            
+            // Auto-sync every 3 seconds
+            setInterval(syncUserData, 3000);
         };
-    }
-});
-</script>
+    </script>
 </body>
 </html>
