@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        /* আপনার বিদ্যমান স্টাইল ঠিক রাখুন - আমি শুধু নিশ্চিত করছি চার্ট কন্টেইনারের উচ্চতা স্পষ্ট */
+        /* আপনার বিদ্যমান স্টাইল কিছুটা কম্প্যাক্ট রাখা হলো */
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
         
         :root {
@@ -72,9 +71,9 @@
         
         .loading-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--cyan); animation: spin 0.6s linear infinite; margin-right: 5px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        button:disabled .loading-spinner { display: inline-block; }
     </style>
+    <!-- লাইটওয়েট চার্ট লাইব্রেরির নির্ভরযোগ্য সংস্করণ -->
+    <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.js"></script>
 </head>
 <body>
     <div id="active-user-bar">
@@ -142,7 +141,7 @@
     </div>
 
     <script>
-        (function(){
+        (function() {
             // ---------- অন-স্ক্রিন ডিবাগ (মোবাইলের জন্য) ----------
             let dbgDiv = document.createElement('div');
             dbgDiv.id = 'live-debug';
@@ -154,41 +153,15 @@
                 if (dbgDiv.innerHTML.split('<br>').length > 6) dbgDiv.innerHTML = dbgDiv.innerHTML.split('<br>').slice(0,6).join('<br>');
             }
 
-            // ---------- গ্লোবাল ভেরিয়েবল ----------
-            let chart = null, candleSeries = null, currentCandles = [];
+            // ---------- গ্লোবাল ----------
+            let chart = null, candleSeries = null;
+            let currentCandles = [];
             let lastPrice = 1.0, userCash = 0, userAAF = 0, currentFee = 0.5;
             let currentTimeframe = 1, isProcessing = false;
             let candlesCache = {};
-            let chartReady = false;
 
-            // ---------- ইউজার সিঙ্ক ----------
-            async function syncUserData() {
-                log("🔄 ইউজার ডাটা আনা হচ্ছে...");
-                try {
-                    const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
-                    if (res.status === 401) { window.location.href = '/login'; return; }
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const data = await res.json();
-                    if (data.status === 'success') {
-                        userCash = parseFloat(data.user.cash) || 0;
-                        userAAF = parseFloat(data.user.aaf) || 0;
-                        lastPrice = parseFloat(data.admin.live_price) || 1.0;
-                        currentFee = parseFloat(data.admin.trading_fee) || 0.5;
-                        document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
-                        document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
-                        document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
-                        document.getElementById('fee-perc').innerHTML = currentFee;
-                        document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
-                        calculateTradeCost();
-                        if (candleSeries && chartReady) updateChartWithPrice(lastPrice);
-                        log(`✅ সিঙ্ক সফল | প্রাইস: ${lastPrice}`);
-                    }
-                } catch(e) { log("❌ সিঙ্ক এরর: "+e.message); }
-            }
-
-            // ---------- ক্যান্ডেল লোড (মোবাইল ফ্রেন্ডলি) ----------
+            // ---------- ক্যান্ডেল লোড ----------
             async function loadCandles() {
-                if (!chartReady || !candleSeries) { log("⏳ চার্ট প্রস্তুত নয়, 500ms পর পুনরায় চেষ্টা"); setTimeout(loadCandles, 500); return; }
                 log("📡 ক্যান্ডেল API কল...");
                 try {
                     const res = await fetch('/api/candles', { credentials: 'include' });
@@ -217,8 +190,8 @@
                     for (let p of parsed) if (!seen.has(p.time)) { seen.add(p.time); unique.push(p); }
                     candlesCache[currentTimeframe] = unique;
                     currentCandles = [...unique];
-                    candleSeries.setData(currentCandles);
-                    log(`✅ ${currentCandles.length} টি ক্যান্ডেল লোড হয়েছে`);
+                    if (candleSeries) candleSeries.setData(currentCandles);
+                    log(`✅ ${currentCandles.length} টি ক্যান্ডেল লোড`);
                 } catch(e) {
                     log("⚠️ API ব্যর্থ, মক ডাটা: "+e.message);
                     generateMockCandles();
@@ -249,8 +222,32 @@
                 log(`🎲 মক ডাটা সেট (${mock.length})`);
             }
 
+            // ---------- ইউজার সিঙ্ক ----------
+            async function syncUserData() {
+                try {
+                    const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
+                    if (res.status === 401) { window.location.href = '/login'; return; }
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        userCash = parseFloat(data.user.cash) || 0;
+                        userAAF = parseFloat(data.user.aaf) || 0;
+                        lastPrice = parseFloat(data.admin.live_price) || 1.0;
+                        currentFee = parseFloat(data.admin.trading_fee) || 0.5;
+                        document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
+                        document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
+                        document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
+                        document.getElementById('fee-perc').innerHTML = currentFee;
+                        document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
+                        calculateTradeCost();
+                        if (candleSeries && lastPrice) updateChartWithPrice(lastPrice);
+                        log(`✅ সিঙ্ক সফল | প্রাইস: ${lastPrice}`);
+                    }
+                } catch(e) { log("❌ সিঙ্ক এরর: "+e.message); }
+            }
+
             function updateChartWithPrice(price) {
-                if (!candleSeries || currentCandles.length===0 || !chartReady) return;
+                if (!candleSeries || currentCandles.length===0) return;
                 const now = Math.floor(Date.now()/1000);
                 const interval = currentTimeframe*60;
                 const barTime = Math.floor(now/interval)*interval;
@@ -266,36 +263,6 @@
                     last.close = price;
                     candleSeries.update(last);
                 }
-            }
-
-            // ---------- চার্ট তৈরি (ফোর্স) ----------
-            function initChart() {
-                const container = document.getElementById('chart-container');
-                if (!container) { log("❌ #chart-container পাওয়া যায়নি"); return false; }
-                container.style.width = '100%';
-                container.style.height = '250px';
-                let width = container.clientWidth;
-                let height = container.clientHeight;
-                if (width < 100) width = window.innerWidth - 20;
-                if (height < 100) height = 250;
-                log(`📐 চার্ট সাইজ: ${width}x${height}`);
-                try {
-                    if (chart) chart.remove();
-                    chart = LightweightCharts.createChart(container, {
-                        width: width,
-                        height: height,
-                        layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
-                        grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
-                        timeScale: { timeVisible: true, secondsVisible: currentTimeframe < 60 }
-                    });
-                    candleSeries = chart.addCandlestickSeries({
-                        upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
-                        wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
-                    });
-                    chartReady = true;
-                    log("✅ চার্ট সফলভাবে তৈরি");
-                    return true;
-                } catch(e) { log("❌ চার্ট এরর: "+e.message); return false; }
             }
 
             // ---------- ট্রেড ফাংশন ----------
@@ -370,7 +337,7 @@
                     if (parseInt(btn.dataset.tf) === minutes) btn.classList.add('active');
                     else btn.classList.remove('active');
                 });
-                if (candleSeries && chartReady) {
+                if (candleSeries) {
                     if (candlesCache[minutes]) {
                         currentCandles = [...candlesCache[minutes]];
                         candleSeries.setData(currentCandles);
@@ -378,6 +345,39 @@
                     } else {
                         await loadCandles();
                     }
+                }
+            }
+
+            // ---------- চার্ট তৈরি (নতুন পদ্ধতি) ----------
+            function initChart() {
+                const container = document.getElementById('chart-container');
+                if (!container) { log("❌ #chart-container পাওয়া যায়নি"); return false; }
+                container.style.width = '100%';
+                container.style.height = '250px';
+                let width = container.clientWidth;
+                let height = container.clientHeight;
+                if (width < 100) width = window.innerWidth - 20;
+                if (height < 100) height = 250;
+                log(`📐 চার্ট সাইজ: ${width}x${height}`);
+                try {
+                    if (chart) chart.remove();
+                    chart = LightweightCharts.createChart(container, {
+                        width: width,
+                        height: height,
+                        layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
+                        grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+                        timeScale: { timeVisible: true, secondsVisible: currentTimeframe < 60 }
+                    });
+                    // সঠিক মেথড: addCandlestickSeries (লাইব্রেরি 4.0.1 এ কাজ করে)
+                    candleSeries = chart.addCandlestickSeries({
+                        upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
+                        wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
+                    });
+                    log("✅ চার্ট সফলভাবে তৈরি");
+                    return true;
+                } catch(e) {
+                    log("❌ চার্ট এরর: "+e.message);
+                    return false;
                 }
             }
 
@@ -401,27 +401,27 @@
                 btn.addEventListener('click', () => { let tf = parseInt(btn.dataset.tf); if (!isNaN(tf)) setTimeframe(tf); });
             });
 
-            // ---------- অ্যাপ স্টার্ট ----------
+            // ---------- অ্যাপ শুরু ----------
             window.addEventListener('DOMContentLoaded', () => {
                 log("🚀 অ্যাপ শুরু");
-                let retryCount = 0;
-                function startApp() {
+                let retry = 0;
+                function start() {
                     if (initChart()) {
                         setupThemeToggle();
                         syncUserData().then(() => {
                             loadCandles().then(() => {
                                 setTimeframe(1);
-                                setInterval(() => { if (candleSeries && chartReady && lastPrice) updateChartWithPrice(lastPrice); }, 3000);
+                                setInterval(() => { if (candleSeries && lastPrice) updateChartWithPrice(lastPrice); }, 3000);
                                 setInterval(syncUserData, 5000);
                             });
                         });
+                    } else if (retry++ < 10) {
+                        setTimeout(start, 500);
                     } else {
-                        retryCount++;
-                        if (retryCount < 15) setTimeout(startApp, 500);
-                        else log("❌ চার্ট শুরু করতে ব্যর্থ, রিলোড করুন");
+                        log("❌ চার্ট শুরু করতে ব্যর্থ, পৃষ্ঠা রিলোড করুন");
                     }
                 }
-                startApp();
+                start();
             });
         })();
     </script>
