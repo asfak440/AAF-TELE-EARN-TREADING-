@@ -1,6 +1,6 @@
 flask
 flask-cors
-pymongo[srv]
+pymongo
 telethon
 firebase-admin
 gunicorn
