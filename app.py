@@ -228,6 +228,32 @@ def update_price_loop():
 # ব্যাকগ্রাউন্ডে প্রাইস আপডেট লুপ চালু করুন
 threading.Thread(target=update_price_loop, daemon=True).start()
 
+
+def init_candles_collection():
+    """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ডামি ডাটা যোগ করে"""
+    try:
+        if candles_col.count_documents({}) == 0:
+            print("📊 ক্যান্ডেল কালেকশন খালি, ডামি ডাটা যোগ করা হচ্ছে...")
+            base = int(datetime.utcnow().timestamp()) - (60 * 60)  # গত ১ ঘন্টা
+            
+            for i in range(60):  # 60 মিনিটের ডাটা
+                price = 1.0 + (i * 0.002) + (i * 0.0005)  # ধীরে ধীরে বাড়বে
+                candles_col.insert_one({
+                    "time": base + (i * 60),  # প্রতি মিনিটে
+                    "open": price,
+                    "high": price * 1.005,
+                    "low": price * 0.995,
+                    "close": price * 1.002
+                })
+            print(f"✅ {candles_col.count_documents({})} টি ক্যান্ডেল যোগ করা হয়েছে")
+        else:
+            print(f"✅ ক্যান্ডেল কালেকশনে আগেই {candles_col.count_documents({})} টি ডাটা আছে")
+    except Exception as e:
+        print(f"❌ ক্যান্ডেল ইনিশিয়ালাইজ করতে ব্যর্থ: {e}")
+
+# অ্যাপ শুরু হওয়ার সময় কল করুন
+init_candles_collection()
+
 # ================= LOGIN REQUIRED DECORATOR =================
 def login_required(f):
     @wraps(f)
