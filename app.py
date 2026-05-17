@@ -845,7 +845,7 @@ def admin_delete_task():
 
 # ================= API: TRADING =================
 
-  @app.route("/api/candles")
+@app.route("/api/candles")
 def get_candles():
     """MongoDB থেকে ক্যান্ডেল ডাটা রিটার্ন করে"""
     try:
