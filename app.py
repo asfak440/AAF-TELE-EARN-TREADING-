@@ -870,6 +870,25 @@ def admin_delete_task():
     return jsonify({"error": "Firebase not configured"}), 500
 
 # ================= API: TRADING =================
+
+    # ================= TEST ENDPOINT (ডিবাগিং এর জন্য) =================
+@app.route("/api/test_db")
+def test_db():
+    """MongoDB কানেকশন টেস্ট করার জন্য"""
+    try:
+        count = candles_col.count_documents({})
+        return jsonify({
+            "status": "success",
+            "candles_count": count,
+            "message": "MongoDB connected successfully"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+        
+    
 @app.route("/api/candles")
 def get_candles():
     """MongoDB থেকে ক্যান্ডেল ডাটা রিটার্ন করে"""
