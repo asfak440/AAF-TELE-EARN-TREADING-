@@ -5,90 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Lightweight Charts v4.1.0 - stable -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
     <style>
+        /* আপনার বিদ্যমান সম্পূর্ণ স্টাইল */
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
-        
         :root {
             --bg: #05080d; --card: #0f172a; --border: rgba(255,255,255,0.05);
             --cyan: #00f2fe; --green: #00ffa3; --red: #ff3366; --text: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.1);
         }
-        
         body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
-        
-        .header { position: fixed; top: 0; left: 0; width: 100%; height: 35px; z-index: 3000; background: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; border-bottom: 1px solid var(--border); }
+        .header { position: fixed; top: 0; left: 0; width: 100%; height: 35px; z-index: 3000; background: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); }
         #admin-ad-box { position: fixed; top: 35px; left: 0; width: 100%; height: 25px; background: #1e293b; z-index: 2999; display: flex; align-items: center; }
-        .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
-        
+        .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; overflow-x: auto; }
         #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
-        #chart-container { width: 100%; height: 100% !important; min-height: 250px; }
-        .tv-lightweight-charts-logo { display: none !important; }
-
+        #chart-container { width: 100%; height: 100% !important; min-height: 250px; position: relative; background: #000; }
+        canvas { width: 100%; height: 100%; display: block; }
         #chart-theme-toggle { 
             position: absolute; left: 10px; bottom: 10px; z-index: 3001; 
             padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
             background: #1e293b; color: white; display: flex; align-items: center; gap: 6px;
             font-size: 9px;
         }
-
         .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
-        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s; }
+        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,254,0.1); }
-        
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .stat-card span { font-size: 10px; color: var(--text); display: block; }
-        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: #fff; }
-        
-        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
+        .stat-card b { font-size: 16px; color: #fff; }
+        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); }
         .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
         .input-box { flex: 1; position: relative; }
-        .input-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .input-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; outline: none; }
         .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
-        
         .fee-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
         .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
         .buy { background: var(--green); color: #000; }
         .sell { background: var(--red); color: #fff; }
-        .btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
-
-        #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.4s forwards; }
-        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 80px; opacity: 1; } }
-
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15,23,42,0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); }
         .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 5000; }
         .dock-nav {
-            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
+            width: 90%; max-width: 400px; height: 55px; background: rgba(15,23,42,0.95);
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex;
-            justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            justify-content: space-around; align-items: center;
             backdrop-filter: blur(10px);
         }
-        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; transition: 0.3s; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
-        .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
-        .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
-        
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-weight: 600; text-transform: uppercase; }
+        .nav-item i { font-size: 16px; margin-bottom: 2px; }
+        .nav-item.active { color: var(--cyan); }
         .loading-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--cyan); animation: spin 0.6s linear infinite; margin-right: 5px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        #live-debug {
+            position: fixed; bottom: 80px; left: 5px; right: 5px; background: #000; color: #0f0;
+            font-size: 10px; padding: 5px; border-radius: 6px; z-index: 9998;
+            font-family: monospace; border: 1px solid #0f0; word-break: break-all;
+        }
     </style>
 </head>
 <body>
-    <div id="active-user-bar">
-        <i class="fas fa-bolt" style="color: var(--cyan);"></i>
-        <span id="popup-text" style="font-size: 12px; color: #fff; font-weight: bold;"></span>
-    </div>
-
-    <header class="header">
-        <h2 style="font-size: 10px; margin: 0; font-family: 'Syncopate';">AAF TRADING</h2>
-        <span id="live-price" style="font-size: 12px; color: var(--green); font-family: 'Rajdhani';">৳ 0.0000</span>
-    </header>
-
-    <div id="admin-ad-box">
-        <marquee id="admin-ad-text" behavior="scroll" direction="left" style="color: #00f2fe; font-size: 10px;">লোড হচ্ছে...</marquee>
-    </div>
-
+    <div id="active-user-bar"><i class="fas fa-bolt" style="color:var(--cyan)"></i><span id="popup-text"></span></div>
+    <div class="header"><h2 style="font-size:10px;margin:0;font-family:'Syncopate';">AAF TRADING</h2><span id="live-price" style="font-size:12px;color:var(--green);">৳ 0.0000</span></div>
+    <div id="admin-ad-box"><marquee id="admin-ad-text" behavior="scroll" direction="left" style="color:#00f2fe;font-size:10px;">লোড হচ্ছে...</marquee></div>
     <div class="tf-bar">
         <button class="tf-btn" data-tf="1">1M</button>
         <button class="tf-btn" data-tf="5">5M</button>
@@ -97,73 +77,76 @@
         <button class="tf-btn" data-tf="240">4H</button>
         <button class="tf-btn" data-tf="1440">1D</button>
     </div>
-
     <div id="chart-wrapper">
-        <div id="chart-theme-toggle">
-            <i class="fas fa-moon"></i>
-            <span id="theme-status">DARK</span>
-        </div>
-        <div id="chart-container"></div>
+        <div id="chart-theme-toggle"><i class="fas fa-moon"></i><span id="theme-status">DARK</span></div>
+        <div id="chart-container"><canvas id="candleCanvas"></canvas></div>
     </div>
-
     <div class="container">
-        <div class="stat-grid">
-            <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
-            <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
-        </div>
-
+        <div class="stat-grid"><div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div><div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div></div>
         <div class="trade-box">
-            <div class="input-group">
-                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div>
-                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
-                <div class="input-box"><input type="number" id="coin-input" placeholder="0.00" step="any"><span>AAF</span></div>
-            </div>
-            <div class="fee-card">
-                <div class="fee-row"><span>ফি (<span id="fee-perc">0.5</span>%):</span><b id="fee-amount">৳ 0.00</b></div>
-                <div class="fee-row"><span>মোট খরচ:</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div>
-            </div>
-            <div class="btn-group">
-                <button id="buy-btn" class="btn buy">BUY SPOT</button>
-                <button id="sell-btn" class="btn sell">SELL SPOT</button>
-            </div>
+            <div class="input-group"><div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div><i class="fas fa-exchange-alt" style="color:var(--text)"></i><div class="input-box"><input type="number" id="coin-input" placeholder="0.00" step="any"><span>AAF</span></div></div>
+            <div class="fee-card"><div class="fee-row"><span>ফি (<span id="fee-perc">0.5</span>%):</span><b id="fee-amount">৳ 0.00</b></div><div class="fee-row"><span>মোট খরচ:</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div></div>
+            <div class="btn-group"><button id="buy-btn" class="btn buy">BUY SPOT</button><button id="sell-btn" class="btn sell">SELL SPOT</button></div>
         </div>
     </div>
-
-    <div class="dock-container">
-        <nav class="dock-nav">
-            <a href="/dashboard" class="nav-item"><i class="fas fa-house"></i>Home</a>
-            <a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a>
-            <a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i>Trading</a>
-            <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
-            <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
-        </nav>
-    </div>
+    <div class="dock-container"><nav class="dock-nav"><a href="/dashboard" class="nav-item"><i class="fas fa-house"></i>Home</a><a href="/task" class="nav-item"><i class="fas fa-tasks"></i>Task</a><a href="/trading" class="nav-item active"><i class="fas fa-chart-line"></i>Trading</a><a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a><a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a></nav></div>
+    <div id="live-debug">🚀 শুরু...</div>
 
     <script>
         (function(){
-            // ------------------------- অন-স্ক্রিন ডিবাগ (মোবাইলের জন্য) -------------------------
-            let dbgDiv = document.createElement('div');
-            dbgDiv.style.cssText = 'position:fixed; bottom:80px; left:5px; right:5px; background:#000; color:#0f0; font-size:10px; padding:5px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #0f0; word-break:break-all;';
-            document.body.appendChild(dbgDiv);
-            function log(msg) {
-                console.log(msg);
-                dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
-                if(dbgDiv.innerHTML.split('<br>').length > 6) dbgDiv.innerHTML = dbgDiv.innerHTML.split('<br>').slice(0,6).join('<br>');
-            }
-
-            // ------------------------- গ্লোবাল ভেরিয়েবল -------------------------
-            let chart, candleSeries, currentCandles = [];
+            let dbg = document.getElementById('live-debug');
+            function log(msg) { console.log(msg); if(dbg) dbg.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbg.innerHTML; if(dbg && dbg.innerHTML.split('<br>').length>6) dbg.innerHTML = dbg.innerHTML.split('<br>').slice(0,6).join('<br>'); }
+            
+            // ---------- ক্যান্ডেল ডাটা ----------
+            let currentCandles = [];
             let lastPrice = 1.0, userCash = 0, userAAF = 0, currentFee = 0.5;
             let currentTimeframe = 1, isProcessing = false;
             let candlesCache = {};
-
-            // ------------------------- মক ক্যান্ডেল জেনারেটর (ব্যাকআপ) -------------------------
+            
+            // ---------- Canvas চার্ট ----------
+            const canvas = document.getElementById('candleCanvas');
+            let ctx = canvas.getContext('2d');
+            
+            function drawCandles() {
+                if(!canvas || !ctx || !currentCandles.length) return;
+                const w = canvas.clientWidth, h = canvas.clientHeight;
+                canvas.width = w; canvas.height = h;
+                ctx.clearRect(0,0,w,h);
+                if(w<20 || h<20) return;
+                const candleWidth = Math.max(2, (w / currentCandles.length) - 1);
+                let maxP = Math.max(...currentCandles.map(c=>c.high));
+                let minP = Math.min(...currentCandles.map(c=>c.low));
+                if(maxP === minP) { maxP = maxP + 0.01; minP = minP - 0.01; }
+                const range = maxP - minP;
+                const yScale = (h - 40) / range;
+                const zeroY = h - 20;
+                
+                for(let i=0; i<currentCandles.length; i++) {
+                    const c = currentCandles[i];
+                    const x = i * (candleWidth + 1);
+                    const openY = zeroY - (c.open - minP) * yScale;
+                    const closeY = zeroY - (c.close - minP) * yScale;
+                    const highY = zeroY - (c.high - minP) * yScale;
+                    const lowY = zeroY - (c.low - minP) * yScale;
+                    const isGreen = c.close >= c.open;
+                    ctx.fillStyle = isGreen ? '#00ffa3' : '#ff3366';
+                    ctx.fillRect(x, Math.min(openY, closeY), candleWidth, Math.abs(closeY - openY));
+                    ctx.fillStyle = isGreen ? '#00ffa3' : '#ff3366';
+                    ctx.fillRect(x + candleWidth/2 - 1, highY, 2, lowY - highY);
+                }
+                ctx.fillStyle = '#aaa';
+                ctx.font = '10px monospace';
+                ctx.fillText(`৳ ${lastPrice.toFixed(4)}`, w-70, 20);
+                ctx.fillStyle = '#0f0';
+                ctx.fillText('📊 ক্যান্ডেল চার্ট', 8, 20);
+            }
+            
             function generateMockCandles(timeframe) {
                 const interval = timeframe * 60;
                 const now = Math.floor(Date.now()/1000);
                 let base = lastPrice || 1.0;
                 const mock = [];
-                for (let i=80; i>=0; i--) {
+                for(let i=80; i>=0; i--) {
                     const t = now - (i*interval);
                     const change = (Math.random()-0.5)*0.025;
                     const close = base * (1+change);
@@ -178,22 +161,19 @@
                 }
                 return mock;
             }
-
-            // ------------------------- ক্যান্ডেল লোড (প্রথমে মক, তারপর API) -------------------------
+            
             async function loadCandles(timeframe = currentTimeframe) {
                 log("📡 ক্যান্ডেল লোড শুরু...");
-                // প্রথমে মক ডাটা দেখান (যাতে চার্ট কখনো খালি না থাকে)
-                if (!candlesCache[timeframe]) {
+                if(!candlesCache[timeframe]) {
                     let mock = generateMockCandles(timeframe);
                     candlesCache[timeframe] = mock;
                     currentCandles = [...mock];
-                    if(candleSeries) candleSeries.setData(currentCandles);
-                    log(`🎲 মক ক্যান্ডেল সেট (${mock.length})`);
+                    drawCandles();
+                    log(`🎲 মক ক্যান্ডেল (${mock.length})`);
                 } else {
                     currentCandles = [...candlesCache[timeframe]];
-                    if(candleSeries) candleSeries.setData(currentCandles);
+                    drawCandles();
                 }
-                // ব্যাকএন্ড থেকে আপডেট আনার চেষ্টা
                 try {
                     const res = await fetch('/api/candles', { credentials: 'include' });
                     if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -203,34 +183,26 @@
                         let parsed = [];
                         for(let c of raw) {
                             let t = c.time;
-                            if(t > 1e11) t = Math.floor(t/1000);
+                            if(t>1e11) t = Math.floor(t/1000);
                             t = parseInt(t);
                             if(isNaN(t)) continue;
-                            parsed.push({
-                                time: t,
-                                open: parseFloat(c.open),
-                                high: parseFloat(c.high),
-                                low: parseFloat(c.low),
-                                close: parseFloat(c.close)
-                            });
+                            parsed.push({ time:t, open:parseFloat(c.open), high:parseFloat(c.high), low:parseFloat(c.low), close:parseFloat(c.close) });
                         }
                         if(parsed.length) {
                             parsed.sort((a,b)=>a.time-b.time);
-                            let unique = [], seen = new Set();
+                            let unique=[], seen=new Set();
                             for(let p of parsed) if(!seen.has(p.time)) { seen.add(p.time); unique.push(p); }
                             candlesCache[timeframe] = unique;
                             currentCandles = [...unique];
-                            if(candleSeries) candleSeries.setData(currentCandles);
-                            log(`✅ রিয়েল ক্যান্ডেল লোড (${unique.length})`);
+                            drawCandles();
+                            log(`✅ রিয়েল ক্যান্ডেল (${unique.length})`);
                         }
                     }
-                } catch(e) {
-                    log(`⚠️ API ব্যর্থ: ${e.message}, মক চলছে`);
-                }
+                } catch(e) { log(`⚠️ API ব্যর্থ: ${e.message}`); }
             }
-
+            
             function updateChartWithPrice(price) {
-                if(!candleSeries || !currentCandles.length) return;
+                if(!currentCandles.length) return;
                 const now = Math.floor(Date.now()/1000);
                 const interval = currentTimeframe * 60;
                 const barTime = Math.floor(now/interval)*interval;
@@ -239,42 +211,40 @@
                     let newCandle = { time:barTime, open:price, high:price, low:price, close:price };
                     currentCandles.push(newCandle);
                     if(candlesCache[currentTimeframe]) candlesCache[currentTimeframe].push(newCandle);
-                    candleSeries.setData(currentCandles);
                 } else {
                     last.high = Math.max(last.high, price);
                     last.low = Math.min(last.low, price);
                     last.close = price;
-                    candleSeries.update(last);
                 }
+                drawCandles();
             }
-
-            // ------------------------- ইউজার ডাটা সিঙ্ক -------------------------
+            
+            // ---------- ইউজার ও ট্রেড লজিক ----------
             async function syncUserData() {
                 try {
-                    const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
-                    if(res.status === 401) { window.location.href = '/login'; return; }
+                    const res = await fetch('/api/user/me', { credentials:'include', headers:{'Cache-Control':'no-cache'} });
+                    if(res.status===401) { window.location.href='/login'; return; }
                     if(!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
-                    if(data.status === 'success') {
-                        userCash = parseFloat(data.user.cash) || 0;
-                        userAAF = parseFloat(data.user.aaf) || 0;
-                        lastPrice = parseFloat(data.admin.live_price) || 1.0;
-                        currentFee = parseFloat(data.admin.trading_fee) || 0.5;
+                    if(data.status==='success') {
+                        userCash = parseFloat(data.user.cash)||0;
+                        userAAF = parseFloat(data.user.aaf)||0;
+                        lastPrice = parseFloat(data.admin.live_price)||1.0;
+                        currentFee = parseFloat(data.admin.trading_fee)||0.5;
                         document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
                         document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
                         document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
                         document.getElementById('fee-perc').innerHTML = currentFee;
-                        document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
                         calculateTradeCost();
-                        if(candleSeries && lastPrice) updateChartWithPrice(lastPrice);
-                        log(`✅ সিঙ্ক সফল | প্রাইস: ${lastPrice.toFixed(4)}`);
+                        if(lastPrice) updateChartWithPrice(lastPrice);
+                        log(`✅ সিঙ্ক: ${lastPrice.toFixed(4)}`);
                     }
                 } catch(e) { log(`❌ সিঙ্ক এরর: ${e.message}`); }
             }
-
+            
             function calculateTradeCost() {
-                let taka = parseFloat(document.getElementById('taka-input').value) || 0;
-                let coin = parseFloat(document.getElementById('coin-input').value) || 0;
+                let taka = parseFloat(document.getElementById('taka-input').value)||0;
+                let coin = parseFloat(document.getElementById('coin-input').value)||0;
                 if(document.activeElement === document.getElementById('taka-input') && taka>0) {
                     coin = taka / lastPrice;
                     document.getElementById('coin-input').value = coin.toFixed(4);
@@ -282,132 +252,94 @@
                     taka = coin * lastPrice;
                     document.getElementById('taka-input').value = taka.toFixed(2);
                 }
-                const fee = (taka * currentFee) / 100;
-                const total = taka + fee;
+                const fee = (taka*currentFee)/100;
+                const total = taka+fee;
                 document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
                 document.getElementById('total-cost').innerHTML = `৳ ${total.toFixed(2)}`;
-                const buyBtn = document.getElementById('buy-btn');
-                const sellBtn = document.getElementById('sell-btn');
-                buyBtn.disabled = (taka < 10 || total > userCash);
-                sellBtn.disabled = (coin <= 0 || coin > userAAF);
+                document.getElementById('buy-btn').disabled = (taka<10 || total>userCash);
+                document.getElementById('sell-btn').disabled = (coin<=0 || coin>userAAF);
             }
-
+            
             async function executeTrade(type) {
                 if(isProcessing) { showPopup("⏳ আগের লেনদেন প্রসেসিং..."); return; }
-                let taka = parseFloat(document.getElementById('taka-input').value) || 0;
-                let coin = parseFloat(document.getElementById('coin-input').value) || 0;
-                if(type === 'buy') {
-                    if(taka < 10) { showPopup("❌ ন্যূনতম ১০ টাকা ট্রেড করতে হবে!"); return; }
-                    const fee = (taka * currentFee)/100;
-                    if(taka+fee > userCash) { showPopup(`❌ টাকা কম! প্রয়োজন ${(taka+fee).toFixed(2)}`); return; }
-                    if(coin <= 0) coin = taka / lastPrice;
+                let taka = parseFloat(document.getElementById('taka-input').value)||0;
+                let coin = parseFloat(document.getElementById('coin-input').value)||0;
+                if(type==='buy') {
+                    if(taka<10) { showPopup("❌ ন্যূনতম ১০ টাকা"); return; }
+                    const fee = (taka*currentFee)/100;
+                    if(taka+fee>userCash) { showPopup(`❌ টাকা কম! প্রয়োজন ${(taka+fee).toFixed(2)}`); return; }
+                    if(coin<=0) coin = taka/lastPrice;
                 } else {
-                    if(coin <= 0) { showPopup("❌ সঠিক কয়েন দিন!"); return; }
-                    if(coin > userAAF) { showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF আছে`); return; }
-                    if(taka <= 0) taka = coin * lastPrice;
+                    if(coin<=0) { showPopup("❌ কয়েন দিন"); return; }
+                    if(coin>userAAF) { showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF`); return; }
+                    if(taka<=0) taka = coin*lastPrice;
                 }
-                isProcessing = true;
-                const buyBtn = document.getElementById('buy-btn'), sellBtn = document.getElementById('sell-btn');
-                const origBuy = buyBtn.innerHTML, origSell = sellBtn.innerHTML;
-                buyBtn.disabled = sellBtn.disabled = true;
-                buyBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
-                sellBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
+                isProcessing=true;
+                const buyBtn=document.getElementById('buy-btn'), sellBtn=document.getElementById('sell-btn');
+                const origBuy=buyBtn.innerHTML, origSell=sellBtn.innerHTML;
+                buyBtn.disabled=sellBtn.disabled=true;
+                buyBtn.innerHTML='<span class="loading-spinner"></span> প্রসেসিং...';
+                sellBtn.innerHTML='<span class="loading-spinner"></span> প্রসেসিং...';
                 try {
                     const res = await fetch('/api/trade/execute', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
+                        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
                         body: JSON.stringify({ type, taka, coin, price: lastPrice })
                     });
                     const data = await res.json();
-                    if(data.status === 'success') {
+                    if(data.status==='success') {
                         showPopup(`✅ ${data.message}`);
-                        document.getElementById('taka-input').value = '';
-                        document.getElementById('coin-input').value = '';
+                        document.getElementById('taka-input').value='';
+                        document.getElementById('coin-input').value='';
                         await syncUserData();
-                    } else { showPopup(`❌ ${data.message || 'ট্রেড ব্যর্থ!'}`); }
+                    } else { showPopup(`❌ ${data.message||'ট্রেড ব্যর্থ!'}`); }
                 } catch(e) { showPopup("❌ সার্ভার ত্রুটি"); }
                 finally {
-                    isProcessing = false;
-                    buyBtn.disabled = sellBtn.disabled = false;
-                    buyBtn.innerHTML = origBuy;
-                    sellBtn.innerHTML = origSell;
+                    isProcessing=false;
+                    buyBtn.disabled=sellBtn.disabled=false;
+                    buyBtn.innerHTML=origBuy; sellBtn.innerHTML=origSell;
                     calculateTradeCost();
                 }
             }
-
+            
             function showPopup(msg) {
-                const bar = document.getElementById('active-user-bar');
-                if(bar) { document.getElementById('popup-text').innerText = msg; bar.style.display = 'flex'; setTimeout(()=>bar.style.display='none',4000); }
+                const bar=document.getElementById('active-user-bar');
+                if(bar){ document.getElementById('popup-text').innerText=msg; bar.style.display='flex'; setTimeout(()=>bar.style.display='none',4000); }
                 else alert(msg);
             }
-
+            
             async function setTimeframe(minutes) {
                 currentTimeframe = minutes;
-                document.querySelectorAll('.tf-btn').forEach(btn => {
-                    if(parseInt(btn.dataset.tf) === minutes) btn.classList.add('active');
+                document.querySelectorAll('.tf-btn').forEach(btn=>{
+                    if(parseInt(btn.dataset.tf)===minutes) btn.classList.add('active');
                     else btn.classList.remove('active');
                 });
                 await loadCandles(minutes);
             }
-
-            function initChart() {
-                const container = document.getElementById('chart-container');
-                if(!container) return;
-                container.innerHTML = '';
-                let width = container.clientWidth;
-                let height = container.clientHeight;
-                if(width < 100) width = window.innerWidth - 20;
-                if(height < 100) height = 250;
-                chart = LightweightCharts.createChart(container, {
-                    width: width, height: height,
-                    layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
-                    grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
-                    timeScale: { timeVisible: true, secondsVisible: currentTimeframe < 60 }
-                });
-                candleSeries = chart.addCandlestickSeries({
-                    upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
-                    wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
-                });
-                window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
-                log("✅ চার্ট সফলভাবে তৈরি");
-                return true;
-            }
-
-            function setupThemeToggle() {
-                const btn = document.getElementById('chart-theme-toggle');
-                if(btn) btn.onclick = () => {
-                    if(!chart) return;
-                    const isDark = document.getElementById('theme-status').innerText !== 'LIGHT';
-                    chart.applyOptions({ layout: { background: { color: isDark ? '#ffffff' : '#000000' }, textColor: isDark ? '#191919' : '#d1d4dc' } });
-                    document.getElementById('theme-status').innerText = isDark ? 'LIGHT' : 'DARK';
-                    btn.innerHTML = isDark ? '<i class="fas fa-sun"></i> LIGHT' : '<i class="fas fa-moon"></i> DARK';
-                };
-            }
-
-            // ইভেন্ট লিসেনার
+            
+            function handleResize() { if(currentCandles.length) drawCandles(); }
+            window.addEventListener('resize', handleResize);
+            
             document.getElementById('taka-input').addEventListener('input', calculateTradeCost);
             document.getElementById('coin-input').addEventListener('input', calculateTradeCost);
-            document.getElementById('buy-btn').addEventListener('click', () => executeTrade('buy'));
-            document.getElementById('sell-btn').addEventListener('click', () => executeTrade('sell'));
-            document.querySelectorAll('.tf-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    let tf = parseInt(btn.dataset.tf);
-                    if(!isNaN(tf)) setTimeframe(tf);
-                });
+            document.getElementById('buy-btn').addEventListener('click', ()=>executeTrade('buy'));
+            document.getElementById('sell-btn').addEventListener('click', ()=>executeTrade('sell'));
+            document.querySelectorAll('.tf-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{ let tf=parseInt(btn.dataset.tf); if(!isNaN(tf)) setTimeframe(tf); });
             });
-
-            // অ্যাপ শুরু
-            window.addEventListener('DOMContentLoaded', async () => {
+            
+            document.getElementById('chart-theme-toggle').onclick = ()=>{
+                let span = document.getElementById('theme-status');
+                span.innerText = span.innerText === 'DARK' ? 'LIGHT' : 'DARK';
+            };
+            
+            window.addEventListener('DOMContentLoaded', async ()=>{
                 log("🚀 অ্যাপ শুরু");
-                initChart();
-                setupThemeToggle();
                 await syncUserData();
                 await loadCandles(1);
                 setTimeframe(1);
                 setInterval(syncUserData, 5000);
-                setInterval(() => { if(candleSeries && lastPrice) updateChartWithPrice(lastPrice); }, 3000);
-                log("✅ সবকিছু প্রস্তুত");
+                setInterval(()=>{ if(lastPrice) updateChartWithPrice(lastPrice); }, 3000);
+                log("✅ প্রস্তুত");
             });
         })();
     </script>
