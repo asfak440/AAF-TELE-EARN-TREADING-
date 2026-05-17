@@ -958,6 +958,48 @@ def market_price():
 
 
 
+@app.route("/api/market/update_candle", methods=["POST"])
+@login_required
+def update_candle():
+    """নতুন ট্রেড হলে ক্যান্ডেল আপডেট করে"""
+    try:
+        data = request.get_json()
+        price = data.get('price', 0)
+        
+        now = int(datetime.utcnow().timestamp())
+        current_minute = now - (now % 60)
+        
+        # বর্তমান মিনিটের ক্যান্ডেল খোঁজা
+        existing = candles_col.find_one({"time": current_minute})
+        
+        if existing:
+            # আপডেট
+            candles_col.update_one(
+                {"time": current_minute},
+                {
+                    "$set": {
+                        "high": max(existing.get("high", price), price),
+                        "low": min(existing.get("low", price), price),
+                        "close": price
+                    }
+                }
+            )
+        else:
+            # নতুন ক্যান্ডেল তৈরি
+            candles_col.insert_one({
+                "time": current_minute,
+                "open": price,
+                "high": price,
+                "low": price,
+                "close": price
+            })
+        
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
 def execute_trade():
