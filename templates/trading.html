@@ -115,8 +115,7 @@
 
         <div class="trade-box">
             <div class="input-group">
-                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div>
-                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div>                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
                 <div class="input-box"><input type="number" id="coin-input" placeholder="0.00" step="any"><span>AAF</span></div>
             </div>
             <div class="fee-card">
@@ -140,8 +139,8 @@
         </nav>
     </div>
 
-    <script>
-        // ==================== GLOBAL VARIABLES ====================
+<script>
+// ==================== GLOBAL VARIABLES ====================
 let chart = null;
 let candleSeries = null;
 let currentCandles = [];
@@ -152,9 +151,8 @@ let currentFee = 0.5;
 let isDarkMode = true;
 let currentTimeframe = 1;
 let isProcessing = false;
-
-// ক্যাশে
 let candlesCache = {};
+let chartReady = false;
 
 // ==================== ইউজার ডাটা সিঙ্ক ====================
 async function syncUserData() {
@@ -194,7 +192,7 @@ async function syncUserData() {
             
             calculateTradeCost();
             
-            if (candleSeries && lastPrice > 0) {
+            if (candleSeries && lastPrice > 0 && chartReady) {
                 updateChartWithPrice(lastPrice);
             }
             
@@ -206,20 +204,25 @@ async function syncUserData() {
     return false;
 }
 
-// ==================== ক্যান্ডেল লোডার (ডিবাগ সহ) ====================
+// ==================== ক্যান্ডেল লোডার (মোবাইল ফ্রেন্ডলি) ====================
 async function loadCandles(timeframe = currentTimeframe) {
+    // যদি চার্ট এখনও প্রস্তুত না হয়, 500ms পর পুনরায় চেষ্টা
+    if (!chartReady || !candleSeries) {
+        console.log("⏳ চার্ট প্রস্তুত নয়, 500ms পরে আবার চেষ্টা...");
+        setTimeout(() => loadCandles(timeframe), 500);
+        return;
+    }
+    
     try {
         // ক্যাশে চেক
         if (candlesCache[timeframe] && candlesCache[timeframe].length > 0) {
             console.log(`✅ ক্যাশে থেকে ${candlesCache[timeframe].length}টি ক্যান্ডেল নেওয়া হলো`);
             currentCandles = [...candlesCache[timeframe]];
-            if (candleSeries) {
-                candleSeries.setData(currentCandles);
-            }
+            candleSeries.setData(currentCandles);
             return;
         }
         
-        console.log(`📡 ব্যাকএন্ড থেকে ক্যান্ডেল ডাটা আনা হচ্ছে (টাইমফ্রেম: ${timeframe})...`);
+        console.log(`📡 ব্যাকএন্ড থেকে ক্যান্ডেল ডাটা আনা হচ্ছে...`);
         const response = await fetch('/api/candles', {
             method: 'GET',
             credentials: 'include'
@@ -228,8 +231,6 @@ async function loadCandles(timeframe = currentTimeframe) {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
-        console.log("📥 সার্ভার রেসপন্স:", data);
-        
         let rawCandles = data.candles || [];
         
         if (!Array.isArray(rawCandles) || rawCandles.length === 0) {
@@ -238,16 +239,11 @@ async function loadCandles(timeframe = currentTimeframe) {
             return;
         }
         
-        // ক্যান্ডেল পার্সিং (টাইমস্ট্যাম্প ফিক্স)
         const parsedCandles = [];
         for (let c of rawCandles) {
             let timeVal = c.time;
-            if (!timeVal && timeVal !== 0) continue;
-            
-            // মিলিসেকেন্ডকে সেকেন্ডে রূপান্তর
-            if (timeVal > 10000000000) {
-                timeVal = Math.floor(timeVal / 1000);
-            }
+            if (timeVal === undefined || timeVal === null) continue;
+            if (timeVal > 10000000000) timeVal = Math.floor(timeVal / 1000);
             timeVal = parseInt(timeVal);
             if (isNaN(timeVal)) continue;
             
@@ -277,17 +273,11 @@ async function loadCandles(timeframe = currentTimeframe) {
         uniqueCandles.sort((a, b) => a.time - b.time);
         
         console.log(`✅ ${uniqueCandles.length}টি ইউনিক ক্যান্ডেল প্রস্তুত`);
-        
-        // ক্যাশে সংরক্ষণ
         candlesCache[timeframe] = uniqueCandles;
         currentCandles = [...uniqueCandles];
         
-        if (candleSeries) {
-            candleSeries.setData(currentCandles);
-            console.log("✅ চার্ট আপডেট হয়েছে");
-        } else {
-            console.warn("⚠️ candleSeries এখনও তৈরি হয়নি");
-        }
+        candleSeries.setData(currentCandles);
+        console.log("✅ চার্ট আপডেট হয়েছে");
         
     } catch (error) {
         console.error('❌ ক্যান্ডেল লোডিং এরর:', error);
@@ -295,9 +285,7 @@ async function loadCandles(timeframe = currentTimeframe) {
     }
 }
 
-// মক ডাটা জেনারেটর (ব্যাকআপ)
 function generateMockCandles(timeframe) {
-    console.log(`🎲 মক ক্যান্ডেল জেনারেট করা হচ্ছে (টাইমফ্রেম: ${timeframe}মিনিট)`);
     const mockCandles = [];
     const now = Math.floor(Date.now() / 1000);
     const interval = timeframe * 60;
@@ -319,16 +307,12 @@ function generateMockCandles(timeframe) {
     
     currentCandles = mockCandles;
     candlesCache[timeframe] = mockCandles;
-    
-    if (candleSeries) {
-        candleSeries.setData(currentCandles);
-        console.log(`✅ ${mockCandles.length}টি মক ক্যান্ডেল চার্টে লোড করা হয়েছে`);
-    }
+    if (candleSeries) candleSeries.setData(currentCandles);
+    console.log(`✅ ${mockCandles.length}টি মক ক্যান্ডেল লোড করা হয়েছে`);
 }
 
-// চার্টে নতুন প্রাইস টিক যোগ করা
 function updateChartWithPrice(price) {
-    if (!candleSeries) return;
+    if (!candleSeries || !chartReady) return;
     
     const now = Math.floor(Date.now() / 1000);
     const intervalSeconds = currentTimeframe * 60;
@@ -342,7 +326,6 @@ function updateChartWithPrice(price) {
     const lastCandle = currentCandles[currentCandles.length - 1];
     
     if (!lastCandle || lastCandle.time !== currentCandleTime) {
-        // নতুন ক্যান্ডেল
         const newCandle = {
             time: currentCandleTime,
             open: price,
@@ -351,12 +334,9 @@ function updateChartWithPrice(price) {
             close: price
         };
         currentCandles.push(newCandle);
-        if (candlesCache[currentTimeframe]) {
-            candlesCache[currentTimeframe].push(newCandle);
-        }
+        if (candlesCache[currentTimeframe]) candlesCache[currentTimeframe].push(newCandle);
         candleSeries.setData(currentCandles);
     } else {
-        // বিদ্যমান ক্যান্ডেল আপডেট
         lastCandle.high = Math.max(lastCandle.high, price);
         lastCandle.low = Math.min(lastCandle.low, price);
         lastCandle.close = price;
@@ -385,9 +365,7 @@ async function executeTrade(type) {
             showPopup(`❌ পর্যাপ্ত টাকা নেই! প্রয়োজন: ৳${totalCost.toFixed(2)}`);
             return;
         }
-        if (coinAmount <= 0) {
-            coinAmount = takaAmount / lastPrice;
-        }
+        if (coinAmount <= 0) coinAmount = takaAmount / lastPrice;
     } else if (type === 'sell') {
         if (coinAmount <= 0) {
             showPopup("❌ সঠিক কয়েন পরিমাণ দিন!");
@@ -397,9 +375,7 @@ async function executeTrade(type) {
             showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF আছে`);
             return;
         }
-        if (takaAmount <= 0) {
-            takaAmount = coinAmount * lastPrice;
-        }
+        if (takaAmount <= 0) takaAmount = coinAmount * lastPrice;
     }
     
     isProcessing = true;
@@ -534,6 +510,7 @@ function initChart() {
         if (chart) chart.applyOptions({ width: container.offsetWidth });
     });
     
+    chartReady = true;
     console.log("✅ চার্ট ইনিশিয়ালাইজ সম্পন্ন");
 }
 
@@ -568,19 +545,19 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
     });
 });
 
-// ==================== পেজ লোড ====================
-window.onload = async () => {
+// ==================== পেজ লোড (মোবাইলের জন্য ডিলে সহ) ====================
+window.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 পেজ লোড শুরু");
     initChart();
     setupThemeToggle();
-    await syncUserData();
-    await loadCandles(1);
-    document.querySelector('.tf-btn[data-tf="1"]').classList.add('active');
-    setInterval(syncUserData, 3000);
-    console.log("✅ সবকিছু প্রস্তুত");
-};
-        
+    // চার্ট রেডি হওয়ার পর sync ও loadCandles চলবে, loadCandles ইতিমধ্যে chartReady চেক করছে
+    syncUserData().then(() => {
+        loadCandles(1);
+    });
+    document.querySelector('.tf-btn[data-tf="1"]')?.classList.add('active');
+    setInterval(syncUserData, 5000);
+});
+    
 </script>
 </body>
 </html>
-             
