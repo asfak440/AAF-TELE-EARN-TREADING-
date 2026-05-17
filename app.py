@@ -51,7 +51,9 @@ trades_col = db_mongo["trades"]
 task_claims_col = db_mongo["task_claims"]
 milestones_col = db_mongo["milestones"] 
 user_milestone_claims_col = db_mongo["user_milestone_claims"]
-deeplink_clicks_col = db_mongo["deeplink_clicks"]  
+deeplink_clicks_col = db_mongo["deeplink_clicks"]
+candles_col = db_mongo['candles']
+
 
 # ================= FIREBASE =================
 if not firebase_admin._apps:
@@ -842,74 +844,61 @@ def admin_delete_task():
     return jsonify({"error": "Firebase not configured"}), 500
 
 # ================= API: TRADING =================
-@app.route("/api/candles")
+
+  @app.route("/api/candles")
 def get_candles():
-    if not fb_ref:
-        # Firebase না থাকলে Mock ডাটা (আগের মতোই থাকবে)
-        candles = []
-        base = int(datetime.utcnow().timestamp()) - 600
-        for i in range(30):
-            candles.append({
-                "time": base + (i * 20),
-                "open": 1.0 + (i * 0.001),
-                "high": 1.005 + (i * 0.001),
-                "low": 0.998 + (i * 0.001),
-                "close": 1.002 + (i * 0.001)
-            })
-        return jsonify({"candles": candles})
-    
-    # Firebase থেকে ডেটা আনা
-    data = fb_ref.child("candle_history").order_by_key().get()
-    if not data:
-        data = fb_ref.child("candles/minutes").get()
-    
-    candles = []
-    if data:
-        for key, val in data.items():
-            if val and isinstance(val, dict):
-                try:
-                    # ১. টাইমস্ট্যাম্প যদি ফ্লোট আকারে থাকে (যেমন ১২৩.৪৫) তবে int সরাসরি কাজ না-ও করতে পারে
-                    # তাই প্রথমে float এ নিয়ে তারপর int এ নেওয়া নিরাপদ।
-                    t = int(float(val.get('time', 0)))
-                    
-                    if t == 0: continue # ইনভ্যালিড টাইম বাদ দিন
-
-                    candles.append({
-                        "time": t,
-                        "open": float(val.get('open', 1.0)),
-                        "high": float(val.get('high', 1.0)),
-                        "low": float(val.get('low', 1.0)),
-                        "close": float(val.get('close', 1.0))
-                    })
-                except:
-                    continue
+    """MongoDB থেকে ক্যান্ডেল ডাটা রিটার্ন করে"""
+    try:
+        # MongoDB থেকে ক্যান্ডেল কালেকশন থেকে ডাটা আনা
+        # ধরে নিচ্ছি আপনার একটি candles_col নামে কালেকশন আছে
+        candles_cursor = candles_col.find({}).sort("time", 1).limit(200)
         
-        # ২. চার্ট সর্টিং ছাড়া ডেটা দেখালে লাইব্রেরি ক্রাশ করে
-        candles.sort(key=lambda x: x['time'])
-
-    # ৩. সবচাইতে গুরুত্বপূর্ণ: যদি একই 'time' এর একাধিক ক্যান্ডেল থাকে, চার্ট আসবে না
-    # ডুপ্লিকেট টাইম রিমুভ করার জন্য নিচের অংশটুকু কাজ করবে
-    seen_times = set()
-    unique_candles = []
-    for c in candles:
-        if c['time'] not in seen_times:
-            unique_candles.append(c)
-            seen_times.add(c['time'])
-    
-    # যদি ডেটা না থাকে তবেই মক ডেটা দিন
-    if not unique_candles:
-        base = int(datetime.utcnow().timestamp()) - 600
-        for i in range(30):
-            unique_candles.append({
-                "time": base + (i * 20),
-                "open": 1.0 + (i * 0.01),
-                "high": 1.05 + (i * 0.01),
-                "low": 0.98 + (i * 0.01),
-                "close": 1.02 + (i * 0.01)
+        candles = []
+        for doc in candles_cursor:
+            candles.append({
+                "time": doc.get("time", 0),
+                "open": float(doc.get("open", 1.0)),
+                "high": float(doc.get("high", 1.0)),
+                "low": float(doc.get("low", 1.0)),
+                "close": float(doc.get("close", 1.0))
             })
-    
-    return jsonify({"candles": unique_candles})
-    
+        
+        # যদি MongoDB এ কোন ডাটা না থাকে, তাহলে মক ডাটা জেনারেট করুন
+        if not candles:
+            print("⚠️ MongoDB এ ক্যান্ডেল ডাটা নেই, মক ডাটা জেনারেট করা হচ্ছে")
+            base = int(datetime.utcnow().timestamp()) - 600
+            for i in range(50):
+                candles.append({
+                    "time": base + (i * 60),  # প্রতি 60 সেকেন্ড পর
+                    "open": 1.0 + (i * 0.002),
+                    "high": 1.01 + (i * 0.002),
+                    "low": 0.99 + (i * 0.002),
+                    "close": 1.005 + (i * 0.002)
+                })
+        
+        return jsonify({
+            "status": "success",
+            "candles": candles
+        })
+        
+    except Exception as e:
+        print(f"❌ Candles API Error: {e}")
+        # এরর হলেও মক ডাটা দিন
+        base = int(datetime.utcnow().timestamp()) - 600
+        candles = []
+        for i in range(50):
+            candles.append({
+                "time": base + (i * 60),
+                "open": 1.0,
+                "high": 1.01,
+                "low": 0.99,
+                "close": 1.0
+            })
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "candles": candles
+        })  
 
 @app.route("/api/market/live-candle")
 def live_candle():
