@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lightweight Charts v4.1.0 - stable -->
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
@@ -139,251 +140,276 @@
     </div>
 
     <script>
-        // ==================== ওরিজিনাল ডিজাইন ঠিক রেখে শুধু চার্ট ও ট্রেড ফিক্স ====================
-        let chart = null;
-        let candleSeries = null;
-        let currentCandles = [];
-        let lastPrice = 1.0;
-        let userCash = 0;
-        let userAAF = 0;
-        let currentFee = 0.5;
-        let currentTimeframe = 1;
-        let isProcessing = false;
-        let candlesCache = {};
+        (function(){
+            // ------------------------- অন-স্ক্রিন ডিবাগ (মোবাইলের জন্য) -------------------------
+            let dbgDiv = document.createElement('div');
+            dbgDiv.style.cssText = 'position:fixed; bottom:80px; left:5px; right:5px; background:#000; color:#0f0; font-size:10px; padding:5px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #0f0; word-break:break-all;';
+            document.body.appendChild(dbgDiv);
+            function log(msg) {
+                console.log(msg);
+                dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
+                if(dbgDiv.innerHTML.split('<br>').length > 6) dbgDiv.innerHTML = dbgDiv.innerHTML.split('<br>').slice(0,6).join('<br>');
+            }
 
-        // ---------- ইউজার ডাটা সিঙ্ক ----------
-        async function syncUserData() {
-            try {
-                const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
-                if (res.status === 401) { window.location.href = '/login'; return; }
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                if (data.status === 'success') {
-                    userCash = parseFloat(data.user.cash) || 0;
-                    userAAF = parseFloat(data.user.aaf) || 0;
-                    lastPrice = parseFloat(data.admin.live_price) || 1.0;
-                    currentFee = parseFloat(data.admin.trading_fee) || 0.5;
-                    document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
-                    document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
-                    document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
-                    document.getElementById('fee-perc').innerHTML = currentFee;
-                    document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
-                    calculateTradeCost();
-                    if (candleSeries && lastPrice) updateChartWithPrice(lastPrice);
-                }
-            } catch(e) { console.error("Sync error", e); }
-        }
+            // ------------------------- গ্লোবাল ভেরিয়েবল -------------------------
+            let chart, candleSeries, currentCandles = [];
+            let lastPrice = 1.0, userCash = 0, userAAF = 0, currentFee = 0.5;
+            let currentTimeframe = 1, isProcessing = false;
+            let candlesCache = {};
 
-        // ---------- ক্যান্ডেল লোড (ব্যাকএন্ড থেকে) ----------
-        async function loadCandles(timeframe = currentTimeframe) {
-            try {
-                if (candlesCache[timeframe] && candlesCache[timeframe].length) {
-                    currentCandles = [...candlesCache[timeframe]];
-                    if (candleSeries) candleSeries.setData(currentCandles);
-                    return;
-                }
-                const res = await fetch('/api/candles', { credentials: 'include' });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                let raw = data.candles || [];
-                if (!raw.length) throw new Error("No candles");
-                const parsed = [];
-                for (let c of raw) {
-                    let t = c.time;
-                    if (t > 1e11) t = Math.floor(t/1000);
-                    t = parseInt(t);
-                    if (isNaN(t)) continue;
-                    parsed.push({
+            // ------------------------- মক ক্যান্ডেল জেনারেটর (ব্যাকআপ) -------------------------
+            function generateMockCandles(timeframe) {
+                const interval = timeframe * 60;
+                const now = Math.floor(Date.now()/1000);
+                let base = lastPrice || 1.0;
+                const mock = [];
+                for (let i=80; i>=0; i--) {
+                    const t = now - (i*interval);
+                    const change = (Math.random()-0.5)*0.025;
+                    const close = base * (1+change);
+                    mock.push({
                         time: t,
-                        open: parseFloat(c.open),
-                        high: parseFloat(c.high),
-                        low: parseFloat(c.low),
-                        close: parseFloat(c.close)
+                        open: base,
+                        high: Math.max(base,close)*(1+Math.random()*0.008),
+                        low: Math.min(base,close)*(1-Math.random()*0.008),
+                        close: close
                     });
+                    base = close;
                 }
-                parsed.sort((a,b)=>a.time-b.time);
-                const unique = [], seen = new Set();
-                for (let p of parsed) if (!seen.has(p.time)) { seen.add(p.time); unique.push(p); }
-                candlesCache[timeframe] = unique;
-                currentCandles = [...unique];
-                if (candleSeries) candleSeries.setData(currentCandles);
-            } catch(e) {
-                console.warn("Candle load error, using mock", e);
-                generateMockCandles(timeframe);
+                return mock;
             }
-        }
 
-        function generateMockCandles(timeframe) {
-            const interval = timeframe * 60;
-            const now = Math.floor(Date.now()/1000);
-            let base = lastPrice || 1.0;
-            const mock = [];
-            for (let i=80; i>=0; i--) {
-                const t = now - (i*interval);
-                const change = (Math.random()-0.5)*0.02;
-                const close = base * (1+change);
-                mock.push({ time:t, open:base, high:Math.max(base,close)*(1+Math.random()*0.006), low:Math.min(base,close)*(1-Math.random()*0.006), close:close });
-                base = close;
+            // ------------------------- ক্যান্ডেল লোড (প্রথমে মক, তারপর API) -------------------------
+            async function loadCandles(timeframe = currentTimeframe) {
+                log("📡 ক্যান্ডেল লোড শুরু...");
+                // প্রথমে মক ডাটা দেখান (যাতে চার্ট কখনো খালি না থাকে)
+                if (!candlesCache[timeframe]) {
+                    let mock = generateMockCandles(timeframe);
+                    candlesCache[timeframe] = mock;
+                    currentCandles = [...mock];
+                    if(candleSeries) candleSeries.setData(currentCandles);
+                    log(`🎲 মক ক্যান্ডেল সেট (${mock.length})`);
+                } else {
+                    currentCandles = [...candlesCache[timeframe]];
+                    if(candleSeries) candleSeries.setData(currentCandles);
+                }
+                // ব্যাকএন্ড থেকে আপডেট আনার চেষ্টা
+                try {
+                    const res = await fetch('/api/candles', { credentials: 'include' });
+                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    let raw = data.candles || [];
+                    if(raw.length) {
+                        let parsed = [];
+                        for(let c of raw) {
+                            let t = c.time;
+                            if(t > 1e11) t = Math.floor(t/1000);
+                            t = parseInt(t);
+                            if(isNaN(t)) continue;
+                            parsed.push({
+                                time: t,
+                                open: parseFloat(c.open),
+                                high: parseFloat(c.high),
+                                low: parseFloat(c.low),
+                                close: parseFloat(c.close)
+                            });
+                        }
+                        if(parsed.length) {
+                            parsed.sort((a,b)=>a.time-b.time);
+                            let unique = [], seen = new Set();
+                            for(let p of parsed) if(!seen.has(p.time)) { seen.add(p.time); unique.push(p); }
+                            candlesCache[timeframe] = unique;
+                            currentCandles = [...unique];
+                            if(candleSeries) candleSeries.setData(currentCandles);
+                            log(`✅ রিয়েল ক্যান্ডেল লোড (${unique.length})`);
+                        }
+                    }
+                } catch(e) {
+                    log(`⚠️ API ব্যর্থ: ${e.message}, মক চলছে`);
+                }
             }
-            currentCandles = mock;
-            candlesCache[timeframe] = mock;
-            if (candleSeries) candleSeries.setData(mock);
-        }
 
-        function updateChartWithPrice(price) {
-            if (!candleSeries || currentCandles.length === 0) return;
-            const now = Math.floor(Date.now()/1000);
-            const interval = currentTimeframe * 60;
-            const barTime = Math.floor(now/interval)*interval;
-            let last = currentCandles[currentCandles.length-1];
-            if (!last || last.time !== barTime) {
-                const newCandle = { time:barTime, open:price, high:price, low:price, close:price };
-                currentCandles.push(newCandle);
-                if (candlesCache[currentTimeframe]) candlesCache[currentTimeframe].push(newCandle);
-                candleSeries.setData(currentCandles);
-            } else {
-                last.high = Math.max(last.high, price);
-                last.low = Math.min(last.low, price);
-                last.close = price;
-                candleSeries.update(last);
+            function updateChartWithPrice(price) {
+                if(!candleSeries || !currentCandles.length) return;
+                const now = Math.floor(Date.now()/1000);
+                const interval = currentTimeframe * 60;
+                const barTime = Math.floor(now/interval)*interval;
+                let last = currentCandles[currentCandles.length-1];
+                if(!last || last.time !== barTime) {
+                    let newCandle = { time:barTime, open:price, high:price, low:price, close:price };
+                    currentCandles.push(newCandle);
+                    if(candlesCache[currentTimeframe]) candlesCache[currentTimeframe].push(newCandle);
+                    candleSeries.setData(currentCandles);
+                } else {
+                    last.high = Math.max(last.high, price);
+                    last.low = Math.min(last.low, price);
+                    last.close = price;
+                    candleSeries.update(last);
+                }
             }
-        }
 
-        // ---------- ট্রেড লজিক ----------
-        function calculateTradeCost() {
-            let taka = parseFloat(document.getElementById('taka-input').value) || 0;
-            let coin = parseFloat(document.getElementById('coin-input').value) || 0;
-            if (document.activeElement === document.getElementById('taka-input') && taka > 0) {
-                coin = taka / lastPrice;
-                document.getElementById('coin-input').value = coin.toFixed(4);
-            } else if (document.activeElement === document.getElementById('coin-input') && coin > 0) {
-                taka = coin * lastPrice;
-                document.getElementById('taka-input').value = taka.toFixed(2);
+            // ------------------------- ইউজার ডাটা সিঙ্ক -------------------------
+            async function syncUserData() {
+                try {
+                    const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
+                    if(res.status === 401) { window.location.href = '/login'; return; }
+                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        userCash = parseFloat(data.user.cash) || 0;
+                        userAAF = parseFloat(data.user.aaf) || 0;
+                        lastPrice = parseFloat(data.admin.live_price) || 1.0;
+                        currentFee = parseFloat(data.admin.trading_fee) || 0.5;
+                        document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
+                        document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
+                        document.getElementById('live-price').innerHTML = `৳ ${lastPrice.toFixed(4)}`;
+                        document.getElementById('fee-perc').innerHTML = currentFee;
+                        document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
+                        calculateTradeCost();
+                        if(candleSeries && lastPrice) updateChartWithPrice(lastPrice);
+                        log(`✅ সিঙ্ক সফল | প্রাইস: ${lastPrice.toFixed(4)}`);
+                    }
+                } catch(e) { log(`❌ সিঙ্ক এরর: ${e.message}`); }
             }
-            const fee = (taka * currentFee) / 100;
-            const total = taka + fee;
-            document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
-            document.getElementById('total-cost').innerHTML = `৳ ${total.toFixed(2)}`;
-            const buyBtn = document.getElementById('buy-btn');
-            const sellBtn = document.getElementById('sell-btn');
-            buyBtn.disabled = (taka < 10 || total > userCash);
-            sellBtn.disabled = (coin <= 0 || coin > userAAF);
-        }
 
-        async function executeTrade(type) {
-            if (isProcessing) { showPopup("⏳ আগের লেনদেন প্রসেসিং..."); return; }
-            let taka = parseFloat(document.getElementById('taka-input').value) || 0;
-            let coin = parseFloat(document.getElementById('coin-input').value) || 0;
-            if (type === 'buy') {
-                if (taka < 10) { showPopup("❌ ন্যূনতম ১০ টাকা ট্রেড করতে হবে!"); return; }
+            function calculateTradeCost() {
+                let taka = parseFloat(document.getElementById('taka-input').value) || 0;
+                let coin = parseFloat(document.getElementById('coin-input').value) || 0;
+                if(document.activeElement === document.getElementById('taka-input') && taka>0) {
+                    coin = taka / lastPrice;
+                    document.getElementById('coin-input').value = coin.toFixed(4);
+                } else if(document.activeElement === document.getElementById('coin-input') && coin>0) {
+                    taka = coin * lastPrice;
+                    document.getElementById('taka-input').value = taka.toFixed(2);
+                }
                 const fee = (taka * currentFee) / 100;
-                if (taka + fee > userCash) { showPopup(`❌ পর্যাপ্ত টাকা নেই! প্রয়োজন: ${(taka+fee).toFixed(2)}`); return; }
-                if (coin <= 0) coin = taka / lastPrice;
-            } else {
-                if (coin <= 0) { showPopup("❌ সঠিক কয়েন পরিমাণ দিন!"); return; }
-                if (coin > userAAF) { showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF আছে`); return; }
-                if (taka <= 0) taka = coin * lastPrice;
+                const total = taka + fee;
+                document.getElementById('fee-amount').innerHTML = `৳ ${fee.toFixed(2)}`;
+                document.getElementById('total-cost').innerHTML = `৳ ${total.toFixed(2)}`;
+                const buyBtn = document.getElementById('buy-btn');
+                const sellBtn = document.getElementById('sell-btn');
+                buyBtn.disabled = (taka < 10 || total > userCash);
+                sellBtn.disabled = (coin <= 0 || coin > userAAF);
             }
-            isProcessing = true;
-            const buyBtn = document.getElementById('buy-btn'), sellBtn = document.getElementById('sell-btn');
-            const origBuy = buyBtn.innerHTML, origSell = sellBtn.innerHTML;
-            buyBtn.disabled = sellBtn.disabled = true;
-            buyBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
-            sellBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
-            try {
-                const res = await fetch('/api/trade/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ type, taka, coin, price: lastPrice })
+
+            async function executeTrade(type) {
+                if(isProcessing) { showPopup("⏳ আগের লেনদেন প্রসেসিং..."); return; }
+                let taka = parseFloat(document.getElementById('taka-input').value) || 0;
+                let coin = parseFloat(document.getElementById('coin-input').value) || 0;
+                if(type === 'buy') {
+                    if(taka < 10) { showPopup("❌ ন্যূনতম ১০ টাকা ট্রেড করতে হবে!"); return; }
+                    const fee = (taka * currentFee)/100;
+                    if(taka+fee > userCash) { showPopup(`❌ টাকা কম! প্রয়োজন ${(taka+fee).toFixed(2)}`); return; }
+                    if(coin <= 0) coin = taka / lastPrice;
+                } else {
+                    if(coin <= 0) { showPopup("❌ সঠিক কয়েন দিন!"); return; }
+                    if(coin > userAAF) { showPopup(`❌ আপনার কাছে ${userAAF.toFixed(4)} AAF আছে`); return; }
+                    if(taka <= 0) taka = coin * lastPrice;
+                }
+                isProcessing = true;
+                const buyBtn = document.getElementById('buy-btn'), sellBtn = document.getElementById('sell-btn');
+                const origBuy = buyBtn.innerHTML, origSell = sellBtn.innerHTML;
+                buyBtn.disabled = sellBtn.disabled = true;
+                buyBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
+                sellBtn.innerHTML = '<span class="loading-spinner"></span> প্রসেসিং...';
+                try {
+                    const res = await fetch('/api/trade/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ type, taka, coin, price: lastPrice })
+                    });
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        showPopup(`✅ ${data.message}`);
+                        document.getElementById('taka-input').value = '';
+                        document.getElementById('coin-input').value = '';
+                        await syncUserData();
+                    } else { showPopup(`❌ ${data.message || 'ট্রেড ব্যর্থ!'}`); }
+                } catch(e) { showPopup("❌ সার্ভার ত্রুটি"); }
+                finally {
+                    isProcessing = false;
+                    buyBtn.disabled = sellBtn.disabled = false;
+                    buyBtn.innerHTML = origBuy;
+                    sellBtn.innerHTML = origSell;
+                    calculateTradeCost();
+                }
+            }
+
+            function showPopup(msg) {
+                const bar = document.getElementById('active-user-bar');
+                if(bar) { document.getElementById('popup-text').innerText = msg; bar.style.display = 'flex'; setTimeout(()=>bar.style.display='none',4000); }
+                else alert(msg);
+            }
+
+            async function setTimeframe(minutes) {
+                currentTimeframe = minutes;
+                document.querySelectorAll('.tf-btn').forEach(btn => {
+                    if(parseInt(btn.dataset.tf) === minutes) btn.classList.add('active');
+                    else btn.classList.remove('active');
                 });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    showPopup(`✅ ${data.message}`);
-                    document.getElementById('taka-input').value = '';
-                    document.getElementById('coin-input').value = '';
-                    await syncUserData();
-                } else { showPopup(`❌ ${data.message || 'ট্রেড ব্যর্থ!'}`); }
-            } catch(e) { showPopup("❌ সার্ভার ত্রুটি"); }
-            finally {
-                isProcessing = false;
-                buyBtn.disabled = sellBtn.disabled = false;
-                buyBtn.innerHTML = origBuy;
-                sellBtn.innerHTML = origSell;
-                calculateTradeCost();
+                await loadCandles(minutes);
             }
-        }
 
-        function showPopup(msg) {
-            const bar = document.getElementById('active-user-bar');
-            const text = document.getElementById('popup-text');
-            if (bar) { text.innerText = msg; bar.style.display = 'flex'; setTimeout(()=>bar.style.display='none',4000); }
-        }
+            function initChart() {
+                const container = document.getElementById('chart-container');
+                if(!container) return;
+                container.innerHTML = '';
+                let width = container.clientWidth;
+                let height = container.clientHeight;
+                if(width < 100) width = window.innerWidth - 20;
+                if(height < 100) height = 250;
+                chart = LightweightCharts.createChart(container, {
+                    width: width, height: height,
+                    layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
+                    grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+                    timeScale: { timeVisible: true, secondsVisible: currentTimeframe < 60 }
+                });
+                candleSeries = chart.addCandlestickSeries({
+                    upColor: '#00ffa3', downColor: '#ff3366', borderVisible: false,
+                    wickUpColor: '#00ffa3', wickDownColor: '#ff3366'
+                });
+                window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
+                log("✅ চার্ট সফলভাবে তৈরি");
+                return true;
+            }
 
-        async function setTimeframe(minutes) {
-            currentTimeframe = minutes;
-            document.querySelectorAll('.tf-btn').forEach(btn => {
-                if (parseInt(btn.dataset.tf) === minutes) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            await loadCandles(minutes);
-        }
-
-        // ---------- চার্ট ইনিশিয়ালাইজ ----------
-        function initChart() {
-            const container = document.getElementById('chart-container');
-            if (!container) return;
-            container.innerHTML = '';
-            chart = LightweightCharts.createChart(container, {
-                width: container.clientWidth,
-                height: 250,
-                layout: { background: { color: '#000000' }, textColor: '#d1d4dc' },
-                grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
-                timeScale: { timeVisible: true, secondsVisible: currentTimeframe < 60 }
-            });
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00ffa3',
-                downColor: '#ff3366',
-                borderVisible: false,
-                wickUpColor: '#00ffa3',
-                wickDownColor: '#ff3366'
-            });
-            window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
-        }
-
-        // থিম টগল
-        function setupThemeToggle() {
-            const btn = document.getElementById('chart-theme-toggle');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    if (!chart) return;
+            function setupThemeToggle() {
+                const btn = document.getElementById('chart-theme-toggle');
+                if(btn) btn.onclick = () => {
+                    if(!chart) return;
                     const isDark = document.getElementById('theme-status').innerText !== 'LIGHT';
                     chart.applyOptions({ layout: { background: { color: isDark ? '#ffffff' : '#000000' }, textColor: isDark ? '#191919' : '#d1d4dc' } });
                     document.getElementById('theme-status').innerText = isDark ? 'LIGHT' : 'DARK';
                     btn.innerHTML = isDark ? '<i class="fas fa-sun"></i> LIGHT' : '<i class="fas fa-moon"></i> DARK';
-                });
+                };
             }
-        }
 
-        // ---------- ইভেন্ট লিসেনার ----------
-        document.getElementById('taka-input').addEventListener('input', calculateTradeCost);
-        document.getElementById('coin-input').addEventListener('input', calculateTradeCost);
-        document.getElementById('buy-btn').addEventListener('click', () => executeTrade('buy'));
-        document.getElementById('sell-btn').addEventListener('click', () => executeTrade('sell'));
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.addEventListener('click', () => { const tf = parseInt(btn.dataset.tf); if (!isNaN(tf)) setTimeframe(tf); });
-        });
+            // ইভেন্ট লিসেনার
+            document.getElementById('taka-input').addEventListener('input', calculateTradeCost);
+            document.getElementById('coin-input').addEventListener('input', calculateTradeCost);
+            document.getElementById('buy-btn').addEventListener('click', () => executeTrade('buy'));
+            document.getElementById('sell-btn').addEventListener('click', () => executeTrade('sell'));
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    let tf = parseInt(btn.dataset.tf);
+                    if(!isNaN(tf)) setTimeframe(tf);
+                });
+            });
 
-        // ---------- পেজ লোড ----------
-        window.addEventListener('DOMContentLoaded', async () => {
-            initChart();
-            setupThemeToggle();
-            await syncUserData();
-            await loadCandles(1);
-            setTimeframe(1);
-            setInterval(syncUserData, 5000);
-            setInterval(() => { if (candleSeries && lastPrice) updateChartWithPrice(lastPrice); }, 3000);
-        });
+            // অ্যাপ শুরু
+            window.addEventListener('DOMContentLoaded', async () => {
+                log("🚀 অ্যাপ শুরু");
+                initChart();
+                setupThemeToggle();
+                await syncUserData();
+                await loadCandles(1);
+                setTimeframe(1);
+                setInterval(syncUserData, 5000);
+                setInterval(() => { if(candleSeries && lastPrice) updateChartWithPrice(lastPrice); }, 3000);
+                log("✅ সবকিছু প্রস্তুত");
+            });
+        })();
     </script>
 </body>
 </html>
