@@ -870,19 +870,22 @@ def admin_delete_task():
     return jsonify({"error": "Firebase not configured"}), 500
 
 # ================= API: TRADING =================
-
 @app.route("/api/candles")
 def get_candles():
     """MongoDB থেকে ক্যান্ডেল ডাটা রিটার্ন করে"""
     try:
         # MongoDB থেকে ক্যান্ডেল কালেকশন থেকে ডাটা আনা
-        # ধরে নিচ্ছি আপনার একটি candles_col নামে কালেকশন আছে
         candles_cursor = candles_col.find({}).sort("time", 1).limit(200)
         
         candles = []
         for doc in candles_cursor:
+            # টাইম ফিল্ডটি সঠিক ফরম্যাটে আছে কিনা চেক করুন
+            time_val = doc.get("time", 0)
+            if time_val == 0:
+                continue
+                
             candles.append({
-                "time": doc.get("time", 0),
+                "time": int(time_val),  # integer নিশ্চিত করুন
                 "open": float(doc.get("open", 1.0)),
                 "high": float(doc.get("high", 1.0)),
                 "low": float(doc.get("low", 1.0)),
@@ -892,15 +895,19 @@ def get_candles():
         # যদি MongoDB এ কোন ডাটা না থাকে, তাহলে মক ডাটা জেনারেট করুন
         if not candles:
             print("⚠️ MongoDB এ ক্যান্ডেল ডাটা নেই, মক ডাটা জেনারেট করা হচ্ছে")
-            base = int(datetime.utcnow().timestamp()) - 600
-            for i in range(50):
+            base = int(datetime.utcnow().timestamp()) - (60 * 60)  # গত ১ ঘন্টা
+            for i in range(60):
+                price = 1.0 + (i * 0.002)
                 candles.append({
-                    "time": base + (i * 60),  # প্রতি 60 সেকেন্ড পর
-                    "open": 1.0 + (i * 0.002),
-                    "high": 1.01 + (i * 0.002),
-                    "low": 0.99 + (i * 0.002),
-                    "close": 1.005 + (i * 0.002)
+                    "time": base + (i * 60),
+                    "open": price,
+                    "high": price * 1.005,
+                    "low": price * 0.995,
+                    "close": price * 1.002
                 })
+        
+        # ক্যান্ডেলগুলোকে টাইম অনুযায়ী সাজানো নিশ্চিত করুন
+        candles.sort(key=lambda x: x['time'])
         
         return jsonify({
             "status": "success",
@@ -909,10 +916,13 @@ def get_candles():
         
     except Exception as e:
         print(f"❌ Candles API Error: {e}")
-        # এরর হলেও মক ডাটা দিন
-        base = int(datetime.utcnow().timestamp()) - 600
+        import traceback
+        traceback.print_exc()
+        
+        # এরর হলেও মক ডাটা দিন (যাতে চার্ট খালি না থাকে)
+        base = int(datetime.utcnow().timestamp()) - (60 * 60)
         candles = []
-        for i in range(50):
+        for i in range(60):
             candles.append({
                 "time": base + (i * 60),
                 "open": 1.0,
@@ -924,7 +934,8 @@ def get_candles():
             "status": "error",
             "message": str(e),
             "candles": candles
-        })  
+        })
+
 
 @app.route("/api/market/live-candle")
 def live_candle():
