@@ -437,17 +437,18 @@
     document.getElementById('chart-theme-toggle')?.addEventListener('click', toggleTheme);
     window.addEventListener('resize', () => { if(currentCandles.length) drawCandles(); });
 
-    // ---------- স্টার্ট ----------
+        // ---------- স্টার্ট ----------
     window.addEventListener('DOMContentLoaded', async () => {
-    log("🚀 অ্যাপ শুরু");
-    await syncUserData();
-    await loadCandles(1);
-    setTimeframe(1);
-    setInterval(syncUserData, 5000);
-    setInterval(() => { if(lastPrice) updateChartWithPrice(lastPrice); }, 3000);
-    log("✅ প্রস্তুত, ক্যান্ডেল চার্ট দেখা যাবে");
-    // এখানে window.addEventListener('resize', ...) থাকলে সেটি মুছে দিন
-});   // <- এখানে শুধু একটি }); থাকবে
+        log("🚀 অ্যাপ শুরু");
+        await syncUserData();
+        await loadCandles(1);
+        setTimeframe(1);
+        setInterval(syncUserData, 5000);
+        setInterval(() => { if(lastPrice) updateChartWithPrice(lastPrice); }, 3000);
+        log("✅ প্রস্তুত, ক্যান্ডেল চার্ট দেখা যাবে");
+    });
+})();   // <-- এই লাইন যোগ করুন
+</script>
 </script>
 </body>
 </html>
