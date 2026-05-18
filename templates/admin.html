@@ -572,7 +572,7 @@ textarea {
 </div>
 
 </div>
-    
+
     <!-- Trading Section -->  
 <div id="trading" class="page-section">  
     <div class="premium-card">  
@@ -586,29 +586,24 @@ textarea {
         <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">  
         <button class="btn-main" onclick="setGlobalFee()">ফি আপডেট</button>  
     </div>    
-    <div class="premium-card">   <!-- 👈 এটি যোগ করা ভালো (কার্ডের মধ্যে রাখো) -->
+    <div class="premium-card">
         <div class="card-title"><i class="fas fa-chart-line"></i> মার্কেট ভোলাটিলিটি কন্ট্রোল</div>
         <div>
             <label>📈 ট্রেড ইমপ্যাক্ট ফ্যাক্টর (প্রতি টাকায় দাম পরিবর্তন)</label>
             <input type="number" id="trade_impact_factor" step="0.00001" value="0.0001">
             <small>বাই করলে দাম বাড়বে, সেল করলে কমবে। যেমন 0.0001 মানে 1000 টাকা ট্রেড করলে দাম 0.1 টাকা পরিবর্তন হবে।</small>
         </div>
-        <div class="premium-card">
-        <div class="card-title"><i class="fas fa-save"></i> ভোলাটিলিটি সেভ করুন</div>
-        <button class="btn-main" onclick="saveVolatilitySettings()">সেটিংস সেভ করুন</button>
-        </div>
         <div>
             <label>🎲 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)</label>
             <input type="number" id="price_volatility" step="0.0001" value="0.0005">
             <small>ছোট রাখুন (যেমন 0.0005 = 0.05%)। ট্রেড ইমপ্যাক্টের চেয়ে কম রাখাই ভালো, যাতে ট্রেডের প্রভাব রিসেট না হয়।</small>
         </div>
-        <div class="premium-card">
-        <div class="card-title"><i class="fas fa-save"></i> ভোলাটিলিটি সেভ করুন</div>
-        <button class="btn-main" onclick="saveVolatilitySettings()">সেটিংস সেভ করুন</button>
+        <div style="margin-top: 15px;">
+            <button class="btn-main" onclick="saveVolatilitySettings()">💾 ভোলাটিলিটি সেভ করুন</button>
         </div>
     </div>
 </div>
-
+    
     <!-- Wallet Section (সঠিক) -->
 <div id="wallet" class="page-section">
     <div class="premium-card">
@@ -1656,7 +1651,32 @@ async function deleteMilestone(id) {
         alert('✅ ডিলিট হয়েছে');
         loadMilestones();
     } else alert('❌ ব্যর্থ');
-                                         }
+    }
+
+    async function saveVolatilitySettings() {
+    const trade_impact_factor = parseFloat(document.getElementById('trade_impact_factor')?.value) || 0.0001;
+    const price_volatility = parseFloat(document.getElementById('price_volatility')?.value) || 0.0005;
+    
+    try {
+        const res = await fetch('/api/admin/update_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ trade_impact_factor, price_volatility })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ ভোলাটিলিটি সেটিংস সেভ হয়েছে');
+            // (ঐচ্ছিক) পেজ রিলোড না করেই লোড করুন
+            if (typeof loadAdminStats === 'function') loadAdminStats();
+        } else {
+            alert('❌ সেভ ব্যর্থ: ' + (data.error || 'Unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('❌ সার্ভার ত্রুটি: ' + err.message);
+    }
+    }
 </script>
     
 </body>
