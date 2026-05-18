@@ -574,18 +574,20 @@ textarea {
 </div>
     
     <!-- Trading Section -->  
-    <div id="trading" class="page-section">  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-coins"></i> মার্কেট প্রাইস কন্ট্রোল</div>  
-            <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:45px; margin:10px 0;">৳ ০.০০</h1>  
-            <input type="number" id="inp-price" step="0.01" placeholder="নতুন মার্কেট প্রাইস সেট করুন">  
-            <button class="btn-main" onclick="forceMarketPrice()">প্রাইস ফিক্সড করুন</button>  
-        </div>  
-        <div class="premium-card">  
-            <div class="card-title"><i class="fas fa-percentage"></i> ট্রেডিং ফি সেটিংস</div>  
-            <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">  
-            <button class="btn-main" onclick="setGlobalFee()">ফি আপডেট</button>  
-        </div>    
+<div id="trading" class="page-section">  
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-coins"></i> মার্কেট প্রাইস কন্ট্রোল</div>  
+        <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:45px; margin:10px 0;">৳ ০.০০</h1>  
+        <input type="number" id="inp-price" step="0.01" placeholder="নতুন মার্কেট প্রাইস সেট করুন">  
+        <button class="btn-main" onclick="forceMarketPrice()">প্রাইস ফিক্সড করুন</button>  
+    </div>  
+    <div class="premium-card">  
+        <div class="card-title"><i class="fas fa-percentage"></i> ট্রেডিং ফি সেটিংস</div>  
+        <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">  
+        <button class="btn-main" onclick="setGlobalFee()">ফি আপডেট</button>  
+    </div>    
+    <div class="premium-card">   <!-- 👈 এটি যোগ করা ভালো (কার্ডের মধ্যে রাখো) -->
+        <div class="card-title"><i class="fas fa-chart-line"></i> মার্কেট ভোলাটিলিটি কন্ট্রোল</div>
         <div>
             <label>📈 ট্রেড ইমপ্যাক্ট ফ্যাক্টর (প্রতি টাকায় দাম পরিবর্তন)</label>
             <input type="number" id="trade_impact_factor" step="0.00001" value="0.0001">
@@ -595,8 +597,9 @@ textarea {
             <label>🎲 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)</label>
             <input type="number" id="price_volatility" step="0.0001" value="0.0005">
             <small>ছোট রাখুন (যেমন 0.0005 = 0.05%)। ট্রেড ইমপ্যাক্টের চেয়ে কম রাখাই ভালো, যাতে ট্রেডের প্রভাব রিসেট না হয়।</small>
-         </div>
-    </div>  
+        </div>
+    </div>
+</div>
 
     <!-- Wallet Section (সঠিক) -->
 <div id="wallet" class="page-section">
