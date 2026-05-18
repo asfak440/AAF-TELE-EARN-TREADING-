@@ -196,28 +196,38 @@ console.log('Chart container:', document.getElementById('chart-container'));
     // চার্ট ইনিশিয়ালাইজ (Binance-স্টাইল)
     function initChart() {
     log("🔧 চার্ট ইনিশিয়ালাইজ শুরু...");
-    if (typeof LightweightCharts === 'undefined') {
-        log("❌ LightweightCharts লাইব্রেরি লোড হয়নি! সার্ভার চেক করুন।");
-        return;
+    const container = document.getElementById('chart-container');
+    if (!container) {
+        log("❌ chart-container পাওয়া যায়নি");
+        return false;
     }
+    if (typeof LightweightCharts === 'undefined') {
+        log("❌ LightweightCharts লাইব্রেরি লোড হয়নি!");
+        return false;
+    }
+    
     container.innerHTML = '';
+    
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
         height: 280,
         layout: { backgroundColor: '#131722', textColor: '#d1d4dc', fontSize: 10 },
         grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
         timeScale: { timeVisible: true, secondsVisible: true, borderColor: '#2a2e39' },
-        rightPriceScale: { borderColor: '#2a2e39', scaleMargins: { top: 0.1, bottom: 0.1 } },
-        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#2a2e39' }
     });
+    
     candleSeries = chart.addCandlestickSeries({
         upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
-        wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+        wickUpColor: '#26a69a', wickDownColor: '#ef5350'
     });
+    
     window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
-    log("✅ চার্ট ইনিশিয়ালাইজ সম্পন্ন");
-    }
-
+    
+    log("✅ candleSeries তৈরি হয়েছে");
+    return true;
+        }
+    
     // ---------- মক ডাটা ----------
     function generateMockCandles(timeframe) {
     log(`🎲 মক ক্যান্ডেল জেনারেট করা হচ্ছে (টাইমফ্রেম: ${timeframe})`);
@@ -250,8 +260,16 @@ console.log('Chart container:', document.getElementById('chart-container'));
         log("❌ candleSeries নেই, চার্ট লোড হয়নি!");
     }
     }
+    
     // ---------- ক্যান্ডেল লোড (API + মক) ----------
     async function loadCandles(timeframe = currentTimeframe) {
+    // candleSeries তৈরি না হলে অপেক্ষা করো
+    if (!candleSeries) {
+        log("⏳ candleSeries তৈরি হয়নি, 500ms পর পুনরায় চেষ্টা...");
+        setTimeout(() => loadCandles(timeframe), 500);
+        return;
+    }
+    
     log("📡 ক্যান্ডেল API কল...");
     try {
         const res = await fetch('/api/candles', { credentials: 'include' });
@@ -260,14 +278,10 @@ console.log('Chart container:', document.getElementById('chart-container'));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const data = await res.json();
-        log(`📥 রেসপন্স ডাটা টাইপ: ${typeof data}, candles length: ${data.candles?.length || 0}`);
-        
         let raw = data.candles || [];
+        log(`📥 রেসপন্স ডাটা টাইপ: ${typeof data}, candles length: ${raw.length}`);
         
-        if (raw.length === 0) {
-            log("⚠️ API থেকে 0 ক্যান্ডেল এসেছে, মক ডাটা ব্যবহার করা হবে");
-            throw new Error("No candles");
-        }
+        if (raw.length === 0) throw new Error("No candles");
         
         let parsed = [];
         for (let c of raw) {
@@ -288,7 +302,6 @@ console.log('Chart container:', document.getElementById('chart-container'));
         
         parsed.sort((a, b) => a.time - b.time);
         
-        // ইউনিক ক্যান্ডেল
         let unique = [];
         let seen = new Set();
         for (let p of parsed) {
@@ -300,16 +313,11 @@ console.log('Chart container:', document.getElementById('chart-container'));
         
         candlesCache[timeframe] = unique;
         currentCandles = [...unique];
-        
-        if (candleSeries) {
-            candleSeries.setData(currentCandles);
-            log(`✅ ${currentCandles.length} টি ক্যান্ডেল লোড হয়েছে`);
-        } else {
-            log("⚠️ candleSeries এখনও তৈরি হয়নি");
-        }
+        candleSeries.setData(currentCandles);
+        log(`✅ ${currentCandles.length} টি ক্যান্ডেল লোড হয়েছে`);
         
     } catch(e) {
-        log(`⚠️ API ব্যর্থ: ${e.message}, মক ডাটা জেনারেট করা হচ্ছে`);
+        log(`⚠️ API ব্যর্থ: ${e.message}, মক ডাটা তৈরি`);
         generateMockCandles(timeframe);
     }
     }
@@ -511,13 +519,16 @@ console.log('Chart container:', document.getElementById('chart-container'));
     // ---------- স্টার্ট ----------
     window.addEventListener('DOMContentLoaded', async () => {
     log("🚀 অ্যাপ শুরু (LightweightCharts)");
-    initChart();
+    initChart();  // প্রথমে চার্ট তৈরি
+    
+    // candleSeries তৈরি হতে একটু সময় দাও
+    await new Promise(r => setTimeout(r, 100));
+    
     await syncUserData();
-    log("📊 ক্যান্ডেল লোড শুরু...");
     await loadCandles(1);
     setTimeframe(1);
     setInterval(syncUserData, 5000);
-    setInterval(() => { if(lastPrice) updateChartWithPrice(lastPrice); }, 3000);
+    setInterval(() => { if(lastPrice && candleSeries) updateChartWithPrice(lastPrice); }, 3000);
     log("✅ সব প্রস্তুত");
 });
 
