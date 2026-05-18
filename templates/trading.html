@@ -209,37 +209,52 @@ console.log('Chart container:', document.getElementById('chart-container'));
     // চার্ট ইনিশিয়ালাইজ (Binance-স্টাইল)
     function initChart() {
     log("🔧 চার্ট ইনিশিয়ালাইজ শুরু...");
-    const container = document.getElementById('chart-container');
-    if (!container) {
-        log("❌ chart-container পাওয়া যায়নি");
-        return false;
-    }
+    
+    // লাইব্রেরি চেক
     if (typeof LightweightCharts === 'undefined') {
         log("❌ LightweightCharts লাইব্রেরি লোড হয়নি!");
+        log("💡 সমাধান: CDN চেক করুন বা নেটওয়ার্ক কানেকশন দেখুন");
         return false;
     }
+    log("✅ LightweightCharts লাইব্রেরি পাওয়া গেছে");
     
+    // কন্টেইনার চেক
+    const container = document.getElementById('chart-container');
+    if (!container) {
+        log("❌ chart-container এলিমেন্ট পাওয়া যায়নি!");
+        return false;
+    }
+    log("✅ chart-container পাওয়া গেছে");
+    
+    // কন্টেইনার পরিষ্কার
     container.innerHTML = '';
     
-    chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 280,
-        layout: { backgroundColor: '#131722', textColor: '#d1d4dc', fontSize: 10 },
-        grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
-        timeScale: { timeVisible: true, secondsVisible: true, borderColor: '#2a2e39' },
-        rightPriceScale: { borderColor: '#2a2e39' }
-    });
-    
-    candleSeries = chart.addCandlestickSeries({
-        upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
-        wickUpColor: '#26a69a', wickDownColor: '#ef5350'
-    });
-    
-    window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
-    
-    log("✅ candleSeries তৈরি হয়েছে");
-    return true;
-        }
+    // চার্ট তৈরি
+    try {
+        chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: 280,
+            layout: { backgroundColor: '#131722', textColor: '#d1d4dc', fontSize: 10 },
+            grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
+            timeScale: { timeVisible: true, secondsVisible: true, borderColor: '#2a2e39' },
+            rightPriceScale: { borderColor: '#2a2e39' }
+        });
+        log("✅ চার্ট অবজেক্ট তৈরি হয়েছে");
+        
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+            wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+        });
+        log("✅ candleSeries তৈরি হয়েছে - সফল!");
+        
+        window.addEventListener('resize', () => chart?.applyOptions({ width: container.clientWidth }));
+        return true;
+        
+    } catch(e) {
+        log(`❌ চার্ট তৈরিতে এরর: ${e.message}`);
+        return false;
+    }
+    }
     
     // ---------- মক ডাটা ----------
     function generateMockCandles(timeframe) {
