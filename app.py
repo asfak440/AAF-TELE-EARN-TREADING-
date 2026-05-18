@@ -98,7 +98,7 @@ def get_admin_config():
             "server_trading": 0,
             "total_users": users_col.count_documents({}),
             "admin_pin": "Abdullah6790",
-            "wallet": {"nagad": "017XXXXXXXX", "bkash": ""},
+            "wallet": {"nagad": "01---------", "bkash": ""},
             "trading_ad_text": "Welcome to Trading",
             "task_banner_ad": "",
             "task_popup_ad": "",
@@ -111,9 +111,10 @@ def get_admin_config():
             "ip_limit": "off",
             "extra_users": 0,
             "task_rules": {
-                "device_check": True,
-                "ip_check": False,
-                "account_check": True
+            "device_check": True,
+            {"$set": {"price_volatility": 0.0001}}, upsert=True
+            "ip_check": False,
+            "account_check": True
             },
             "ip_limit_per_hour": 5,
             "default_task_expiry_hours": 168
@@ -186,7 +187,7 @@ def update_price_loop():
             current_minute = now.replace(second=0, microsecond=0)
 
             # ১. লাইভ প্রাইস র‍্যান্ডম আপডেট
-            change = random.uniform(-0.005, 0.005)
+            change = random.uniform(-0.0001, 0.0001)
             current_price += change
             current_price = max(0.5, min(2.5, current_price))
 
