@@ -23,7 +23,7 @@
         .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
         
         #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
-        #chart-container { width: 100%; height: 100% !important; min-height: 250px; }
+        #chart-container { width: 100%; height: 300% !important; min-height: 300px; }
         .tv-lightweight-charts-logo { display: none !important; }
 
         #chart-theme-toggle { 
@@ -158,6 +158,19 @@
         </nav>
     </div>
     <script>
+        // টেস্ট 1: API চেক
+fetch('/api/candles')
+  .then(r => r.json())
+  .then(d => console.log('Candles API:', d))
+  .catch(e => console.error('API Error:', e));
+
+// টেস্ট 2: চার্ট লাইব্রেরি চেক
+console.log('LightweightCharts:', typeof LightweightCharts);
+
+// টেস্ট 3: চার্ট কন্টেইনার চেক
+console.log('Chart container:', document.getElementById('chart-container'));
+
+        
 (function(){
     // ---------- ডিবাগ ----------
     let dbgDiv = document.createElement('div');
