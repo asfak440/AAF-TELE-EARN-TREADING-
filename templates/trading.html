@@ -190,23 +190,22 @@
     ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, w, h);
     
-    // ব্যাকগ্রাউন্ড (সাইবার পিংক থিমের জন্য গাঢ় বেগুনি)
+    // ব্যাকগ্রাউন্ড
     ctx.fillStyle = isDarkTheme ? '#0a0a0f' : '#ffffff';
     ctx.fillRect(0, 0, w, h);
     
     const totalCandles = currentCandles.length;
     if (totalCandles === 0) return;
     
-    // 🆕 জুম ও প্যান ক্যালকুলেশন
+    // জুম ও প্যান ক্যালকুলেশন
     let baseCandleWidth = (w / totalCandles) * 0.6;
     let candleWidth = Math.max(1, baseCandleWidth * scale);
-    let spacing = candleWidth * 0.3;  // 30% ফাঁকা
+    let spacing = candleWidth * 0.3;
     
-    // দৃশ্যমান ক্যান্ডেলের রেঞ্জ
     let startIndex = Math.max(0, Math.floor(-offsetX / (candleWidth + spacing)));
     let endIndex = Math.min(totalCandles, startIndex + Math.ceil(w / (candleWidth + spacing)) + 3);
     
-    // দৃশ্যমান ক্যান্ডেলের উপর ভিত্তি করে মূল্য সীমা নির্ধারণ
+    // দৃশ্যমান ক্যান্ডেলের উপর ভিত্তি করে মূল্য সীমা
     let visibleCandles = currentCandles.slice(startIndex, endIndex);
     if (visibleCandles.length === 0) visibleCandles = currentCandles;
     let maxP = Math.max(...visibleCandles.map(c => c.high));
@@ -216,11 +215,12 @@
     const yScale = (h - 40) / range;
     const zeroY = h - 20;
     
-    // সাইবার পিংক থিমের রং
-    const greenColor = '#00ffcc';   // সায়ান
-    const redColor = '#ff00ff';     // পিংক
-    const darkGreen = '#00aa88';
-    const darkRed = '#cc00aa';
+    // 🆕 এখানে রং ডিফাইন করুন (isPinkTheme চেক করে)
+    const isPinkTheme = true;  // true দিলে পিংক থিম, false দিলে Binance রং
+    const greenColor = isPinkTheme ? '#00ffcc' : '#26a69a';
+    const redColor = isPinkTheme ? '#ff00ff' : '#ef5350';
+    const darkGreen = isPinkTheme ? '#00aa88' : '#1f8a7a';
+    const darkRed = isPinkTheme ? '#cc00aa' : '#c04240';
     
     for (let i = startIndex; i < endIndex; i++) {
         const c = currentCandles[i];
@@ -253,7 +253,7 @@
         ctx.lineWidth = 0.8;
         ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
     }
-    
+    }
     // ---------- মক ডাটা ----------
     function generateMockCandles(timeframe) {
         const interval = timeframe * 60;
