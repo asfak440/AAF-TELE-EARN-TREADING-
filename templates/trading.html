@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Lightweight Charts CDN (প্রফেশনাল চার্ট) -->
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
+    <!-- CDN 1 (Cloudflare) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.0/lightweight-charts.standalone.js"></script>
+
+    <!-- অথবা CDN 2 (jsDelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
+
+    <!-- অথবা CDN 3 (Unpkg) -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
         
@@ -518,11 +526,25 @@ console.log('Chart container:', document.getElementById('chart-container'));
 
     // ---------- স্টার্ট ----------
     window.addEventListener('DOMContentLoaded', async () => {
-    log("🚀 অ্যাপ শুরু (LightweightCharts)");
-    initChart();  // প্রথমে চার্ট তৈরি
+    log("🚀 অ্যাপ শুরু");
     
-    // candleSeries তৈরি হতে একটু সময় দাও
-    await new Promise(r => setTimeout(r, 100));
+    // চার্ট তৈরি হওয়া পর্যন্ত বারবার চেষ্টা
+    let retryCount = 0;
+    let chartReady = false;
+    
+    while (!chartReady && retryCount < 10) {
+        chartReady = initChart();
+        if (!chartReady) {
+            log(`⏳ চার্ট তৈরি ব্যর্থ, ${retryCount + 1} সেকেন্ড পর পুনরায় চেষ্টা...`);
+            await new Promise(r => setTimeout(r, 1000));
+            retryCount++;
+        }
+    }
+    
+    if (!chartReady) {
+        log("❌ ১০ বার চেষ্টা করেও চার্ট তৈরি করতে ব্যর্থ!");
+        return;
+    }
     
     await syncUserData();
     await loadCandles(1);
