@@ -233,16 +233,8 @@
     ctx.fillText(`৳ ${lastPrice.toFixed(4)}`, w - 70, 20);
     ctx.fillStyle = isDarkTheme ? '#0f0' : '#060';
     ctx.fillText('📊 AAF/USDT', 8, 20);
-                 }
-    
-    // বর্তমান মূল্য লেবেল
-    ctx.fillStyle = isDarkTheme ? '#aaa' : '#333';
-    ctx.font = '10px monospace';
-    ctx.fillText(`৳ ${lastPrice.toFixed(4)}`, w-70, 20);
-    ctx.fillStyle = isDarkTheme ? '#0f0' : '#060';
-    ctx.fillText('📊 ক্যান্ডেল', 8, 20);
     }
-
+    
     // ---------- মক ডাটা ----------
     function generateMockCandles(timeframe) {
         const interval = timeframe * 60;
@@ -454,12 +446,8 @@
     setInterval(syncUserData, 5000);
     setInterval(() => { if(lastPrice) updateChartWithPrice(lastPrice); }, 3000);
     log("✅ প্রস্তুত, ক্যান্ডেল চার্ট দেখা যাবে");
-
-    // resize ইভেন্ট লিসেনার (সবশেষে রাখলে ভালো)
-    window.addEventListener('resize', () => {
-        if (currentCandles.length) drawCandles();
-    });
-});
+    // এখানে window.addEventListener('resize', ...) থাকলে সেটি মুছে দিন
+});   // <- এখানে শুধু একটি }); থাকবে
 </script>
 </body>
 </html>
