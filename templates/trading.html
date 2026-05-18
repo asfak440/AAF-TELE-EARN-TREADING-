@@ -182,10 +182,9 @@
 
     // চার্ট ইনিশিয়ালাইজ (Binance-স্টাইল)
     function initChart() {
-    const container = document.getElementById('chart-container');
-    if (!container) return;
+    log("🔧 চার্ট ইনিশিয়ালাইজ শুরু...");
     if (typeof LightweightCharts === 'undefined') {
-        log("❌ LightweightCharts লাইব্রেরি লোড হয়নি! চেক করুন script যোগ করা হয়েছে কিনা।");
+        log("❌ LightweightCharts লাইব্রেরি লোড হয়নি! সার্ভার চেক করুন।");
         return;
     }
     container.innerHTML = '';
@@ -208,24 +207,25 @@
 
     // ---------- মক ডাটা ----------
     function generateMockCandles(timeframe) {
+    log(`🎲 মক ডাটা জেনারেট করা হচ্ছে (টাইমফ্রেম: ${timeframe})`);
     const interval = timeframe * 60;
-    const now = Math.floor(Date.now()/1000);
+    const now = Math.floor(Date.now() / 1000);
     let base = lastPrice || 1.0;
     const candles = [];
-    for(let i=80; i>=0; i--) {
-        const t = now - (i*interval);
-        const change = (Math.random()-0.5)*0.025;
-        const close = base * (1+change);
+    for (let i = 80; i >= 0; i--) {
+        const t = now - (i * interval);
+        const change = (Math.random() - 0.5) * 0.02;
+        const close = base * (1 + change);
         candles.push({
-            time: t, 
+            time: t,
             open: base,
-            high: Math.max(base,close)*(1+Math.random()*0.008),
-            low: Math.min(base,close)*(1-Math.random()*0.008),
+            high: Math.max(base, close) * (1 + Math.random() * 0.01),
+            low: Math.min(base, close) * (1 - Math.random() * 0.01),
             close: close
         });
         base = close;
     }
-    log(`🎲 মক ডাটা জেনারেট: ${candles.length} ক্যান্ডেল`);
+    log(`🎲 ${candles.length} টি মক ক্যান্ডেল তৈরি`);
     return candles;
     }
     // ---------- ক্যান্ডেল লোড (API + মক) ----------
@@ -233,36 +233,57 @@
     log("📡 ক্যান্ডেল API কল...");
     try {
         const res = await fetch('/api/candles', { credentials: 'include' });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        log(`📡 API রেসপন্স স্ট্যাটাস: ${res.status}`);
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
-        let raw = data.candles || [];
-        if(raw.length) {
+        log(`📥 রেসপন্স ডাটা: ${JSON.stringify(data).substring(0, 200)}`);
+        
+        let raw = data.candles || data.data || [];
+        
+        if (raw && raw.length > 0) {
             let parsed = [];
-            for(let c of raw) {
+            for (let c of raw) {
                 let t = c.time;
-                if(t > 1e11) t = Math.floor(t/1000);
+                if (t > 1e11) t = Math.floor(t / 1000);
                 t = parseInt(t);
-                if(isNaN(t)) continue;
-                parsed.push({ time:t, open:parseFloat(c.open), high:parseFloat(c.high), low:parseFloat(c.low), close:parseFloat(c.close) });
+                if (isNaN(t)) continue;
+                parsed.push({
+                    time: t,
+                    open: parseFloat(c.open),
+                    high: parseFloat(c.high),
+                    low: parseFloat(c.low),
+                    close: parseFloat(c.close)
+                });
             }
-            if(parsed.length) {
-                parsed.sort((a,b)=>a.time-b.time);
+            if (parsed.length > 0) {
+                parsed.sort((a, b) => a.time - b.time);
                 candlesCache[timeframe] = parsed;
                 currentCandles = [...parsed];
-                if (candleSeries) candleSeries.setData(currentCandles);
-                log(`✅ রিয়েল ক্যান্ডেল লোড (${currentCandles.length})`);
+                if (candleSeries) {
+                    candleSeries.setData(currentCandles);
+                    log(`✅ রিয়েল ক্যান্ডেল লোড (${currentCandles.length})`);
+                } else {
+                    log("⚠️ candleSeries এখনও তৈরি হয়নি");
+                }
                 return;
             }
         }
-        throw new Error("No valid candles");
-    } catch(e) {
-        log(`⚠️ API ব্যর্থ, মক ডাটা: ${e.message}`);
+        throw new Error("No valid candles in response");
+        
+    } catch (e) {
+        log(`⚠️ API ব্যর্থ বা ডাটা নেই, মক ডাটা জেনারেট: ${e.message}`);
         // মক ডাটা জেনারেট করো
         let mock = generateMockCandles(timeframe);
         candlesCache[timeframe] = mock;
         currentCandles = [...mock];
-        if (candleSeries) candleSeries.setData(currentCandles);
-        log(`🎲 মক ক্যান্ডেল সেট (${currentCandles.length})`);
+        if (candleSeries) {
+            candleSeries.setData(currentCandles);
+            log(`🎲 মক ক্যান্ডেল সেট (${currentCandles.length}) - চার্ট আপডেট হয়েছে`);
+        } else {
+            log("❌ candleSeries নেই, চার্ট ইনিশিয়ালাইজ হয়নি!");
+        }
     }
     }
 
