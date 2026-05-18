@@ -176,7 +176,7 @@ current_price = 1.0
 def update_price_loop():
     global current_price
     last_candle_minute = None
-    candle_open = current_price  # এখানে ভ্যারিয়েবল তৈরি করুন
+    candle_open = current_price
     candle_high = current_price
     candle_low = current_price
     candle_close = current_price
@@ -186,15 +186,16 @@ def update_price_loop():
             now = datetime.utcnow()
             current_minute = now.replace(second=0, microsecond=0)
 
-            # ১. লাইভ প্রাইস র‍্যান্ডম আপডেট
-            change = random.uniform(-0.0001, 0.0001)
+            # 🆕 এডমিন কনফিগ থেকে volatility পড়ুন (প্রতি লুপেই পড়ে, রিয়েল টাইম আপডেট হবে)
+            admin = get_admin_config()
+            volatility = admin.get("price_volatility", 0.0005)   # ডিফল্ট 0.0005 (0.05%)
+            change = random.uniform(-volatility, volatility)
             current_price += change
             current_price = max(0.5, min(2.5, current_price))
 
             # ২. প্রতি মিনিটের শুরুতে মিনিটের ক্যান্ডেল তৈরী এবং Firebase-এ সেভ
             if last_candle_minute != current_minute:
                 if last_candle_minute is not None:
-                    # মিনিট শেষ হয়ে গেলে, ঐ মিনিটের OHLC ডাটা ফায়ারবেসে সেভ করুন
                     if fb_ref:
                         candle_ref = fb_ref.child(f"candles/minutes/{last_candle_minute.isoformat()}")
                         candle_ref.set({
@@ -205,15 +206,13 @@ def update_price_loop():
                             "close": candle_close
                         })
                         print(f"Candle saved for {last_candle_minute}")
-
-                # নতুন মিনিটের জন্য ভ্যারিয়েবল রিসেট করুন
+                # নতুন মিনিটের জন্য রিসেট
                 candle_open = current_price
                 candle_high = current_price
                 candle_low = current_price
                 candle_close = current_price
                 last_candle_minute = current_minute
             else:
-                # একই মিনিটের মধ্যে চলমান ক্যান্ডেল আপডেট করুন (শুধু মেমরিতে)
                 candle_high = max(candle_high, current_price)
                 candle_low = min(candle_low, current_price)
                 candle_close = current_price
@@ -221,7 +220,7 @@ def update_price_loop():
             # ৩. MongoDB-তে লাইভ প্রাইস আপডেট
             admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": now}})
 
-            time.sleep(1) # প্রতি সেকেন্ডে প্রাইস আপডেট
+            time.sleep(1)
         except Exception as e:
             print(f"Price update error: {e}")
             time.sleep(5)
@@ -1051,10 +1050,16 @@ def execute_trade():
 
     admin = get_admin_config() or {}
     fee_percent = float(admin.get("trading_fee", 0.5) or 0.5)
+    
+    # 🆕 ইমপ্যাক্ট ফ্যাক্টর এডমিন কনফিগ থেকে নেওয়া (ডিফল্ট 0.0001)
+    impact_factor = float(admin.get("trade_impact_factor", 0.0001))
 
     if price <= 0:
         return jsonify({"status": "error", "message": "Invalid price"}), 400
 
+    # --------------------------------------------------------------
+    # BUY
+    # --------------------------------------------------------------
     if trade_type == "buy":
         if taka <= 0:
             return jsonify({"status": "error", "message": "Invalid taka amount"}), 400
@@ -1091,8 +1096,23 @@ def execute_trade():
             "timestamp": datetime.utcnow()
         })
 
+        # 🆕 ---------- বাই ট্রেডের ফলে প্রাইস বাড়ানো ----------
+        current_live_price = float(admin.get("live_price", 1.0))
+        price_change = taka * impact_factor
+        new_price = current_live_price + price_change
+        new_price = max(0.1, new_price)   # দাম যেন ০.১ টাকার নিচে না যায়
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$set": {"live_price": new_price}}
+        )
+        # 🆕 (ঐচ্ছিক) গ্লোবাল ভেরিয়েবল আপডেট করতে চাইলে এখানে current_price = new_price সেট করুন
+        # ---------------------------------------------------------------
+
         return jsonify({"status": "success", "message": f"Bought {coin:.4f} AAF successfully"})
 
+    # --------------------------------------------------------------
+    # SELL
+    # --------------------------------------------------------------
     elif trade_type == "sell":
         if coin <= 0:
             return jsonify({"status": "error", "message": "Invalid coin amount"}), 400
@@ -1129,9 +1149,21 @@ def execute_trade():
             "timestamp": datetime.utcnow()
         })
 
+        # 🆕 ---------- সেল ট্রেডের ফলে প্রাইস কমানো ----------
+        current_live_price = float(admin.get("live_price", 1.0))
+        price_change = taka * impact_factor
+        new_price = current_live_price - price_change
+        new_price = max(0.1, new_price)   # দাম যেন ০.১ টাকার নিচে না যায়
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$set": {"live_price": new_price}}
+        )
+        # ---------------------------------------------------------------
+
         return jsonify({"status": "success", "message": f"Sold {coin:.4f} AAF successfully"})
 
     return jsonify({"status": "error", "message": "Invalid type"}), 400
+
 
 
 @app.route("/api/wallet/withdraw", methods=["POST"])
@@ -1152,6 +1184,7 @@ def withdraw():
         "created_at": datetime.utcnow()
     })
     return jsonify({"message": "Withdraw request sent"})
+    
     
 
 @app.route("/api/wallet/transfer", methods=["POST"])
@@ -1313,7 +1346,6 @@ def admin_update_settings():
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     
-    # বাকি সব ফিল্ড আগের মতো
     update_data = {
         "channel_url": data.get("channel_url", ""),
         "min_trades": int(data.get("min_trades", 5)),
@@ -1335,9 +1367,14 @@ def admin_update_settings():
         }),
         "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),
         "default_task_expiry_days": int(data.get("default_task_expiry_days", 7)),
+        
+        # 🆕 ট্রেড ইমপ্যাক্ট ফ্যাক্টর (বাই করলে দাম বাড়ে, সেল করলে কমে)
+        "trade_impact_factor": float(data.get("trade_impact_factor", 0.0001)),
+        # 🆕 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)
+        "price_volatility": float(data.get("price_volatility", 0.0005))
     }
     
-    # পপআপ ফিল্ডগুলো nested অবজেক্টে রূপান্তর
+    # পপআপ ফিল্ডগুলো nested অবজেক্টে
     update_data["popup_ad"] = {
         "title": data.get("popup_ad_title", ""),
         "desc": data.get("popup_ad_desc", ""),
@@ -1345,7 +1382,6 @@ def admin_update_settings():
         "enabled": data.get("popup_ad_enabled", False)
     }
     
-    # MongoDB আপডেট
     admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     return jsonify({"success": True})
     
