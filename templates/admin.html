@@ -585,7 +585,17 @@ textarea {
             <div class="card-title"><i class="fas fa-percentage"></i> ট্রেডিং ফি সেটিংস</div>  
             <input type="number" id="c-fee" placeholder="ফি কত % কাটবে?">  
             <button class="btn-main" onclick="setGlobalFee()">ফি আপডেট</button>  
-        </div>  
+        </div>    
+        <div>
+            <label>📈 ট্রেড ইমপ্যাক্ট ফ্যাক্টর (প্রতি টাকায় দাম পরিবর্তন)</label>
+            <input type="number" id="trade_impact_factor" step="0.00001" value="0.0001">
+            <small>বাই করলে দাম বাড়বে, সেল করলে কমবে। যেমন 0.0001 মানে 1000 টাকা ট্রেড করলে দাম 0.1 টাকা পরিবর্তন হবে।</small>
+        </div>
+        <div>
+            <label>🎲 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)</label>
+            <input type="number" id="price_volatility" step="0.0001" value="0.0005">
+            <small>ছোট রাখুন (যেমন 0.0005 = 0.05%)। ট্রেড ইমপ্যাক্টের চেয়ে কম রাখাই ভালো, যাতে ট্রেডের প্রভাব রিসেট না হয়।</small>
+         </div>
     </div>  
 
     <!-- Wallet Section (সঠিক) -->
@@ -1210,7 +1220,7 @@ async function updateServerSettings() {
         task_banner_ad: document.getElementById('task_banner_ad')?.value || '',
         task_popup_ad: document.getElementById('task_popup_ad')?.value || '',
 
-         // 🆕 পপআপ ফিল্ড যোগ করুন
+        // পপআপ ফিল্ড
         popup_ad_title: document.getElementById('popup_ad_title')?.value || '',
         popup_ad_desc: document.getElementById('popup_ad_desc')?.value || '',
         popup_ad_image: document.getElementById('popup_ad_image')?.value || '',
@@ -1222,8 +1232,15 @@ async function updateServerSettings() {
             account_check: document.getElementById('task_rule_account')?.value === 'true'
         },
         ip_limit_per_hour: parseInt(document.getElementById('ip_limit_per_hour')?.value) || 5,
-        default_task_expiry_hours: parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168
+        default_task_expiry_hours: parseInt(document.getElementById('default_task_expiry_hours')?.value) || 168,
+        
+        // 🆕 নতুন দুটি ফিল্ড যোগ করো (এখানে!)
+        trade_impact_factor: parseFloat(document.getElementById('trade_impact_factor')?.value) || 0.0001,
+        price_volatility: parseFloat(document.getElementById('price_volatility')?.value) || 0.0005
     };
+    
+    // 👇 নিচের লাইনগুলো ডিলিট করে দাও (এগুলো ভুল)
+    // let data = { ... }; // এইটা বাদ
     
     try {
         const res = await fetch('/api/admin/update_settings', {
@@ -1245,10 +1262,8 @@ async function updateServerSettings() {
         console.error(err);
         alert('❌ সার্ভার এরর: ' + err.message);
     }
-    }
+}
 
-
-// ========== NEW: Firebase realtime sync for admin settings ==========
 
 // ========== MODIFIED: initAdmin() ==========
 function initAdmin(){
