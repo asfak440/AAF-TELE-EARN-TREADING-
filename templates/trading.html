@@ -78,6 +78,19 @@
 .tf-btn { background: #2a2e39; color: #8a919e; border: none; }
 .tf-btn.active { background: #2962ff; color: #fff; }
 #chart-wrapper { background: #131722; }
+
+        /* ক্যান্ডেল পরিষ্কার দেখানোর জন্য */
+#candleCanvas {
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* চার্ট কন্টেইনার টাচ অপশন */
+#chart-container {
+    touch-action: none;
+    overflow: hidden;
+}
     </style>
 </head>
 <body>
@@ -249,9 +262,9 @@
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
         
         // কনটুর
-        ctx.strokeStyle = isGreen ? darkGreen : darkRed;
-        ctx.lineWidth = 0.8;
-        ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
+        //ctx.strokeStyle = isGreen ? darkGreen : darkRed;
+        //ctx.lineWidth = 0.8;
+        //ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
     }
     }
     // ---------- মক ডাটা ----------
