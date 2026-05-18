@@ -112,7 +112,7 @@ def get_admin_config():
             "extra_users": 0,
             "task_rules": {
             "device_check": True,
-            {"$set": {"price_volatility": 0.0001}}, upsert=True
+            "price_volatility": 0.0001,
             "ip_check": False,
             "account_check": True
             },
