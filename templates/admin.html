@@ -593,10 +593,18 @@ textarea {
             <input type="number" id="trade_impact_factor" step="0.00001" value="0.0001">
             <small>বাই করলে দাম বাড়বে, সেল করলে কমবে। যেমন 0.0001 মানে 1000 টাকা ট্রেড করলে দাম 0.1 টাকা পরিবর্তন হবে।</small>
         </div>
+        <div class="premium-card">
+        <div class="card-title"><i class="fas fa-save"></i> ভোলাটিলিটি সেভ করুন</div>
+        <button class="btn-main" onclick="saveVolatilitySettings()">সেটিংস সেভ করুন</button>
+        </div>
         <div>
             <label>🎲 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)</label>
             <input type="number" id="price_volatility" step="0.0001" value="0.0005">
             <small>ছোট রাখুন (যেমন 0.0005 = 0.05%)। ট্রেড ইমপ্যাক্টের চেয়ে কম রাখাই ভালো, যাতে ট্রেডের প্রভাব রিসেট না হয়।</small>
+        </div>
+        <div class="premium-card">
+        <div class="card-title"><i class="fas fa-save"></i> ভোলাটিলিটি সেভ করুন</div>
+        <button class="btn-main" onclick="saveVolatilitySettings()">সেটিংস সেভ করুন</button>
         </div>
     </div>
 </div>
