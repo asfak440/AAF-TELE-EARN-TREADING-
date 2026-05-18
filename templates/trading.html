@@ -5,17 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Lightweight Charts CDN (প্রফেশনাল চার্ট) -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
-    <!-- CDN 1 (Cloudflare) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.0/lightweight-charts.standalone.js"></script>
 
-    <!-- অথবা CDN 2 (jsDelivr) -->
-    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
+   <!-- শুধু একটি CDN রাখুন (Cloudflare সবচেয়ে নির্ভরযোগ্য) -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.0/lightweight-charts.standalone.js"></script>
 
-    <!-- অথবা CDN 3 (Unpkg) -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
-    <script>
+   <script>
     setTimeout(() => {
         if (typeof LightweightCharts === 'undefined') {
             console.error("❌ LightweightCharts লোড হয়নি!");
@@ -25,7 +19,6 @@
         }
     }, 2000);
     </script>
-    <script src="/lightweight-charts.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
