@@ -192,8 +192,8 @@
     if (totalCandles === 0) return;
     
     // জুম ও প্যান ক্যালকুলেশন
-    let baseCandleWidth = (w / totalCandles) * 0.6;
-    let candleWidth = Math.max(3, baseCandleWidth * scale);
+    let baseCandleWidth = (w / totalCandles) * 0.65;
+    let candleWidth = Math.max(2, baseCandleWidth * scale);
     let spacing = candleWidth * 0.3;
     let startIndex = Math.max(0, Math.floor(-offsetX / (candleWidth + spacing)));
     let endIndex = Math.min(totalCandles, startIndex + Math.ceil(w / (candleWidth + spacing)) + 2);
@@ -203,17 +203,18 @@
     if (visibleCandles.length === 0) visibleCandles = currentCandles;
     let maxP = Math.max(...visibleCandles.map(c => c.high));
     let minP = Math.min(...visibleCandles.map(c => c.low));
+    let padding = (maxP - minP) * 0.05;
+    maxP = maxP + padding;
+    minP = minP - padding;
     if (maxP === minP) { maxP += 0.01; minP -= 0.01; }
     const range = maxP - minP;
     const yScale = (h - 50) / range;
     const zeroY = h - 30;
     
-    // স্পষ্ট রং (ঘোলাভাব দূর করতে)
-    const greenColor = '#00ffa3';
-    const redColor = '#ff3366';
-    const wickColor = '#c0c0c0';
+    // ✅ Binance স্টাইলে রং (উইক ও বডি একই রং)
+    const greenColor = '#26a69a';   // Binance সবুজ
+    const redColor = '#ef5350';     // Binance লাল
     
-    // ✅ ক্যান্ডেল আঁকা (কনটুর ছাড়া)
     for (let i = startIndex; i < endIndex; i++) {
         const c = currentCandles[i];
         const x = offsetX + i * (candleWidth + spacing);
@@ -224,25 +225,28 @@
         const highY = zeroY - (c.high - minP) * yScale;
         const lowY = zeroY - (c.low - minP) * yScale;
         const isGreen = c.close >= c.open;
+        const candleColor = isGreen ? greenColor : redColor;
         
-        // উইক (পাতলা ও পরিষ্কার)
+        // ✅ উইক (হাই-লো লাইন) – বডির রং অনুযায়ী, পাতলা লাইন
         ctx.beginPath();
-        ctx.strokeStyle = wickColor;
+        ctx.strokeStyle = candleColor;
         ctx.lineWidth = 1.2;
         ctx.moveTo(x + candleWidth / 2, highY);
         ctx.lineTo(x + candleWidth / 2, lowY);
         ctx.stroke();
         
-        // বডি (শুধু ফিল, কোনো কনটুর নেই)
+        // ✅ বডি (ওপেন-ক্লোজ আয়তক্ষেত্র) – ন্যূনতম উচ্চতা 2px
         const bodyTop = Math.min(openY, closeY);
         let bodyHeight = Math.abs(closeY - openY);
-        if (bodyHeight < 1.5) bodyHeight = 1.5;
-        ctx.fillStyle = isGreen ? greenColor : redColor;
+        if (bodyHeight < 2) bodyHeight = 2;
+        ctx.fillStyle = candleColor;
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
+        
+        // ❌ বডির কনটুর বা স্ট্রোক নেই (ঘোলা ভাব দূর করতে)
     }
     
-    // ✅ নিচে তারিখ/সময় লেবেল (পরিষ্কার ফন্ট)
-    ctx.fillStyle = isDarkTheme ? '#a0a0a0' : '#666';
+    // ---------- 📅 নিচে তারিখ/সময় লেবেল ----------
+    ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
@@ -253,23 +257,16 @@
         if (index >= 0 && index < currentCandles.length) {
             let time = currentCandles[index].time;
             let date = new Date(time * 1000);
-            let timeStr = '';
-            if (currentTimeframe < 60) {
-                timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } else if (currentTimeframe < 1440) {
-                timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } else {
-                timeStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-            }
+            let timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             let xPos = offsetX + index * (candleWidth + spacing) + candleWidth/2;
-            if (xPos > 20 && xPos < w - 20) {
-                ctx.fillText(timeStr, xPos, h - 18);
+            if (xPos > 10 && xPos < w - 10) {
+                ctx.fillText(timeStr, xPos, h - 20);
             }
         }
     }
     
-    // ✅ ডান পাশে প্রাইস লেভেল (পরিষ্কার)
-    ctx.fillStyle = isDarkTheme ? '#a0a0a0' : '#666';
+    // ---------- 📈 ডান পাশে প্রাইস লেভেল ----------
+    ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
     ctx.font = '10px monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -278,18 +275,16 @@
     for (let i = 0; i <= priceLevels; i++) {
         let price = minP + (maxP - minP) * (i / priceLevels);
         let yPos = zeroY - (price - minP) * yScale;
-        if (yPos > 15 && yPos < h - 20) {
-            ctx.fillText(price.toFixed(5), w - 6, yPos);
+        if (yPos > 15 && yPos < h - 25) {
+            ctx.fillText(price.toFixed(5), w - 5, yPos);
         }
     }
     
-    // ✅ বর্তমান প্রাইস লেবেল (আলাদা রং)
-    ctx.fillStyle = '#00ffa3';
+    // বর্তমান প্রাইস (সবুজ রঙে)
+    ctx.fillStyle = greenColor;
     ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(lastPrice.toFixed(5), w - 6, zeroY - (lastPrice - minP) * yScale);
+    ctx.fillText(lastPrice.toFixed(5), w - 5, zeroY - (lastPrice - minP) * yScale);
     
-    // রিসেট
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     }
