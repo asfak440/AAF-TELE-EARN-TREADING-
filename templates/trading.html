@@ -6,7 +6,7 @@
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Lightweight Charts CDN (প্রফেশনাল চার্ট) -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
     <style>
            @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
 
@@ -761,16 +761,31 @@ body.light #chart-theme-toggle {
     document.getElementById('chart-theme-toggle')?.addEventListener('click', toggleTheme);
     window.addEventListener('resize', () => { if(chart) chart.resize(container.clientWidth, 250); });
 
+
     // ---------- এপ্লিকেশন স্টার্ট ----------
-    window.addEventListener('DOMContentLoaded', async () => {
-        log("🚀 আপনার নিজস্ব AAF চার্ট লোড হচ্ছে...");
+    function checkAndStart() {
+        // লাইব্রেরি লোড হয়েছে কিনা বারবার চেক করা
+        if (typeof LightweightCharts === 'undefined') {
+            log("⏳ চার্ট লাইব্রেরি লোড হওয়ার জন্য অপেক্ষা করা হচ্ছে...");
+            setTimeout(checkAndStart, 500); // লাইব্রেরি না পাওয়া পর্যন্ত প্রতি ৫০০ মিলি-সেকেন্ড পর পর ট্রাই করবে
+            return;
+        }
+
+        log("🚀 আপনার নিজস্ব AAF চার্ট ইঞ্জিন সফলভাবে চালু হয়েছে!");
         initPersonalChart();
-        await syncUserData();
-        await loadYourCandles();
+        syncUserData();
+        loadYourCandles();
         
         // প্রতি ৩ সেকেন্ড পর পর আপনার নিজস্ব ব্যাকএন্ড প্রাইস চেক করে ক্যান্ডেল লাইভ নড়াচড়া করবে
         setInterval(syncUserData, 3000); 
-    });
+    }
+
+    // পেজ লোড হলে চেক করা শুরু করবে
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', checkAndStart);
+    } else {
+        checkAndStart();
+    }
 })();
 </script>
 </body>
