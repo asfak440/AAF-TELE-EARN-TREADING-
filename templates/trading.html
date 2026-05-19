@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-   <!-- শুধু একটি CDN রাখুন (Cloudflare সবচেয়ে নির্ভরযোগ্য) -->
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.0/lightweight-charts.standalone.js"></script>
-
+    <script src="/static/lightweight-charts.js"></script>
    <script>
     setTimeout(() => {
         if (typeof LightweightCharts === 'undefined') {
@@ -36,7 +33,7 @@
         .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
         
         #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
-        #chart-container { width: 100%; height: 100% !important; min-height: 300px; }
+        #chart-container { width: 100%; height: 250% !important; min-height: 300px; }
         .tv-lightweight-charts-logo { display: none !important; }
 
         #chart-theme-toggle { 
@@ -92,18 +89,7 @@
 .tf-btn.active { background: #2962ff; color: #fff; }
 #chart-wrapper { background: #131722; }
 
-        /* ক্যান্ডেল পরিষ্কার দেখানোর জন্য */
-#candleCanvas {
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-}
-
-/* চার্ট কন্টেইনার টাচ অপশন */
-#chart-container {
-    touch-action: none;
-    overflow: hidden;
-}
+        
     </style>
 </head>
 <body>
@@ -209,6 +195,13 @@ console.log('Chart container:', document.getElementById('chart-container'));
     // চার্ট ইনিশিয়ালাইজ (Binance-স্টাইল)
     function initChart() {
     log("🔧 চার্ট ইনিশিয়ালাইজ শুরু...");
+
+        // যদি লাইব্রেরি লোড না হয়, ক্যানভাস ব্যাকআপ ব্যবহার করুন
+    if (typeof LightweightCharts === 'undefined') {
+        log("⚠️ LightweightCharts নেই, ক্যানভাস ব্যাকআপ ব্যবহার করা হচ্ছে");
+        initCanvasBackup();
+        return true;
+    }
     
     // লাইব্রেরি চেক
     if (typeof LightweightCharts === 'undefined') {
@@ -373,7 +366,18 @@ console.log('Chart container:', document.getElementById('chart-container'));
             last.close = price;
             candleSeries.update(last);
         }
+
+        // ক্যানভাস ব্যাকআপ ব্যবহার করলে
+    if (typeof LightweightCharts === 'undefined' && window.updateChartBackup) {
+        window.updateChartBackup(price);
+        return;
     }
+    }
+
+
+
+
+    
 
     // ---------- ইউজার ডাটা ----------
     async function syncUserData() {
