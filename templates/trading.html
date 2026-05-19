@@ -8,98 +8,422 @@
     <!-- Lightweight Charts CDN (প্রফেশনাল চার্ট) -->
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
-        
-        :root {
-            --bg: #05080d; --card: #0f172a; --border: rgba(255,255,255,0.05);
-            --cyan: #00f2fe; --green: #00ffa3; --red: #ff3366; --text: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.1);
+           @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
+
+:root {
+    --bg: #05080d;
+    --card: #0f172a;
+    --border: rgba(255, 255, 255, 0.05);
+    --cyan: #00f2fe;
+    --green: #00ffa3;
+    --red: #ff3366;
+    --text: #94a3b8;
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ---------- বেস স্টাইল ---------- */
+body {
+    background: #0f172a;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
+    padding-bottom: 110px;
+    overflow-x: hidden;
+}
+
+/* ---------- হেডার ও ফিক্সড এলিমেন্ট ---------- */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 35px;
+    z-index: 3000;
+    background: #0f172a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+}
+
+#admin-ad-box {
+    position: fixed;
+    top: 35px;
+    left: 0;
+    width: 100%;
+    height: 25px;
+    background: #1e293b;
+    z-index: 2999;
+    display: flex;
+    align-items: center;
+}
+
+.tf-bar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: 35px;
+    z-index: 2998;
+    background: #000;
+    display: flex;
+    gap: 8px;
+    padding: 5px 15px;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+.tf-btn {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tf-btn.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0, 242, 254, 0.1);
+}
+
+/* ---------- চার্ট এলিমেন্ট ---------- */
+#chart-wrapper {
+    position: fixed;
+    top: 95px;
+    left: 0;
+    width: 100%;
+    height: 250px;
+    z-index: 2997;
+    background: #0f172a;
+    border-bottom: 1px solid var(--border);
+}
+
+#chart-container {
+    width: 100%;
+    height: 100% !important;
+    min-height: 250px;
+    background: #0f172a;
+    touch-action: none;
+    overflow: hidden;
+    position: relative;
+}
+
+.tv-lightweight-charts-logo {
+    display: none !important;
+}
+
+/* ক্যান্ডেল ক্যানভাস */
+#candleCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+#chart-theme-toggle {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 3001;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #1e293b;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+}
+
+/* ---------- কন্টেইনার ও কার্ড ---------- */
+.container {
+    padding-top: 360px;
+    padding-bottom: 100px;
+    max-width: 350px;
+    margin: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: var(--card);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.stat-card span {
+    font-size: 10px;
+    color: var(--text);
+    display: block;
+}
+
+.stat-card b {
+    font-family: 'Rajdhani';
+    font-size: 16px;
+    color: #fff;
+}
+
+.trade-box {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    position: relative;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.input-box {
+    flex: 1;
+    position: relative;
+}
+
+.input-box input {
+    width: 100%;
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 12px;
+    color: var(--cyan);
+    font-size: 16px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.input-box span {
+    position: absolute;
+    right: 8px;
+    top: 14px;
+    color: var(--text);
+    font-size: 10px;
+}
+
+.fee-card {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+    margin-bottom: 15px;
+}
+
+.fee-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 12px;
+    text-transform: uppercase;
+    transition: 0.2s;
+}
+
+.buy {
+    background: var(--green);
+    color: #000;
+}
+
+.sell {
+    background: var(--red);
+    color: #fff;
+}
+
+.btn:disabled {
+    opacity: 0.3;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+/* ---------- পপআপ ও নেভিগেশন ---------- */
+#active-user-bar {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--cyan);
+    padding: 10px;
+    border-radius: 12px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+    animation: slideDown 0.4s forwards;
+}
+
+@keyframes slideDown {
+    from {
+        top: -50px;
+        opacity: 0;
+    }
+    to {
+        top: 80px;
+        opacity: 1;
+    }
+}
+
+.dock-container {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 5000;
+}
+
+.dock-nav {
+    width: 90%;
+    max-width: 400px;
+    height: 55px;
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 35px;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.nav-item {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 8px;
+    text-align: center;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Rajdhani';
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nav-item i {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.nav-item.active {
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--cyan);
+    animation: spin 0.6s linear infinite;
+    margin-right: 5px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========== লাইট থিম ওভাররাইড ========== */
+body.light {
+    background: #ffffff;
+}
+
+body.light #chart-wrapper,
+body.light #chart-container {
+    background: #ffffff;
+}
+
+body.light .header,
+body.light .dock-nav {
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+}
+
+body.light .tf-btn {
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+}
+
+body.light .tf-btn.active {
+    background: #2962ff;
+    color: #fff;
+}
+
+body.light .stat-card {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+}
+
+body.light .stat-card span,
+body.light .stat-card b {
+    color: #333;
+}
+
+body.light .trade-box {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+}
+
+body.light .fee-card {
+    background: #e8e8e8;
+}
+
+body.light .fee-row span,
+body.light .fee-row b {
+    color: #333;
+}
+
+body.light #candleCanvas {
+    background: #ffffff;
+}
+
+body.light #chart-theme-toggle {
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    color: #333;
         }
-        
-        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
-        
-        .header { position: fixed; top: 0; left: 0; width: 100%; height: 35px; z-index: 3000; background: #0f172a; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; border-bottom: 1px solid var(--border); }
-        #admin-ad-box { position: fixed; top: 35px; left: 0; width: 100%; height: 25px; background: #1e293b; z-index: 2999; display: flex; align-items: center; }
-        .tf-bar { position: fixed; top: 60px; left: 0; width: 100%; height: 35px; z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px; box-sizing: border-box; overflow-x: auto; }
-        
-        #chart-wrapper { position: fixed; top: 95px; left: 0; width: 100%; height: 250px; z-index: 2997; background: #000; border-bottom: 1px solid var(--border); }
-        #chart-container { width: 100%; height: 100% !important; min-height: 250px; }
-        .tv-lightweight-charts-logo { display: none !important; }
-
-        #chart-theme-toggle { 
-            position: absolute; left: 10px; bottom: 10px; z-index: 3001; 
-            padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
-            background: #1e293b; color: white; display: flex; align-items: center; gap: 6px;
-            font-size: 9px;
-        }
-
-        /* ক্যান্ডেল শার্প দেখানোর জন্য */
-        #candleCanvas {
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-
-        /* চার্ট কন্টেইনার */
-        #chart-container {
-            background: #131722;
-        }
-        /* চার্ট কন্টেইনার ব্যাকগ্রাউন্ড */
-        #chart-wrapper, #chart-container {
-            background: #0f172a;
-         }
-
-        /* ক্যান্ডেল পরিষ্কার দেখানোর জন্য */
-        #candleCanvas {
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-         }
-           
-         /* লাইট থিমের জন্য */
-         body.light, .light #chart-wrapper {
-             background: #ffffff;
-         }
-
-
-        .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
-        .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s; }
-        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,254,0.1); }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .stat-card span { font-size: 10px; color: var(--text); display: block; }
-        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: #fff; }
-        
-        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
-        .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
-        .input-box { flex: 1; position: relative; }
-        .input-box input { width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none; }
-        .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
-        
-        .fee-card { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
-        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; }
-        .buy { background: var(--green); color: #000; }
-        .sell { background: var(--red); color: #fff; }
-        .btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
-
-        #active-user-bar { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--cyan); padding: 10px; border-radius: 12px; display: none; align-items: center; gap: 10px; z-index: 9999; backdrop-filter: blur(10px); animation: slideDown 0.4s forwards; }
-        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 80px; opacity: 1; } }
-
-        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 5000; }
-        .dock-nav {
-            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
-            border-radius: 35px; border: 1px solid var(--glass-border); display: flex;
-            justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-        }
-        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; transition: 0.3s; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
-        .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
-        .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
-        
-        .loading-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--cyan); animation: spin 0.6s linear infinite; margin-right: 5px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
