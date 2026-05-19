@@ -54,6 +54,12 @@
             image-rendering: crisp-edges;
             image-rendering: pixelated;
          }
+           
+         /* লাইট থিমের জন্য */
+         body.light, .light #chart-wrapper {
+             background: #ffffff;
+         }
+
 
         .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
         .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s; }
@@ -206,8 +212,8 @@
     ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, w, h);
     
-    // ব্যাকগ্রাউন্ড
-    ctx.fillStyle = isDarkTheme ? '#131722' : '#ffffff';
+    // লাইট থিমের ব্যাকগ্রাউন্ড (সাদা)
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     
     const total = currentCandles.length;
@@ -217,7 +223,7 @@
     let candleWidth = Math.max(2, (w / total) * 0.65);
     let spacing = Math.max(0.5, candleWidth * 0.25);
     
-    // মূল্য সীমা (দৃশ্যমান ক্যান্ডেলের উপর ভিত্তি করে)
+    // মূল্য সীমা
     let maxP = Math.max(...currentCandles.map(c => c.high));
     let minP = Math.min(...currentCandles.map(c => c.low));
     let padding = (maxP - minP) * 0.05;
@@ -228,9 +234,9 @@
     const yScale = (h - 40) / range;
     const zeroY = h - 20;
     
-    // ✅ উজ্জ্বল শক্ত রং (ফেইড নাই)
-    const UP_COLOR = '#00ffa3';   // উজ্জ্বল সবুজ
-    const DOWN_COLOR = '#ff3366'; // উজ্জ্বল লাল
+    // ✅ লাইট থিমের ক্যান্ডেল রং (উজ্জ্বল)
+    const UP_COLOR = '#00ffa3';   // সবুজ
+    const DOWN_COLOR = '#ff3366'; // লাল
     
     for (let i = 0; i < total; i++) {
         const c = currentCandles[i];
@@ -242,7 +248,7 @@
         const isGreen = c.close >= c.open;
         const candleColor = isGreen ? UP_COLOR : DOWN_COLOR;
         
-        // ✅ উইক (বডির রং অনুযায়ী, কোনো ফেইড নাই)
+        // উইক
         ctx.beginPath();
         ctx.strokeStyle = candleColor;
         ctx.lineWidth = 1.5;
@@ -250,7 +256,7 @@
         ctx.lineTo(x + candleWidth / 2, lowY);
         ctx.stroke();
         
-        // ✅ বডি (শক্ত রং, কোনো স্ট্রোক নাই)
+        // বডি
         const bodyTop = Math.min(openY, closeY);
         let bodyHeight = Math.abs(closeY - openY);
         if (bodyHeight < 1.5) bodyHeight = 1.5;
@@ -258,8 +264,8 @@
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
     }
     
-    // নিচে টাইম লেবেল
-    ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
+    // নিচে টাইম লেবেল (গাঢ় ধূসর)
+    ctx.fillStyle = '#555555';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
@@ -276,8 +282,8 @@
         }
     }
     
-    // ডান পাশে প্রাইস লেভেল
-    ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
+    // ডান পাশে প্রাইস লেভেল (গাঢ় ধূসর)
+    ctx.fillStyle = '#555555';
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -297,7 +303,7 @@
     
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-            }
+                }
     // ---------- ক্যান্ডেল লোড (API + মক) ----------
     async function loadCandles(timeframe = currentTimeframe) {
         log("📡 ক্যান্ডেল API কল...");
