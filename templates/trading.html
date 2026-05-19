@@ -548,6 +548,79 @@ console.log('Chart container:', document.getElementById('chart-container'));
         }
     });
 
+    // ক্যানভাস ব্যাকআপ (লাইব্রেরি না থাকলে)
+let canvas, ctx;
+
+function initCanvasBackup() {
+    const container = document.getElementById('chart-container');
+    if (!container) return;
+    container.innerHTML = '';
+    canvas = document.createElement('canvas');
+    canvas.id = 'candleCanvas';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+    ctx = canvas.getContext('2d');
+    
+    // drawCandles ফাংশন ওভাররাইড করুন
+    window.drawCandlesBackup = function() {
+        if (!canvas || !currentCandles.length) return;
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        canvas.width = w; canvas.height = h;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = isDarkTheme ? '#131722' : '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        
+        const total = currentCandles.length;
+        let candleW = Math.max(2, (w / total) * 0.6);
+        let space = candleW * 0.25;
+        
+        let maxP = Math.max(...currentCandles.map(c => c.high));
+        let minP = Math.min(...currentCandles.map(c => c.low));
+        if (maxP === minP) { maxP += 0.01; minP -= 0.01; }
+        const yScale = (h - 40) / (maxP - minP);
+        const zeroY = h - 20;
+        
+        for (let i = 0; i < total; i++) {
+            const c = currentCandles[i];
+            const x = i * (candleW + space);
+            const openY = zeroY - (c.open - minP) * yScale;
+            const closeY = zeroY - (c.close - minP) * yScale;
+            const highY = zeroY - (c.high - minP) * yScale;
+            const lowY = zeroY - (c.low - minP) * yScale;
+            const isGreen = c.close >= c.open;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = '#aaa';
+            ctx.moveTo(x + candleW/2, highY);
+            ctx.lineTo(x + candleW/2, lowY);
+            ctx.stroke();
+            
+            ctx.fillStyle = isGreen ? '#26a69a' : '#ef5350';
+            ctx.fillRect(x, Math.min(openY, closeY), candleW, Math.max(1, Math.abs(closeY - openY)));
+        }
+    };
+    
+    // updateChartWithPrice ওভাররাইড
+    window.updateChartBackup = function(price) {
+        if (!currentCandles.length) return;
+        const now = Math.floor(Date.now()/1000);
+        const interval = currentTimeframe * 60;
+        const barTime = Math.floor(now/interval)*interval;
+        let last = currentCandles[currentCandles.length-1];
+        if (!last || last.time !== barTime) {
+            currentCandles.push({ time:barTime, open:price, high:price, low:price, close:price });
+        } else {
+            last.high = Math.max(last.high, price);
+            last.low = Math.min(last.low, price);
+            last.close = price;
+        }
+        window.drawCandlesBackup();
+    };
+    
+    log("✅ ক্যানভাস ব্যাকআপ চার্ট তৈরি হয়েছে");
+                               }
+
     // ---------- স্টার্ট ----------
     window.addEventListener('DOMContentLoaded', async () => {
     log("🚀 অ্যাপ শুরু");
