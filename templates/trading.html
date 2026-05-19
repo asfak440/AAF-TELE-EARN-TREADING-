@@ -33,6 +33,17 @@
             font-size: 9px;
         }
 
+        /* ক্যান্ডেল শার্প দেখানোর জন্য */
+        #candleCanvas {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* চার্ট কন্টেইনার */
+        #chart-container {
+            background: #131722;
+        }
         /* চার্ট কন্টেইনার ব্যাকগ্রাউন্ড */
         #chart-wrapper, #chart-container {
             background: #0f172a;
@@ -190,140 +201,103 @@
     function drawCandles() {
     if (!canvas || !currentCandles.length) return;
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (w < 50 || h < 50) return;
+    if (w < 30 || h < 30) return;
     canvas.width = w; canvas.height = h;
     ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, w, h);
     
-    // ব্যাকগ্রাউন্ড (ডার্ক থিমের জন্য গাঢ় স্লেট)
-    ctx.fillStyle = isDarkTheme ? '#0f172a' : '#ffffff';
+    // ব্যাকগ্রাউন্ড
+    ctx.fillStyle = isDarkTheme ? '#131722' : '#ffffff';
     ctx.fillRect(0, 0, w, h);
     
-    const totalCandles = currentCandles.length;
-    if (totalCandles === 0) return;
+    const total = currentCandles.length;
+    if (total === 0) return;
     
-    // জুম ও প্যান ক্যালকুলেশন
-    let baseCandleWidth = (w / totalCandles) * 0.65;
-    let candleWidth = Math.max(2, baseCandleWidth * scale);
-    let spacing = candleWidth * 0.3;
-    let startIndex = Math.max(0, Math.floor(-offsetX / (candleWidth + spacing)));
-    let endIndex = Math.min(totalCandles, startIndex + Math.ceil(w / (candleWidth + spacing)) + 2);
+    // ক্যান্ডেলের প্রস্থ ও ব্যবধান
+    let candleWidth = Math.max(2, (w / total) * 0.65);
+    let spacing = Math.max(0.5, candleWidth * 0.25);
     
-    // দৃশ্যমান ক্যান্ডেলের মূল্য সীমা
-    let visibleCandles = currentCandles.slice(startIndex, endIndex);
-    if (visibleCandles.length === 0) visibleCandles = currentCandles;
-    let maxP = Math.max(...visibleCandles.map(c => c.high));
-    let minP = Math.min(...visibleCandles.map(c => c.low));
+    // মূল্য সীমা (দৃশ্যমান ক্যান্ডেলের উপর ভিত্তি করে)
+    let maxP = Math.max(...currentCandles.map(c => c.high));
+    let minP = Math.min(...currentCandles.map(c => c.low));
     let padding = (maxP - minP) * 0.05;
     maxP = maxP + padding;
     minP = minP - padding;
     if (maxP === minP) { maxP += 0.01; minP -= 0.01; }
     const range = maxP - minP;
-    const yScale = (h - 50) / range;
-    const zeroY = h - 30;
+    const yScale = (h - 40) / range;
+    const zeroY = h - 20;
     
-    // 🎨 লগের রং অনুযায়ী ক্যান্ডেল কালার
-    const greenColor = '#00ffa3';   // লগের সবুজ
-    const redColor = '#ff3366';     // লগের লাল
+    // ✅ উজ্জ্বল শক্ত রং (ফেইড নাই)
+    const UP_COLOR = '#00ffa3';   // উজ্জ্বল সবুজ
+    const DOWN_COLOR = '#ff3366'; // উজ্জ্বল লাল
     
-    for (let i = startIndex; i < endIndex; i++) {
+    for (let i = 0; i < total; i++) {
         const c = currentCandles[i];
-        const x = offsetX + i * (candleWidth + spacing);
-        if (x + candleWidth < 0 || x > w) continue;
-        
+        const x = i * (candleWidth + spacing);
         const openY = zeroY - (c.open - minP) * yScale;
         const closeY = zeroY - (c.close - minP) * yScale;
         const highY = zeroY - (c.high - minP) * yScale;
         const lowY = zeroY - (c.low - minP) * yScale;
         const isGreen = c.close >= c.open;
-        const candleColor = isGreen ? greenColor : redColor;
+        const candleColor = isGreen ? UP_COLOR : DOWN_COLOR;
         
-        // উইক - বডির রং অনুযায়ী
+        // ✅ উইক (বডির রং অনুযায়ী, কোনো ফেইড নাই)
         ctx.beginPath();
         ctx.strokeStyle = candleColor;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.5;
         ctx.moveTo(x + candleWidth / 2, highY);
         ctx.lineTo(x + candleWidth / 2, lowY);
         ctx.stroke();
         
-        // বডি
+        // ✅ বডি (শক্ত রং, কোনো স্ট্রোক নাই)
         const bodyTop = Math.min(openY, closeY);
         let bodyHeight = Math.abs(closeY - openY);
-        if (bodyHeight < 2) bodyHeight = 2;
+        if (bodyHeight < 1.5) bodyHeight = 1.5;
         ctx.fillStyle = candleColor;
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
     }
     
-    // 📅 নিচে টাইম লেবেল (লগের ধূসর রং)
+    // নিচে টাইম লেবেল
     ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
-    ctx.font = '10px monospace';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     
-    const labelCount = 5;
-    for (let i = 0; i <= labelCount; i++) {
-        let index = startIndex + Math.floor((endIndex - startIndex) * (i / labelCount));
-        if (index >= 0 && index < currentCandles.length) {
-            let time = currentCandles[index].time;
-            let date = new Date(time * 1000);
+    for (let i = 0; i <= 5; i++) {
+        let idx = Math.floor((total - 1) * (i / 5));
+        if (idx >= 0 && idx < total) {
+            let date = new Date(currentCandles[idx].time * 1000);
             let timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            let xPos = offsetX + index * (candleWidth + spacing) + candleWidth/2;
+            let xPos = idx * (candleWidth + spacing) + candleWidth/2;
             if (xPos > 10 && xPos < w - 10) {
-                ctx.fillText(timeStr, xPos, h - 20);
+                ctx.fillText(timeStr, xPos, h - 18);
             }
         }
     }
     
-    // 📈 ডান পাশে প্রাইস লেভেল (লগের ধূসর রং)
+    // ডান পাশে প্রাইস লেভেল
     ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
-    ctx.font = '10px monospace';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     
-    const priceLevels = 5;
-    for (let i = 0; i <= priceLevels; i++) {
-        let price = minP + (maxP - minP) * (i / priceLevels);
+    for (let i = 0; i <= 5; i++) {
+        let price = minP + (maxP - minP) * (i / 5);
         let yPos = zeroY - (price - minP) * yScale;
-        if (yPos > 15 && yPos < h - 25) {
+        if (yPos > 10 && yPos < h - 15) {
             ctx.fillText(price.toFixed(5), w - 5, yPos);
         }
     }
     
-    // 💚 বর্তমান প্রাইস (লগের সবুজ রং)
-    ctx.fillStyle = greenColor;
-    ctx.font = 'bold 11px monospace';
+    // বর্তমান প্রাইস (সবুজ)
+    ctx.fillStyle = UP_COLOR;
+    ctx.font = 'bold 10px monospace';
     ctx.fillText(lastPrice.toFixed(5), w - 5, zeroY - (lastPrice - minP) * yScale);
-    
-    // 🔷 চার্টের উপরের বাম পাশে সায়ান রং (লগের সায়ান)
-    ctx.fillStyle = '#00f2fe';
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('AAF/USDT', 8, 15);
     
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    }
-    // ---------- মক ডাটা ----------
-    function generateMockCandles(timeframe) {
-        const interval = timeframe * 60;
-        const now = Math.floor(Date.now()/1000);
-        let base = lastPrice || 1.0;
-        const candles = [];
-        for(let i=80; i>=0; i--) {
-            const t = now - (i*interval);
-            const change = (Math.random()-0.5)*0.025;
-            const close = base * (1+change);
-            candles.push({
-                time: t, open: base,
-                high: Math.max(base,close)*(1+Math.random()*0.008),
-                low: Math.min(base,close)*(1-Math.random()*0.008),
-                close: close
-            });
-            base = close;
-        }
-        return candles;
-    }
-
+            }
     // ---------- ক্যান্ডেল লোড (API + মক) ----------
     async function loadCandles(timeframe = currentTimeframe) {
         log("📡 ক্যান্ডেল API কল...");
