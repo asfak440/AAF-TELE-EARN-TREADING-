@@ -459,22 +459,23 @@
     drawCandles();  // ← এই লাইনটি যোগ করুন
     }
 
-
 function toggleTheme() {
     isDarkTheme = !isDarkTheme;
     const themeSpan = document.getElementById('theme-status');
     const themeBtn = document.getElementById('chart-theme-toggle');
+    
     if(isDarkTheme) {
         themeSpan.innerText = 'DARK';
         themeBtn.innerHTML = '<i class="fas fa-moon"></i> DARK';
-        document.getElementById('chart-wrapper').style.background = '#131722';  // ← #000 থেকে পরিবর্তন
+        document.getElementById('chart-wrapper').style.background = '#131722';
     } else {
         themeSpan.innerText = 'LIGHT';
         themeBtn.innerHTML = '<i class="fas fa-sun"></i> LIGHT';
-        document.getElementById('chart-wrapper').style.background = '#ffffff';   // ← #fff রাখুন
+        document.getElementById('chart-wrapper').style.background = '#ffffff';
     }
     drawCandles();
-        }
+}
+
             // ---------- জুম ও প্যান ইভেন্ট লিসেনার ----------
 function handleTouchStart(e) {
     e.preventDefault();
