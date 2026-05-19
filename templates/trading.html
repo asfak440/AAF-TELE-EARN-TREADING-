@@ -33,6 +33,17 @@
             font-size: 9px;
         }
 
+        /* চার্ট কন্টেইনার ব্যাকগ্রাউন্ড */
+        #chart-wrapper, #chart-container {
+            background: #0f172a;
+         }
+
+        /* ক্যান্ডেল পরিষ্কার দেখানোর জন্য */
+        #candleCanvas {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+         }
+
         .container { padding-top: 360px; padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px; }
         .tf-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.2s; }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,254,0.1); }
@@ -184,8 +195,8 @@
     ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, w, h);
     
-    // ব্যাকগ্রাউন্ড
-    ctx.fillStyle = isDarkTheme ? '#131722' : '#ffffff';
+    // ব্যাকগ্রাউন্ড (ডার্ক থিমের জন্য গাঢ় স্লেট)
+    ctx.fillStyle = isDarkTheme ? '#0f172a' : '#ffffff';
     ctx.fillRect(0, 0, w, h);
     
     const totalCandles = currentCandles.length;
@@ -211,9 +222,9 @@
     const yScale = (h - 50) / range;
     const zeroY = h - 30;
     
-    // ✅ Binance স্টাইলে রং (উইক ও বডি একই রং)
-    const greenColor = '#26a69a';   // Binance সবুজ
-    const redColor = '#ef5350';     // Binance লাল
+    // 🎨 লগের রং অনুযায়ী ক্যান্ডেল কালার
+    const greenColor = '#00ffa3';   // লগের সবুজ
+    const redColor = '#ff3366';     // লগের লাল
     
     for (let i = startIndex; i < endIndex; i++) {
         const c = currentCandles[i];
@@ -227,7 +238,7 @@
         const isGreen = c.close >= c.open;
         const candleColor = isGreen ? greenColor : redColor;
         
-        // ✅ উইক (হাই-লো লাইন) – বডির রং অনুযায়ী, পাতলা লাইন
+        // উইক - বডির রং অনুযায়ী
         ctx.beginPath();
         ctx.strokeStyle = candleColor;
         ctx.lineWidth = 1.2;
@@ -235,17 +246,15 @@
         ctx.lineTo(x + candleWidth / 2, lowY);
         ctx.stroke();
         
-        // ✅ বডি (ওপেন-ক্লোজ আয়তক্ষেত্র) – ন্যূনতম উচ্চতা 2px
+        // বডি
         const bodyTop = Math.min(openY, closeY);
         let bodyHeight = Math.abs(closeY - openY);
         if (bodyHeight < 2) bodyHeight = 2;
         ctx.fillStyle = candleColor;
         ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
-        
-        // ❌ বডির কনটুর বা স্ট্রোক নেই (ঘোলা ভাব দূর করতে)
     }
     
-    // ---------- 📅 নিচে তারিখ/সময় লেবেল ----------
+    // 📅 নিচে টাইম লেবেল (লগের ধূসর রং)
     ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
@@ -265,7 +274,7 @@
         }
     }
     
-    // ---------- 📈 ডান পাশে প্রাইস লেভেল ----------
+    // 📈 ডান পাশে প্রাইস লেভেল (লগের ধূসর রং)
     ctx.fillStyle = isDarkTheme ? '#8a919e' : '#666';
     ctx.font = '10px monospace';
     ctx.textAlign = 'right';
@@ -280,10 +289,16 @@
         }
     }
     
-    // বর্তমান প্রাইস (সবুজ রঙে)
+    // 💚 বর্তমান প্রাইস (লগের সবুজ রং)
     ctx.fillStyle = greenColor;
     ctx.font = 'bold 11px monospace';
     ctx.fillText(lastPrice.toFixed(5), w - 5, zeroY - (lastPrice - minP) * yScale);
+    
+    // 🔷 চার্টের উপরের বাম পাশে সায়ান রং (লগের সায়ান)
+    ctx.fillStyle = '#00f2fe';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('AAF/USDT', 8, 15);
     
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
