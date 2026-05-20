@@ -490,11 +490,9 @@ body.light #chart-theme-toggle {
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
     </div>
-<script>
-// ---------- TradingView Lightweight Charts Core Engine (ইন্টারনেট ছাড়া রান করার জন্য সরাসরি যুক্ত) ----------
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t="undefined"!=typeof globalThis?globalThis:t||self).LightweightCharts={})}(this,(function(t){"use strict";var e=function(t,e){return(e=function(t,e){return{width:t,height:e}})(t,e)};t.createChart=function(t,r){var n=void 0!==r?r:{},i=n.width,o=n.height,s=document.createElement("div");s.style.position="relative",s.style.width="100%",s.style.height="100%";var a=document.createElement("canvas");a.style.width="100%",a.style.height="100%",s.appendChild(a),t.appendChild(s);var c={resize:function(t,e){a.width=t,a.height=e,c.render()},addCandlestickSeries:function(t){var e=[];return{setData:function(t){e=t,c.render()},update:function(t){var r=e.findIndex((function(e){return e.time===t.time}));r>-1?e[r]=t:e.push(t),c.render()}}},render:function(){var t=a.getContext("2d");if(t){t.clearRect(0,0,a.width,a.height),t.fillStyle=n.layout&&"light"===n.layout.theme?"#ffffff":"#0f172a",t.fillRect(0,0,a.width,a.height);var r=a.width/10,i=a.height/2;t.fillStyle="#94a3b8",t.font="12px sans-serif",t.textAlign="center"}}};return c.resize(void 0!==i?i:t.clientWidth,void 0!==o?o:250),c},Object.defineProperty(t,"__esModule",{value:!0})}));
+    <script src="/static/js/lightweight-charts.js"></script>
 
-// ---------- আপনার মেইন অ্যাপ্লিকেশন স্ক্রিপ্ট ----------
+<script>
 (function(){
     // ডিবাগ লগ সিস্টেম
     let dbgDiv = document.getElementById('live-debug');
@@ -521,19 +519,39 @@ body.light #chart-theme-toggle {
     let candleSeries = null;
     let chart = null;
 
-    // চার্ট ইনিশিয়ালাইজেশন
+    // অফিশিয়াল ক্যান্ডেলস্টিক চার্ট তৈরি
     function initPersonalChart() {
         if (!container) return;
         container.innerHTML = ''; 
         
         try {
+            // রিয়েল TradingView লাইটওয়েট চার্ট কনফিগারেশন
             chart = LightweightCharts.createChart(container, {
                 width: container.clientWidth || window.innerWidth,
                 height: 250,
-                layout: { theme: isDarkTheme ? 'dark' : 'light' }
+                layout: {
+                    background: { type: 'vertical', color: isDarkTheme ? '#0f172a' : '#ffffff' },
+                    textColor: isDarkTheme ? '#94a3b8' : '#333333',
+                },
+                grid: {
+                    vertLines: { color: isDarkTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)' },
+                    horzLines: { color: isDarkTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)' },
+                },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#ddd', autoScale: true },
+                timeScale: { borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#ddd', timeVisible: true }
             });
 
-            candleSeries = chart.addCandlestickSeries();
+            // রিয়েল ক্যান্ডেলস্টিক সিরিজ যোগ করা
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ffa3', 
+                downColor: '#ff3366', 
+                borderDownColor: '#ff3366',
+                borderUpColor: '#00ffa3',
+                wickDownColor: '#ff3366',
+                wickUpColor: '#00ffa3',
+            });
+
             log("📊 AAF চার্ট ইঞ্জিন সফলভাবে তৈরি হয়েছে");
         } catch (err) {
             log("❌ চার্ট তৈরিতে ত্রুটি: " + err.message);
@@ -558,6 +576,7 @@ body.light #chart-theme-toggle {
                 })).sort((a, b) => a.time - b.time);
                 
                 candleSeries.setData(parsed);
+                chart.timeScale().fitContent(); // সব ক্যান্ডেল স্ক্রিনে ফিট করার জন্য
                 log(`✅ ডাটাবেস থেকে ${parsed.length}টি ক্যান্ডেল লোড হয়েছে`);
             } else {
                 log("ℹ️ ডাটাবেস ক্যান্ডেল খালি, লাইভ ডাটার জন্য ওয়েট করছে...");
@@ -567,7 +586,7 @@ body.light #chart-theme-toggle {
         }
     }
 
-    // চার্ট মোমবাতি আপডেট
+    // চার্ট মোমবাতি লাইভ আপডেট লজিক
     function updateChartWithYourPrice(price) {
         if (!candleSeries || !price) return;
         const now = Math.floor(Date.now() / 1000);
@@ -575,14 +594,14 @@ body.light #chart-theme-toggle {
 
         candleSeries.update({
             time: barTime,
-            open: price,
-            high: price * 1.001,
-            low: price * 0.999,
+            open: lastPrice,
+            high: Math.max(lastPrice, price) * 1.0005,
+            low: Math.min(lastPrice, price) * 0.9995,
             close: price
         });
     }
 
-    // ইউজার ব্যালেন্স ও প্রাইস সিঙ্ক (সবচেয়ে গুরুত্বপূর্ণ অংশ)
+    // ইউজার ব্যালেন্স ও প্রাইস সিঙ্ক
     async function syncUserData() {
         try {
             const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
@@ -608,9 +627,9 @@ body.light #chart-theme-toggle {
                     priceEl.style.color = (newPrice >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
+                updateChartWithYourPrice(newPrice);
                 lastPrice = newPrice;
                 calculateTradeCost();
-                updateChartWithYourPrice(lastPrice);
             }
         } catch (e) { 
             log("❌ ব্যালেন্স সিঙ্ক সমস্যা: " + e.message); 
@@ -663,22 +682,27 @@ body.light #chart-theme-toggle {
         finally { isProcessing = false; calculateTradeCost(); }
     }
 
-    // ইভেন্ট লিসেনারস
     document.getElementById('taka-input')?.addEventListener('input', calculateTradeCost);
     document.getElementById('coin-input')?.addEventListener('input', calculateTradeCost);
     document.getElementById('buy-btn')?.addEventListener('click', () => executeTrade('buy'));
     document.getElementById('sell-btn')?.addEventListener('click', () => executeTrade('sell'));
 
-    // স্টার্ট রানিং
-    window.addEventListener('load', () => {
+    // চার্ট বুটস্ট্র্যাপ রান করা
+    function startApp() {
+        if (typeof LightweightCharts === 'undefined') {
+            log("⏳ চার্ট ইঞ্জিন লোডের অপেক্ষা...");
+            setTimeout(startApp, 300);
+            return;
+        }
         log("🚀 অ্যাপ্লিকেশন লোড সম্পন্ন");
         initPersonalChart();
         syncUserData();
         loadYourCandles();
-        setInterval(syncUserData, 3000); 
-    });
+        setInterval(syncUserData, 3000);
+    }
+
+    window.addEventListener('load', startApp);
 })();
 </script>
-        
 </body>
 </html>
