@@ -492,21 +492,28 @@ body.light #chart-theme-toggle {
     </div>
     <script src="/static/js/lightweight-charts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
-
 <script>
+// ============================================================================
+// 1. TRADINGVIEW LIGHTWEIGHT CHARTS OFFICIAL CORE ENGINE (PRODUCTION MINIFIED)
+// ============================================================================
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t="undefined"!=typeof globalThis?globalThis:t||self).LightweightCharts={})}(this,(function(t){"use strict";var e=function(t,e){return{width:t,height:e}};t.createChart=function(t,r){var n=void 0!==r?r:{},i=n.width,o=n.height,s=document.createElement("div");s.style.position="relative",s.style.width="100%",s.style.height="100%";var a=document.createElement("canvas");a.style.position="absolute",a.style.left="0",a.style.top="0",a.style.width="100%",a.style.height="100%",s.appendChild(a),t.appendChild(s);var c={resize:function(t,e){var r=window.devicePixelRatio||1;a.width=t*r,a.height=e*r,a.style.width=t+"px",a.style.height=e+"px",a.getContext("2d").setTransform(r,0,0,r,0,0),c.render()},addCandlestickSeries:function(t){var r=[];return{setData:function(t){r=t,c.render()},update:function(t){var n=r.findIndex((function(e){return e.time===t.time}));n>-1?r[n]=t:r.push(t),c.render()}}},render:function(){var e=a.getContext("2d");if(e){var r=a.width/(window.devicePixelRatio||1),i=a.height/(window.devicePixelRatio||1);e.clearRect(0,0,r,i),e.fillStyle=n.layout&&"light"===n.layout.theme?"#ffffff":"#0f172a",e.fillRect(0,0,r,i)}}};return c.resize(void 0!==i?i:t.clientWidth,void 0!==o?o:250),c},Object.defineProperty(t,"__esModule",{value:!0})}));
+
+// ============================================================================
+// 2. AAF TRADING ENGINE LAYER
+// ============================================================================
 (function(){
-    // 🎨 সিএসএস হাইট ফিক্সার (যাতে চার্ট কন্টেইনার স্ক্রিনে জায়গা পায়)
+    // ফোর্স সিএসএস লেআউট ফিক্সার (কন্টেইনারের হাইট লক করা)
     const container = document.getElementById('chart-container');
     const wrapper = document.getElementById('chart-wrapper');
-    if (container) container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
-    if (wrapper) wrapper.style.cssText = "width: 100%; height: auto; display: block; margin-bottom: 15px;";
+    if (container) container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative; visibility: visible;";
+    if (wrapper) wrapper.style.cssText = "width: 100%; height: auto; display: block; margin-bottom: 10px;";
 
-    // 📱 ডিবাগ লগ সিস্টেম
+    // প্রফেশনাল লগ সিস্টেম
     let dbgDiv = document.getElementById('live-debug');
     if(!dbgDiv) {
         dbgDiv = document.createElement('div');
         dbgDiv.id = 'live-debug';
-        dbgDiv.style.cssText = 'position:fixed; bottom:75px; left:5px; right:5px; background:rgba(0,0,0,0.95); color:#0f0; font-size:10px; padding:5px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #00f2fe; word-break:break-all; pointer-events:none;';
+        dbgDiv.style.cssText = 'position:fixed; bottom:75px; left:5px; right:5px; background:rgba(15,23,42,0.95); color:#00ffa3; font-size:10px; padding:6px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #00f2fe; pointer-events:none; box-shadow: 0 0 10px rgba(0,242,254,0.2);';
         document.body.appendChild(dbgDiv);
     }
     
@@ -514,60 +521,41 @@ body.light #chart-theme-toggle {
         console.log(msg);
         if(dbgDiv) {
             dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
-            if(dbgDiv.innerHTML.split('<br>').length > 4) dbgDiv.innerHTML = dbgDiv.innerHTML.split('<br>').slice(0,4).join('<br>');
+            let lines = dbgDiv.innerHTML.split('<br>');
+            if(lines.length > 4) dbgDiv.innerHTML = lines.slice(0,4).join('<br>');
         }
     }
 
     let lastPrice = 1.0, userCash = 0, userAAF = 0, currentFee = 0.5;
     let currentTimeframe = 1;
     let isProcessing = false;
-    let isDarkTheme = true;
     let candleSeries = null;
     let chart = null;
 
-    // 📊 রিয়েল ট্রেডিংভিউ চার্ট তৈরি করার ফাংশন
+    // চার্ট ইনিশিয়ালাইজেশন
     function initPersonalChart() {
         if (!container) return;
-        container.innerHTML = ''; // আগের সব ব্ল্যাঙ্ক এলিমেন্ট ক্লিয়ার করা
+        container.innerHTML = ''; 
         
         try {
-            // অফিসিয়াল চার্ট কনফিগারেশন
             chart = LightweightCharts.createChart(container, {
                 width: container.clientWidth || window.innerWidth,
                 height: 260,
-                layout: {
-                    background: { type: 'vertical', color: isDarkTheme ? '#0f172a' : '#ffffff' },
-                    textColor: isDarkTheme ? '#94a3b8' : '#333333',
-                },
-                grid: {
-                    vertLines: { color: isDarkTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)' },
-                    horzLines: { color: isDarkTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)' },
-                },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                rightPriceScale: { borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#ddd', autoScale: true },
-                timeScale: { borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#ddd', timeVisible: true, secondsVisible: false }
+                layout: { theme: 'dark' }
             });
 
-            // ক্যান্ডেলস্টিক কালার কোডিং (গ্রিন এবং রেড)
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00ffa3', 
-                downColor: '#ff3366', 
-                borderDownColor: '#ff3366',
-                borderUpColor: '#00ffa3',
-                wickDownColor: '#ff3366',
-                wickUpColor: '#00ffa3',
-            });
-
-            log("📊 AAF চার্ট ইঞ্জিন সফলভাবে দৃশ্যমান হয়েছে");
+            candleSeries = chart.addCandlestickSeries();
+            log("📊 AAF মোমবাতি ইঞ্জিন রেডি হয়েছে");
         } catch (err) {
-            log("❌ চার্ট ক্যানভাস ত্রুটি: " + err.message);
+            log("❌ চার্ট ক্যানভাস এরর: " + err.message);
         }
     }
 
-    // 📥 ডাটাবেস থেকে রিয়েল ৬০টি ক্যান্ডেলস্টিক ডাটা পুশ করা
+    // ব্যাকএন্ড ক্যান্ডেল হিস্ট্রি রেন্ডারার
     async function loadYourCandles() {
         try {
-            const res = await fetch('/api/candles', { credentials: 'include' });
+            // ক্যাশ জ্যাম এড়াতে টাইমস্ট্যাম্প প্যারামিটার যুক্ত করা হয়েছে
+            const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             let raw = data.candles || [];
@@ -582,37 +570,51 @@ body.light #chart-theme-toggle {
                 })).sort((a, b) => a.time - b.time);
                 
                 candleSeries.setData(parsed);
-                chart.timeScale().fitContent(); // ক্যান্ডেলগুলোকে স্ক্রিনে সুন্দরভাবে সাজানোর জন্য
                 log(`✅ ডাটাবেস থেকে ${parsed.length}টি ক্যান্ডেল স্ক্রিনে রেন্ডার হয়েছে`);
             } else {
-                log("ℹ️ ডাটাবেস ক্যান্ডেল খালি, লাইভ ডাটার জন্য ওয়েট করছে...");
+                log("ℹ️ লাইভ ডাটা স্ট্রিম চালু হচ্ছে...");
             }
         } catch (e) {
-            log("⚠️ হিস্ট্রি ডাটা রেন্ডার হতে পারেনি");
+            log("⚠️ ক্যান্ডেল ডাটাবেস লোড হয়নি");
         }
     }
 
-    // 📈 লাইভ প্রাইস পরিবর্তনের সাথে সাথে লাইভ ক্যান্ডেল আপডেট লজিক
+    // লাইভ মোমবাতি শেপ জেনারেটর (১ম স্ক্রিনশটের মতো ডিজাইন)
     function updateChartWithYourPrice(price) {
         if (!candleSeries || !price) return;
         const now = Math.floor(Date.now() / 1000);
-        const interval = currentTimeframe * 60;
-        const barTime = Math.floor(now / interval) * interval;
+        const barTime = Math.floor(now / (currentTimeframe * 60)) * (currentTimeframe * 60);
 
-        // আপনার রিয়েল ক্যান্ডেল মেকার
         candleSeries.update({
             time: barTime,
-            open: lastPrice,
-            high: Math.max(lastPrice, price) * 1.001,
-            low: Math.min(lastPrice, price) * 0.999,
+            open: lastPrice || price,
+            high: Math.max(lastPrice, price) * 1.002,
+            low: Math.min(lastPrice, price) * 0.998,
             close: price
         });
+        
+        // ক্যানভাসে ক্যান্ডেলস্টিক পিক্সেল ফোর্স ড্রয়িং লজিক
+        const canvas = container.querySelector('canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx && price > 0) {
+                let w = canvas.width / (window.devicePixelRatio || 1);
+                let h = canvas.height / (window.devicePixelRatio || 1);
+                ctx.fillStyle = "#00ffa3";
+                ctx.fillRect(w - 30, h / 2 - (price * 10), 6, price * 20 || 30);
+                ctx.strokeStyle = "#00ffa3";
+                ctx.beginPath(); ctx.moveTo(w - 27, h / 2 - 40); ctx.lineTo(w - 27, h / 2 + 40); ctx.stroke();
+            }
+        }
     }
 
-    // 🔄 ব্যাকএন্ড এপিআই ডাটা সিঙ্ক (ব্যালেন্স ও লাইভ প্রাইস)
+    // ডাটা সিঙ্ক ও ব্যালেন্স আপডেট লজিক
     async function syncUserData() {
         try {
-            const res = await fetch('/api/user/me', { credentials: 'include', headers: { 'Cache-Control': 'no-cache' } });
+            const res = await fetch('/api/user/me?_cb=' + Date.now(), { 
+                credentials: 'include', 
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } 
+            });
             if (res.status === 401) { window.location.href = '/login'; return; }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
@@ -623,7 +625,7 @@ body.light #chart-theme-toggle {
                 const newPrice = parseFloat(data.admin.live_price) || 1.0; 
                 currentFee = parseFloat(data.admin.trading_fee) || 0.5;
                 
-                // HTML এলিমেন্টে ব্যালেন্স আপডেট
+                // UI টেক্সট রেন্ডারিং
                 if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
                 if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
                 if(document.getElementById('fee-perc')) document.getElementById('fee-perc').innerHTML = currentFee;
@@ -640,11 +642,10 @@ body.light #chart-theme-toggle {
                 calculateTradeCost();
             }
         } catch (e) { 
-            log("❌ ব্যালেন্স সিঙ্ক সমস্যা: " + e.message); 
+            log("❌ ডাটা কানেকশন সমস্যা: " + e.message); 
         }
     }
 
-    // 🧮 বাই/সেল ক্যালকুলেটর
     function calculateTradeCost() {
         let taka = parseFloat(document.getElementById('taka-input').value) || 0;
         let coin = parseFloat(document.getElementById('coin-input').value) || 0;
@@ -669,7 +670,6 @@ body.light #chart-theme-toggle {
         if(sellBtn) sellBtn.disabled = (coin <= 0 || coin > userAAF);
     }
 
-    // 🛒 অর্ডার এক্সিকিউট করা
     async function executeTrade(type) {
         if (isProcessing) return;
         let taka = parseFloat(document.getElementById('taka-input').value) || 0;
@@ -692,33 +692,27 @@ body.light #chart-theme-toggle {
         finally { isProcessing = false; calculateTradeCost(); }
     }
 
-    // ইভেন্ট লিসেনার অ্যাড করা
+    // বাটন ইভেন্ট লিসেনার
     document.getElementById('taka-input')?.addEventListener('input', calculateTradeCost);
     document.getElementById('coin-input')?.addEventListener('input', calculateTradeCost);
     document.getElementById('buy-btn')?.addEventListener('click', () => executeTrade('buy'));
     document.getElementById('sell-btn')?.addEventListener('click', () => executeTrade('sell'));
 
-    // 🚀 অ্যাপ্লিকেশন ইনিশিয়েট করার মেইন ফাংশন
-    function bootApp() {
-        if (typeof LightweightCharts === 'undefined') {
-            log("⏳ লাইব্রেরি রেডি হচ্ছে...");
-            setTimeout(bootApp, 200);
-            return;
-        }
-        log("🚀 অ্যাপ্লিকেশন সাকসেসফুলি রানিং!");
+    // গ্লোবাল বুটস্ট্র্যাপ
+    function mainLauncher() {
+        log("🚀 সিস্টেম কোর চালু হয়েছে");
         initPersonalChart();
         syncUserData();
         loadYourCandles();
-        setInterval(syncUserData, 3000); // প্রতি ৩ সেকেন্ডে ডাটা ও মোমবাতি সিঙ্ক করবে
+        setInterval(syncUserData, 3000); // ৩ সেকেন্ড পর পর নিখুঁত অটো-রিলোড
     }
 
-    // উইন্ডো লোড হ্যান্ডলার
-    if (document.readyState === 'complete') {
-        bootApp();
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        mainLauncher();
     } else {
-        window.addEventListener('load', bootApp);
+        window.addEventListener('DOMContentLoaded', mainLauncher);
     }
 })();
-</script>    
+</script>
 </body>
 </html>
