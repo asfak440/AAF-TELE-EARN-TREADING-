@@ -492,8 +492,7 @@ body.light #chart-theme-toggle {
     </div>
     <script src="/static/js/lightweight-charts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-
+    
 <script>
 (function() {
     const container = document.getElementById('chart-container');
@@ -501,7 +500,7 @@ body.light #chart-theme-toggle {
 
     container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
 
-    // ডিবাগ লগ
+    // রিয়েল-টাইম লাইভ ডিবাগ লগ স্ক্রিন
     let dbgDiv = document.getElementById('live-debug');
     if(!dbgDiv) {
         dbgDiv = document.createElement('div');
@@ -529,7 +528,7 @@ body.light #chart-theme-toggle {
         light: { bg: '#ffffff', grid: 'rgba(0, 0, 0, 0.06)', text: '#334155', upCandle: '#00c853', downCandle: '#ff1744' }
     };
 
-    // 📊 চার্ট ইনিশিয়ালাইজেশন
+    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
     function initTradingViewChart() {
         if (!window.LightweightCharts) return;
         container.innerHTML = '';
@@ -550,12 +549,12 @@ body.light #chart-theme-toggle {
         });
     }
 
-    // 📜 ১. ফায়ারবেস (Firebase) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
-    async function fetchFirebaseHistoryCandles() {
+    // 📜 ১. ফায়ারবেস (Firebase API) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
+    async function fetchFirebaseHistory() {
         try {
-            log("📡 Firebase থেকে ২ মাসের হিস্ট্রি ডাটা আনা হচ্ছে...");
-            // আপনার ব্যাকএন্ডের ফায়ারবেস হিস্ট্রি এপিআই এন্ডপয়েন্ট (প্রয়োজন হলে ইউআরএল পরিবর্তন করে নিন)
-            const res = await fetch('/api/candles/history?_cb=' + Date.now(), { credentials: 'include' });
+            log("📡 Firebase থেকে ২ মাসের ক্যান্ডেল ব্যাকআপ আনা হচ্ছে...");
+            // আপনার ব্যাকএন্ডের ফায়ারবেস হিস্ট্রি এপিআই রুট (যা ফায়ারবেস রেফারেন্স থেকে ডাটা পাঠায়)
+            const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
             const data = await res.json();
@@ -564,7 +563,7 @@ body.light #chart-theme-toggle {
             if (candleSeries && historyCandles.length > 0) {
                 let parsed = historyCandles.map(c => {
                     let t = parseInt(c.time);
-                    if (t > 9999999999) t = Math.floor(t / 1000); 
+                    if (t > 9999999999) t = Math.floor(t / 1000); // সেকেন্ডে রূপান্তর
                     return {
                         time: t,
                         open: parseFloat(c.open),
@@ -573,38 +572,34 @@ body.light #chart-theme-toggle {
                         close: parseFloat(c.close)
                     };
                 });
-                parsed.sort((a, b) => a.time - b.time);
+                parsed.sort((a, b) => a.time - b.time); // টাইম সিকোয়েন্স ফিক্স
                 candleSeries.setData(parsed);
                 chart.timeScale().fitContent();
-                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল হিস্ট্রি লোড হয়েছে`);
+                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে`);
             }
         } catch (err) {
-            log("⚠️ ফায়ারবেস হিস্ট্রি লোড প্রবলেম বা ডাটা খালি");
+            log("⚠️ ফায়ারবেস ডাটাবেস হিস্ট্রি কানেকশন পেন্ডিং...");
         }
     }
 
-    // 🕯️ ২. মঙ্গোডিবি (MongoDB) থেকে লাইভ ক্যান্ডেল তৈরি ও রিয়েল-টাইম আপডেট
-    async function syncMongoDBLiveAndUser() {
+    // 🕯️ ২. মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও রিয়েল-টাইম কাঁপানো
+    async function syncMongoDBLive() {
         try {
-            // মঙ্গোডিবি লাইভ এপিআই সোর্স এবং ইউজার ব্যালেন্স সিঙ্ক
-            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
-            if (res.status === 401) { window.location.href = '/login'; return; }
+            // আপনার প্রোভাইড করা লাইভ মার্কেট প্রাইস এপিআই রুট
+            const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
             const data = await res.json();
             
-            if (data.status === 'success') {
-                // মঙ্গোডিবি থেকে আসা রিয়েল-টাইম লাইভ প্রাইস
-                const livePriceFromMongo = parseFloat(data.admin.live_price) || 1.0;
+            if (data && data.live_price) {
+                const livePriceFromMongo = parseFloat(data.live_price);
                 
-                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
-                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
-                
+                // লাইভ প্রাইস টেক্সট ডাইনামিক রেন্ডারিং
                 const priceEl = document.getElementById('live-price');
                 if (priceEl) {
                     priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
                     priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
-                // মঙ্গোডিবির প্রাইস দিয়ে চার্টের রানিং ক্যান্ডেলস্টিক কাঁপানো/আপডেট করা
+                // মঙ্গোডিবির প্রাইস সরাসরি চার্টের লাইভ রানিং বারে পুশ করা
                 if (candleSeries && livePriceFromMongo) {
                     const now = Math.floor(Date.now() / 1000);
                     const interval = currentTimeframe * 60;
@@ -619,22 +614,44 @@ body.light #chart-theme-toggle {
                     });
                 }
 
-                // যখন ১ মিনিট পুর্ন হয়ে ক্যান্ডেল ক্লোজ হবে, তখন ফায়ারবেস হিস্ট্রিতে ডাটা পুশ হবে এবং চার্ট রি-সিঙ্ক হবে
-                const secs = new Date().getSeconds();
-                const mins = new Date().getMinutes();
-                if (secs === 0 && mins % currentTimeframe === 0) {
-                    log("🔄 ক্যান্ডেল পিরিয়ড শেষ! নতুন ক্লোজড ডাটা Firebase-এ সেভ হচ্ছে...");
-                    fetchFirebaseHistoryCandles(); 
-                }
-
                 lastPrice = livePriceFromMongo;
             }
         } catch (e) {
-            // এরর হ্যান্ডলার
+            // সাইলেন্ট এরর হ্যান্ডলার
         }
     }
 
-    // 🎨 লাইট/ডার্ক থিম সুইচ লজিক (রিয়েল-টাইম)
+    // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
+    async function syncUserDataAndClosing() {
+        try {
+            // আপনার ইউজার প্রোফাইল এপিআই (ব্যালেন্স আপডেট করার জন্য)
+            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
+            if (res.status === 401) { window.location.href = '/login'; return; }
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
+            }
+
+            // যখন কাঁটায় কাঁটায় ১ মিনিট (বা নির্দিষ্ট টাইমফ্রেম) পূর্ণ হবে
+            const secs = new Date().getSeconds();
+            const mins = new Date().getMinutes();
+            if (secs === 0 && mins % currentTimeframe === 0) {
+                log("🔄 ক্যান্ডেল টাইম শেষ! MongoDB ক্লোজড ডাটা Firebase-এ পাঠাচ্ছে...");
+                
+                // আপনার ব্যাকএন্ডের ক্যান্ডেল আপডেট রুট হিট করা
+                await fetch('/api/market/update_candle', { method: 'POST', credentials: 'include' });
+                
+                // ফায়ারবেস থেকে ফ্রেশ ক্যান্ডেল হিস্ট্রি চার্টে রি-রেন্ডার করা
+                setTimeout(fetchFirebaseHistory, 1500); 
+            }
+        } catch (err) {
+            // কানেকশন এরর হ্যান্ডলার
+        }
+    }
+
+    // 🎨 থিম সুইচার লিসেনার
     function setupThemeToggleListener() {
         const toggleBtn = document.getElementById('chart-theme-toggle');
         const statusText = document.getElementById('theme-status');
@@ -651,12 +668,12 @@ body.light #chart-theme-toggle {
                 if (statusText) statusText.innerText = "DARK";
                 activeToggleBtn.querySelector('i').className = "fas fa-moon";
                 activeToggleBtn.style.color = "#fff";
-                log("🌙 ডার্ক মোড সচল");
+                log("🌙 ডার্ক মোড অ্যাক্টিভেটেড");
             } else {
                 if (statusText) statusText.innerText = "LIGHT";
                 activeToggleBtn.querySelector('i').className = "fas fa-sun";
                 activeToggleBtn.style.color = "#ffb703";
-                log("☀️ লাইট মোড সচল");
+                log("☀️ লাইট মোড অ্যাক্টিভেটেড");
             }
 
             if (chart && candleSeries) {
@@ -694,29 +711,35 @@ body.light #chart-theme-toggle {
                 const selectedTf = parseInt(this.getAttribute('data-tf'));
                 if (selectedTf && selectedTf !== currentTimeframe) {
                     currentTimeframe = selectedTf;
-                    log(`⏳ টাইমফ্রেম: ${currentTimeframe}M`);
+                    log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
                     initTradingViewChart();
-                    fetchFirebaseHistoryCandles();
+                    fetchFirebaseHistory();
                     setupTimeframeListeners();
                 }
             });
         });
     }
 
-    function startSystem() {
-        initTradingViewChart();          // চার্ট রেন্ডার
-        fetchFirebaseHistoryCandles();   // ফায়ারবেস থেকে ২ মাসের অতীত ডাটা লোড
-        setupThemeToggleListener();       // লাইট/ডার্ক বাটন সচল
-        setupTimeframeListeners();       // টাইমফ্রেম বাটন সচল
+    // বুট রানার
+    function startTradingEngine() {
+        initTradingViewChart();
+        fetchFirebaseHistory();
+        setupThemeToggleListener();
+        setupTimeframeListeners();
         
-        setInterval(syncMongoDBLiveAndUser, 3000); // প্রতি ৩ সেকেন্ডে মঙ্গোডিবি থেকে লাইভ ক্যান্ডেল আপডেট
-        log("🚀 সিস্টেম সফলভাবে মঙ্গোডিবি লাইভ এবং ফায়ারবেস হিস্ট্রির সাথে কানেক্টেড!");
+        // মঙ্গোডিবি থেকে লাইভ ডাটা টিক টিক করে পড়ার জন্য (প্রতি ১ সেকেন্ডে)
+        setInterval(syncMongoDBLive, 1000);
+        
+        // ইউজার ব্যালেন্স ও ক্যান্ডেল ক্লোজিং চেক করার জন্য (প্রতি ৩ সেকেন্ডে)
+        setInterval(syncUserDataAndClosing, 3000);
+        
+        log("🚀 আপনার Flask এপিআই-এর সাথে ফ্রন্টএন্ড ইঞ্জিন সিঙ্কড!");
     }
 
     if (document.readyState === 'complete') {
-        startSystem();
+        startTradingEngine();
     } else {
-        window.addEventListener('load', startSystem);
+        window.addEventListener('load', startTradingEngine);
     }
 })();
 </script>
