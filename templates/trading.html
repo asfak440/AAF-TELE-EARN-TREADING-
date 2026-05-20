@@ -492,22 +492,16 @@ body.light #chart-theme-toggle {
     </div>
     <script src="/static/js/lightweight-charts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
 <script>
-// ============================================================================
-// 1. OFFICIAL TRADINGVIEW LIGHTWEIGHT CHARTS ENGINE (CORE SOURCE)
-// ============================================================================
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t="undefined"!=typeof globalThis?globalThis:t||self).LightweightCharts={})}(this,(function(t){"use strict";var e=function(t,e){return{width:t,height:e}};function r(t,e){return Object.assign({},t,e)}var i=function(){function t(t){this._options=t}return t.prototype.options=function(){return this._options},t.prototype.applyOptions=function(t){this._options=r(this._options,t)},t}();var s=function(){function t(t,e){this._container=t,this._options=e,this._canvas=document.createElement("canvas"),this._canvas.style.position="absolute",this._canvas.style.left="0",this._canvas.style.top="0",this._container.appendChild(this._canvas),this._ctx=this._canvas.getContext("2d")}return t.prototype.resize=function(t,e){var r=window.devicePixelRatio||1;this._canvas.width=t*r,this._canvas.height=e*r,this._canvas.style.width=t+"px",this._canvas.style.height=e+"px",this._ctx.setTransform(r,0,0,r,0,0)},t.prototype.draw=function(t){var e=this._canvas.width/(window.devicePixelRatio||1),r=this._canvas.height/(window.devicePixelRatio||1);this._ctx.clearRect(0,0,e,r),this._ctx.fillStyle=this._options.layout.background.color,this._ctx.fillRect(0,0,e,r),t.forEach((function(t,i){var s=e/Math.max(t.length,10),n=i*s+5,a=r-(t.close*(r/2)),h=r-(t.open*(r/2)),o=r-(t.high*(r/2)),l=r-(t.low*(r/2));var c=t.close>=t.open?"#00ffa3":"#ff3366";var ctx=this._ctx;ctx.strokeStyle=c,ctx.fillStyle=c,ctx.beginPath(),ctx.moveTo(n+s/4,o),ctx.lineTo(n+s/4,l),ctx.stroke(),ctx.fillRect(n,Math.min(a,h),Math.max(s/2,2),Math.max(Math.abs(a-h),2))}),this)},t}();var n=function(){function t(t,e){this._chartOptions=r({width:0,height:0,layout:{background:{color:"#0f172a"}}},e),this._container=t,this._series=[],this._view=new s(this._container,this._chartOptions),this.resize(this._chartOptions.width||t.clientWidth,this._chartOptions.height||250)}return t.prototype.resize=function(t,e){this._view.resize(t,e),this.render()},t.prototype.applyOptions=function(t){this._chartOptions=r(this._chartOptions,t),this._view._options=this._chartOptions,this.render()},t.prototype.addCandlestickSeries=function(){var t=this,e=[];return{setData:function(r){e=r,t.render()},update:function(r){var i=e.findIndex((function(t){return t.time===r.time}));i>-1?e[i]=r:e.push(r),t.render()},getData:function(){return e}}},t.prototype.render=function(){var t=this,e=[];this._series.forEach((function(t){e=e.concat(t.getData())})),this._view.draw(e)},t}();t.createChart=function(t,e){var r=new n(t,e);return r._series.push(r.addCandlestickSeries()),r},Object.defineProperty(t,"__esModule",{value:!0})}));
-
-// ============================================================================
-// 2. AAF PRODUCTION TRADING CONTROL LAYER
-// ============================================================================
-(function(){
-    // লেআউট ও কন্টেইনার স্ট্যাবিলিটি লক
+(function() {
     const container = document.getElementById('chart-container');
-    const wrapper = document.getElementById('chart-wrapper');
-    if (container) container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative; visibility: visible; overflow: hidden;";
-    if (wrapper) wrapper.style.cssText = "width: 100%; height: auto; display: block; margin-bottom: 15px;";
+    if (!container) return;
 
+    container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
+
+    // ডিবাগ লগ
     let dbgDiv = document.getElementById('live-debug');
     if(!dbgDiv) {
         dbgDiv = document.createElement('div');
@@ -524,127 +518,171 @@ body.light #chart-theme-toggle {
         }
     }
 
-    let lastPrice = 1.0, userCash = 0, userAAF = 0, currentFee = 0.5;
+    let chart = null;
+    let candleSeries = null;
+    let lastPrice = 1.0;
     let currentTimeframe = 1; 
     let isDarkTheme = true; 
-    let isProcessing = false;
-    let mainSeries = null;
-    let mainChart = null;
 
-    // চার্ট ইঞ্জিন রান করার মেইন ফাংশন
-    function bootTradingChart() {
-        if (!container) return;
-        container.innerHTML = ''; 
-        try {
-            mainChart = LightweightCharts.createChart(container, {
-                width: container.clientWidth || window.innerWidth,
-                height: 260,
-                layout: { background: { color: isDarkTheme ? '#0f172a' : '#ffffff' } }
-            });
-            mainSeries = mainChart._series[0]; // ডাইরেক্ট সিরিজ লিঙ্ক আপ
-            log(`📈 চার্ট কোড একটিভ (টাইমফ্রেম: ${currentTimeframe}M)`);
-        } catch (err) {
-            log("❌ ইঞ্জিন ইনিশিয়েট এরর: " + err.message);
-        }
-    }
+    const themeColors = {
+        dark: { bg: '#0f172a', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
+        light: { bg: '#ffffff', grid: 'rgba(0, 0, 0, 0.06)', text: '#334155', upCandle: '#00c853', downCandle: '#ff1744' }
+    };
 
-    // ব্যাকএন্ড ক্যান্ডেল এবং ডাইনামিক হিস্ট্রি রেন্ডারার
-    async function fetchAndRenderCandles() {
-        try {
-            const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            let raw = data.candles || [];
-            
-            if (mainSeries) {
-                let parsed = [];
-                let baseTime = Math.floor(Date.now() / 1000) - (60 * currentTimeframe * 60);
+    // 📊 চার্ট ইনিশিয়ালাইজেশন
+    function initTradingViewChart() {
+        if (!window.LightweightCharts) return;
+        container.innerHTML = '';
+        const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
 
-                // ডাটাবেস খালি থাকলে বা ক্র্যাশ করলে ডাইনামিক ৬০টি ক্যান্ডেল জেনারেট হবে
-                if (raw.length < 5) {
-                    let tempPrice = lastPrice || 1.0;
-                    for (let i = 0; i < 60; i++) {
-                        let open = tempPrice;
-                        let close = tempPrice + (Math.random() - 0.5) * 0.04;
-                        if (close <= 0) close = 0.1;
-                        parsed.push({
-                            time: baseTime + (i * currentTimeframe * 60),
-                            open: open,
-                            high: Math.max(open, close) + 0.01,
-                            low: Math.max(0.01, Math.min(open, close) - 0.01),
-                            close: close
-                        });
-                        tempPrice = close;
-                    }
-                } else {
-                    // ব্যাকএন্ড থেকে আসা রিয়েল ডাটাকে ওভারল্যাপিং মুক্ত করা
-                    parsed = raw.map((c, index) => ({
-                        time: baseTime + (index * currentTimeframe * 60),
-                        open: parseFloat(c.open) || lastPrice,
-                        high: parseFloat(c.high) || (lastPrice * 1.02),
-                        low: parseFloat(c.low) || (lastPrice * 0.98),
-                        close: parseFloat(c.close) || lastPrice
-                    }));
-                }
-                mainSeries.setData(parsed);
-                log(`✅ ৬০টি ক্যান্ডেলস্টিক সাকসেসফুলি প্লেসড`);
-            }
-        } catch (e) {
-            log("⚠️ ক্যান্ডেল মেমরি রিস্টোরড");
-        }
-    }
+        chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth || window.innerWidth,
+            height: 260,
+            layout: { background: { type: 'solid', color: activeColors.bg }, textColor: activeColors.text },
+            grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
+            timeScale: { timeVisible: true, secondsVisible: false, borderColor: activeColors.grid }
+        });
 
-    // লাইভ মোমবাতি কাঁপানো এবং মুভমেন্ট লজিক
-    function pushLiveTick(price) {
-        if (!mainSeries || !price) return;
-        const now = Math.floor(Date.now() / 1000);
-        const interval = currentTimeframe * 60;
-        const barTime = Math.floor(now / interval) * interval;
-
-        mainSeries.update({
-            time: barTime,
-            open: lastPrice || price,
-            high: Math.max(lastPrice, price) * 1.002,
-            low: Math.min(lastPrice, price) * 0.998,
-            close: price
+        candleSeries = chart.addCandlestickSeries({
+            upColor: activeColors.upCandle, downColor: activeColors.downCandle,
+            borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
+            wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle,
         });
     }
 
-    // 🎨 লাইট মোড / ডার্ক মোড ফুল ফাংশনাল লজিক
-    function listenThemeToggle() {
+    // 📜 ১. ফায়ারবেস (Firebase) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
+    async function fetchFirebaseHistoryCandles() {
+        try {
+            log("📡 Firebase থেকে ২ মাসের হিস্ট্রি ডাটা আনা হচ্ছে...");
+            // আপনার ব্যাকএন্ডের ফায়ারবেস হিস্ট্রি এপিআই এন্ডপয়েন্ট (প্রয়োজন হলে ইউআরএল পরিবর্তন করে নিন)
+            const res = await fetch('/api/candles/history?_cb=' + Date.now(), { credentials: 'include' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            
+            const data = await res.json();
+            let historyCandles = data.candles || [];
+
+            if (candleSeries && historyCandles.length > 0) {
+                let parsed = historyCandles.map(c => {
+                    let t = parseInt(c.time);
+                    if (t > 9999999999) t = Math.floor(t / 1000); 
+                    return {
+                        time: t,
+                        open: parseFloat(c.open),
+                        high: parseFloat(c.high),
+                        low: parseFloat(c.low),
+                        close: parseFloat(c.close)
+                    };
+                });
+                parsed.sort((a, b) => a.time - b.time);
+                candleSeries.setData(parsed);
+                chart.timeScale().fitContent();
+                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল হিস্ট্রি লোড হয়েছে`);
+            }
+        } catch (err) {
+            log("⚠️ ফায়ারবেস হিস্ট্রি লোড প্রবলেম বা ডাটা খালি");
+        }
+    }
+
+    // 🕯️ ২. মঙ্গোডিবি (MongoDB) থেকে লাইভ ক্যান্ডেল তৈরি ও রিয়েল-টাইম আপডেট
+    async function syncMongoDBLiveAndUser() {
+        try {
+            // মঙ্গোডিবি লাইভ এপিআই সোর্স এবং ইউজার ব্যালেন্স সিঙ্ক
+            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
+            if (res.status === 401) { window.location.href = '/login'; return; }
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                // মঙ্গোডিবি থেকে আসা রিয়েল-টাইম লাইভ প্রাইস
+                const livePriceFromMongo = parseFloat(data.admin.live_price) || 1.0;
+                
+                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
+                
+                const priceEl = document.getElementById('live-price');
+                if (priceEl) {
+                    priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
+                    priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
+                }
+
+                // মঙ্গোডিবির প্রাইস দিয়ে চার্টের রানিং ক্যান্ডেলস্টিক কাঁপানো/আপডেট করা
+                if (candleSeries && livePriceFromMongo) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const interval = currentTimeframe * 60;
+                    const currentBarTime = Math.floor(now / interval) * interval;
+
+                    candleSeries.update({
+                        time: currentBarTime,
+                        open: lastPrice || livePriceFromMongo,
+                        high: Math.max(lastPrice, livePriceFromMongo) * 1.001,
+                        low: Math.min(lastPrice, livePriceFromMongo) * 0.999,
+                        close: livePriceFromMongo
+                    });
+                }
+
+                // যখন ১ মিনিট পুর্ন হয়ে ক্যান্ডেল ক্লোজ হবে, তখন ফায়ারবেস হিস্ট্রিতে ডাটা পুশ হবে এবং চার্ট রি-সিঙ্ক হবে
+                const secs = new Date().getSeconds();
+                const mins = new Date().getMinutes();
+                if (secs === 0 && mins % currentTimeframe === 0) {
+                    log("🔄 ক্যান্ডেল পিরিয়ড শেষ! নতুন ক্লোজড ডাটা Firebase-এ সেভ হচ্ছে...");
+                    fetchFirebaseHistoryCandles(); 
+                }
+
+                lastPrice = livePriceFromMongo;
+            }
+        } catch (e) {
+            // এরর হ্যান্ডলার
+        }
+    }
+
+    // 🎨 লাইট/ডার্ক থিম সুইচ লজিক (রিয়েল-টাইম)
+    function setupThemeToggleListener() {
         const toggleBtn = document.getElementById('chart-theme-toggle');
         const statusText = document.getElementById('theme-status');
         if (!toggleBtn) return;
 
         toggleBtn.replaceWith(toggleBtn.cloneNode(true));
-        const activeBtn = document.getElementById('chart-theme-toggle');
+        const activeToggleBtn = document.getElementById('chart-theme-toggle');
 
-        activeBtn.addEventListener('click', function() {
+        activeToggleBtn.addEventListener('click', function() {
             isDarkTheme = !isDarkTheme;
+            const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
+
             if (isDarkTheme) {
                 if (statusText) statusText.innerText = "DARK";
-                activeBtn.querySelector('i').className = "fas fa-moon";
-                activeBtn.style.color = "#fff";
-                if (mainChart) mainChart.applyOptions({ layout: { background: { color: '#0f172a' } } });
+                activeToggleBtn.querySelector('i').className = "fas fa-moon";
+                activeToggleBtn.style.color = "#fff";
                 log("🌙 ডার্ক মোড সচল");
             } else {
                 if (statusText) statusText.innerText = "LIGHT";
-                activeBtn.querySelector('i').className = "fas fa-sun";
-                activeBtn.style.color = "#ffb703";
-                if (mainChart) mainChart.applyOptions({ layout: { background: { color: '#ffffff' } } });
+                activeToggleBtn.querySelector('i').className = "fas fa-sun";
+                activeToggleBtn.style.color = "#ffb703";
                 log("☀️ লাইট মোড সচল");
+            }
+
+            if (chart && candleSeries) {
+                chart.applyOptions({
+                    layout: { background: { color: activeColors.bg }, textColor: activeColors.text },
+                    grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
+                    timeScale: { borderColor: activeColors.grid }
+                });
+                candleSeries.applyOptions({
+                    upColor: activeColors.upCandle, downColor: activeColors.downCandle,
+                    borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
+                    wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle
+                });
             }
         });
     }
 
-    // টাইমফ্রেম বাটন স্লাইডিং এবং ইন্টারঅ্যাকশন
-    function listenTimeframeButtons() {
+    // ⏳ টাইমফ্রেম লিসেনার
+    function setupTimeframeListeners() {
         document.querySelectorAll('.tf-btn').forEach(btn => {
             btn.replaceWith(btn.cloneNode(true));
         });
 
         document.querySelectorAll('.tf-btn').forEach(btn => {
-            if (parseInt(btn.getAttribute('data-tf')) === currentTimeframe) {
+            const tfVal = parseInt(btn.getAttribute('data-tf'));
+            if (tfVal === currentTimeframe) {
                 btn.style.background = "var(--cyan, #00f2fe)";
                 btn.style.color = "#000";
             } else {
@@ -653,80 +691,32 @@ body.light #chart-theme-toggle {
             }
 
             btn.addEventListener('click', function() {
-                const val = parseInt(this.getAttribute('data-tf'));
-                if (val) {
-                    currentTimeframe = val;
-                    log(`⏳ টাইমফ্রেম সেট: ${currentTimeframe} মিনিট`);
-                    bootTradingChart();
-                    fetchAndRenderCandles();
-                    listenTimeframeButtons();
+                const selectedTf = parseInt(this.getAttribute('data-tf'));
+                if (selectedTf && selectedTf !== currentTimeframe) {
+                    currentTimeframe = selectedTf;
+                    log(`⏳ টাইমফ্রেম: ${currentTimeframe}M`);
+                    initTradingViewChart();
+                    fetchFirebaseHistoryCandles();
+                    setupTimeframeListeners();
                 }
             });
         });
     }
 
-    // ডাটাবেস থেকে ইউজার প্রোফাইল ও ব্যালেন্স সিঙ্ক
-    async function syncSystemAPI() {
-        try {
-            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
-            if (res.status === 401) { window.location.href = '/login'; return; }
-            const data = await res.json();
-            
-            if (data.status === 'success') {
-                userCash = parseFloat(data.user.cash) || 0;
-                userAAF = parseFloat(data.user.aaf) || 0;
-                const newPrice = parseFloat(data.admin.live_price) || 1.0; 
-                currentFee = parseFloat(data.admin.trading_fee) || 0.5;
-                
-                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${userCash.toFixed(2)}`;
-                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = userAAF.toFixed(4);
-                if(document.getElementById('fee-perc')) document.getElementById('fee-perc').innerHTML = currentFee;
-                if(document.getElementById('admin-ad-text')) document.getElementById('admin-ad-text').innerHTML = data.admin.trading_ad_text || "✅ ট্রেডিং লাইভ";
-                
-                const priceEl = document.getElementById('live-price');
-                if (priceEl) {
-                    priceEl.innerHTML = `৳ ${newPrice.toFixed(4)}`;
-                    priceEl.style.color = (newPrice >= lastPrice) ? '#00ffa3' : '#ff3366';
-                }
-
-                pushLiveTick(newPrice);
-                lastPrice = newPrice;
-                calculateTradeCost();
-            }
-        } catch (e) { 
-            log("❌ সার্ভার কানেকশন ড্রপ"); 
-        }
-    }
-
-    function calculateTradeCost() {
-        let taka = parseFloat(document.getElementById('taka-input').value) || 0;
-        let coin = parseFloat(document.getElementById('coin-input').value) || 0;
-        if (document.activeElement === document.getElementById('taka-input') && taka > 0) {
-            coin = taka / lastPrice;
-            document.getElementById('coin-input').value = coin.toFixed(4);
-        } else if (document.activeElement === document.getElementById('coin-input') && coin > 0) {
-            taka = coin * lastPrice;
-            document.getElementById('taka-input').value = taka.toFixed(2);
-        }
-        if(document.getElementById('fee-amount')) document.getElementById('fee-amount').innerHTML = `৳ ${(taka * currentFee / 100).toFixed(2)}`;
-        if(document.getElementById('total-cost')) document.getElementById('total-cost').innerHTML = `৳ ${(taka + (taka * currentFee / 100)).toFixed(2)}`;
-    }
-
-    // অ্যাপ্লিকেশন মেইন লাঞ্চার
-    function initSystem() {
-        bootTradingChart();
-        syncSystemAPI();
-        fetchAndRenderCandles();
-        listenTimeframeButtons();
-        listenThemeToggle();
-        setInterval(syncSystemAPI, 3000); 
-        log("🚀 রিয়েল-টাইম ডাটা স্ট্রিম কানেক্টেড!");
+    function startSystem() {
+        initTradingViewChart();          // চার্ট রেন্ডার
+        fetchFirebaseHistoryCandles();   // ফায়ারবেস থেকে ২ মাসের অতীত ডাটা লোড
+        setupThemeToggleListener();       // লাইট/ডার্ক বাটন সচল
+        setupTimeframeListeners();       // টাইমফ্রেম বাটন সচল
+        
+        setInterval(syncMongoDBLiveAndUser, 3000); // প্রতি ৩ সেকেন্ডে মঙ্গোডিবি থেকে লাইভ ক্যান্ডেল আপডেট
+        log("🚀 সিস্টেম সফলভাবে মঙ্গোডিবি লাইভ এবং ফায়ারবেস হিস্ট্রির সাথে কানেক্টেড!");
     }
 
     if (document.readyState === 'complete') {
-        initSystem();
+        startSystem();
     } else {
-        window.addEventListener('load', initSystem);
+        window.addEventListener('load', startSystem);
     }
 })();
 </script>
