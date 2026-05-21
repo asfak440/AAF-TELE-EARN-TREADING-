@@ -9,7 +9,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
 
         :root {
-            --bg: #0f172a;
+            --bg: #05080d;
             --card: #0f172a;
             --border: rgba(255, 255, 255, 0.05);
             --cyan: #00f2fe;
@@ -19,325 +19,113 @@
             --glass-border: rgba(255, 255, 255, 0.1);
         }
 
+        /* 🎨 লাইট থিমের জন্য ভ্যারিয়েবল রুট ফিক্স */
+        body.light {
+            --bg: #ffffff;
+            --card: #f8fafc;
+            --border: #e2e8f0;
+            --text: #64748b;
+        }
+
         body {
-            background: #0f172a;
-            color: #fff;
+            background-color: var(--bg);
+            color: var(--bg) == #ffffff ? #000 : #fff;
             font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding-bottom: 110px;
             overflow-x: hidden;
-            transition: background 0.3s, color 0.3s;
+            transition: background 0.3s ease;
         }
 
-        /* ---------- হেডার ও ফিক্সড এলিমেন্ট ---------- */
+        /* হেডার ও ফিক্সড এলিমেন্ট */
         .header {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 35px;
-            z-index: 3000;
-            background: #0f172a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            box-sizing: border-box;
+            top: 0; left: 0; width: 100%; height: 35px; z-index: 3000;
+            background: var(--card);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; box-sizing: border-box;
             border-bottom: 1px solid var(--border);
         }
+        body.light .header h2 { color: #0f172a; }
 
         #admin-ad-box {
-            position: fixed;
-            top: 35px;
-            left: 0;
-            width: 100%;
-            height: 25px;
-            background: #1e293b;
-            z-index: 2999;
-            display: flex;
-            align-items: center;
+            position: fixed; top: 35px; left: 0; width: 100%; height: 25px;
+            background: var(--card); z-index: 2999; display: flex; align-items: center;
         }
 
         .tf-bar {
-            position: fixed;
-            top: 60px;
-            left: 0;
-            width: 100%;
-            height: 35px;
-            z-index: 2998;
-            background: #000;
-            display: flex;
-            gap: 8px;
-            padding: 5px 15px;
-            overflow-x: auto;
-            box-sizing: border-box;
+            position: fixed; top: 60px; left: 0; width: 100%; height: 35px;
+            z-index: 2998; background: #000; display: flex; gap: 8px; padding: 5px 15px;
+            overflow-x: auto; box-sizing: border-box;
         }
 
         .tf-btn {
-            background: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;
         }
+        .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.1); }
 
-        .tf-btn.active {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 242, 254, 0.1);
-        }
-
-        /* ---------- চার্ট এলিমেন্ট ---------- */
+        /* 📉 চার্ট কন্টেইনার ফিক্স */
         #chart-wrapper {
-            position: fixed;
-            top: 95px;
-            left: 0;
-            width: 100%;
-            height: 250px;
-            z-index: 4000;
-            background: #0f172a;
-            border-bottom: 1px solid var(--border);
+            position: fixed; top: 95px; left: 0; width: 100%; height: 250px;
+            z-index: 2997; background: var(--bg); border-bottom: 1px solid var(--border);
         }
 
         #chart-container {
-            width: 100%;
-            height: 250px !important; /* 🎯 ২৫০px হাইট ফিক্সড লক করা হলো */
-            background: #0f172a;
-            touch-action: none;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .tv-lightweight-charts-logo {
-            display: none !important;
+            width: 100%; height: 250px !important;
+            background: var(--bg); touch-action: none; overflow: hidden; position: relative;
         }
 
         #chart-theme-toggle {
-            position: absolute;
-            left: 10px;
-            bottom: 10px;
-            z-index: 3001;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: #1e293b;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 9px;
+            position: absolute; left: 10px; bottom: 10px; z-index: 3001;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--card); color: #fff;
+            display: flex; align-items: center; gap: 6px; font-size: 9px;
         }
+        body.light #chart-theme-toggle { color: #0f172a; }
 
-        /* ---------- কন্টেইনার ও কার্ড ---------- */
+        /* কন্টেইনার ও কার্ডের রি-পজিশন */
         .container {
-            padding-top: 410px;
-            padding-bottom: 100px;
-            max-width: 350px;
-            margin: auto;
-            padding-left: 15px;
-            padding-right: 15px;
+            padding-top: 365px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
+            padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px;
         }
+        body.light .container { color: #0f172a; }
 
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-card span { font-size: 10px; color: var(--text); display: block; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) == #ffffff ? #000 : #fff; }
+        body.light .stat-card b { color: #0f172a; }
 
-        .stat-card {
-            background: var(--card);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .stat-card span {
-            font-size: 10px;
-            color: var(--text);
-            display: block;
-        }
-
-        .stat-card b {
-            font-family: 'Rajdhani';
-            font-size: 16px;
-            color: #fff;
-        }
-
-        .trade-box {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid var(--border);
-            position: relative;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
+        .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
+        .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+        .input-box { flex: 1; position: relative; }
         .input-box input {
-            width: 100%;
-            background: #000;
-            border: 1px solid var(--border);
-            padding: 12px;
-            color: var(--cyan);
-            font-size: 16px;
-            border-radius: 8px;
-            box-sizing: border-box;
-            outline: none;
+            width: 100%; background: #000; border: 1px solid var(--border);
+            padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none;
         }
+        body.light class.input-box input { background: #fff; }
+        .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
 
-        .input-box span {
-            position: absolute;
-            right: 8px;
-            top: 14px;
-            color: var(--text);
-            font-size: 10px;
-        }
+        .fee-card { background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        body.light .fee-row { color: #0f172a; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
+        .buy { background: var(--green); color: #000; }
+        .sell { background: var(--red); color: #fff; }
 
-        .fee-card {
-            background: rgba(255, 255, 255, 0.02);
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px dashed var(--border);
-            margin-bottom: 15px;
-        }
-
-        .fee-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            margin-bottom: 4px;
-        }
-
-        .btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 12px;
-            text-transform: uppercase;
-            transition: 0.2s;
-        }
-
-        .buy {
-            background: var(--green);
-            color: #000;
-        }
-
-        .sell {
-            background: var(--red);
-            color: #fff;
-        }
-
-        .btn:disabled {
-            opacity: 0.3;
-            filter: grayscale(1);
-            cursor: not-allowed;
-        }
-
-        .dock-container {
-            position: fixed;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            z-index: 5000;
-        }
-
+        /* ডক নেভিগেশন */
+        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 5000; }
         .dock-nav {
-            width: 90%;
-            max-width: 400px;
-            height: 55px;
-            background: rgba(15, 23, 42, 0.95);
-            border-radius: 35px;
-            border: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
+            border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
         }
-
-        .nav-item {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 8px;
-            text-align: center;
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: 'Rajdhani';
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .nav-item i {
-            font-size: 16px;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .nav-item.active {
-            color: var(--cyan);
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
-        }
-
-        /* ========== 🎨 লাইট থিম ক্লিন ওভাররাইড ফিক্স ========== */
-        body.light {
-            background: #ffffff !important;
-            color: #222222 !important;
-        }
-        body.light #chart-wrapper, 
-        body.light #chart-container {
-            background: #ffffff !important;
-        }
-        body.light .header {
-            background: #f1f5f9 !important;
-            border-bottom: 1px solid #cbd5e1 !important;
-        }
-        body.light .header h2 {
-            color: #0f172a !important;
-        }
-        body.light .stat-card {
-            background: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-        }
-        body.light .stat-card b {
-            color: #0f172a !important;
-        }
-        body.light .trade-box {
-            background: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-        }
-        body.light #chart-theme-toggle {
-            background: #e2e8f0 !important;
-            color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
-        }
-        body.light .nav-item {
-            color: #64748b !important;
-        }
-        body.light .nav-item.active {
-            color: #2563eb !important;
-        }
+        body.light class.dock-nav { background: rgba(255, 255, 255, 0.95); }
+        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
+        .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--cyan); }
     </style>
 </head>
 <body>
@@ -405,9 +193,25 @@
         </nav>
     </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
-  <script src="/static/js/lightweight-charts.js"></script>
+    <script>
+        // থিম বাটন ক্লিক ফিক্স
+        const toggleBtn = document.getElementById('chart-theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+                const status = document.getElementById('theme-status');
+                if (status) {
+                    status.innerText = document.body.classList.contains('light') ? 'LIGHT' : 'DARK';
+                }
+            });
+        }
+    </script>
+
+    <script src="/static/js/lightweight-charts.js"></script>
+</body>
+</html>https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
