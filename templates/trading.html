@@ -587,35 +587,35 @@ window.updateTradeCalculator = function(source) {
 
     // ⏳ টাইমফ্রেম লিসেনার
     function setupTimeframeListeners() {
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.replaceWith(btn.cloneNode(true));
-        });
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+    });
 
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            const tfVal = parseInt(btn.getAttribute('data-tf'));
-            if (tfVal === currentTimeframe) {
-                btn.style.background = "var(--cyan, #00f2fe)";
-                btn.style.color = "#000";
-            } else {
-                btn.style.background = "";
-                btn.style.color = "";
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        const tfVal = parseInt(btn.getAttribute('data-tf'));
+        if (tfVal === currentTimeframe) {
+            btn.style.background = "var(--cyan, #00f2fe)";
+            btn.style.color = "#000";
+        } else {
+            btn.style.background = "";
+            btn.style.color = "";
+        }
+
+        btn.addEventListener('click', function() {
+            const selectedTf = parseInt(this.getAttribute('data-tf'));
+            if (selectedTf && selectedTf !== currentTimeframe) {
+                currentTimeframe = selectedTf;
+                lastSavedMinute = -1; // টাইমফ্রেম বদলালে লক রিলিজ করার লাইন
+                log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
+                initTradingViewChart();
+                fetchFirebaseHistory();
+                setupTimeframeListeners();
             }
-
-            btn.addEventListener('click', function() {
-                const selectedTf = parseInt(this.getAttribute('data-tf'));
-                if (selectedTf && selectedTf !== currentTimeframe) {
-                    currentTimeframe = selectedTf;
-                    lastSavedMinute = -1; // টাইমফ্রেম বদলালে লক রিলিজ করার লাইন
-                    log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
-                    initTradingViewChart();
-                    fetchFirebaseHistory();
-                    setupTimeframeListeners();
-                }
-            });
         });
-    }
+    });
+}
 
-        window.executeTradeAction = async function() {
+window.executeTradeAction = async function() {
     const takaInput = document.getElementById('taka-input');
     if (!takaInput || parseFloat(takaInput.value) <= 0) {
         alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
@@ -650,10 +650,16 @@ window.updateTradeCalculator = function(source) {
             takaInput.value = "";
             document.getElementById('coin-input').value = "";
     
-            // ট্রেড সফল হলে ব্যাকগ্রাউন্ডে ইনস্ট্যান্ট অ্যাকাউন্ট ব্যালেন্স আপডেট হবে
+            // 🎯 ফিক্স: ট্রেড সফল হলে ব্যাকগ্রাউন্ডে ইনস্ট্যান্ট অ্যাকাউন্ট ব্যালেন্স আপডেট হবে
             if (typeof syncUserDataAndClosing === 'function') {
                 await syncUserDataAndClosing(); 
             }
+
+            // 🎯 বোনাস ফিক্স: ব্যালেন্স যেন ১00% আপডেট হয়, তাই অ্যালার্ট ওকে করার আধা সেকেন্ড পর পেজ অটো-রিফ্রেশ হবে
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+
         } else {
             log(`❌ এরর: ${result.message}`);
             alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
