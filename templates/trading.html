@@ -511,7 +511,7 @@
             labelEl.innerText = totalCostLabel;
         }
     }
-    }
+    
     
     // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
     async function syncUserDataAndClosing() {
@@ -535,7 +535,7 @@
                 log("🔄 ক্যান্ডেল টাইম শেষ! MongoDB ক্লোজড ডাটা Firebase-এ পাঠাচ্ছে...");
                 
                 await fetch('/api/market/update_candle', { method: 'POST', credentials: 'include' });
-                setTimeout(fetchFirebaseHistory, 1500); 
+                setTimeout(fetchFirebaseHistory, 3000); 
             }
         } catch (err) {
             // কানেকশন এরর হ্যান্ডলার
@@ -654,22 +654,23 @@
             if (result.status === 'success') {
                 log(`✅ ${result.message}`);
                 alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
-                
+        
                 takaInput.value = "";
                 document.getElementById('coin-input').value = "";
-                
-                if (typeof syncUserDataAndClosing === 'function') {
-                    syncUserDataAndClosing();
+        
+        // 🎯 ফিক্স: ব্যালেন্স যেন সাথে সাথে পরিবর্তন হয়, তাই await দিয়ে কল করা হলো
+           await syncUserDataAndClosing(); 
+               }
+               } else {
+                    log(`❌ এরর: ${result.message}`);
+                    alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
                 }
-            } else {
-                log(`❌ এরর: ${result.message}`);
-                alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
+            } catch (error) {
+                log("❌ সার্ভার এরর!");
+                alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
             }
-        } catch (error) {
-            log("❌ সার্ভার এরর!");
-            alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
-        }
-    };
+        };
+    
     // বুট রানার
     function startTradingEngine() {
         initTradingViewChart();
