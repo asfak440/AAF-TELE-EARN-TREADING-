@@ -218,22 +218,7 @@
     </div>
 
     
-     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-
-    <script>
-        // থিম বাটন ক্লিক ফিক্স
-        const toggleBtn = document.getElementById('chart-theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                document.body.classList.toggle('light');
-                const status = document.getElementById('theme-status');
-                if (status) {
-                    status.innerText = document.body.classList.contains('light') ? 'LIGHT' : 'DARK';
-                }
-            });
-        }
-    </script>
-
+     
     <script src="/static/js/lightweight-charts.js"></script>
 
     <script>
