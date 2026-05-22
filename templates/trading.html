@@ -219,34 +219,21 @@
 
     
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="/static/js/lightweight-charts.js"></script>
-
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // নিশ্চিত করুন চার্ট এই কন্টেইনারে তৈরি হচ্ছে
-            const container = document.getElementById('chart-container');
-            if (container && typeof LightweightCharts !== 'undefined') {
-                const chart = LightweightCharts.createChart(container, {
-                    width: container.clientWidth,
-                    height: 250, // আমরা সিএসএস-এ ২৫০ করেছি, এখানেও ২৫০ দিন
-                    layout: { background: { color: '#0f172a' }, textColor: '#94a3b8' },
-                    grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } }
-                });
-                
-                const candleSeries = chart.addCandlestickSeries();
-                
-                // আপনার এপিআই (Flask) থেকে ডাটা এনে পুশ করার ফাংশন
-                fetch('/api/candles')
-                    .then(res => res.json())
-                    .then(data => {
-                        if(data.status === "success" && data.candles) {
-                            candleSeries.setData(data.candles);
-                            console.log("ক্যান্ডেল চার্টে পুশ করা হয়েছে!");
-                        }
-                    });
-            }
-        });
-</script>
+        // থিম বাটন ক্লিক ফিক্স
+        const toggleBtn = document.getElementById('chart-theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light');
+                const status = document.getElementById('theme-status');
+                if (status) {
+                    status.innerText = document.body.classList.contains('light') ? 'LIGHT' : 'DARK';
+                }
+            });
+        }
+    </script>
+
+<script src="/static/js/lightweight-charts.js"></script>
 <script>
 (function() {
     const container = document.getElementById('chart-container');
