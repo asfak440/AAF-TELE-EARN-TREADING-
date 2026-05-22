@@ -6,7 +6,7 @@
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght=600;700&family=Hind+Siliguri:wght=400;600&family=Syncopate:wght=400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
 
         :root {
             --bg: #05080d;
@@ -17,28 +17,24 @@
             --red: #ff3366;
             --text: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.1);
-            --body-text: #ffffff;     /* 🎯 ডার্ক মোডে লেখার রঙ কড়া সাদা */
-            --balance-color: #ffffff; /* 🎯 ডার্ক মোডে ব্যালেন্স সংখ্যার রঙ */
         }
 
-        /* 🎨 লাইট থিম ভ্যারিয়েবল ফিক্স */
+        /* 🎨 লাইট থিমের জন্য ভ্যারিয়েবল রুট ফিক্স */
         body.light {
             --bg: #ffffff;
             --card: #f8fafc;
             --border: #e2e8f0;
             --text: #64748b;
-            --body-text: #0f172a;
-            --balance-color: #0f172a; /* 🎯 লাইট মোডে ব্যালেন্স সংখ্যার রঙ কালো */
         }
 
         body {
             background-color: var(--bg);
-            color: var(--body-text); /* 🎯 ভুল কন্ডিশনাল কোড বাদ দিয়ে ভ্যারিয়েবল বসানো হয়েছে */
+            color: var(--bg) == #ffffff ? #000 : #fff;
             font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding-bottom: 110px;
             overflow-x: hidden;
-            transition: background 0.3s ease, color 0.3s ease;
+            transition: background 0.3s ease;
         }
 
         /* হেডার ও ফিক্সড এলিমেন্ট */
@@ -69,38 +65,50 @@
         }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.1); }
 
-        /* 📉 চার্ট কন্টেইনার ফিক্স (উচ্চতা মোবাইল ফ্রেন্ডলি ১৮০px এ লক করা হয়েছে) */
-        #chart-wrapper {
-            position: fixed; top: 95px; left: 0; width: 100%; height: 180px;
-            z-index: 2997; background: var(--bg); border-bottom: 1px solid var(--border);
-            transition: background 0.3s;
-        }
+        /* 📉 চার্ট কন্টেইনার ফিক্স */
+        /* 🎯 পরিবর্তন করে এটি বসান: */
+#chart-wrapper {
+    position: fixed;
+    top: 95px;
+    left: 0;
+    width: 100%;
+    height: 180px; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    z-index: 2997;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.3s;
+}
 
-        #chart-container {
-            width: 100%; height: 180px !important;
-            background: var(--bg); touch-action: none; overflow: hidden; position: relative;
-            transition: background 0.3s;
-        }
+#chart-container {
+    width: 100%;
+    height: 180px !important; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    background: var(--bg);
+    touch-action: none;
+    overflow: hidden;
+    position: relative;
+    transition: background 0.3s;
+}
 
         #chart-theme-toggle {
             position: absolute; left: 10px; bottom: 10px; z-index: 3001;
             padding: 4px 8px; border-radius: 4px; cursor: pointer;
-            border: 1px solid var(--border); background: var(--card); color: var(--body-text);
+            border: 1px solid var(--border); background: var(--card); color: #fff;
             display: flex; align-items: center; gap: 6px; font-size: 9px;
         }
+        body.light #chart-theme-toggle { color: #0f172a; }
 
         /* কন্টেইনার ও কার্ডের রি-পজিশন */
         .container {
-            padding-top: 295px !important; /* 🎯 চার্টের ১৮০px উচ্চতা অনুযায়ী পারফেক্ট দূরত্ব */
+            padding-top: 365px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
             padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px;
         }
+        body.light .container { color: #0f172a; }
 
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .stat-card span { font-size: 10px; color: var(--text); display: block; margin-bottom: 2px; }
-        
-        /* 🎯 ব্যালেন্স সংখ্যার কালার ফিক্স */
-        .stat-card b { font-family: 'Rajdhani'; font-size: 18px; color: var(--balance-color) !important; font-weight: 700; display: inline-block; }
+        .stat-card span { font-size: 10px; color: var(--text); display: block; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) == #ffffff ? #000 : #fff; }
+        body.light .stat-card b { color: #0f172a; }
 
         .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
         .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
@@ -109,11 +117,12 @@
             width: 100%; background: #000; border: 1px solid var(--border);
             padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none;
         }
-        body.light .input-box input { background: #fff; color: #000; border: 1px solid #cbd5e1; }
+        body.light class.input-box input { background: #fff; }
         .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
 
         .fee-card { background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
-        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--body-text); }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        body.light .fee-row { color: #0f172a; }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
@@ -126,7 +135,7 @@
             width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
         }
-        body.light .dock-nav { background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1; }
+        body.light class.dock-nav { background: rgba(255, 255, 255, 0.95); }
         .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
         .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
         .nav-item.active { color: var(--cyan); }
@@ -195,7 +204,7 @@
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
-    </div>
+                                                   </div>
 
     
         <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
@@ -215,8 +224,6 @@
     </script>
 
     <script src="/static/js/lightweight-charts.js"></script>
-</body>
-</html>https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
