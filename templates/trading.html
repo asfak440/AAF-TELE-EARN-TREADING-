@@ -73,7 +73,7 @@
     top: 75px;
     left: 0;
     width: 100%;
-    height: 200px; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    height: 250px; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
     z-index: 2997;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
@@ -82,7 +82,7 @@
 
 #chart-container {
     width: 100%;
-    height: 200px !important; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
+    height: 250px !important; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
     background: var(--bg);
     touch-action: none;
     overflow: hidden;
@@ -289,9 +289,22 @@
         });
 
         candleSeries = chart.addCandlestickSeries({
-            upColor: activeColors.upCandle, downColor: activeColors.downCandle,
-            borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
-            wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle,
+            upColor: '#2ebd85',       // বাইন্যান্স অরিজিনাল গ্রিন বডি
+            downColor: '#df294a',     // বাইন্যান্স অরিজিনাল রেড বডি
+            borderUpColor: '#2ebd85',
+            borderDownColor: '#df294a',
+            wickUpColor: '#2ebd85',   // ক্যান্ডেলের উপরের ও নিচের চিকন সুতা বা Wick
+            wickDownColor: '#df294a',
+            borderColor: '#374151',
+        });
+
+        // ক্যান্ডেলগুলো যেন খুব বেশি বড় বা স্ক্রিনের বাইরে না যায়, তাই চার্ট স্কেল ফিক্স:
+        chart.priceScale('right').applyOptions({
+            autoScale: true,
+            scaleMargins: {
+                top: 0.1, // উপর থেকে ১০% জায়গা ফাঁকা থাকবে
+                bottom: 0.15, // নিচ থেকে ১৫% জায়গা ফাঁকা থাকবে
+            },
         });
     }
 
