@@ -418,22 +418,28 @@
         } catch (e) {}
     }
 
-    // 🎯 বাই/সেল বাটন টগল এবং মোড লক করার ফিক্স
+     // 🎯 // 🎯 // 🎯 // 🎯 // 🎯 // 🎯
     window.setTradeMode = function(mode) {
-        const buyBtn = document.getElementById('buy-btn');
-        const sellBtn = document.getElementById('sell-btn');
-        if (!buyBtn || !sellBtn) return;
+    const buyBtn = document.getElementById('buy-btn');
+    const sellBtn = document.getElementById('sell-btn');
+    if (!buyBtn || !sellBtn) return;
 
-        if (mode === 'sell') {
-            sellBtn.classList.add('sell-active', 'active');
-            buyBtn.classList.remove('active');
-        } else {
-            sellBtn.classList.remove('sell-active', 'active');
-            buyBtn.classList.add('active');
-        }
-        
-        // বাটন চেঞ্জ হওয়ার সাথে সাথে ক্যালকুলেটরের হিসাব রিফ্রেশ হবে
-        window.updateTradeCalculator = function(source) {
+    if (mode === 'sell') {
+        sellBtn.classList.add('sell-active', 'active');
+        buyBtn.classList.remove('active');
+    } else {
+        sellBtn.classList.remove('sell-active', 'active');
+        buyBtn.classList.add('active');
+    }
+    
+    // 🎯 ফিক্স ১: বাটন চেঞ্জ হওয়ার সাথে সাথে ক্যালকুলেটরের হিসাবকে বাইরে থেকে কল করা হলো
+    if (typeof window.updateTradeCalculator === 'function') {
+        window.updateTradeCalculator('taka');
+    }
+}; // 🎯 ফিক্স ২: এখানে setTradeMode ফাংশনটি নিখুঁতভাবে ক্লোজ (বন্ধ) করা হলো!
+
+// 🎯 ফিক্স ৩: এখন updateTradeCalculator ফাংশনটি সম্পূর্ণ স্বাধীনভাবে বাইরে থাকবে
+window.updateTradeCalculator = function(source) {
     const takaInput = document.getElementById('taka-input');
     const coinInput = document.getElementById('coin-input');
     if (!takaInput || !coinInput) return;
@@ -453,7 +459,7 @@
     let finalExecutionPrice = isSellMode ? sellPrice : buyPrice;
     let amount = 0;
 
-    // 🔄 ৩. ইনপুট ট্র্যাকিং এবং লাইভ টিক ফিক্স (লজিক্যাল বাগ দূর করা হয়েছে)
+    // 🔄 ৩. ইনপুট ট্র্যাকিং এবং লাইভ টিক ফিক্স
     if (source === 'coin') {
         const coins = parseFloat(coinInput.value) || 0;
         amount = coins * finalExecutionPrice; 
@@ -463,7 +469,7 @@
             takaInput.value = "";
         }
     } else if (source === 'taka_live') {
-        // চার্টে লাইভ প্রাইস নড়ার সময় ইউজার যদি অলরেডি টাইপ করে থাকে, তবেই কয়েন বক্স আপডেট হবে
+        // চার্টে লাইভ প্রাইস নড়ার সময় ইউজার যদি অলরেডি টাইপ করে থাকে, তবেই কয়েন বক্স আপডেট হবে
         if (takaInput.value !== "") {
             amount = parseFloat(takaInput.value) || 0;
             coinInput.value = (amount / finalExecutionPrice).toFixed(4);
@@ -498,7 +504,7 @@
             labelEl.innerText = totalCostLabel;
         }
     }
-}; // 🎯 ফিক্স: ফাংশনটির শেষে সেমিকোলনসহ ব্র্যাকেট লক নিখুঁত করা হয়েছে
+}; // 🎯 ক্যালকুলেটর ফাংশন এখানে সাফল্যের সাথে শেষ হলো
     
     // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
     async function syncUserDataAndClosing() {
