@@ -216,8 +216,8 @@
     </div>
     
     <div class="btn-group">
-        <button id="buy-btn" class="btn buy active" onclick="setTradeMode('buy'); executeTradeAction();">BUY SPOT</button>
-        <button id="sell-btn" class="btn sell" onclick="setTradeMode('sell'); executeTradeAction();">SELL SPOT</button>
+        <button id="buy-btn" class="btn buy active" onclick="setTradeMode('buy')">BUY SPOT</button>
+        <button id="sell-btn" class="btn sell" onclick="setTradeMode('sell')">SELL SPOT</button>    
     </div>
     </div>
 
@@ -370,7 +370,7 @@
     }
             
 
-    // 🕯️ ২. মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও রিয়েল-টাইম কাঁপানো
+    // 🕯️ ২. মঙ্গোডিবি থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও সেভিং বাগ ফিক্স
     async function syncMongoDBLive() {
         try {
             const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
@@ -385,16 +385,16 @@
                     priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
-                // মঙ্গোডিবির প্রাইস এখানে পুশ হবে (যা ওপরে ভুল করে ঢুকেছিল)
                 if (candleSeries && livePriceFromMongo) {
                     const now = Math.floor(Date.now() / 1000);
                     const interval = currentTimeframe * 60;
                     const currentBarTime = Math.floor(now / interval) * interval;
 
+                    // 🎯 ফিক্স: নতুন মিনিট শুরু হলে ওল্ড ক্যান্ডেল লক করে সম্পূর্ণ নতুন ক্যান্ডেল অবজেক্ট তৈরি হবে
                     if (!currentBar || currentBar.time !== currentBarTime) {
                         currentBar = {
                             time: currentBarTime,
-                            open: lastPrice || livePriceFromMongo,
+                            open: livePriceFromMongo, // ওল্ড প্রাইসের জায়গায় লাইভ ওপেন প্রাইস লক
                             high: livePriceFromMongo,
                             low: livePriceFromMongo,
                             close: livePriceFromMongo
@@ -409,10 +409,33 @@
                 }
 
                 lastPrice = livePriceFromMongo;
+                
+                // 🔄 লাইভ প্রাইস আপডেটের সাথে সাথে ক্যালকুলেটরও ব্যাকগ্রাউন্ডে অটো সিঙ্ক হবে
+                if (typeof window.updateTradeCalculator === 'function') {
+                    window.updateTradeCalculator('taka_live');
+                }
             }
         } catch (e) {}
     }
 
+    // 🎯 বাই/সেল বাটন টগল এবং মোড লক করার ফিক্স
+    window.setTradeMode = function(mode) {
+        const buyBtn = document.getElementById('buy-btn');
+        const sellBtn = document.getElementById('sell-btn');
+        if (!buyBtn || !sellBtn) return;
+
+        if (mode === 'sell') {
+            sellBtn.classList.add('sell-active', 'active');
+            buyBtn.classList.remove('active');
+        } else {
+            sellBtn.classList.remove('sell-active', 'active');
+            buyBtn.classList.add('active');
+        }
+        
+        // বাটন চেঞ্জ হওয়ার সাথে সাথে ক্যালকুলেটরের হিসাব রিফ্রেশ হবে
+        window.updateTradeCalculator('taka');
+    };
+    
     window.updateTradeCalculator = function(source) {
     const takaInput = document.getElementById('taka-input');
     const coinInput = document.getElementById('coin-input');
@@ -599,57 +622,54 @@
         });
     }
 
-    // 🚀 বাই বা সেল বাটনে চাপ দিলে ব্যাকএন্ডে আসল ট্রেড এক্সিকিউট করার ফাংশন
-async function executeTradeAction() {
-    const takaInput = document.getElementById('taka-input');
-    if (!takaInput || parseFloat(takaInput.value) <= 0) {
-        alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
-        return;
-    }
-
-    // বর্তমানে কোন মোড একটিভ আছে (buy নাকি sell) তা চেনার লজিক
-    const isSellMode = document.getElementById('sell-btn').classList.contains('sell-active');
-    const actionType = isSellMode ? 'sell' : 'buy';
-    const bdtAmount = parseFloat(takaInput.value);
-
-    log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
-
-    try {
-        // আপনার Flask ব্যাকএন্ড এপিআই-তে ডাটা পাঠানো হচ্ছে
-        const response = await fetch('/api/trade/execute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: actionType,    // 'buy' অথবা 'sell'
-                amount: bdtAmount      // কত টাকার ট্রেড করবে
-            }),
-            credentials: 'include'
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            log(`✅ ${result.message}`);
-            alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
-            
-            // ট্রেড সফল হওয়ার পর ইনপুট বক্স খালি করা
-            takaInput.value = "";
-            document.getElementById('coin-input').value = "";
-            
-            // ইউজার ব্যালেন্স রিয়েল-টাইম আপডেট করার ফাংশনটি কল করা
-            if (typeof syncUserDataAndClosing === 'function') {
-                syncUserDataAndClosing();
-            }
-        } else {
-            log(`❌ এরর: ${result.message}`);
-            alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
+    // 🚀 ৩. ফাইনাল এক্সিকিউশন অর্ডার এপিআই কল (বাটন ট্র্যাকিং ফিক্সড)
+    window.executeTradeAction = async function() {
+        const takaInput = document.getElementById('taka-input');
+        if (!takaInput || parseFloat(takaInput.value) <= 0) {
+            alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
+            return;
         }
-    } catch (error) {
-        log("❌ সার্ভার কানেকশন এরর!");
-        alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
-    }
-}
 
+        // ফিক্সড: বাটন গ্রুপে 'active' ক্লাস কার ওপর আছে তা নিখুঁতভাবে চেক করা
+        const sellBtn = document.getElementById('sell-btn');
+        const isSellMode = sellBtn && sellBtn.classList.contains('active');
+        const actionType = isSellMode ? 'sell' : 'buy';
+        const bdtAmount = parseFloat(takaInput.value);
+
+        log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
+
+        try {
+            const response = await fetch('/api/trade/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: actionType,    
+                    amount: bdtAmount      
+                }),
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                log(`✅ ${result.message}`);
+                alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
+                
+                takaInput.value = "";
+                document.getElementById('coin-input').value = "";
+                
+                if (typeof syncUserDataAndClosing === 'function') {
+                    syncUserDataAndClosing();
+                }
+            } else {
+                log(`❌ এরর: ${result.message}`);
+                alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
+            }
+        } catch (error) {
+            log("❌ সার্ভার এরর!");
+            alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
+        }
+    };
     // বুট রানার
     function startTradingEngine() {
         initTradingViewChart();
