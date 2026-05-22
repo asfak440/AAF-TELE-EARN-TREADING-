@@ -433,10 +433,7 @@
         }
         
         // বাটন চেঞ্জ হওয়ার সাথে সাথে ক্যালকুলেটরের হিসাব রিফ্রেশ হবে
-        window.updateTradeCalculator('taka');
-    };
-    
-    window.updateTradeCalculator = function(source) {
+        window.updateTradeCalculator = function(source) {
     const takaInput = document.getElementById('taka-input');
     const coinInput = document.getElementById('coin-input');
     if (!takaInput || !coinInput) return;
@@ -446,11 +443,9 @@
     const buyPrice = currentMarketPrice;
     const sellPrice = currentMarketPrice * 0.98; 
 
-    // ২. ওয়ান-ক্লিক ট্র্যাকিং ফিক্স: বাটন গ্রুপে 'active' ক্লাস কার ওপর আছে তা দেখা
+    // ২. ওয়ান-ক্লিক ট্র্যাকিং ফিক্স
     let isSellMode = false;
     const sellBtn = document.getElementById('sell-btn');
-    const buyBtn = document.getElementById('buy-btn');
-    
     if (sellBtn && sellBtn.classList.contains('active')) {
         isSellMode = true;
     }
@@ -458,7 +453,7 @@
     let finalExecutionPrice = isSellMode ? sellPrice : buyPrice;
     let amount = 0;
 
-    // 🔄 যদি ইউজার কয়েন বক্সে টাইপ করে (কয়েন থেকে টাকা হিসাব)
+    // 🔄 ৩. ইনপুট ট্র্যাকিং এবং লাইভ টিক ফিক্স (লজিক্যাল বাগ দূর করা হয়েছে)
     if (source === 'coin') {
         const coins = parseFloat(coinInput.value) || 0;
         amount = coins * finalExecutionPrice; 
@@ -467,9 +462,13 @@
         } else {
             takaInput.value = "";
         }
-    } 
-    // 🔄 যদি ইউজার টাকা বক্সে টাইপ করে (টাকা থেকে কয়েন হিসাব)
-    else {
+    } else if (source === 'taka_live') {
+        // চার্টে লাইভ প্রাইস নড়ার সময় ইউজার যদি অলরেডি টাইপ করে থাকে, তবেই কয়েন বক্স আপডেট হবে
+        if (takaInput.value !== "") {
+            amount = parseFloat(takaInput.value) || 0;
+            coinInput.value = (amount / finalExecutionPrice).toFixed(4);
+        }
+    } else {
         amount = parseFloat(takaInput.value) || 0;
         const estimatedAAF = amount / finalExecutionPrice;
         if (takaInput.value !== "") {
@@ -479,39 +478,27 @@
         }
     }
 
-    // ৩. 🎯 ফি এবং মোট টাকার লজিক্যাল ফিক্স (BUY বনাম SELL)
+    // ৪. ফি এবং মোট টাকার লজিক
     const feeRate = 0.005; // ০.৫% ফি
     const fee = amount * feeRate;
-    let totalCost = 0;
-    let totalCostLabel = "মোট খরচ:"; // ফ্রন্টএন্ড লেখার ডাইনামিক টগল
+    let totalCost = isSellMode ? (amount - fee) : (amount + fee);
+    let totalCostLabel = isSellMode ? "মোট পাবেন:" : "মোট খরচ:";
 
-    if (isSellMode) {
-        // সেল করার সময় ইউজার ফি কেটে বাকি টাকা হাতে পাবে (মাইনাস হবে)
-        totalCost = amount - fee; 
-        totalCostLabel = "মোট পাবেন:";
-    } else {
-        // বাই করার সময় টাকা এবং ফি একসাথে পকেট থেকে যাবে (প্লাস হবে)
-        totalCost = amount + fee;
-        totalCostLabel = "মোট খরচ:";
-    }
-
-    // ৪. HTML টেক্সট ও লেবেল রিয়েল-টাইম আপডেট করা
+    // ৫. HTML টেক্সট ও লেবেল রিয়েল-টাইম আপডেট করা
     if(document.getElementById('fee-amount')) {
         document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(4)}`;
     }
     
     const totalCostEl = document.getElementById('total-cost');
     if(totalCostEl) {
-        // মোট খরচের ভেতরের টেক্সট আপডেট
         totalCostEl.innerText = `৳ ${totalCost.toFixed(4)}`;
         
-        // সিএসএস ক্লাসের ওপরের লেবেল টেক্সট (মোট খরচ / মোট পাবেন) ডাইনামিক করা
         const labelEl = totalCostEl.parentElement.querySelector('span');
         if (labelEl) {
             labelEl.innerText = totalCostLabel;
         }
     }
-    
+}; // 🎯 ফিক্স: ফাংশনটির শেষে সেমিকোলনসহ ব্র্যাকেট লক নিখুঁত করা হয়েছে
     
     // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
     async function syncUserDataAndClosing() {
@@ -622,42 +609,55 @@
         });
     }
 
-    // 🚀 ৩. ফাইনাল এক্সিকিউশন অর্ডার এপিআই কল (বাটন ট্র্যাকিং ফিক্সড)
-    window.executeTradeAction = async function() {
-        const takaInput = document.getElementById('taka-input');
-        if (!takaInput || parseFloat(takaInput.value) <= 0) {
-            alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
-            return;
+        // 🚀 ৩. ফাইনাল এক্সিকিউশন অর্ডার এপিআই কল (বাটন ট্র্যাকিং ফিক্সড)
+           window.executeTradeAction = async function() {
+    const takaInput = document.getElementById('taka-input');
+    if (!takaInput || parseFloat(takaInput.value) <= 0) {
+        alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
+        return;
+    }
+
+    // বাটন গ্রুপে 'active' ক্লাস কার ওপর আছে তা নিখুঁতভাবে চেক করা
+    const sellBtn = document.getElementById('sell-btn');
+    const isSellMode = sellBtn && sellBtn.classList.contains('active');
+    const actionType = isSellMode ? 'sell' : 'buy';
+    const bdtAmount = parseFloat(takaInput.value);
+
+    log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
+
+    try {
+        const response = await fetch('/api/trade/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: actionType,    
+                amount: bdtAmount      
+            }),
+            credentials: 'include'
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            log(`✅ ${result.message}`);
+            alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
+    
+            takaInput.value = "";
+            document.getElementById('coin-input').value = "";
+    
+            // 🎯 ফিক্স: ট্রেড সফল হলে ব্যাকগ্রাউন্ডে ইনস্ট্যান্ট অ্যাকাউন্ট ব্যালেন্স আপডেট হবে
+            if (typeof syncUserDataAndClosing === 'function') {
+                await syncUserDataAndClosing(); 
+            }
+        } else {
+            log(`❌ এরর: ${result.message}`);
+            alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
         }
-
-        // ফিক্সড: বাটন গ্রুপে 'active' ক্লাস কার ওপর আছে তা নিখুঁতভাবে চেক করা
-        const sellBtn = document.getElementById('sell-btn');
-        const isSellMode = sellBtn && sellBtn.classList.contains('active');
-        const actionType = isSellMode ? 'sell' : 'buy';
-        const bdtAmount = parseFloat(takaInput.value);
-
-        log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
-
-        try {
-            const response = await fetch('/api/trade/execute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: actionType,    
-                    amount: bdtAmount      
-                }),
-                credentials: 'include'
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                log(`✅ ${result.message}`);
-                alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
-        
-                takaInput.value = "";
-                document.getElementById('coin-input').value = "";
-        
+    } catch (error) {
+        log("❌ সার্ভার এরর!");
+        alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
+    }
+}; // 🎯 ফিক্স: ট্রাই-ক্যাচ এবং মেইন ফাংশন সঠিকভাবে ক্লোজ করা হয়েছে
         // 🎯 ফিক্স: ব্যালেন্স যেন সাথে সাথে পরিবর্তন হয়, তাই await দিয়ে কল করা হলো
            await syncUserDataAndClosing(); 
                }
@@ -665,7 +665,7 @@
                     log(`❌ এরর: ${result.message}`);
                     alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
                 }
-            } catch (error) {
+             catch (error) {
                 log("❌ সার্ভার এরর!");
                 alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
             }
