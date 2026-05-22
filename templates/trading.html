@@ -189,18 +189,17 @@
             <div class="stat-card"><span>আপনার AAF</span><b id="user-aaf">0.00</b></div>
             <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
         </div>
-
         <div class="trade-box">
     <div class="input-group">
         <div class="input-box">
-            <input type="number" id="taka-input" oninput="updateTradeCalculator()" placeholder="0.00" step="any">
+            <input type="number" id="taka-input" oninput="updateTradeCalculator('taka')" placeholder="0.00" step="any">
             <span>BDT</span>
         </div>
         
         <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
         
         <div class="input-box">
-            <input type="number" id="coin-input" placeholder="0.00" step="any">
+            <input type="number" id="coin-input" oninput="updateTradeCalculator('coin')" placeholder="0.00" step="any">
             <span>AAF</span>
         </div>
     </div>
@@ -215,6 +214,8 @@
             <b id="total-cost" style="color:var(--cyan)">৳ 0.00</b>
         </div>
     </div>
+        </div>
+        
         </div>
             <div class="btn-group">
                 <button id="buy-btn" class="btn buy">BUY SPOT</button>
@@ -314,13 +315,22 @@
             borderColor: '#374151',
         });
 
-        // ক্যান্ডেলগুলো যেন খুব বেশি বড় বা স্ক্রিনের বাইরে না যায়, তাই চার্ট স্কেল ফিক্স:
+        // 🎯 সাইড গ্রাফ বা প্রাইস স্কেল বাইন্যান্স স্টাইল কাস্টমাইজেশন
         chart.priceScale('right').applyOptions({
             autoScale: true,
+            borderColor: '#2ebd85', // সাইড গ্রাফের ডানদিকের বর্ডার লাইনের কালার গ্রিন করা হলো
+            textColor: '#94a3b8',   // স্কেলের ভেতরের প্রাইস টেক্সটের কালার
             scaleMargins: {
-                top: 0.1, // উপর থেকে ১০% জায়গা ফাঁকা থাকবে
-                bottom: 0.15, // নিচ থেকে ১৫% জায়গা ফাঁকা থাকবে
+                top: 0.1, 
+                bottom: 0.15, 
             },
+        });
+
+        // লাইভ প্রাইসের যে অনুভূমিক (Horizontal) রেখাটি চার্টে ভাসবে, সেটির কালার ফিক্স
+        candleSeries.applyOptions({
+            priceLineColor: '#2ebd85', // লাইভ প্রাইস লাইনের কালার গ্রিন হবে
+            priceLineWidth: 1,         // লাইনের পুরুত্ব
+            priceLineStyle: 2,         // ডটেড (Dotted) স্টাইল রেখা
         });
     }
 
@@ -406,48 +416,56 @@
         } catch (e) {}
     }
 
-    window.updateTradeCalculator = function() {
+    window.updateTradeCalculator = function(source) {
         const takaInput = document.getElementById('taka-input');
-        if (!takaInput) return;
-        
-        const amount = parseFloat(takaInput.value) || 0;
-        
-        // ০.৫% ফি হিসাব
-        const feeRate = 0.005; 
-        const fee = amount * feeRate;
-        const totalCost = amount + fee;
-        
-        // চার্টের কারেন্ট মার্কেট প্রাইস এবং ২% কম দামে বিক্রির লজিক
+        const coinInput = document.getElementById('coin-input');
+        if (!takaInput || !coinInput) return;
+
+        // চার্টের কারেন্ট মার্কেট প্রাইস এবং ২% স্প্রেড লজিক
         const currentMarketPrice = (typeof lastPrice !== 'undefined' && lastPrice > 0) ? lastPrice : 1.0;
         const buyPrice = currentMarketPrice;
         const sellPrice = currentMarketPrice * 0.98; 
 
         let finalExecutionPrice = buyPrice;
-        
-        // আপনার সাইটের sell বাটন একটিভ আছে কি না (sell-active ক্লাস দিয়ে চেক)
         const isSellMode = document.querySelector('.sell-active') || false; 
         if (isSellMode) {
             finalExecutionPrice = sellPrice;
         }
 
-        // ফাইনাল প্রাইস দিয়ে এএএফ কয়েন ক্যালকুলেট
-        const estimatedAAF = amount / finalExecutionPrice;
+        let amount = 0;
 
-        // আপনার HTML আইডি অনুযায়ী ডাটা রিয়েল-টাইম পুশ
-        if(document.getElementById('fee-amount')) {
-            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(4)}`;
-        }
-        if(document.getElementById('total-cost')) {
-            document.getElementById('total-cost').innerText = `৳ ${totalCost.toFixed(4)}`;
-        }
-        
-        const coinInput = document.getElementById('coin-input');
-        if (coinInput) {
+        // 🔄 যদি ইউজার কয়েন বক্সে টাইপ করে (কয়েন থেকে টাকা হিসাব)
+        if (source === 'coin') {
+            const coins = parseFloat(coinInput.value) || 0;
+            amount = coins * finalExecutionPrice; // কয়েনকে প্রাইস দিয়ে গুণ করে টাকা বের করা হলো
+            if (coinInput.value !== "") {
+                takaInput.value = amount.toFixed(2);
+            } else {
+                takaInput.value = "";
+            }
+        } 
+        // 🔄 যদি ইউজার টাকা বক্সে টাইপ করে (টাকা থেকে কয়েন হিসাব)
+        else {
+            amount = parseFloat(takaInput.value) || 0;
+            const estimatedAAF = amount / finalExecutionPrice;
             if (takaInput.value !== "") {
                 coinInput.value = estimatedAAF.toFixed(4);
             } else {
                 coinInput.value = "";
             }
+        }
+
+        // ০.৫% ফি এবং মোট খরচ হিসাব (টাকার পরিমাণের ওপর ভিত্তি করে)
+        const feeRate = 0.005; 
+        const fee = amount * feeRate;
+        const totalCost = amount + fee;
+
+        // HTML টেক্সট আপডেট
+        if(document.getElementById('fee-amount')) {
+            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(4)}`;
+        }
+        if(document.getElementById('total-cost')) {
+            document.getElementById('total-cost').innerText = `৳ ${totalCost.toFixed(4)}`;
         }
     }
     
