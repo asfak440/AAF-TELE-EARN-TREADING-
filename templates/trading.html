@@ -28,13 +28,12 @@
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--bg) #ffffff
+            background-color: #05080d; /* 👈 বাইনান্সের মতো ডার্ক ব্যাকগ্রাউন্ড */
+            color: #ffffff;
             font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding-bottom: 110px;
             overflow-x: hidden;
-            transition: background 0.3s ease;
         }
 
         /* হেডার ও ফিক্সড এলিমেন্ট */
@@ -90,12 +89,23 @@
     position: relative;
     transition: background 0.3s;
 }
-
-        #chart-theme-toggle {
-            position: absolute; left: 10px; bottom: 10px; z-index: 3001;
-            padding: 4px 8px; border-radius: 4px; cursor: pointer;
-            border: 1px solid var(--border); background: var(--card); color: #fff;
-            display: flex; align-items: center; gap: 6px; font-size: 9px;
+        
+#chart-theme-toggle {
+    position: fixed;   /* 👈 পুরো স্ক্রিনের সাপেক্ষে ফিক্সড পজিশন */
+    right: 15px;       /* 👈 ডান পাশ থেকে ১৫ পিক্সেল দূরত্ব */
+    bottom: 90px;      /* 👈 নিচের ডক নেভিগেশনের ঠিক ওপরে ভেসে থাকবে */
+    z-index: 5001;     /* 👈 সবার ওপরে দেখানোর জন্য জেন-ইনডেক্স বাড়ানো হলো */
+    padding: 6px 10px; 
+    border-radius: 20px; /* 👈 গোল ক্যাপসুল বাটন লুক দেওয়ার জন্য */
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    background: #1e293b; 
+    color: #fff;
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    font-size: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* 👈 বাটনটি সুন্দর ফুটে ওঠার জন্য শ্যাডো */
         }
         body.light #chart-theme-toggle { color: #0f172a; }
 
@@ -121,9 +131,9 @@
         body.light .input-box input { background: #fff; color: #000; }
         .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
 
-        .fee-card { background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
-        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        body.light .fee-row { color: #0f172a; }
+        .fee-card { background: #0f172a; padding: 12px; border-radius: 10px; border: 1px dashed rgba(255, 255, 255, 0.15); margin-bottom: 15px; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: #94a3b8 !important; }
+        .fee-row b { color: #ffffff !important; }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
@@ -205,10 +215,10 @@
             <a href="/wallet" class="nav-item"><i class="fas fa-wallet"></i>Wallet</a>
             <a href="/account" class="nav-item"><i class="fas fa-user-circle"></i>Account</a>
         </nav>
-                                                   </div>
+    </div>
 
     
-        <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <script>
         // থিম বাটন ক্লিক ফিক্স
@@ -283,10 +293,11 @@
     let isDarkTheme = true; 
 
     const themeColors = {
-        dark: { bg: '#0f172a', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
-        light: { bg: '#ffffff', grid: 'rgba(0, 0, 0, 0.06)', text: '#334155', upCandle: '#00c853', downCandle: '#ff1744' }
+        dark: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
+        light: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' }
     };
 
+    
     // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
     function initTradingViewChart() {
         if (!window.LightweightCharts) return;
