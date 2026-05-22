@@ -40,13 +40,15 @@
         /* হেডার ও ফিক্সড এলিমেন্ট */
         .header {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 20px; z-index: 3000;
+            top: 0; left: 0; width: 100%; height: 20px; z-index: 3000; /* 👈 উচ্চতা ২০px-ই রইল */
             background: var(--card);
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 15px; box-sizing: border-box;
             border-bottom: 1px solid var(--border);
-        }
-        body.light .header h2 { color: #0f172a; }
+         }
+         .header h2 { 
+             color: #ffffff !important; /* 👈 হেডারের নাম এখন থেকে সবসময় সাদা দেখাবে */
+         }
 
         #admin-ad-box {
             position: fixed; top: 20px; left: 0; width: 100%; height: 20px;
@@ -107,9 +109,8 @@
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .stat-card span { font-size: 10px; color: var(--text); display: block; }
-        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) #ffffff; }
-        body.light .stat-card b { color: #0f172a; }
-
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: #ffffff !important; /* 👈 ব্যালেন্সের সংখ্যা এখন সবসময় ঝকঝকে সাদা দেখাবে */
+        }
         .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
         .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
         .input-box { flex: 1; position: relative; }
