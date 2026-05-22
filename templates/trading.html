@@ -190,20 +190,35 @@
             <div class="stat-card"><span>টাকা ব্যালেন্স</span><b id="user-cash">৳ 0.00</b></div>
         </div>
         <div class="trade-box">
-            <div class="input-group">
-                <div class="input-box"><input type="number" id="taka-input" placeholder="0.00" step="any"><span>BDT</span></div>
-                <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
-                <div class="input-box"><input type="number" id="coin-input" placeholder="0.00" step="any"><span>AAF</span></div>
-            </div>
-            <div class="fee-card">
-                <div class="fee-row"><span>ফি (<span id="fee-perc">0.5</span>%):</span><b id="fee-amount">৳ 0.00</b></div>
-                <div class="fee-row"><span>মোট খরচ:</span><b id="total-cost" style="color:var(--cyan)">৳ 0.00</b></div>
-            </div>
-            <div class="btn-group">
-                <button id="buy-btn" class="btn buy">BUY SPOT</button>
-                <button id="sell-btn" class="btn sell">SELL SPOT</button>
-            </div>
+     <div class="input-group">
+        <div class="input-box">
+            <input type="number" id="taka-input" oninput="updateTradeCalculator('taka')" placeholder="0.00" step="any">
+            <span>BDT</span>
         </div>
+        
+        <i class="fas fa-exchange-alt" style="color:var(--text)"></i>
+        
+        <div class="input-box">
+            <input type="number" id="coin-input" oninput="updateTradeCalculator('coin')" placeholder="0.00" step="any">
+            <span>AAF</span>
+        </div>
+    </div>
+    
+    <div class="fee-card">
+        <div class="fee-row">
+            <span>ফি (<span id="fee-perc">0.5</span>%):</span>
+            <b id="fee-amount">৳ 0.00</b>
+        </div>
+        <div class="fee-row">
+            <span>মোট খরচ:</span>
+            <b id="total-cost" style="color:var(--cyan)">৳ 0.00</b>
+        </div>
+    </div>
+    
+    <div class="btn-group">
+        <button id="buy-btn" class="btn buy active" onclick="setTradeMode('buy')">BUY SPOT</button>
+        <button id="sell-btn" class="btn sell" onclick="setTradeMode('sell')">SELL SPOT</button>
+    </div>
     </div>
 
     <div class="dock-container">
