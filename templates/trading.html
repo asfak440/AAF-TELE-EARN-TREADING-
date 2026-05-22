@@ -29,7 +29,7 @@
 
         body {
             background-color: var(--bg);
-            color: var(--bg) == #ffffff ? #000 : #fff;
+            color: var(--bg) #ffffff
             font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding-bottom: 110px;
@@ -107,7 +107,7 @@
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .stat-card span { font-size: 10px; color: var(--text); display: block; }
-        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) == #ffffff ? #000 : #fff; }
+        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) #ffffff; }
         body.light .stat-card b { color: #0f172a; }
 
         .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
@@ -117,7 +117,7 @@
             width: 100%; background: #000; border: 1px solid var(--border);
             padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none;
         }
-        body.light class.input-box input { background: #fff; }
+        body.light .input-box input { background: #fff; color: #000; }
         .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
 
         .fee-card { background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
@@ -135,7 +135,7 @@
             width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
         }
-        body.light class.dock-nav { background: rgba(255, 255, 255, 0.95); }
+        body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
         .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
         .nav-item.active { color: var(--cyan); }
