@@ -299,7 +299,6 @@
     async function fetchFirebaseHistory() {
         try {
             log("📡 Firebase থেকে ২ মাসের ক্যান্ডেল ব্যাকআপ আনা হচ্ছে...");
-            // আপনার ব্যাকএন্ডের ফায়ারবেস হিস্ট্রি এপিআই রুট (যা ফায়ারবেস রেফারেন্স থেকে ডাটা পাঠায়)
             const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
@@ -309,7 +308,7 @@
             if (candleSeries && historyCandles.length > 0) {
                 let parsed = historyCandles.map(c => {
                     let t = parseInt(c.time);
-                    if (t > 9999999999) t = Math.floor(t / 1000); // সেকেন্ডে রূপান্তর
+                    if (t > 9999999999) t = Math.floor(t / 1000); 
                     return {
                         time: t,
                         open: parseFloat(c.open),
@@ -318,15 +317,22 @@
                         close: parseFloat(c.close)
                     };
                 });
-                parsed.sort((a, b) => a.time - b.time); // টাইম সিকোয়েন্স ফিক্স
+                parsed.sort((a, b) => a.time - b.time); 
                 candleSeries.setData(parsed);
                 chart.timeScale().fitContent();
-                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে`);
+
+                // লাস্ট ক্যান্ডেল ট্র্যাক মেমরিতে সেট
+                const lastValid = parsed[parsed.length - 1];
+                lastPrice = lastValid.close;
+                currentBar = { ...lastValid };
+
+                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে`);
             }
         } catch (err) {
             log("⚠️ ফায়ারবেস ডাটাবেস হিস্ট্রি কানেকশন পেন্ডিং...");
         }
     }
+            
 
     // 🕯️ ২. মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও রিয়েল-টাইম কাঁপানো
     async function syncMongoDBLive() {
@@ -380,16 +386,15 @@
                 if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
             }
 
-            // যখন কাঁটায় কাঁটায় ১ মিনিট (বা নির্দিষ্ট টাইমফ্রেম) পূর্ণ হবে
-            const secs = new Date().getSeconds();
-            const mins = new Date().getMinutes();
-            if (secs === 0 && mins % currentTimeframe === 0) {
+            // যখন কাঁটায় কাঁটায় ১ মিনিট (বা নির্দিষ্ট টাইমফ্রেম) পূর্ণ হবে (Lock Added)
+            const now = new Date();
+            const secs = now.getSeconds();
+            const mins = now.getMinutes();
+            if (secs === 0 && mins % currentTimeframe === 0 && mins !== lastSavedMinute) {
+                lastSavedMinute = mins; // লক একটিভ হলো
                 log("🔄 ক্যান্ডেল টাইম শেষ! MongoDB ক্লোজড ডাটা Firebase-এ পাঠাচ্ছে...");
                 
-                // আপনার ব্যাকএন্ডের ক্যান্ডেল আপডেট রুট হিট করা
                 await fetch('/api/market/update_candle', { method: 'POST', credentials: 'include' });
-                
-                // ফায়ারবেস থেকে ফ্রেশ ক্যান্ডেল হিস্ট্রি চার্টে রি-রেন্ডার করা
                 setTimeout(fetchFirebaseHistory, 1500); 
             }
         } catch (err) {
@@ -457,6 +462,7 @@
                 const selectedTf = parseInt(this.getAttribute('data-tf'));
                 if (selectedTf && selectedTf !== currentTimeframe) {
                     currentTimeframe = selectedTf;
+                    lastSavedMinute = -1; // টাইমফ্রেম বদলালে লক রিলিজ করার লাইন
                     log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
                     initTradingViewChart();
                     fetchFirebaseHistory();
