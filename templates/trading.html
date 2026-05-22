@@ -337,42 +337,46 @@
     // 🕯️ ২. মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও রিয়েল-টাইম কাঁপানো
     async function syncMongoDBLive() {
         try {
-            // আপনার প্রোভাইড করা লাইভ মার্কেট প্রাইস এপিআই রুট
             const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
             const data = await res.json();
             
             if (data && data.live_price) {
                 const livePriceFromMongo = parseFloat(data.live_price);
                 
-                // লাইভ প্রাইস টেক্সট ডাইনামিক রেন্ডারিং
                 const priceEl = document.getElementById('live-price');
                 if (priceEl) {
                     priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
                     priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
-                // মঙ্গোডিবির প্রাইস সরাসরি চার্টের লাইভ রানিং বারে পুশ করা
+                // মঙ্গোডিবির প্রাইস এখানে পুশ হবে (যা ওপরে ভুল করে ঢুকেছিল)
                 if (candleSeries && livePriceFromMongo) {
                     const now = Math.floor(Date.now() / 1000);
                     const interval = currentTimeframe * 60;
                     const currentBarTime = Math.floor(now / interval) * interval;
 
-                    candleSeries.update({
-                        time: currentBarTime,
-                        open: lastPrice || livePriceFromMongo,
-                        high: Math.max(lastPrice, livePriceFromMongo) * 1.001,
-                        low: Math.min(lastPrice, livePriceFromMongo) * 0.999,
-                        close: livePriceFromMongo
-                    });
+                    if (!currentBar || currentBar.time !== currentBarTime) {
+                        currentBar = {
+                            time: currentBarTime,
+                            open: lastPrice || livePriceFromMongo,
+                            high: livePriceFromMongo,
+                            low: livePriceFromMongo,
+                            close: livePriceFromMongo
+                        };
+                    } else {
+                        currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
+                        currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
+                        currentBar.close = livePriceFromMongo;
+                    }
+
+                    candleSeries.update(currentBar);
                 }
 
                 lastPrice = livePriceFromMongo;
             }
-        } catch (e) {
-            // সাইলেন্ট এরর হ্যান্ডলার
-        }
+        } catch (e) {}
     }
-
+    
     // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
     async function syncUserDataAndClosing() {
         try {
@@ -439,8 +443,7 @@
                     wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle
                 });
             }
-        });
-    }
+        
 
     // ⏳ টাইমফ্রেম লিসেনার
     function setupTimeframeListeners() {
