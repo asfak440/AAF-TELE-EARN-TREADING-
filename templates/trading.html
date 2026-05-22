@@ -609,8 +609,7 @@
         });
     }
 
-        // 🚀 ৩. ফাইনাল এক্সিকিউশন অর্ডার এপিআই কল (বাটন ট্র্যাকিং ফিক্সড)
-           window.executeTradeAction = async function() {
+        window.executeTradeAction = async function() {
     const takaInput = document.getElementById('taka-input');
     if (!takaInput || parseFloat(takaInput.value) <= 0) {
         alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
@@ -645,7 +644,7 @@
             takaInput.value = "";
             document.getElementById('coin-input').value = "";
     
-            // 🎯 ফিক্স: ট্রেড সফল হলে ব্যাকগ্রাউন্ডে ইনস্ট্যান্ট অ্যাকাউন্ট ব্যালেন্স আপডেট হবে
+            // ট্রেড সফল হলে ব্যাকগ্রাউন্ডে ইনস্ট্যান্ট অ্যাকাউন্ট ব্যালেন্স আপডেট হবে
             if (typeof syncUserDataAndClosing === 'function') {
                 await syncUserDataAndClosing(); 
             }
@@ -657,19 +656,7 @@
         log("❌ সার্ভার এরর!");
         alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
     }
-}; // 🎯 ফিক্স: ট্রাই-ক্যাচ এবং মেইন ফাংশন সঠিকভাবে ক্লোজ করা হয়েছে
-        // 🎯 ফিক্স: ব্যালেন্স যেন সাথে সাথে পরিবর্তন হয়, তাই await দিয়ে কল করা হলো
-           await syncUserDataAndClosing(); 
-               }
-               } else {
-                    log(`❌ এরর: ${result.message}`);
-                    alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
-                }
-             catch (error) {
-                log("❌ সার্ভার এরর!");
-                alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
-            }
-        };
+};
     
     // বুট রানার
     function startTradingEngine() {
