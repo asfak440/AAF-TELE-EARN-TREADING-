@@ -263,6 +263,10 @@
     let lastPrice = 1.0;
     let currentTimeframe = 1; 
     let isDarkTheme = true; 
+    
+    // 🔐 ক্যান্ডেল রিফ্রেশে সেভ রাখার লক ও মেমোরি ভ্যারিয়েবল
+    let currentBar = null; 
+    let lastSavedMinute = -1; 
 
     const themeColors = {
         dark: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
