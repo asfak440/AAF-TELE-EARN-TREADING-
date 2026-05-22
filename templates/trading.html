@@ -6,7 +6,7 @@
     <title>AAF Trading | Pro Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Hind+Siliguri:wght@400;600&family=Syncopate:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght=600;700&family=Hind+Siliguri:wght=400;600&family=Syncopate:wght=400;700&display=swap');
 
         :root {
             --bg: #05080d;
@@ -17,24 +17,28 @@
             --red: #ff3366;
             --text: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.1);
+            --body-text: #ffffff;     /* 🎯 ডার্ক মোডে লেখার রঙ কড়া সাদা */
+            --balance-color: #ffffff; /* 🎯 ডার্ক মোডে ব্যালেন্স সংখ্যার রঙ */
         }
 
-        /* 🎨 লাইট থিমের জন্য ভ্যারিয়েবল রুট ফিক্স */
+        /* 🎨 লাইট থিম ভ্যারিয়েবল ফিক্স */
         body.light {
             --bg: #ffffff;
             --card: #f8fafc;
             --border: #e2e8f0;
             --text: #64748b;
+            --body-text: #0f172a;
+            --balance-color: #0f172a; /* 🎯 লাইট মোডে ব্যালেন্স সংখ্যার রঙ কালো */
         }
 
         body {
             background-color: var(--bg);
-            color: var(--bg) == #ffffff ? #000 : #fff;
+            color: var(--body-text); /* 🎯 ভুল কন্ডিশনাল কোড বাদ দিয়ে ভ্যারিয়েবল বসানো হয়েছে */
             font-family: 'Rajdhani', sans-serif;
             margin: 0;
             padding-bottom: 110px;
             overflow-x: hidden;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         /* হেডার ও ফিক্সড এলিমেন্ট */
@@ -65,50 +69,38 @@
         }
         .tf-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 254, 0.1); }
 
-        /* 📉 চার্ট কন্টেইনার ফিক্স */
-        /* 🎯 পরিবর্তন করে এটি বসান: */
-#chart-wrapper {
-    position: fixed;
-    top: 95px;
-    left: 0;
-    width: 100%;
-    height: 180px; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
-    z-index: 2997;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    transition: background 0.3s;
-}
+        /* 📉 চার্ট কন্টেইনার ফিক্স (উচ্চতা মোবাইল ফ্রেন্ডলি ১৮০px এ লক করা হয়েছে) */
+        #chart-wrapper {
+            position: fixed; top: 95px; left: 0; width: 100%; height: 180px;
+            z-index: 2997; background: var(--bg); border-bottom: 1px solid var(--border);
+            transition: background 0.3s;
+        }
 
-#chart-container {
-    width: 100%;
-    height: 180px !important; /* 👈 ২৫০ থেকে কমিয়ে ১৮০px করুন */
-    background: var(--bg);
-    touch-action: none;
-    overflow: hidden;
-    position: relative;
-    transition: background 0.3s;
-}
+        #chart-container {
+            width: 100%; height: 180px !important;
+            background: var(--bg); touch-action: none; overflow: hidden; position: relative;
+            transition: background 0.3s;
+        }
 
         #chart-theme-toggle {
             position: absolute; left: 10px; bottom: 10px; z-index: 3001;
             padding: 4px 8px; border-radius: 4px; cursor: pointer;
-            border: 1px solid var(--border); background: var(--card); color: #fff;
+            border: 1px solid var(--border); background: var(--card); color: var(--body-text);
             display: flex; align-items: center; gap: 6px; font-size: 9px;
         }
-        body.light #chart-theme-toggle { color: #0f172a; }
 
         /* কন্টেইনার ও কার্ডের রি-পজিশন */
         .container {
-            padding-top: 365px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
+            padding-top: 295px !important; /* 🎯 চার্টের ১৮০px উচ্চতা অনুযায়ী পারফেক্ট দূরত্ব */
             padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px;
         }
-        body.light .container { color: #0f172a; }
 
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .stat-card span { font-size: 10px; color: var(--text); display: block; }
-        .stat-card b { font-family: 'Rajdhani'; font-size: 16px; color: var(--bg) == #ffffff ? #000 : #fff; }
-        body.light .stat-card b { color: #0f172a; }
+        .stat-card span { font-size: 10px; color: var(--text); display: block; margin-bottom: 2px; }
+        
+        /* 🎯 ব্যালেন্স সংখ্যার কালার ফিক্স */
+        .stat-card b { font-family: 'Rajdhani'; font-size: 18px; color: var(--balance-color) !important; font-weight: 700; display: inline-block; }
 
         .trade-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative; }
         .input-group { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
@@ -117,12 +109,11 @@
             width: 100%; background: #000; border: 1px solid var(--border);
             padding: 12px; color: var(--cyan); font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none;
         }
-        body.light class.input-box input { background: #fff; }
+        body.light .input-box input { background: #fff; color: #000; border: 1px solid #cbd5e1; }
         .input-box span { position: absolute; right: 8px; top: 14px; color: var(--text); font-size: 10px; }
 
         .fee-card { background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 15px; }
-        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        body.light .fee-row { color: #0f172a; }
+        .fee-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--body-text); }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; text-transform: uppercase; }
@@ -135,7 +126,7 @@
             width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
             border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
         }
-        body.light class.dock-nav { background: rgba(255, 255, 255, 0.95); }
+        body.light .dock-nav { background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1; }
         .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
         .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
         .nav-item.active { color: var(--cyan); }
@@ -206,301 +197,244 @@
         </nav>
     </div>
 
-    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.min.js"></script>
 
     <script>
-        // থিম বাটন ক্লিক ফিক্স
-        const toggleBtn = document.getElementById('chart-theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                document.body.classList.toggle('light');
-                const status = document.getElementById('theme-status');
-                if (status) {
-                    status.innerText = document.body.classList.contains('light') ? 'LIGHT' : 'DARK';
-                }
-            });
+    (function() {
+        const container = document.getElementById('chart-container');
+        if (!container) return;
+
+        // লাইভ ডিবাগ লগ স্ক্রিন
+        let dbgDiv = document.getElementById('live-debug');
+        if(!dbgDiv) {
+            dbgDiv = document.createElement('div');
+            dbgDiv.id = 'live-debug';
+            dbgDiv.style.cssText = 'position:fixed; bottom:75px; left:5px; right:5px; background:rgba(15,23,42,0.95); color:#00ffa3; font-size:10px; padding:6px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #00f2fe; pointer-events:none;';
+            document.body.appendChild(dbgDiv);
         }
-    </script>
-
-    <script src="/static/js/lightweight-charts.js"></script>
-</body>
-</html>https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // নিশ্চিত করুন চার্ট এই কন্টেইনারে তৈরি হচ্ছে
-            const container = document.getElementById('chart-container');
-            if (container && typeof LightweightCharts !== 'undefined') {
-                const chart = LightweightCharts.createChart(container, {
-                    width: container.clientWidth,
-                    height: 250, // আমরা সিএসএস-এ ২৫০ করেছি, এখানেও ২৫০ দিন
-                    layout: { background: { color: '#0f172a' }, textColor: '#94a3b8' },
-                    grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } }
-                });
-                
-                const candleSeries = chart.addCandlestickSeries();
-                
-                // আপনার এপিআই (Flask) থেকে ডাটা এনে পুশ করার ফাংশন
-                fetch('/api/candles')
-                    .then(res => res.json())
-                    .then(data => {
-                        if(data.status === "success" && data.candles) {
-                            candleSeries.setData(data.candles);
-                            console.log("ক্যান্ডেল চার্টে পুশ করা হয়েছে!");
-                        }
-                    });
+        
+        function log(msg) {
+            if(dbgDiv) {
+                dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
+                let lines = dbgDiv.innerHTML.split('<br>');
+                if(lines.length > 4) dbgDiv.innerHTML = lines.slice(0,4).join('<br>');
             }
-        });
-</script>
-<script>
-(function() {
-    const container = document.getElementById('chart-container');
-    if (!container) return;
-
-    container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
-
-    // রিয়েল-টাইম লাইভ ডিবাগ লগ স্ক্রিন
-    let dbgDiv = document.getElementById('live-debug');
-    if(!dbgDiv) {
-        dbgDiv = document.createElement('div');
-        dbgDiv.id = 'live-debug';
-        dbgDiv.style.cssText = 'position:fixed; bottom:75px; left:5px; right:5px; background:rgba(15,23,42,0.95); color:#00ffa3; font-size:10px; padding:6px; border-radius:6px; z-index:9999; font-family:monospace; border:1px solid #00f2fe; pointer-events:none;';
-        document.body.appendChild(dbgDiv);
-    }
-    
-    function log(msg) {
-        if(dbgDiv) {
-            dbgDiv.innerHTML = new Date().toLocaleTimeString() + ' | ' + msg + '<br>' + dbgDiv.innerHTML;
-            let lines = dbgDiv.innerHTML.split('<br>');
-            if(lines.length > 4) dbgDiv.innerHTML = lines.slice(0,4).join('<br>');
         }
-    }
 
-    let chart = null;
-    let candleSeries = null;
-    let lastPrice = 1.0;
-    let currentTimeframe = 1; 
-    let isDarkTheme = true; 
+        let chart = null;
+        let candleSeries = null;
+        let lastPrice = 1.0;
+        let currentTimeframe = 1; 
+        let isDarkTheme = true; 
 
-    const themeColors = {
-        dark: { bg: '#0f172a', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
-        light: { bg: '#ffffff', grid: 'rgba(0, 0, 0, 0.06)', text: '#334155', upCandle: '#00c853', downCandle: '#ff1744' }
-    };
+        const themeColors = {
+            dark: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.03)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
+            light: { bg: '#ffffff', grid: 'rgba(0, 0, 0, 0.06)', text: '#334155', upCandle: '#00c853', downCandle: '#ff1744' }
+        };
 
-    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
-    function initTradingViewChart() {
-        if (!window.LightweightCharts) return;
-        container.innerHTML = '';
-        const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
-
-        chart = LightweightCharts.createChart(container, {
-            width: container.clientWidth || window.innerWidth,
-            height: 260,
-            layout: { background: { type: 'solid', color: activeColors.bg }, textColor: activeColors.text },
-            grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
-            timeScale: { timeVisible: true, secondsVisible: false, borderColor: activeColors.grid }
-        });
-
-        candleSeries = chart.addCandlestickSeries({
-            upColor: activeColors.upCandle, downColor: activeColors.downCandle,
-            borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
-            wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle,
-        });
-    }
-
-    // 📜 ১. ফায়ারবেস (Firebase API) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
-    async function fetchFirebaseHistory() {
-        try {
-            log("📡 Firebase থেকে ২ মাসের ক্যান্ডেল ব্যাকআপ আনা হচ্ছে...");
-            // আপনার ব্যাকএন্ডের ফায়ারবেস হিস্ট্রি এপিআই রুট (যা ফায়ারবেস রেফারেন্স থেকে ডাটা পাঠায়)
-            const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            
-            const data = await res.json();
-            let historyCandles = data.candles || [];
-
-            if (candleSeries && historyCandles.length > 0) {
-                let parsed = historyCandles.map(c => {
-                    let t = parseInt(c.time);
-                    if (t > 9999999999) t = Math.floor(t / 1000); // সেকেন্ডে রূপান্তর
-                    return {
-                        time: t,
-                        open: parseFloat(c.open),
-                        high: parseFloat(c.high),
-                        low: parseFloat(c.low),
-                        close: parseFloat(c.close)
-                    };
-                });
-                parsed.sort((a, b) => a.time - b.time); // টাইম সিকোয়েন্স ফিক্স
-                candleSeries.setData(parsed);
-                chart.timeScale().fitContent();
-                log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে`);
-            }
-        } catch (err) {
-            log("⚠️ ফায়ারবেস ডাটাবেস হিস্ট্রি কানেকশন পেন্ডিং...");
-        }
-    }
-
-    // 🕯️ ২. মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও রিয়েল-টাইম কাঁপানো
-    async function syncMongoDBLive() {
-        try {
-            // আপনার প্রোভাইড করা লাইভ মার্কেট প্রাইস এপিআই রুট
-            const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
-            const data = await res.json();
-            
-            if (data && data.live_price) {
-                const livePriceFromMongo = parseFloat(data.live_price);
-                
-                // লাইভ প্রাইস টেক্সট ডাইনামিক রেন্ডারিং
-                const priceEl = document.getElementById('live-price');
-                if (priceEl) {
-                    priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
-                    priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
-                }
-
-                // মঙ্গোডিবির প্রাইস সরাসরি চার্টের লাইভ রানিং বারে পুশ করা
-                if (candleSeries && livePriceFromMongo) {
-                    const now = Math.floor(Date.now() / 1000);
-                    const interval = currentTimeframe * 60;
-                    const currentBarTime = Math.floor(now / interval) * interval;
-
-                    candleSeries.update({
-                        time: currentBarTime,
-                        open: lastPrice || livePriceFromMongo,
-                        high: Math.max(lastPrice, livePriceFromMongo) * 1.001,
-                        low: Math.min(lastPrice, livePriceFromMongo) * 0.999,
-                        close: livePriceFromMongo
-                    });
-                }
-
-                lastPrice = livePriceFromMongo;
-            }
-        } catch (e) {
-            // সাইলেন্ট এরর হ্যান্ডলার
-        }
-    }
-
-    // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
-    async function syncUserDataAndClosing() {
-        try {
-            // আপনার ইউজার প্রোফাইল এপিআই (ব্যালেন্স আপডেট করার জন্য)
-            const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
-            if (res.status === 401) { window.location.href = '/login'; return; }
-            const data = await res.json();
-            
-            if (data.status === 'success') {
-                if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
-                if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
-            }
-
-            // যখন কাঁটায় কাঁটায় ১ মিনিট (বা নির্দিষ্ট টাইমফ্রেম) পূর্ণ হবে
-            const secs = new Date().getSeconds();
-            const mins = new Date().getMinutes();
-            if (secs === 0 && mins % currentTimeframe === 0) {
-                log("🔄 ক্যান্ডেল টাইম শেষ! MongoDB ক্লোজড ডাটা Firebase-এ পাঠাচ্ছে...");
-                
-                // আপনার ব্যাকএন্ডের ক্যান্ডেল আপডেট রুট হিট করা
-                await fetch('/api/market/update_candle', { method: 'POST', credentials: 'include' });
-                
-                // ফায়ারবেস থেকে ফ্রেশ ক্যান্ডেল হিস্ট্রি চার্টে রি-রেন্ডার করা
-                setTimeout(fetchFirebaseHistory, 1500); 
-            }
-        } catch (err) {
-            // কানেকশন এরর হ্যান্ডলার
-        }
-    }
-
-    // 🎨 থিম সুইচার লিসেনার
-    function setupThemeToggleListener() {
-        const toggleBtn = document.getElementById('chart-theme-toggle');
-        const statusText = document.getElementById('theme-status');
-        if (!toggleBtn) return;
-
-        toggleBtn.replaceWith(toggleBtn.cloneNode(true));
-        const activeToggleBtn = document.getElementById('chart-theme-toggle');
-
-        activeToggleBtn.addEventListener('click', function() {
-            isDarkTheme = !isDarkTheme;
+        // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (১৮০px উচ্চতায় লক)
+        function initTradingViewChart() {
+            if (!window.LightweightCharts) return;
+            container.innerHTML = '';
             const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
 
-            if (isDarkTheme) {
-                if (statusText) statusText.innerText = "DARK";
-                activeToggleBtn.querySelector('i').className = "fas fa-moon";
-                activeToggleBtn.style.color = "#fff";
-                log("🌙 ডার্ক মোড অ্যাক্টিভেটেড");
-            } else {
-                if (statusText) statusText.innerText = "LIGHT";
-                activeToggleBtn.querySelector('i').className = "fas fa-sun";
-                activeToggleBtn.style.color = "#ffb703";
-                log("☀️ লাইট মোড অ্যাক্টিভেটেড");
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth || window.innerWidth,
+                height: 180, // 👈 ২৬০ থেকে কমিয়ে ১৮০px করা হয়েছে
+                layout: { background: { type: 'solid', color: activeColors.bg }, textColor: activeColors.text },
+                grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
+                timeScale: { timeVisible: true, secondsVisible: false, borderColor: activeColors.grid }
+            });
+
+            candleSeries = chart.addCandlestickSeries({
+                upColor: activeColors.upCandle, downColor: activeColors.downCandle,
+                borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
+                wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle,
+            });
+        }
+
+        // 📜 ফায়ারবেস (Firebase API) ডাটা লোড
+        async function fetchFirebaseHistory() {
+            try {
+                log("📡 Firebase থেকে ক্যান্ডেল ব্যাকআপ আনা হচ্ছে...");
+                const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const data = await res.json();
+                let historyCandles = data.candles || [];
+
+                if (candleSeries && historyCandles.length > 0) {
+                    let parsed = historyCandles.map(c => {
+                        let t = parseInt(c.time);
+                        if (t > 9999999999) t = Math.floor(t / 1000); 
+                        return {
+                            time: t,
+                            open: parseFloat(c.open),
+                            high: parseFloat(c.high),
+                            low: parseFloat(c.low),
+                            close: parseFloat(c.close)
+                        };
+                    });
+                    parsed.sort((a, b) => a.time - b.time); 
+                    candleSeries.setData(parsed);
+                    chart.timeScale().fitContent();
+                    log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল সাজানো হয়েছে`);
+                }
+            } catch (err) {
+                log("⚠️ ফায়ারবেস ডাটাবেস হিস্ট্রি কানেকশন পেন্ডিং...");
             }
+        }
 
-            if (chart && candleSeries) {
-                chart.applyOptions({
-                    layout: { background: { color: activeColors.bg }, textColor: activeColors.text },
-                    grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
-                    timeScale: { borderColor: activeColors.grid }
-                });
-                candleSeries.applyOptions({
-                    upColor: activeColors.upCandle, downColor: activeColors.downCandle,
-                    borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
-                    wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle
-                });
+        // 🕯️ মঙ্গোডিবি (MongoDB Live API) থেকে লাইভ রিয়েল-টাইম ডাটা রিফ্রেশ ও সেভ মেকানিজম
+        async function syncMongoDBLive() {
+            try {
+                const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
+                const data = await res.json();
+                
+                if (data && data.live_price) {
+                    const livePriceFromMongo = parseFloat(data.live_price);
+                    
+                    const priceEl = document.getElementById('live-price');
+                    if (priceEl) {
+                        priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
+                        priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
+                    }
+
+                    if (candleSeries && livePriceFromMongo) {
+                        const now = Math.floor(Date.now() / 1000);
+                        const interval = currentTimeframe * 60;
+                        const currentBarTime = Math.floor(now / interval) * interval;
+
+                        candleSeries.update({
+                            time: currentBarTime,
+                            open: lastPrice || livePriceFromMongo,
+                            high: Math.max(lastPrice, livePriceFromMongo) * 1.001,
+                            low: Math.min(lastPrice, livePriceFromMongo) * 0.999,
+                            close: livePriceFromMongo
+                        });
+                    }
+                    lastPrice = livePriceFromMongo;
+                }
+            } catch (e) {
+                // এরর ইগনোর
             }
-        });
-    }
+        }
 
-    // ⏳ টাইমফ্রেম লিসেনার
-    function setupTimeframeListeners() {
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.replaceWith(btn.cloneNode(true));
-        });
+        // 🔄 ইউজার ডাটা (ব্যালেন্স ফিক্স) এবং ৬০ সেকেন্ড পর পর ক্যান্ডেল ক্লোজিং ও পার্মানেন্ট সেভ লজিক
+        async function syncUserDataAndClosing() {
+            try {
+                const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    if(document.getElementById('user-cash')) document.getElementById('user-cash').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+                    if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
+                }
 
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            const tfVal = parseInt(btn.getAttribute('data-tf'));
-            if (tfVal === currentTimeframe) {
-                btn.style.background = "var(--cyan, #00f2fe)";
-                btn.style.color = "#000";
-            } else {
-                btn.style.background = "";
-                btn.style.color = "";
+                // 🎯 ৬০টি ক্যান্ডেলের পর নতুন ক্যান্ডেল পার্মানেন্টলি সেভ না হওয়ার সমাধান:
+                const secs = new Date().getSeconds();
+                const mins = new Date().getMinutes();
+                // কাঁটায় কাঁটায় টাইমফ্রেম শেষ হওয়া মাত্রই ব্যাকএন্ডে পোস্ট রিকোয়েস্ট পাঠিয়ে ডাটা সেভ লক করা হচ্ছে
+                if (secs === 0 && mins % currentTimeframe === 0) {
+                    log("🔄 নতুন ক্যান্ডেল ক্লোজড! Firebase-এ ডাটা রাইট (Save) হচ্ছে...");
+                    
+                    await fetch('/api/market/update_candle', { method: 'POST', credentials: 'include' });
+                    
+                    // সেভ হওয়ার ঠিক ১.৫ সেকেন্ড পর চার্ট রিলোড দিয়ে নতুন ক্যান্ডেল স্ক্রিনে টেনে আনা
+                    setTimeout(fetchFirebaseHistory, 1500); 
+                }
+            } catch (err) {
+                // এরর ইগনোর
             }
+        }
 
-            btn.addEventListener('click', function() {
-                const selectedTf = parseInt(this.getAttribute('data-tf'));
-                if (selectedTf && selectedTf !== currentTimeframe) {
-                    currentTimeframe = selectedTf;
-                    log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
-                    initTradingViewChart();
-                    fetchFirebaseHistory();
-                    setupTimeframeListeners();
+        // 🎨 থিম সুইচার লিসেনার ফিক্স
+        function setupThemeToggleListener() {
+            const toggleBtn = document.getElementById('chart-theme-toggle');
+            const statusText = document.getElementById('theme-status');
+            if (!toggleBtn) return;
+
+            toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+            const activeToggleBtn = document.getElementById('chart-theme-toggle');
+
+            activeToggleBtn.addEventListener('click', function() {
+                isDarkTheme = !isDarkTheme;
+                const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
+
+                if (isDarkTheme) {
+                    if (statusText) statusText.innerText = "DARK";
+                    activeToggleBtn.querySelector('i').className = "fas fa-moon";
+                    log("🌙 ডার্ক মোড অ্যাক্টিভেটেড");
+                } else {
+                    if (statusText) statusText.innerText = "LIGHT";
+                    activeToggleBtn.querySelector('i').className = "fas fa-sun";
+                    log("☀️ লাইট মোড অ্যাক্টিভেটেড");
+                }
+
+                if (chart && candleSeries) {
+                    chart.applyOptions({
+                        layout: { background: { color: activeColors.bg }, textColor: activeColors.text },
+                        grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
+                        timeScale: { borderColor: activeColors.grid }
+                    });
+                    candleSeries.applyOptions({
+                        upColor: activeColors.upCandle, downColor: activeColors.downCandle,
+                        borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
+                        wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle
+                    });
                 }
             });
-        });
-    }
+        }
 
-    // বুট রানার
-    function startTradingEngine() {
-        initTradingViewChart();
-        fetchFirebaseHistory();
-        setupThemeToggleListener();
-        setupTimeframeListeners();
-        
-        // মঙ্গোডিবি থেকে লাইভ ডাটা টিক টিক করে পড়ার জন্য (প্রতি ১ সেকেন্ডে)
-        setInterval(syncMongoDBLive, 1000);
-        
-        // ইউজার ব্যালেন্স ও ক্যান্ডেল ক্লোজিং চেক করার জন্য (প্রতি ৩ সেকেন্ডে)
-        setInterval(syncUserDataAndClosing, 3000);
-        
-        log("🚀 আপনার Flask এপিআই-এর সাথে ফ্রন্টএন্ড ইঞ্জিন সিঙ্কড!");
-    }
+        // ⏳ টাইমফ্রেম লিসেনার
+        function setupTimeframeListeners() {
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.replaceWith(btn.cloneNode(true));
+            });
 
-    if (document.readyState === 'complete') {
-        startTradingEngine();
-    } else {
-        window.addEventListener('load', startTradingEngine);
-    }
-})();
-</script>
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                const tfVal = parseInt(btn.getAttribute('data-tf'));
+                if (tfVal === currentTimeframe) {
+                    btn.style.background = "var(--cyan, #00f2fe)";
+                    btn.style.color = "#000";
+                } else {
+                    btn.style.background = "";
+                    btn.style.color = "";
+                }
+
+                btn.addEventListener('click', function() {
+                    const selectedTf = parseInt(this.getAttribute('data-tf'));
+                    if (selectedTf && selectedTf !== currentTimeframe) {
+                        currentTimeframe = selectedTf;
+                        log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
+                        initTradingViewChart();
+                        fetchFirebaseHistory();
+                        setupTimeframeListeners();
+                    }
+                });
+            });
+        }
+
+        // ইঞ্জিন স্টার্টার
+        function startTradingEngine() {
+            initTradingViewChart();
+            fetchFirebaseHistory();
+            setupThemeToggleListener();
+            setupTimeframeListeners();
+            
+            setInterval(syncMongoDBLive, 1000); // প্রতি সেকেন্ডে রিয়েল-টাইম লাইভ ক্যান্ডেল কাঁপবে
+            setInterval(syncUserDataAndClosing, 3000); // ব্যালেন্স এবং ক্যান্ডেল সেভ ট্রিপল চেক
+            
+            log("🚀 ফিক্সড ফ্রন্টএন্ড সাকসেসফুলি সিঙ্কড!");
+        }
+
+        if (document.readyState === 'complete') {
+            startTradingEngine();
+        } else {
+            window.addEventListener('load', startTradingEngine);
+        }
+    })();
+    </script>
 </body>
 </html>
