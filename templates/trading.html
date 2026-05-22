@@ -405,6 +405,51 @@
             }
         } catch (e) {}
     }
+
+    window.updateTradeCalculator = function() {
+        const takaInput = document.getElementById('taka-input');
+        if (!takaInput) return;
+        
+        const amount = parseFloat(takaInput.value) || 0;
+        
+        // ০.৫% ফি হিসাব
+        const feeRate = 0.005; 
+        const fee = amount * feeRate;
+        const totalCost = amount + fee;
+        
+        // চার্টের কারেন্ট মার্কেট প্রাইস এবং ২% কম দামে বিক্রির লজিক
+        const currentMarketPrice = (typeof lastPrice !== 'undefined' && lastPrice > 0) ? lastPrice : 1.0;
+        const buyPrice = currentMarketPrice;
+        const sellPrice = currentMarketPrice * 0.98; 
+
+        let finalExecutionPrice = buyPrice;
+        
+        // আপনার সাইটের sell বাটন একটিভ আছে কি না (sell-active ক্লাস দিয়ে চেক)
+        const isSellMode = document.querySelector('.sell-active') || false; 
+        if (isSellMode) {
+            finalExecutionPrice = sellPrice;
+        }
+
+        // ফাইনাল প্রাইস দিয়ে এএএফ কয়েন ক্যালকুলেট
+        const estimatedAAF = amount / finalExecutionPrice;
+
+        // আপনার HTML আইডি অনুযায়ী ডাটা রিয়েল-টাইম পুশ
+        if(document.getElementById('fee-amount')) {
+            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(4)}`;
+        }
+        if(document.getElementById('total-cost')) {
+            document.getElementById('total-cost').innerText = `৳ ${totalCost.toFixed(4)}`;
+        }
+        
+        const coinInput = document.getElementById('coin-input');
+        if (coinInput) {
+            if (takaInput.value !== "") {
+                coinInput.value = estimatedAAF.toFixed(4);
+            } else {
+                coinInput.value = "";
+            }
+        }
+    }
     
     // 🔄 ৩. ইউজার ডাটা এবং এক মিনিট পর পর ক্যান্ডেল ক্লোজিং এপিআই হিট
     async function syncUserDataAndClosing() {
@@ -446,7 +491,6 @@
 
         activeToggleBtn.addEventListener('click', function() {
             isDarkTheme = !isDarkTheme;
-            const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
 
             if (isDarkTheme) {
                 if (statusText) statusText.innerText = "DARK";
@@ -460,19 +504,30 @@
                 log("☀️ লাইট মোড অ্যাক্টিভেটেড");
             }
 
+            // 🎯 কনটেইনার, ব্যাকগ্রাউন্ড এবং সাইড গ্রাফ কালার ডাইনামিক চেঞ্জ
             if (chart && candleSeries) {
                 chart.applyOptions({
-                    layout: { background: { color: activeColors.bg }, textColor: activeColors.text },
-                    grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
-                    timeScale: { borderColor: activeColors.grid }
+                    layout: { 
+                        background: { type: 'solid', color: isDarkTheme ? '#05080d' : '#ffffff' },
+                        textColor: isDarkTheme ? '#94a3b8' : '#333333'
+                    },
+                    grid: {
+                        vertLines: { color: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                        horzLines: { color: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
+                    }
                 });
+
+                // 📈 ক্যান্ডেল এবং সাইড গ্রাফের টেক্সট কালার সেটিংস রিলিজ (সেম টু সেম রাখা)
                 candleSeries.applyOptions({
-                    upColor: activeColors.upCandle, downColor: activeColors.downCandle,
-                    borderUpColor: activeColors.upCandle, borderDownColor: activeColors.downCandle,
-                    wickUpColor: activeColors.upCandle, wickDownColor: activeColors.downCandle
+                    upColor: '#2ebd85',       
+                    downColor: '#df294a',     
+                    borderUpColor: '#2ebd85',
+                    borderDownColor: '#df294a',
+                    wickUpColor: '#2ebd85',   
+                    wickDownColor: '#df294a'
                 });
             }
-        }); // 👈 এই ক্লোজিং ব্র্যাকেটটি আপনার কোড থেকে গায়েব হয়ে গিয়েছিল
+        }); // 👈 ব্র্যাকেট জটলা ফিক্সড
     }
 
     // ⏳ টাইমফ্রেম লিসেনার
