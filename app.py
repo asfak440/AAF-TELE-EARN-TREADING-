@@ -904,31 +904,23 @@ def test_db():
             "message": str(e)
         }), 500
         
-    
 
 def get_candles():
-    """মঙ্গোডিবি (MongoDB) থেকে ১ মাসের ক্যান্ডেল হিস্ট্রি রিটার্ন করে, খালি থাকলে ডামি ডাটা দেয়"""
+    """মঙ্গোডিবি (MongoDB) থেকে সরাসরি ক্যান্ডেল হিস্ট্রি রিটার্ন করে, কোনো টাইম লক ছাড়া"""
     try:
         candles = []
 
-        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে ক্যান্ডেল ডাটা লোড করা
+        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে লেটেস্ট ক্যান্ডেল ডাটা লোড করা
         try:
-            # গত ৩০ দিনের ক্যান্ডেল ফিল্টার করার সেফটি লক (১ মাসের ডাটা)
-            # ১ মাস = ৩০ দিন * ২৪ ঘণ্টা * ৬০ মিনিট = ৪৩,২০০টি ক্যান্ডেল সর্বোচ্চ
-            one_month_ago_timestamp = int(time.time()) - (30 * 24 * 60 * 60)
-            
-            # ৩০ দিনের ভেতরের ডাটাগুলো টাইম অনুযায়ী সর্ট করে আনা হচ্ছে (কোনো ফায়ারবেস নেই)
-            candles_cursor = candles_col.find(
-                {"time": {"$gte": one_month_ago_timestamp}}, 
-                {'_id': 0}
-            ).sort("time", 1)
+            # 🎯 ফিক্স: টাইম ফিল্টার পুরো সরিয়ে সরাসরি লাস্ট ১০০টি ক্যান্ডেল টেনে আনা হচ্ছে
+            # এটি অতীত বা ভবিষ্যৎ সব ধরণের টাইমস্ট্যাম্পকে চার্টে লোড করে দেবে
+            candles_cursor = candles_col.find({}, {'_id': 0}).sort("time", -1).limit(100)
             
             for doc in candles_cursor:
                 time_val = doc.get("time", 0)
                 if time_val == 0:
                     continue
                 
-                # টাইমস্ট্যাম্প যদি ভুলবশত মিলি-সেকেন্ডে থাকে, তাকে সেকেন্ডে রূপান্তর করার সেফটি চেক
                 if time_val > 9999999999:
                     time_val = int(time_val / 1000)
 
@@ -941,35 +933,33 @@ def get_candles():
                 })
                 
             if candles:
-                print(f"✅ MongoDB থেকে {len(candles)}টি ক্যান্ডেল হিস্ট্রি সফলভাবে লোড হয়েছে")
+                print(f"✅ MongoDB থেকে {len(candles)}টি ক্যান্ডেল হিস্ট্রি সফলভাবে লোড হয়েছে")
                 
         except Exception as mongo_err:
             print(f"⚠️ MongoDB Read Error: {mongo_err}")
 
-        # ⚡ ২. মঙ্গোডিবি যদি একদম প্রথমবার সম্পূর্ণ খালি থাকে, তবে চার্ট সচল রাখতে ডামি ক্যান্ডেল জেনারেট হবে
+        # ⚡ ২. মঙ্গোডিবি যদি কোনো কারণে একদম খালি থাকে, তবে চার্ট সচল রাখতে ডামি ক্যান্ডেল তৈরি হবে
         if not candles:
-            print("⚠️ মঙ্গোডিবি খালি! চার্ট সচল রাখতে ৯০ পয়সা লিমিটে ৬০টি ডামি ক্যান্ডেল তৈরি হচ্ছে")
-            base = int(time.time()) - (60 * 60)  # গত ১ ঘণ্টা আগে থেকে শুরু
+            print("⚠️ মঙ্গোডিবি খালি! চার্ট সচল রাখতে ৬০টি ডামি ক্যান্ডেল তৈরি হচ্ছে")
+            base = int(time.time()) - (60 * 60)
             
             start_price = 1.0000
             initial_candles = []
             
             for i in range(60):
                 open_p = start_price
-                # একটি র্যান্ডম হালকা মুভমেন্ট জেনারেট করা হলো
                 movement = random.uniform(-0.001, 0.0015)
                 close_p = start_price + movement
                 
-                # 🛡️ ৯০ পয়সার সিকিউরিটি ফ্লোর লক (এর নিচে প্রাইস নামতে পারবে না)
                 if open_p < 0.9000: open_p = 0.9000
                 if close_p < 0.9000: close_p = 0.9000
                 
                 high_p = max(open_p, close_p) + random.uniform(0.0001, 0.0005)
                 low_p = min(open_p, close_p) - random.uniform(0.0001, 0.0005)
-                if low_p < 0.9000: low_p = 0.9000  # লো-ও ৯০ পয়সার নিচে যাবে না
+                if low_p < 0.9000: low_p = 0.9000
 
                 candle_obj = {
-                    "time": base + (i * 60),
+                    "time": int(base + (i * 60)),
                     "open": float(open_p),
                     "high": float(high_p),
                     "low": float(low_p),
@@ -979,14 +969,13 @@ def get_candles():
                 initial_candles.append(candle_obj)
                 start_price = close_p
             
-            # প্রথমবার খালি থাকলে এই ৬০টি ক্যান্ডেল মঙ্গোডিবিতে সেভও করে রাখবে যেন পরের বার ডামি ডাটা না লাগে
             try:
                 candles_col.insert_many(initial_candles)
-                print("💾 প্রাথমিক ৬০টি ক্যান্ডেল মঙ্গোডিবিতে সফলভাবে সেভ করা হয়েছে!")
+                print("💾 প্রাথমিক ৬০টি ক্যান্ডেল মঙ্গোডিবিতে সফলভাবে সেভ করা হয়েছে!")
             except Exception as ins_err:
                 print(f"⚠️ Initial Insert Error: {ins_err}")
 
-        # ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী সাজানো (ট্রেডিংভিউ চার্ট রুলস)
+        # 🎯 ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী ছোট থেকে বড় (Ascending) সাজানো (ট্রেডিংভিউ রুলস)
         candles.sort(key=lambda x: x['time'])
         
         return jsonify({
@@ -996,12 +985,11 @@ def get_candles():
         
     except Exception as e:
         print(f"❌ Candles API Critical Error: {e}")
-        # ক্র্যাশ প্রতিরোধে ১ টাকার বেস ডামি ডাটা ফলব্যাক
         base = int(time.time()) - (60 * 60)
         fallback_candles = []
         for i in range(60):
             fallback_candles.append({
-                "time": base + (i * 60),
+                "time": int(base + (i * 60)),
                 "open": 1.0, "high": 1.01, "low": 0.90, "close": 1.0
             })
         return jsonify({
@@ -1009,6 +997,9 @@ def get_candles():
             "message": str(e),
             "candles": fallback_candles
         })
+
+
+            
 
 
 @app.route("/api/market/live-candle")
