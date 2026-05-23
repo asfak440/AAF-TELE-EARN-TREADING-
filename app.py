@@ -339,15 +339,24 @@ def add_header(response):
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
+
 @app.route('/api/reset-my-chart')
 def reset_my_chart():
     try:
-        # 🎯 ফায়ারবেসের এই উল্টাপাল্টা candles এবং candle_history নোড দুটি সম্পূর্ণ মুছে ফেলা হলো
-        firebase.delete('/', 'candles')
-        firebase.delete('/', 'candle_history')
-        return "✅ ডাটাবেস সফলভাবে পরিষ্কার করা হয়েছে! এখন চার্ট রিফ্রেশ দিন।"
+        # ১. আপনার ফায়ারবেসের অরিজিনাল ইউআরএল লিংক (আপনার স্ক্রিনশট থেকে নেওয়া)
+        firebase_url = "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
+        
+        # ২. সরাসরি ফায়ারবেস এপিআই হিট করে candles এবং candle_history নোড দুটি ডিলিট করা
+        res1 = requests.delete(f"{firebase_url}/candles.json")
+        res2 = requests.delete(f"{firebase_url}/candle_history.json")
+        
+        if res1.status_code == 200 and res2.status_code == 200:
+            return "✅ ডাটাবেস সফলভাবে পরিষ্কার করা হয়েছে! এবার আপনার ট্রেডিং পেজ রিফ্রেশ দিন।"
+        else:
+            return f"⚠️ ফায়ারবেস রেসপন্স এরর: candles ({res1.status_code}), history ({res2.status_code})"
+            
     except Exception as e:
-        return f"❌ ভুল হয়েছে: {str(e)}"
+        return f"❌ নেটওয়ার্ক বা পাইথন ভুল হয়েছে: {str(e)}"
 
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
