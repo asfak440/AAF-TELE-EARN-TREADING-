@@ -469,85 +469,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             }
         } catch (e) {}
     }
-     
-    window.setTradeMode = function(mode) {
-        const buyBtn = document.getElementById('buy-btn');
-        const sellBtn = document.getElementById('sell-btn');
-        if (!buyBtn || !sellBtn) return;
 
-        if (mode === 'sell') {
-            sellBtn.classList.add('sell-active', 'active');
-            buyBtn.classList.remove('active');
-        } else {
-            sellBtn.classList.remove('sell-active', 'active');
-            buyBtn.classList.add('active');
-        }
-        
-        if (typeof window.updateTradeCalculator === 'function') {
-            window.updateTradeCalculator('taka');
-        }
-    }; 
-
-    window.updateTradeCalculator = function(source) {
-        const takaInput = document.getElementById('taka-input');
-        const coinInput = document.getElementById('coin-input');
-        if (!takaInput || !coinInput) return;
-
-        const currentMarketPrice = (typeof lastPrice !== 'undefined' && lastPrice > 0) ? lastPrice : 1.0;
-        const buyPrice = currentMarketPrice;
-        const sellPrice = currentMarketPrice * 0.98; 
-
-        let isSellMode = false;
-        const sellBtn = document.getElementById('sell-btn');
-        if (sellBtn && sellBtn.classList.contains('active')) {
-            isSellMode = true;
-        }
-
-        let finalExecutionPrice = isSellMode ? sellPrice : buyPrice;
-        let amount = 0;
-
-        if (source === 'coin') {
-            const coins = parseFloat(coinInput.value) || 0;
-            amount = coins * finalExecutionPrice; 
-            if (coinInput.value !== "") {
-                takaInput.value = amount.toFixed(2);
-            } else {
-                takaInput.value = "";
-            }
-        } else if (source === 'taka_live') {
-            if (takaInput.value !== "") {
-                amount = parseFloat(takaInput.value) || 0;
-                coinInput.value = (amount / finalExecutionPrice).toFixed(4);
-            }
-        } else {
-            amount = parseFloat(takaInput.value) || 0;
-            const estimatedAAF = amount / finalExecutionPrice;
-            if (takaInput.value !== "") {
-                coinInput.value = estimatedAAF.toFixed(4);
-            } else {
-                coinInput.value = "";
-            }
-        }
-
-        const feeRate = 0.005; 
-        const fee = amount * feeRate;
-        let totalCost = isSellMode ? (amount - fee) : (amount + fee);
-        let totalCostLabel = isSellMode ? "মোট পাবেন:" : "মোট খরচ:";
-
-        if(document.getElementById('fee-amount')) {
-            document.getElementById('fee-amount').innerText = `৳ ${fee.toFixed(4)}`;
-        }
-        
-        const totalCostEl = document.getElementById('total-cost');
-        if(totalCostEl) {
-            totalCostEl.innerText = `৳ ${totalCost.toFixed(4)}`;
-            
-            const labelEl = totalCostEl.parentElement.querySelector('span');
-            if (labelEl) {
-                labelEl.innerText = totalCostLabel;
-            }
-        }
-    }; 
     
     // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক
     async function syncUserDataAndClosing() {
@@ -651,15 +573,103 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         });
     }
 
+
+    // 🔁 স্পট ট্রেড মোড পরিবর্তন (Buy/Sell)
+    window.setTradeMode = function(mode) {
+        const buyBtn = document.getElementById('buy-btn') || document.querySelector('.buy-btn') || document.getElementById('buy-spot');
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-btn') || document.getElementById('sell-spot');
+        
+        if (!buyBtn || !sellBtn) {
+            log("⚠️ Buy/Sell বাটন ফ্রন্টএন্ডে খুঁজে পাওয়া যায়নি!");
+            return;
+        }
+
+        if (mode === 'sell') {
+            sellBtn.classList.add('sell-active', 'active');
+            buyBtn.classList.remove('active');
+        } else {
+            sellBtn.classList.remove('sell-active', 'active');
+            buyBtn.classList.add('active');
+        }
+        
+        // বাটন চেঞ্জ হলে সাথে সাথে ক্যালকুলেটর আপডেট হবে
+        if (typeof window.updateTradeCalculator === 'function') {
+            window.updateTradeCalculator('taka');
+        }
+    }; 
+
+    // 🧮 লাইভ ট্রেড ক্যালকুলেটর (টাকা ⇄ কয়েন এক্সচেঞ্জ ও ফি হিসাব)
+    window.updateTradeCalculator = function(source) {
+        // আইডি কনফ্লিক্ট এড়াতে অল্টারনেটিভ আইডি ব্যাকআপ লক
+        const takaInput = document.getElementById('taka-input') || document.getElementById('bdt-amount') || document.querySelector('input[placeholder*="BDT"]') || document.querySelector('input[type="number"]');
+        const coinInput = document.getElementById('coin-input') || document.getElementById('aaf-amount') || document.querySelector('input[placeholder*="AAF"]');
+        
+        if (!takaInput || !coinInput) return;
+
+        // গ্লোবাল লাইভ প্রাইস পড়া (ফালব্যাক ১.০ টাকা)
+        const currentMarketPrice = (typeof lastPrice !== 'undefined' && lastPrice > 0) ? lastPrice : 1.0;
+        
+        // 🎯 লজিক: বাই মোডে কারেন্ট প্রাইস, সেল মোডে ২% কম (৯৮% দাম)
+        let isSellMode = false;
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-active') || document.querySelector('.active[id*="sell"]');
+        if (sellBtn && (sellBtn.classList.contains('active') || sellBtn.classList.contains('sell-active'))) {
+            isSellMode = true;
+        }
+
+        let finalExecutionPrice = isSellMode ? (currentMarketPrice * 0.98) : currentMarketPrice;
+
+        // ইনপুট বক্সের ডাটা এক্সচেঞ্জ লজিক
+        if (source === 'coin') {
+            const coins = parseFloat(coinInput.value) || 0;
+            let amount = coins * finalExecutionPrice; 
+            if (coinInput.value !== "") {
+                takaInput.value = amount.toFixed(2);
+            } else {
+                takaInput.value = "";
+            }
+        } else {
+            // টাকা ইনপুট দিলে বা লাইভ প্রাইস আপডেট হলে কয়েন হিসাব হবে
+            if (takaInput.value !== "") {
+                const amount = parseFloat(takaInput.value) || 0;
+                coinInput.value = (amount / finalExecutionPrice).toFixed(4);
+            } else {
+                coinInput.value = "";
+            }
+        }
+
+        // 💰 ফি এবং মোট খরচ প্রদর্শন (এডমিন প্যানেল থেকে যদি ভেরিয়েবল আসে তবে সেটি, নয়তো ফালব্যাক ০.৫%)
+        const amountForFee = parseFloat(takaInput.value) || 0;
+        const feeRate = 0.005; // ০.৫% ফালব্যাক ফি
+        const fee = amountForFee * feeRate;
+        let totalCost = isSellMode ? (amountForFee - fee) : (amountForFee + fee);
+        let totalCostLabel = isSellMode ? "মোট পাবেন:" : "মোট খরচ:";
+
+        // HTML টেক্সট আপডেট
+        const feeEl = document.getElementById('fee-amount') || document.getElementById('trade-fee');
+        if (feeEl) feeEl.innerText = `৳ ${fee.toFixed(4)}`;
+        
+        const totalCostEl = document.getElementById('total-cost') || document.getElementById('total-amount');
+        if (totalCostEl) {
+            totalCostEl.innerText = `৳ ${totalCost.toFixed(4)}`;
+            const labelEl = totalCostEl.parentElement.querySelector('span');
+            if (labelEl) labelEl.innerText = totalCostLabel;
+        }
+    }; 
+
+    // 🚀 ট্রেড অর্ডার এক্সিকিউশন ও ব্যাকএন্ডে সাবমিট লজিক
     window.executeTradeAction = async function() {
-        const takaInput = document.getElementById('taka-input');
+        const takaInput = document.getElementById('taka-input') || document.getElementById('bdt-amount') || document.querySelector('input[placeholder*="BDT"]') || document.querySelector('input[type="number"]');
         if (!takaInput || parseFloat(takaInput.value) <= 0) {
             alert("দয়া করে সঠিক টাকার পরিমাণ লিখুন!");
             return;
         }
 
-        const sellBtn = document.getElementById('sell-btn');
-        const isSellMode = sellBtn && sellBtn.classList.contains('active');
+        let isSellMode = false;
+        const sellBtn = document.getElementById('sell-btn') || document.querySelector('.sell-active') || document.querySelector('.active[id*="sell"]');
+        if (sellBtn && (sellBtn.classList.contains('active') || sellBtn.classList.contains('sell-active'))) {
+            isSellMode = true;
+        }
+        
         const actionType = isSellMode ? 'sell' : 'buy';
         const bdtAmount = parseFloat(takaInput.value);
 
@@ -683,22 +693,20 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 alert(`${actionType === 'buy' ? 'কেনা' : 'বিক্রি'} সফল হয়েছে!`);
         
                 takaInput.value = "";
-                document.getElementById('coin-input').value = "";
+                const coinInput = document.getElementById('coin-input') || document.getElementById('aaf-amount');
+                if (coinInput) coinInput.value = "";
         
+                // ইউজার ব্যালেন্স ইনস্ট্যান্ট রিফ্রেশ
                 if (typeof syncUserDataAndClosing === 'function') {
                     await syncUserDataAndClosing(); 
                 }
-
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-
+                setTimeout(() => { window.location.reload(); }, 800);
             } else {
                 log(`❌ এরর: ${result.message}`);
                 alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
             }
         } catch (error) {
-            log("❌ সার্ভার এরর!");
+            log("❌ সার্ভার এরর! ট্রেড সাবমিট হয়নি।");
             alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
         }
     };
