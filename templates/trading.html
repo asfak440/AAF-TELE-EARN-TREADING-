@@ -111,8 +111,8 @@
 
         /* কন্টেইনার ও কার্ডের রি-পজিশন */
         .container {
-            padding-top: 365px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
-            padding-bottom: 100px; max-width: 350px; margin: auto; padding-left: 15px; padding-right: 15px;
+            padding-top: 360px !important; /* চার্ট থেকে পারফেক্ট দূরত্ব */
+            padding-bottom: 140px; max-width: 360px; margin: auto; padding-left: 10px; padding-right: 10px;
         }
         body.light .container { color: #0f172a; }
 
@@ -141,15 +141,57 @@
         .sell { background: var(--red); color: #fff; }
 
         /* ডক নেভিগেশন */
-        .dock-container { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 5000; }
-        .dock-nav {
-            width: 90%; max-width: 400px; height: 55px; background: rgba(15, 23, 42, 0.95);
-            border-radius: 35px; border: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center;
-        }
-        body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
-        .nav-item { color: #94a3b8; text-decoration: none; font-size: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; font-family: 'Rajdhani'; font-weight: 600; text-transform: uppercase; }
-        .nav-item i { font-size: 16px; display: block; margin-bottom: 2px; }
-        .nav-item.active { color: var(--cyan); }
+        .dock-container { 
+    position: fixed; 
+    bottom: 20px; 
+    left: 0;               /* 🎯 ফিক্স: বাম পাশ থেকে ০ লক করা হলো যাতে এক সাইড না হয় */
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;   /* 🎯 ফিক্স: পুরো ডকবার স্ক্রিনের একদম মাঝখানে থাকবে */
+    z-index: 5000; 
+    box-sizing: border-box; 
+}
+
+.dock-nav {
+    width: 90%; 
+    max-width: 360px;      /* 🎯 ফিক্স: আপনার মেইন কন্টেইনারের সাথে উইডথ ম্যাচ করা হলো */
+    height: 55px; 
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 35px; 
+    border: 1px solid var(--glass-border); 
+    display: flex; 
+    justify-content: space-around; 
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 10px;       /* 🎯 ফিক্স: ভেতরের আইকনগুলোর জন্য সেফটি প্যাডিং */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); /* দেখতে প্রিমিয়াম লাগবে */
+}
+
+body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
+
+.nav-item { 
+    color: #94a3b8; 
+    text-decoration: none; 
+    font-size: 9px;        /* হালকা বড় করা হলো পড়ার সুবিধার্থে */
+    text-align: center; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    font-family: 'Rajdhani'; 
+    font-weight: 600; 
+    text-transform: uppercase;
+    flex: 1;               /* 🎯 ফিক্স: ৫টি বাটন সমানভাবে পুরো জায়গা ভাগ করে নেবে, কেউ এক সাইড হবে না */
+}
+
+.nav-item i { 
+    font-size: 18px;       /* আইকন সাইজ পারফেক্ট করা হলো */
+    display: block; 
+    margin-bottom: 3px; 
+}
+
+.nav-item.active { color: var(--cyan); }
     </style>
 </head>
 <body>
