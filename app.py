@@ -340,6 +340,8 @@ def add_header(response):
     return response
 
 
+import requests
+
 @app.route('/api/reset-my-chart')
 def reset_my_chart():
     try:
