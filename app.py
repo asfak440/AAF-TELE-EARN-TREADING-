@@ -133,25 +133,6 @@ def get_admin_config():
     return doc
 
 
-def clean_expired_tasks():
-    while True:
-        try:
-            if fb_ref:
-                now = datetime.utcnow().isoformat()
-                tasks = fb_ref.child("tasks").get()
-                if tasks:
-                    for key, task in tasks.items():
-                        if task.get("expires_at") and task["expires_at"] < now:
-                            fb_ref.child(f"tasks/{key}").delete()
-                            print(f"Deleted expired task: {key}")
-        except Exception as e:
-            print(f"Clean error: {e}")
-        time.sleep(3600)  # প্রতি ঘন্টা
-
-# অ্যাপ স্টার্টআপে থ্রেড চালু করুন (আপনার অন্যান্য থ্রেডের সাথে)
-threading.Thread(target=clean_expired_tasks, daemon=True).start()
-    
-
 def update_total_users():
     total = users_col.count_documents({})
     admin_config_col.update_one({"_id": "global"}, {"$set": {"total_users": total}})
@@ -166,57 +147,74 @@ current_price = 1.0
 def update_price_loop():
     global current_price
     last_candle_minute = None
+    
+    # শুরুর ক্যান্ডেল ভ্যালু লক
     candle_open = current_price
     candle_high = current_price
     candle_low = current_price
     candle_close = current_price
 
+    print("🚀 মঙ্গোডিবি অটো-ক্যান্ডেল ইঞ্জিন ও লাইভ প্রাইস লুপ চালু হয়েছে...")
+
     while True:
         try:
             now = datetime.utcnow()
-            current_minute = now.replace(second=0, microsecond=0)
+            # কারেন্ট মিনিট লক (সেকেন্ড ০ করে মিনিট ভিত্তিক টাইমস্ট্যাম্প তৈরি)
+            current_minute_timestamp = int(time.time() - (time.time() % 60))
 
-            # 🆕 এডমিন কনফিগ থেকে volatility পড়ুন (প্রতি লুপেই পড়ে, রিয়েল টাইম আপডেট হবে)
+            # এডমিন কনফিগ থেকে volatility পড়া
             admin = get_admin_config()
-            volatility = admin.get("price_volatility", 0.0005)   # ডিফল্ট 0.0005 (0.05%)
+            volatility = admin.get("task_rules", {}).get("price_volatility", 0.0005) if isinstance(admin.get("task_rules"), dict) else admin.get("price_volatility", 0.0005)
+            
+            # 📈📉 র্যান্ডম আপ-ডাউন প্রাইস মুভমেন্ট লজিক
             change = random.uniform(-volatility, volatility)
             current_price += change
-            current_price = max(0.5, min(2.5, current_price))
+            
+            # 🛡️ ৯০ পয়সার সেফটি ফ্লোর এবং ২.৫ টাকার সিলিং লক
+            current_price = max(0.9000, min(2.5000, current_price))
 
-            # ২. প্রতি মিনিটের শুরুতে মিনিটের ক্যান্ডেল তৈরী এবং Firebase-এ সেভ
-            if last_candle_minute != current_minute:
+            # প্রতি মিনিটের শুরুতে নতুন ক্যান্ডেল তৈরি এবং MongoDB-তে সেভ
+            if last_candle_minute != current_minute_timestamp:
                 if last_candle_minute is not None:
-                    if fb_ref:
-                        candle_ref = fb_ref.child(f"candles/minutes/{last_candle_minute.isoformat()}")
-                        candle_ref.set({
-                            "time": int(last_candle_minute.timestamp()),
-                            "open": candle_open,
-                            "high": candle_high,
-                            "low": candle_low,
-                            "close": candle_close
-                        })
-                        print(f"Candle saved for {last_candle_minute}")
-                # নতুন মিনিটের জন্য রিসেট
+                    # 💾 সরাসরি মঙ্গোডিবিতে ক্যান্ডেল পুশ
+                    candles_col.insert_one({
+                        "time": last_candle_minute,
+                        "open": float(candle_open),
+                        "high": float(candle_high),
+                        "low": float(candle_low),
+                        "close": float(candle_close)
+                    })
+                    print(f"⏰ [অটো-ইঞ্জিন]: নতুন ক্যান্ডেল মঙ্গোডিবিতে সেভ হয়েছে! টাইম: {last_candle_minute}")
+
+                    # 🧹 অটো-ক্লিনার: ১ মাসের পুরনো ডাটা সাথে সাথে ডিলিট
+                    try:
+                        one_month_ago = int(time.time()) - (30 * 24 * 60 * 60)
+                        candles_col.delete_many({"time": {"$lt": one_month_ago}})
+                    except Exception as clean_err:
+                        print(f"⚠️ ওল্ড ডাটা অটো-ক্লিন করতে সমস্যা: {clean_err}")
+
+                # নতুন মিনিটের জন্য ক্যান্ডেল ভ্যারিয়েবল রিসেট
                 candle_open = current_price
                 candle_high = current_price
                 candle_low = current_price
                 candle_close = current_price
-                last_candle_minute = current_minute
+                last_candle_minute = current_minute_timestamp
             else:
+                # একই মিনিটের ভেতরে থাকলে হাই, লো এবং ক্লোজ প্রাইস অনবরত ক্যান্ডেল বডিতে ট্র্যাক হবে
                 candle_high = max(candle_high, current_price)
                 candle_low = min(candle_low, current_price)
                 candle_close = current_price
 
-            # ৩. MongoDB-তে লাইভ প্রাইস আপডেট
-            admin_config_col.update_one({"_id": "global"}, {"$set": {"live_price": current_price, "last_updated": now}})
+            # MongoDB এডমিন কনফিগে গ্লোবাল লাইভ প্রাইস রিয়েল-টাইম আপডেট করা (যা টেক্সটে শো করে)
+            admin_config_col.update_one(
+                {"_id": "global"}, 
+                {"$set": {"live_price": float(current_price), "last_updated": now}}
+            )
 
             time.sleep(1)
         except Exception as e:
             print(f"Price update error: {e}")
             time.sleep(5)
-
-# ব্যাকগ্রাউন্ডে প্রাইস আপডেট লুপ চালু করুন
-threading.Thread(target=update_price_loop, daemon=True).start()
 
 
 def init_candles_collection():
@@ -227,31 +225,22 @@ def init_candles_collection():
         if current_count == 0:
             print("📊 ক্যান্ডেল কালেকশন সম্পূর্ণ খালি! আপ-ডাউন ডামি ডাটা ইনসার্ট করা হচ্ছে...")
             
-            # স্ট্যান্ডার্ড ইন্টিজার Unix টাইমস্ট্যাম্প (১ ঘণ্টা আগের)
             base_time = int(time.time()) - (60 * 60)
-            
             start_price = 1.0000
             initial_candles = []
             
-            for i in range(60):  # ৬০ মিনিটের ডাটা
+            for i in range(60):  
                 open_p = start_price
+                movement = random.uniform(-0.0015, 0.0015) 
                 
-                # 🎯 নতুন আপ/ডাউন লজিক: র্যান্ডম হারে দাম বাড়ছে বা কমছে
-                # এটি মাইনাস বা প্লাস র্যান্ডম মুভমেন্ট জেনারেট করবে
-                movement = random.uniform(-0.0015, 0.0015) # -0.0015 থেকে +0.0015 এর মধ্যে
-                
-                # কিছু বড় মুভমেন্ট (Volatile Candle) তৈরির জন্য ৫% চান্স
                 if random.random() < 0.05:
-                     movement = random.uniform(-0.003, 0.003) # আরও বড় আপ/ডাউন
+                     movement = random.uniform(-0.003, 0.003) 
                 
                 close_p = start_price + movement
                 
-                # 🛡️ ৯০ পয়সার সিকিউরিটি ফ্লোর সেফটি লক (প্রাইস এর নিচে নামবে না)
                 if open_p < 0.9000: open_p = 0.9000
                 if close_p < 0.9000: close_p = 0.9000
                 
-                # হাই-লো ক্যালকুলেশন (উইক বা শ্যাডো তৈরি হবে)
-                # ক্যান্ডেলটি আপ নাকি ডাউন তা চেক করে উইক বা শ্যাডো তৈরি হচ্ছে
                 is_up = close_p >= open_p
                 if is_up:
                     high_p = close_p + random.uniform(0.0001, 0.0008)
@@ -260,22 +249,19 @@ def init_candles_collection():
                     high_p = open_p + random.uniform(0.0001, 0.0006)
                     low_p = close_p - random.uniform(0.0001, 0.0008)
                 
-                # ৯০ পয়সার ফ্লোর সিকিউরিটি হাই/লো-তেও লাগাচ্ছি
                 if low_p < 0.9000: low_p = 0.9000
                 if high_p < 0.9000: high_p = 0.9000
 
                 initial_candles.append({
-                    "time": base_time + (i * 60),  # Unix Integer টাইমস্ট্যাম্প
+                    "time": int(base_time + (i * 60)),  # পারফেক্ট ইন্টিজার ফিক্স
                     "open": float(open_p),
                     "high": float(high_p),
                     "low": float(low_p),
                     "close": float(close_p)
                 })
                 
-                # পরের ক্যান্ডেলের ওপেন প্রাইস হবে আগেরটার ক্লোজ প্রাইস
                 start_price = close_p
             
-            # অপ্টিমাইজেশন: ৬০টি ক্যান্ডেল একবারে (Bulk Insert) পুশ
             candles_col.insert_many(initial_candles)
             print(f"✅ মঙ্গোডিবিতে সফলভাবে ৬০টি আপ-ডাউন ক্যান্ডেল ইনিশিয়ালি যোগ করা হয়েছে!")
         else:
@@ -283,9 +269,6 @@ def init_candles_collection():
             
     except Exception as e:
         print(f"❌ ক্যান্ডেল ইনিশিয়ালাইজ করতে ব্যর্থ: {e}")
-
-# অ্যাপ শুরু হওয়ার সময় কল করুন
-init_candles_collection()
 # ================= LOGIN REQUIRED DECORATOR =================
 def login_required(f):
     @wraps(f)
