@@ -338,7 +338,16 @@ def add_header(response):
     # সেশন কুকি যাতে ফ্রন্টএন্ডে সঠিকভাবে পৌঁছায় তা নিশ্চিত করে
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
-    
+
+@app.route('/api/reset-my-chart')
+def reset_my_chart():
+    try:
+        # 🎯 ফায়ারবেসের এই উল্টাপাল্টা candles এবং candle_history নোড দুটি সম্পূর্ণ মুছে ফেলা হলো
+        firebase.delete('/', 'candles')
+        firebase.delete('/', 'candle_history')
+        return "✅ ডাটাবেস সফলভাবে পরিষ্কার করা হয়েছে! এখন চার্ট রিফ্রেশ দিন।"
+    except Exception as e:
+        return f"❌ ভুল হয়েছে: {str(e)}"
 
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
