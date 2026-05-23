@@ -55,16 +55,6 @@ deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
 
 
-# ================= FIREBASE =================
-if not firebase_admin._apps:
-    if os.path.exists(FIREBASE_KEY_PATH):
-        cred = credentials.Certificate(FIREBASE_KEY_PATH)
-        firebase_admin.initialize_app(cred, {"databaseURL": FIREBASE_DB_URL})
-        print("✅ Firebase Connected")
-    else:
-        print("⚠️ firebase-key.json not found. Firebase features will not work.")
-fb_ref = db.reference() if firebase_admin._apps else None
-
 # ================= NEW: Per-request async helper (no persistent client) =================
 def run_async(coro):
     """প্রতি রিকোয়েস্টে নতুন ইভেন্ট লুপ তৈরি করে (persistent নয়)"""
@@ -230,30 +220,72 @@ threading.Thread(target=update_price_loop, daemon=True).start()
 
 
 def init_candles_collection():
-    """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ডামি ডাটা যোগ করে"""
+    """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ১ ঘণ্টার রিয়ালিস্টিক (আপ/ডাউন) ডামি ডাটা যোগ করে"""
     try:
-        if candles_col.count_documents({}) == 0:
-            print("📊 ক্যান্ডেল কালেকশন খালি, ডামি ডাটা যোগ করা হচ্ছে...")
-            base = int(datetime.utcnow().timestamp()) - (60 * 60)  # গত ১ ঘন্টা
+        current_count = candles_col.count_documents({})
+        
+        if current_count == 0:
+            print("📊 ক্যান্ডেল কালেকশন সম্পূর্ণ খালি! আপ-ডাউন ডামি ডাটা ইনসার্ট করা হচ্ছে...")
             
-            for i in range(60):  # 60 মিনিটের ডাটা
-                price = 1.0 + (i * 0.002) + (i * 0.0005)  # ধীরে ধীরে বাড়বে
-                candles_col.insert_one({
-                    "time": base + (i * 60),  # প্রতি মিনিটে
-                    "open": price,
-                    "high": price * 1.005,
-                    "low": price * 0.995,
-                    "close": price * 1.002
+            # স্ট্যান্ডার্ড ইন্টিজার Unix টাইমস্ট্যাম্প (১ ঘণ্টা আগের)
+            base_time = int(time.time()) - (60 * 60)
+            
+            start_price = 1.0000
+            initial_candles = []
+            
+            for i in range(60):  # ৬০ মিনিটের ডাটা
+                open_p = start_price
+                
+                # 🎯 নতুন আপ/ডাউন লজিক: র্যান্ডম হারে দাম বাড়ছে বা কমছে
+                # এটি মাইনাস বা প্লাস র্যান্ডম মুভমেন্ট জেনারেট করবে
+                movement = random.uniform(-0.0015, 0.0015) # -0.0015 থেকে +0.0015 এর মধ্যে
+                
+                # কিছু বড় মুভমেন্ট (Volatile Candle) তৈরির জন্য ৫% চান্স
+                if random.random() < 0.05:
+                     movement = random.uniform(-0.003, 0.003) # আরও বড় আপ/ডাউন
+                
+                close_p = start_price + movement
+                
+                # 🛡️ ৯০ পয়সার সিকিউরিটি ফ্লোর সেফটি লক (প্রাইস এর নিচে নামবে না)
+                if open_p < 0.9000: open_p = 0.9000
+                if close_p < 0.9000: close_p = 0.9000
+                
+                # হাই-লো ক্যালকুলেশন (উইক বা শ্যাডো তৈরি হবে)
+                # ক্যান্ডেলটি আপ নাকি ডাউন তা চেক করে উইক বা শ্যাডো তৈরি হচ্ছে
+                is_up = close_p >= open_p
+                if is_up:
+                    high_p = close_p + random.uniform(0.0001, 0.0008)
+                    low_p = open_p - random.uniform(0.0001, 0.0006)
+                else:
+                    high_p = open_p + random.uniform(0.0001, 0.0006)
+                    low_p = close_p - random.uniform(0.0001, 0.0008)
+                
+                # ৯০ পয়সার ফ্লোর সিকিউরিটি হাই/লো-তেও লাগাচ্ছি
+                if low_p < 0.9000: low_p = 0.9000
+                if high_p < 0.9000: high_p = 0.9000
+
+                initial_candles.append({
+                    "time": base_time + (i * 60),  # Unix Integer টাইমস্ট্যাম্প
+                    "open": float(open_p),
+                    "high": float(high_p),
+                    "low": float(low_p),
+                    "close": float(close_p)
                 })
-            print(f"✅ {candles_col.count_documents({})} টি ক্যান্ডেল যোগ করা হয়েছে")
+                
+                # পরের ক্যান্ডেলের ওপেন প্রাইস হবে আগেরটার ক্লোজ প্রাইস
+                start_price = close_p
+            
+            # অপ্টিমাইজেশন: ৬০টি ক্যান্ডেল একবারে (Bulk Insert) পুশ
+            candles_col.insert_many(initial_candles)
+            print(f"✅ মঙ্গোডিবিতে সফলভাবে ৬০টি আপ-ডাউন ক্যান্ডেল ইনিশিয়ালি যোগ করা হয়েছে!")
         else:
-            print(f"✅ ক্যান্ডেল কালেকশনে আগেই {candles_col.count_documents({})} টি ডাটা আছে")
+            print(f"✅ ক্যান্ডেল কালেকশনে আগে থেকেই {current_count}টি ডাটা সুরক্ষিত আছে।")
+            
     except Exception as e:
-        print(f"❌ ক্যান্ডেল ইনিশিয়ালাইজ করতে ব্যর্থ: {e}")
+        print(f"❌ ক্যান্ডেল ইনিশিয়ালাইজ করতে ব্যর্থ: {e}")
 
-# অ্যাপ শুরু হওয়ার সময় কল করুন
+# অ্যাপ শুরু হওয়ার সময় কল করুন
 init_candles_collection()
-
 # ================= LOGIN REQUIRED DECORATOR =================
 def login_required(f):
     @wraps(f)
@@ -890,42 +922,37 @@ def test_db():
         }), 500
         
     
+import time
+import random
+from datetime import datetime, timedelta
+from flask import jsonify
 
-@app.route("/api/candles")
 def get_candles():
-    """ফায়ারবেস থেকে ২ মাসের ক্যান্ডেল হিস্ট্রি রিটার্ন করে, খালি থাকলে মঙ্গোডিবি বা ডামি ডাটা দেয়"""
+    """মঙ্গোডিবি (MongoDB) থেকে ১ মাসের ক্যান্ডেল হিস্ট্রি রিটার্ন করে, খালি থাকলে ডামি ডাটা দেয়"""
     try:
         candles = []
 
-        # 📜 ১. প্রথমে ফায়ারবেস (Firebase Realtime DB) থেকে ২ মাসের হিস্ট্রি ডাটা খোঁজা হবে
-        if fb_ref:
-            try:
-                # আপনার ফায়ারবেসের ক্যান্ডেল নোড থেকে ডাটা রিড
-                fb_data = fb_ref.child("candles").get()
-                if fb_data:
-                    # ফায়ারবেস থেকে আসা ডাটাকে লিস্টে কনভার্ট করা
-                    raw_list = fb_data.values() if isinstance(fb_data, dict) else fb_data
-                    for c in raw_list:
-                        if c and "time" in c:
-                            candles.append({
-                                "time": int(c["time"]),
-                                "open": float(c.get("open", 1.0)),
-                                "high": float(c.get("high", 1.0)),
-                                "low": float(c.get("low", 1.0)),
-                                "close": float(c.get("close", 1.0))
-                            })
-                    print(f"✅ Firebase থেকে {len(candles)}টি ক্যান্ডেল হিস্ট্রি লোড হয়েছে")
-            except Exception as fb_err:
-                print(f"⚠️ Firebase Read Error: {fb_err}")
-
-        # 🍃 ২. ফায়ারবেস যদি খালি থাকে, তবে ফলব্যাক হিসেবে মঙ্গোডিবি থেকে লাইভ ক্যান্ডেল চেক করবে
-        if not candles:
-            print("ℹ️ Firebase খালি, MongoDB থেকে লাইভ ক্যান্ডেল চেক করা হচ্ছে...")
-            candles_cursor = candles_col.find({}).sort("time", 1).limit(200)
+        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে ক্যান্ডেল ডাটা লোড করা
+        try:
+            # গত ৩০ দিনের ক্যান্ডেল ফিল্টার করার সেফটি লক (১ মাসের ডাটা)
+            # ১ মাস = ৩০ দিন * ২৪ ঘণ্টা * ৬০ মিনিট = ৪৩,২০০টি ক্যান্ডেল সর্বোচ্চ
+            one_month_ago_timestamp = int(time.time()) - (30 * 24 * 60 * 60)
+            
+            # ৩০ দিনের ভেতরের ডাটাগুলো টাইম অনুযায়ী সর্ট করে আনা হচ্ছে (কোনো ফায়ারবেস নেই)
+            candles_cursor = candles_col.find(
+                {"time": {"$gte": one_month_ago_timestamp}}, 
+                {'_id': 0}
+            ).sort("time", 1)
+            
             for doc in candles_cursor:
                 time_val = doc.get("time", 0)
                 if time_val == 0:
                     continue
+                
+                # টাইমস্ট্যাম্প যদি ভুলবশত মিলি-সেকেন্ডে থাকে, তাকে সেকেন্ডে রূপান্তর করার সেফটি চেক
+                if time_val > 9999999999:
+                    time_val = int(time_val / 1000)
+
                 candles.append({
                     "time": int(time_val),
                     "open": float(doc.get("open", 1.0)),
@@ -933,36 +960,54 @@ def get_candles():
                     "low": float(doc.get("low", 1.0)),
                     "close": float(doc.get("close", 1.0))
                 })
+                
+            if candles:
+                print(f"✅ MongoDB থেকে {len(candles)}টি ক্যান্ডেল হিস্ট্রি সফলভাবে লোড হয়েছে")
+                
+        except Exception as mongo_err:
+            print(f"⚠️ MongoDB Read Error: {mongo_err}")
 
-        # ⚡ ৩. যদি দুটো ডাটাবেসই সম্পূর্ণ খালি থাকে, তবে চার্ট চালু রাখতে ডামি ক্যান্ডেল জেনারেট হবে
+        # ⚡ ২. মঙ্গোডিবি যদি একদম প্রথমবার সম্পূর্ণ খালি থাকে, তবে চার্ট সচল রাখতে ডামি ক্যান্ডেল জেনারেট হবে
         if not candles:
-            print("⚠️ কোনো ডাটাবেসেই ডাটা নেই! চার্ট সচল রাখতে ৯০ পয়সা লিমিটে ডামি ক্যান্ডেল তৈরি হচ্ছে")
-            base = int(datetime.utcnow().timestamp()) - (60 * 60)  # গত ১ ঘন্টা থেকে শুরু
+            print("⚠️ মঙ্গোডিবি খালি! চার্ট সচল রাখতে ৯০ পয়সা লিমিটে ৬০টি ডামি ক্যান্ডেল তৈরি হচ্ছে")
+            base = int(time.time()) - (60 * 60)  # গত ১ ঘণ্টা আগে থেকে শুরু
             
             start_price = 1.0000
+            initial_candles = []
+            
             for i in range(60):
                 open_p = start_price
-                # র্যান্ডম আপ-ডাউন প্রাইস মুভমেন্ট
-                close_p = start_price + (import_random_or_math_logic_here_if_needed() or 0.002) 
+                # একটি র্যান্ডম হালকা মুভমেন্ট জেনারেট করা হলো
+                movement = random.uniform(-0.001, 0.0015)
+                close_p = start_price + movement
                 
                 # 🛡️ ৯০ পয়সার সিকিউরিটি ফ্লোর লক (এর নিচে প্রাইস নামতে পারবে না)
                 if open_p < 0.9000: open_p = 0.9000
                 if close_p < 0.9000: close_p = 0.9000
                 
-                high_p = max(open_p, close_p) + 0.003
-                low_p = min(open_p, close_p) - 0.003
-                if low_p < 0.9000: low_p = 0.9000 # লো-ও ৯০ পয়সার নিচে যাবে না
+                high_p = max(open_p, close_p) + random.uniform(0.0001, 0.0005)
+                low_p = min(open_p, close_p) - random.uniform(0.0001, 0.0005)
+                if low_p < 0.9000: low_p = 0.9000  # লো-ও ৯০ পয়সার নিচে যাবে না
 
-                candles.append({
+                candle_obj = {
                     "time": base + (i * 60),
                     "open": float(open_p),
                     "high": float(high_p),
                     "low": float(low_p),
                     "close": float(close_p)
-                })
+                }
+                candles.append(candle_obj)
+                initial_candles.append(candle_obj)
                 start_price = close_p
+            
+            # প্রথমবার খালি থাকলে এই ৬০টি ক্যান্ডেল মঙ্গোডিবিতে সেভও করে রাখবে যেন পরের বার ডামি ডাটা না লাগে
+            try:
+                candles_col.insert_many(initial_candles)
+                print("💾 প্রাথমিক ৬০টি ক্যান্ডেল মঙ্গোডিবিতে সফলভাবে সেভ করা হয়েছে!")
+            except Exception as ins_err:
+                print(f"⚠️ Initial Insert Error: {ins_err}")
 
-        # ৪. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী সাজানো (ট্রেডিংভিউ চার্ট রুলস)
+        # ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী সাজানো (ট্রেডিংভিউ চার্ট রুলস)
         candles.sort(key=lambda x: x['time'])
         
         return jsonify({
@@ -972,8 +1017,8 @@ def get_candles():
         
     except Exception as e:
         print(f"❌ Candles API Critical Error: {e}")
-        # এরর হলেও সেফটি হিসেবে ১ টাকার বেস ডামি ডাটা রিটার্ন (চার্ট ক্র্যাশ প্রতিরোধ)
-        base = int(datetime.utcnow().timestamp()) - (60 * 60)
+        # ক্র্যাশ প্রতিরোধে ১ টাকার বেস ডামি ডাটা ফলব্যাক
+        base = int(time.time()) - (60 * 60)
         fallback_candles = []
         for i in range(60):
             fallback_candles.append({
@@ -985,6 +1030,7 @@ def get_candles():
             "message": str(e),
             "candles": fallback_candles
         })
+
 
 @app.route("/api/market/live-candle")
 def live_candle():
