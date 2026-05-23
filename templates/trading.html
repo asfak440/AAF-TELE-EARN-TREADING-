@@ -332,47 +332,62 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     
     // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
     function initTradingViewChart() {
-        if (!window.LightweightCharts) return;
-        container.innerHTML = '';
-        const activeColors = isDarkTheme ? themeColors.dark : themeColors.light;
+    if (!window.LightweightCharts) return;
+    container.innerHTML = '';
+    
+    // থিম অনুযায়ী ব্যাকগ্রাউন্ড ও টেক্সট কালার নির্ধারণ
+    const activeBg = isDarkTheme ? '#05080d' : '#ffffff';
+    const activeText = isDarkTheme ? '#94a3b8' : '#333333';
+    const activeGrid = isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0,0,0,0.05)';
 
-        chart = LightweightCharts.createChart(container, {
-            width: container.clientWidth || window.innerWidth,
-            height: 260,
-            layout: { background: { type: 'solid', color: activeColors.bg }, textColor: activeColors.text },
-            grid: { vertLines: { color: activeColors.grid }, horzLines: { color: activeColors.grid } },
-            timeScale: { timeVisible: true, secondsVisible: false, borderColor: activeColors.grid }
-        });
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || window.innerWidth,
+        height: 250, // চার্টের হাইট ২৫০ পিক্সেল লক রাখা হলো
+        layout: { 
+            background: { type: 'solid', color: activeBg }, 
+            textColor: activeText 
+        },
+        grid: { 
+            vertLines: { color: activeGrid }, 
+            horzLines: { color: activeGrid } 
+        },
+        timeScale: { 
+            timeVisible: true, 
+            secondsVisible: false, 
+            borderColor: activeGrid,
+            barSpacing: 8, // 🎯 ফিক্স: ক্যান্ডেলগুলোর মাঝখানের স্পেস বাড়ানো হলো যাতে বডি মোটা দেখায়
+        }
+    });
 
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#2ebd85',       // বাইন্যান্স অরিজিনাল গ্রিন বডি
-            downColor: '#df294a',     // বাইন্যান্স অরিজিনাল রেড বডি
-            borderUpColor: '#2ebd85',
-            borderDownColor: '#df294a',
-            wickUpColor: '#2ebd85',   // ক্যান্ডেলের উপরের ও নিচের চিকন সুতা বা Wick
-            wickDownColor: '#df294a',
-            borderColor: '#374151',
-        });
+    // 🎯 ক্যান্ডেলস্টিক কালার সেটিংস একদম সলিড ও ব্রাইট করা হলো যাতে মোমবাতি স্পষ্ট দেখা যায়
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#00ffa3',         // ঝকঝকে নিয়ন সবুজ বডি
+        downColor: '#ff3366',       // ঝকঝকে নিয়ন লাল বডি
+        borderUpColor: '#00ffa3',
+        borderDownColor: '#ff3366',
+        wickUpColor: '#00ffa3',     // উপরের ও নিচের সুতা (Wick) সবুজ
+        wickDownColor: '#ff3366',   // উপরের ও নিচের সুতা (Wick) লাল
+        borderColor: '#1e293b',
+    });
 
-        // 🎯 সাইড গ্রাফ বা প্রাইস স্কেল বাইন্যান্স স্টাইল কাস্টমাইজেশন
-        chart.priceScale('right').applyOptions({
-            autoScale: true,
-            borderColor: '#2ebd85', // সাইড গ্রাফের ডানদিকের বর্ডার লাইনের কালার গ্রিন করা হলো
-            textColor: '#94a3b8',   // স্কেলের ভেতরের প্রাইস টেক্সটের কালার
-            scaleMargins: {
-                top: 0.1, 
-                bottom: 0.15, 
-            },
-        });
+    // ডানদিকের প্রাইস স্কেল বাইন্যান্স স্টাইল কাস্টমাইজেশন
+    chart.priceScale('right').applyOptions({
+        autoScale: true,
+        borderColor: activeGrid, 
+        textColor: activeText,   
+        scaleMargins: {
+            top: 0.1, 
+            bottom: 0.15, 
+        },
+    });
 
-        // লাইভ প্রাইসের যে অনুভূমিক (Horizontal) রেখাটি চার্টে ভাসবে, সেটির কালার ফিক্স
-        candleSeries.applyOptions({
-            priceLineColor: '#2ebd85', // লাইভ প্রাইস লাইনের কালার গ্রিন হবে
-            priceLineWidth: 1,         // লাইনের পুরুত্ব
-            priceLineStyle: 2,         // ডটেড (Dotted) স্টাইল রেখা
-        });
+    // লাইভ রানিং প্রাইস লাইনের কালার ও স্টাইল ফিক্স
+    candleSeries.applyOptions({
+        priceLineColor: '#00ffa3', 
+        priceLineWidth: 1,         
+        priceLineStyle: 2, // ডটেড রেখা        
+    });
     }
-
     // 📜 ১. ফায়ারবেস (Firebase API) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
     async function fetchFirebaseHistory() {
         try {
