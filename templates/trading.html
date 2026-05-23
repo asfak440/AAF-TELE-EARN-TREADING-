@@ -437,53 +437,67 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
 
     // 🕯️ ২. মঙ্গোডিবি থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও সেভিং বাগ ফিক্স
     async function syncMongoDBLive() {
-        try {
-            const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
-            const data = await res.json();
+    try {
+        const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data && data.live_price) {
+            const livePriceFromMongo = parseFloat(data.live_price);
             
-            if (data && data.live_price) {
-                const livePriceFromMongo = parseFloat(data.live_price);
-                
-                const priceEl = document.getElementById('live-price');
-                if (priceEl) {
-                    priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
-                    priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
-                }
-
-                if (candleSeries && livePriceFromMongo) {
-                    const now = Math.floor(Date.now() / 1000);
-                    const interval = currentTimeframe * 60;
-                    const currentBarTime = Math.floor(now / interval) * interval;
-
-                    // 🎯 ফিক্স: নতুন মিনিট শুরু হলে ওল্ড ক্যান্ডেল লক করে সম্পূর্ণ নতুন ক্যান্ডেল অবজেক্ট তৈরি হবে
-                    if (!currentBar || currentBar.time !== currentBarTime) {
-                        currentBar = {
-                            time: currentBarTime,
-                            open: livePriceFromMongo, // ওল্ড প্রাইসের জায়গায় লাইভ ওপেন প্রাইস লক
-                            high: livePriceFromMongo,
-                            low: livePriceFromMongo,
-                            close: livePriceFromMongo
-                        };
-                    } else {
-                        currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
-                        currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
-                        currentBar.close = livePriceFromMongo;
-                    }
-
-                    candleSeries.update(currentBar);
-                }
-
-                lastPrice = livePriceFromMongo;
-                
-                // 🔄 লাইভ প্রাইস আপডেটের সাথে সাথে ক্যালকুলেটরও ব্যাকগ্রাউন্ডে অটো সিঙ্ক হবে
-                if (typeof window.updateTradeCalculator === 'function') {
-                    window.updateTradeCalculator('taka_live');
-                }
+            const priceEl = document.getElementById('live-price');
+            if (priceEl) {
+                priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
+                priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
             }
-        } catch (e) {}
+
+            if (candleSeries && livePriceFromMongo) {
+                const now = Math.floor(Date.now() / 1000);
+                const interval = currentTimeframe * 60;
+                const currentBarTime = Math.floor(now / interval) * interval;
+
+                // 🎯 ফিক্স: হিস্ট্রি থেকে আসা লাস্ট ক্যান্ডেলের টাইমের সাথে লাইভ টাইমের নিখুঁত সিঙ্ক
+                if (!currentBar) {
+                    currentBar = {
+                        time: currentBarTime,
+                        open: livePriceFromMongo,
+                        high: livePriceFromMongo,
+                        low: livePriceFromMongo,
+                        close: livePriceFromMongo
+                    };
+                }
+
+                // 🎯 ফিক্স: ঘড়ির কাঁটায় আসল মিনিট পরিবর্তন হলেই কেবল নতুন ক্যান্ডেল তৈরি হবে, প্রতি টিকে নয়!
+                if (currentBarTime > currentBar.time) {
+                    currentBar = {
+                        time: currentBarTime,
+                        open: livePriceFromMongo, 
+                        high: livePriceFromMongo,
+                        low: livePriceFromMongo,
+                        close: livePriceFromMongo
+                    };
+                } else {
+                    // একই মিনিটের ভেতর থাকলে ক্যান্ডেলের হাই, লো এবং ক্লোজ আপডেট হবে (ফলে বডি মোটা ও ছড়ানো হবে)
+                    currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
+                    currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
+                    currentBar.close = livePriceFromMongo;
+                }
+
+                candleSeries.update(currentBar);
+            }
+
+            lastPrice = livePriceFromMongo;
+            
+            // 🔄 লাইভ প্রাইস আপডেটের সাথে সাথে ক্যালকুলেটরও ব্যাকগ্রাউন্ডে অটো সিঙ্ক হবে
+            if (typeof window.updateTradeCalculator === 'function') {
+                window.updateTradeCalculator('taka_live');
+            }
+        }
+    } catch (e) {
+        // ব্যাকগ্রাউন্ড এরর সাইলেন্ট রাখা হলো
+    }
     }
 
-     // 🎯 // 🎯 // 🎯 // 🎯 // 🎯 // 🎯
+     
     window.setTradeMode = function(mode) {
     const buyBtn = document.getElementById('buy-btn');
     const sellBtn = document.getElementById('sell-btn');
