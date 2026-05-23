@@ -289,14 +289,16 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         }
     </script>
      <script src="/static/js/lightweight-charts.js"></script>
-     <script>
-         (function() {
+     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>
+(function() {
     const container = document.getElementById('chart-container');
     if (!container) return;
 
     container.style.cssText = "width: 100%; height: 260px; min-height: 260px; display: block; position: relative;";
 
-    // রিয়েল-টাইম লাইভ ডিবাগ লগ স্ক্রিন
+    // 📡 রিয়েল-টাইম লাইভ ডিবাগ লগ স্ক্রিন
     let dbgDiv = document.getElementById('live-debug');
     if(!dbgDiv) {
         dbgDiv = document.createElement('div');
@@ -318,19 +320,18 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     let lastPrice = 1.0;
     let currentTimeframe = 1; 
     let isDarkTheme = true; 
-    
-    // 🔐 ক্যান্ডেল রিফ্রেশে সেভ রাখার লক ও মেমোরি ভ্যারিয়েবল
     let currentBar = null; 
     let lastSavedMinute = -1; 
-
-    const themeColors = {
-        dark: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' },
-        light: { bg: '#05080d', grid: 'rgba(255, 255, 255, 0.05)', text: '#94a3b8', upCandle: '#00ffa3', downCandle: '#ff3366' }
-    };
 
     // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
     function initTradingViewChart() {
         if (!window.LightweightCharts) return;
+        
+        // 🎯 ফিক্স: নতুন চার্ট তৈরির আগে পুরনো চার্ট অবজেক্ট মেমরি থেকে পুরোপুরি ডিলিট করা
+        if (chart) {
+            chart.remove();
+            chart = null;
+        }
         container.innerHTML = '';
         
         const activeBg = isDarkTheme ? '#05080d' : '#ffffff';
@@ -380,7 +381,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         });
     }
 
-    // 🎯 ১. ফায়ারবেস বদলে সরাসরি MongoDB থেকে ১ মাসের চার্ট হিস্ট্রি লোড করার গ্লোবাল ফাংশন
+    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন
     async function loadChartHistoryFromMongo() {
         try {
             log("📡 MongoDB থেকে চার্টের ক্যান্ডেল ডাটা আনা হচ্ছে...");
@@ -393,7 +394,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             if (candleSeries && historyCandles.length > 0) {
                 let parsed = historyCandles.map(c => {
                     let t = parseInt(c.time);
-                    if (t > 9999999999) t = Math.floor(t / 1000); // মিলি-সেকেন্ড থাকলে সেকেন্ডে রূপান্তর
+                    if (t > 9999999999) t = Math.floor(t / 1000); 
                     return {
                         time: t,
                         open: parseFloat(c.open),
@@ -403,24 +404,26 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                     };
                 });
 
-                // টাইম অনুযায়ী নিখুঁত সর্টিং
+                // টাইম সিকোয়েন্স অনুযায়ী নিখুঁত সর্টিং
                 parsed.sort((a, b) => a.time - b.time); 
                 candleSeries.setData(parsed);
                 chart.timeScale().fitContent();
 
-                // গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেলটি লক
+                // গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেল লক করা
                 const lastValid = parsed[parsed.length - 1];
                 lastPrice = lastValid.close;
                 currentBar = { ...lastValid };
 
-                log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
+                log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
+            } else {
+                log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
             }
         } catch (err) {
             log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
         }
     }
 
-    // ২. লাইভ সিঙ্ক ফাংশন (মোবাইলের টাইম বাদ দিয়ে ডাটাবেসের লাস্ট টাইমকে ফলো করবে)
+    // 🎯 ২. লাইভ সিঙ্ক ফাংশন (ফিক্সড: ফ্রন্টএন্ড কোনো ডামি ক্যান্ডেল বানাবে না, ব্যাকএন্ডের রিয়েল টাইম ডাটা ফলো করবে)
     async function syncMongoDBLive() {
         try {
             const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
@@ -435,22 +438,21 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                     priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
-                if (candleSeries && livePriceFromMongo && currentBar) {
-                    const interval = (parseInt(currentTimeframe) || 1) * 60; 
-
-                    const systemNow = Math.floor(Date.now() / 1000);
+                if (candleSeries && currentBar) {
+                    // ব্যাকএন্ডের বর্তমান মিনিটের সঠিক লক নিয়ে রিয়েল-টাইম মোমবাতি আপডেট
+                    const currentSystemMinute = Math.floor(Date.now() / 1000) - (Math.floor(Date.now() / 1000) % 60);
                     
-                    if (systemNow % interval === 0) {
-                        const nextBarTime = currentBar.time + interval;
+                    if (currentSystemMinute > currentBar.time) {
+                        // ব্যাকএন্ডে নতুন মিনিট শুরু হলে ফ্রন্টএন্ডে নতুন ক্যান্ডেল ব্লক তৈরি হবে
                         currentBar = {
-                            time: nextBarTime,
+                            time: currentSystemMinute,
                             open: livePriceFromMongo,
                             high: livePriceFromMongo,
                             low: livePriceFromMongo,
                             close: livePriceFromMongo
                         };
-                        log(`🆕 নতুন ক্যান্ডেল ওপেন হলো: ${nextBarTime}`);
                     } else {
+                        // একই মিনিটের ভেতর অনবরত হাই, লো, ক্লোজ সিঙ্ক হবে
                         currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
                         currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
                         currentBar.close = livePriceFromMongo;
@@ -559,14 +561,14 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
             }
 
-            // 🎯 ফিক্স: ফায়ারবেস বা ডুপ্লিকেট এপিআই কল সম্পূর্ণ বাদ দেওয়া হয়েছে
+            // কাঁটায় কাঁটায় নতুন মিনিটে পৌঁছালে ডাটাবেস থেকে ফ্রেশ অল ক্যান্ডেল রিলোড করবে
             const now = new Date();
             const secs = now.getSeconds();
             const mins = now.getMinutes();
             if (secs === 0 && mins % currentTimeframe === 0 && mins !== lastSavedMinute) {
                 lastSavedMinute = mins; 
-                log("🔄 নতুন মিনিটের ক্যান্ডেল সিঙ্ক হচ্ছে...");
-                setTimeout(loadChartHistoryFromMongo, 2000); 
+                log("🔄 নতুন মিনিটের ক্যান্ডেল ডাটাবেস থেকে সিঙ্ক হচ্ছে...");
+                setTimeout(loadChartHistoryFromMongo, 1500); 
             }
         } catch (err) {}
     }
@@ -608,12 +610,12 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 });
 
                 candleSeries.applyOptions({
-                    upColor: '#2ebd85',       
-                    downColor: '#df294a',     
-                    borderUpColor: '#2ebd85',
-                    borderDownColor: '#df294a',
-                    wickUpColor: '#2ebd85',   
-                    wickDownColor: '#df294a'
+                    upColor: '#00ffa3',       
+                    downColor: '#ff3366',     
+                    borderUpColor: '#00ffa3',
+                    borderDownColor: '#ff3366',
+                    wickUpColor: '#00ffa3',   
+                    wickDownColor: '#ff3366'
                 });
             }
         }); 
@@ -640,9 +642,9 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 if (selectedTf && selectedTf !== currentTimeframe) {
                     currentTimeframe = selectedTf;
                     lastSavedMinute = -1; 
-                    log(`⏳ টাইমফ্রেমসুইচ: ${currentTimeframe}M`);
+                    log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
                     initTradingViewChart();
-                    loadChartHistoryFromMongo(); // 🎯 নতুন মঙ্গোডিবি ফাংশন এখানে যুক্ত করা হয়েছে
+                    loadChartHistoryFromMongo(); 
                     setupTimeframeListeners();
                 }
             });
@@ -704,14 +706,14 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     // বুট রানার
     function startTradingEngine() {
         initTradingViewChart();
-        loadChartHistoryFromMongo(); // 🎯 ফায়ারবেসের পরিবর্তে এখন সরাসরি মঙ্গোডিবি লোড হবে
+        loadChartHistoryFromMongo(); 
         setupThemeToggleListener();
         setupTimeframeListeners();
         
         setInterval(syncMongoDBLive, 1000);
         setInterval(syncUserDataAndClosing, 3000);
         
-        log("🚀 মঙ্গোডিবি ব্যাকএন্ড ইঞ্জিনের সাথে চার্ট সিঙ্কড!");
+        log("🚀 মঙ্গোডিবি ইঞ্জিনের সাথে চার্ট সিঙ্কড ও লাইভ!");
     }
 
     if (document.readyState === 'complete') {
@@ -720,7 +722,6 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         window.addEventListener('load', startTradingEngine);
     }
 })();
-
 </script>
 </body>
 </html>
