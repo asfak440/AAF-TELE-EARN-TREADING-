@@ -388,8 +388,9 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         priceLineStyle: 2, // ডটেড রেখা        
     });
     }
-    // 📜 ১. ফায়ারবেস (Firebase API) থেকে ২ মাসের ওল্ড ক্যান্ডেল হিস্ট্রি লোড
-    async function fetchFirebaseHistory() {
+
+    // ১. ফায়ারবেস হিস্ট্রি ফাংশন (টাইমস্ট্যাম্পকে ডাটাবেসের অরিজিনাল ফরমেটে লক করা হলো)
+async function fetchFirebaseHistory() {
     try {
         log("📡 Firebase থেকে ২ মাসের ক্যান্ডেল ব্যাকআপ আনা হচ্ছে...");
         const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
@@ -399,16 +400,11 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         let historyCandles = data.candles || [];
 
         if (candleSeries && historyCandles.length > 0) {
-            // 🎯 ফিক্স: টাইমস্ট্যাম্প সর্টিং এবং গ্যাপ বাগ দূর করার নিখুঁত লজিক
-            let nowUnix = Math.floor(Date.now() / 1000);
-            let timeStep = currentTimeframe * 60; // টাইমফ্রেম অনুযায়ী সেকেন্ড (যেমন: 1M = 60s)
-
-            let parsed = historyCandles.map((c, index) => {
-                // ডাটাবেসের টাইম যদি ভেঙে যায়, তবে আমরা রিয়েল টাইম থেকে পেছনে ব্যাক-ক্যালকুলেট করে টাইম ফিক্স করছি
-                let correctedTime = nowUnix - ((historyCandles.length - 1 - index) * timeStep);
-                
+            let parsed = historyCandles.map(c => {
+                let t = parseInt(c.time);
+                if (t > 9999999999) t = Math.floor(t / 1000); // মিলি-সেকেন্ড থাকলে সেকেন্ডে রূপান্তর
                 return {
-                    time: correctedTime, // 🎯 ফিক্স: টাইম সিকোয়েন্স একদম লাইভ টাইমের সাথে লক করা হলো
+                    time: t,
                     open: parseFloat(c.open),
                     high: parseFloat(c.high),
                     low: parseFloat(c.low),
@@ -416,27 +412,25 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 };
             });
 
+            // টাইম অনুযায়ী নিখুঁত সর্টিং
             parsed.sort((a, b) => a.time - b.time); 
             candleSeries.setData(parsed);
-            
-            // 🎯 ফিক্স: চার্ট যেন জুম আউট হয়ে বামে না চলে যায়, ক্যান্ডেল স্ক্রিন ফিট করা হলো
             chart.timeScale().fitContent();
 
-            // লাস্ট ক্যান্ডেল ট্র্যাক মেমরিতে সেট
+            // 🎯 গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেলটি এবং তার অরিজিনাল টাইমস্ট্যাম্প লক
             const lastValid = parsed[parsed.length - 1];
             lastPrice = lastValid.close;
             currentBar = { ...lastValid };
 
-            log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে`);
+            log(`✅ Firebase থেকে ${parsed.length}টি ক্যান্ডেল চার্টে সাজানো হয়েছে। লাস্ট টাইম: ${currentBar.time}`);
         }
     } catch (err) {
         log("⚠️ ফায়ারবেস ডাটাবেস হিস্ট্রি কানেকশন পেন্ডিং...");
     }
-    }
-            
+}
 
-    // 🕯️ ২. মঙ্গোডিবি থেকে লাইভ ক্যান্ডেলস্টিক জেনারেট ও সেভিং বাগ ফিক্স
-    async function syncMongoDBLive() {
+// ২. লাইভ সিঙ্ক ফাংশন (মোবাইলের টাইম বাদ দিয়ে ডাটাবেসের লাস্ট টাইমকে ফলো করবে)
+async function syncMongoDBLive() {
     try {
         const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
         const data = await res.json();
@@ -450,33 +444,26 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
             }
 
-            if (candleSeries && livePriceFromMongo) {
-                const now = Math.floor(Date.now() / 1000);
-                const interval = currentTimeframe * 60;
-                const currentBarTime = Math.floor(now / interval) * interval;
+            if (candleSeries && livePriceFromMongo && currentBar) {
+                const interval = (parseInt(currentTimeframe) || 1) * 60; // যেমন: ১ মিনিট = ৬০ সেকেন্ড
 
-                // 🎯 ফিক্স: হিস্ট্রি থেকে আসা লাস্ট ক্যান্ডেলের টাইমের সাথে লাইভ টাইমের নিখুঁত সিঙ্ক
-                if (!currentBar) {
+                // 🎯 ট্র্যাকিং ফিক্স: মোবাইলের টাইমস্ট্যাম্প নয়, ব্যাকএন্ডের রানিং মিনিটের বেস তৈরি করা হলো
+                const systemNow = Math.floor(Date.now() / 1000);
+                
+                // যদি মেমরিতে থাকা শেষ ক্যান্ডেলের টাইমের চেয়ে ঘড়ির কাঁটায় ১ মিনিট পার হয়ে যায়
+                if (systemNow % interval === 0) {
+                    // নতুন ক্যান্ডেল ঠিক ওল্ড ক্যান্ডেলের পর ডানে তৈরি হবে, কোনো ফাঁকা জায়গা (Gap) থাকবে না
+                    const nextBarTime = currentBar.time + interval;
                     currentBar = {
-                        time: currentBarTime,
+                        time: nextBarTime,
                         open: livePriceFromMongo,
                         high: livePriceFromMongo,
                         low: livePriceFromMongo,
                         close: livePriceFromMongo
                     };
-                }
-
-                // 🎯 ফিক্স: ঘড়ির কাঁটায় আসল মিনিট পরিবর্তন হলেই কেবল নতুন ক্যান্ডেল তৈরি হবে, প্রতি টিকে নয়!
-                if (currentBarTime > currentBar.time) {
-                    currentBar = {
-                        time: currentBarTime,
-                        open: livePriceFromMongo, 
-                        high: livePriceFromMongo,
-                        low: livePriceFromMongo,
-                        close: livePriceFromMongo
-                    };
+                    log(`🆕 সবার জন্য একই সাথে নতুন ক্যান্ডেল ওপেন হলো: ${nextBarTime}`);
                 } else {
-                    // একই মিনিটের ভেতর থাকলে ক্যান্ডেলের হাই, লো এবং ক্লোজ আপডেট হবে (ফলে বডি মোটা ও ছড়ানো হবে)
+                    // একই মিনিটের ভেতরে থাকলে মোমবাতির বডি মোটা হবে
                     currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
                     currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
                     currentBar.close = livePriceFromMongo;
@@ -487,16 +474,12 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
 
             lastPrice = livePriceFromMongo;
             
-            // 🔄 লাইভ প্রাইস আপডেটের সাথে সাথে ক্যালকুলেটরও ব্যাকগ্রাউন্ডে অটো সিঙ্ক হবে
             if (typeof window.updateTradeCalculator === 'function') {
                 window.updateTradeCalculator('taka_live');
             }
         }
-    } catch (e) {
-        // ব্যাকগ্রাউন্ড এরর সাইলেন্ট রাখা হলো
+    } catch (e) {}
     }
-    }
-
      
     window.setTradeMode = function(mode) {
     const buyBtn = document.getElementById('buy-btn');
