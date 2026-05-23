@@ -905,10 +905,6 @@ def test_db():
         }), 500
         
     
-import time
-import random
-from datetime import datetime, timedelta
-from flask import jsonify
 
 def get_candles():
     """মঙ্গোডিবি (MongoDB) থেকে ১ মাসের ক্যান্ডেল হিস্ট্রি রিটার্ন করে, খালি থাকলে ডামি ডাটা দেয়"""
