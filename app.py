@@ -120,7 +120,7 @@ def get_admin_config():
         doc["ip_limit_per_hour"] = 5
         need_update = True
     if "default_task_expiry_hours" not in doc:
-        doc["default_task_expiry_hours"] = 168,
+        doc["default_task_expiry_hours"] = 168
         need_update = True
 
     if need_update:
@@ -146,76 +146,74 @@ current_price = 1.0
 # এই কোডটি app.py-তে আপনার বিদ্যমান update_price_loop() ফাংশনটিকে প্রতিস্থাপন করবে।
 def update_price_loop():
     global current_price
-    last_candle_minute = None
+    print("🚀 মঙ্গোডিবি অটো-ক্যান্ডেল ইঞ্জিন ও লাইভ প্রাইস লুপ চালু হয়েছে...")
     
-    # শুরুর ক্যান্ডেল ভ্যালু লক
-    candle_open = current_price
-    candle_high = current_price
-    candle_low = current_price
-    candle_close = current_price
-
-    print("🚀 মঙ্গোডিবি অটো-ক্যান্ডেল ইঞ্জিন ও লাইভ প্রাইস লুপ চালু হয়েছে...")
+    last_saved_minute = -1
 
     while True:
         try:
             now = datetime.utcnow()
-            # কারেন্ট মিনিট লক (সেকেন্ড ০ করে মিনিট ভিত্তিক টাইমস্ট্যাম্প তৈরি)
-            current_minute_timestamp = int(time.time() - (time.time() % 60))
+            now_ts = int(time.time())
+            # ⏰ কারেন্ট মিনিটের একদম শুরুর নিখুঁত টাইমস্ট্যাম্প লক
+            current_minute_timestamp = now_ts - (now_ts % 60)
 
-            # এডমিন কনফিগ থেকে volatility পড়া
-            admin = get_admin_config()
+            # ১. এডমিন কনফিগ থেকে volatility এবং লাইভ প্রাইস সিঙ্ক করা (ট্রেড ইমপ্যাক্ট লক)
+            admin = get_admin_config() or {}
             volatility = admin.get("task_rules", {}).get("price_volatility", 0.0005) if isinstance(admin.get("task_rules"), dict) else admin.get("price_volatility", 0.0005)
             
-            # 📈📉 র্যান্ডম আপ-ডাউন প্রাইস মুভমেন্ট লজিক
-            change = random.uniform(-volatility, volatility)
-            current_price += change
+            # ডাটাবেসে যদি ট্রেডের কারণে দাম পরিবর্তন হয়ে থাকে, তবে সেটাকে বেস প্রাইস ধরা হবে
+            db_price = float(admin.get("live_price", current_price))
             
-            # 🛡️ ৯০ পয়সার সেফটি ফ্লোর এবং ২.৫ টাকার সিলিং লক
+            # 📈📉 র্যান্ডম আপ-ডাউন মুভমেন্ট (১-২ পয়সার কন্ট্রোল)
+            change = random.uniform(-volatility, volatility)
+            current_price = db_price + change
+            
+            # 🛡️ ৯০ পয়সার সেফটি ফ্লোর এবং ২.৫ টাকার সিলিং লক
             current_price = max(0.9000, min(2.5000, current_price))
 
-            # প্রতি মিনিটের শুরুতে নতুন ক্যান্ডেল তৈরি এবং MongoDB-তে সেভ
-            if last_candle_minute != current_minute_timestamp:
-                if last_candle_minute is not None:
-                    # 💾 সরাসরি মঙ্গোডিবিতে ক্যান্ডেল পুশ
-                    candles_col.insert_one({
-                        "time": last_candle_minute,
-                        "open": float(candle_open),
-                        "high": float(candle_high),
-                        "low": float(candle_low),
-                        "close": float(candle_close)
-                    })
-                    print(f"⏰ [অটো-ইঞ্জিন]: নতুন ক্যান্ডেল মঙ্গোডিবিতে সেভ হয়েছে! টাইম: {last_candle_minute}")
+            # ২. প্রতি মিনিটে ডাটাবেসে নতুন ক্যান্ডেল তৈরি ও রিয়েল-টাইম আপডেট লজিক
+            if current_minute_timestamp != last_saved_minute:
+                # নতুন মিনিট শুরু হয়েছে! আগের মিনিটের ডাটা লক করে একদম ফ্রেশ ক্যান্ডেল ইনসার্ট হবে
+                new_candle = {
+                    "time": int(current_minute_timestamp),
+                    "open": float(db_price),
+                    "high": float(max(db_price, current_price)),
+                    "low": float(min(db_price, current_price)),
+                    "close": float(current_price)
+                }
+                candles_col.insert_one(new_candle)
+                print(f"⏰ [অটো-ইঞ্জিন]: নতুন ক্যান্ডেল তৈরি হয়েছে! টাইম: {current_minute_timestamp} | দাম: {current_price:.4f}")
+                
+                # 🧹 অটো-ক্লিনার: ২০০ লাইনের বেশি ডাটা হলে পুরনো ডাটা ডিলিট (যাতে ডাটাবেস ফাস্ট থাকে)
+                if candles_col.count_documents({}) > 200:
+                    oldest_candles = candles_col.find({}, {"_id": 1}).sort("time", 1).limit(candles_col.count_documents({}) - 200)
+                    for old_doc in oldest_candles:
+                        candles_col.delete_one({"_id": old_doc["_id"]})
 
-                    # 🧹 অটো-ক্লিনার: ১ মাসের পুরনো ডাটা সাথে সাথে ডিলিট
-                    try:
-                        one_month_ago = int(time.time()) - (30 * 24 * 60 * 60)
-                        candles_col.delete_many({"time": {"$lt": one_month_ago}})
-                    except Exception as clean_err:
-                        print(f"⚠️ ওল্ড ডাটা অটো-ক্লিন করতে সমস্যা: {clean_err}")
-
-                # নতুন মিনিটের জন্য ক্যান্ডেল ভ্যারিয়েবল রিসেট
-                candle_open = current_price
-                candle_high = current_price
-                candle_low = current_price
-                candle_close = current_price
-                last_candle_minute = current_minute_timestamp
+                last_saved_minute = current_minute_timestamp
             else:
-                # একই মিনিটের ভেতরে থাকলে হাই, লো এবং ক্লোজ প্রাইস অনবরত ক্যান্ডেল বডিতে ট্র্যাক হবে
-                candle_high = max(candle_high, current_price)
-                candle_low = min(candle_low, current_price)
-                candle_close = current_price
+                # 🔄 একই মিনিটের ভেতরে রিয়েল-টাইম হাই, লো এবং ক্লোজ ডাটাবেসে আপডেট হবে (যার ফলে চার্ট লাইভ নড়াচড়া করবে)
+                candles_col.update_one(
+                    {"time": int(current_minute_timestamp)},
+                    {
+                        "$max": {"high": float(current_price)},
+                        "$min": {"low": float(current_price)},
+                        "$set": {"close": float(current_price)}
+                    },
+                    upsert=True
+                )
 
-            # MongoDB এডমিন কনফিগে গ্লোবাল লাইভ প্রাইস রিয়েল-টাইম আপডেট করা (যা টেক্সটে শো করে)
+            # ৩. MongoDB এডমিন কনফিগে গ্লোবাল লাইভ প্রাইস রিয়েল-টাইম আপডেট
             admin_config_col.update_one(
                 {"_id": "global"}, 
                 {"$set": {"live_price": float(current_price), "last_updated": now}}
             )
 
-            time.sleep(1)
+            time.sleep(1) # প্রতি ১ সেকেন্ডে লুপ চলবে
+
         except Exception as e:
             print(f"Price update error: {e}")
             time.sleep(5)
-
 
 def init_candles_collection():
     """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ১ ঘণ্টার রিয়ালিস্টিক (আপ/ডাউন) ডামি ডাটা যোগ করে"""
