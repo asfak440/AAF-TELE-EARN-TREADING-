@@ -54,11 +54,27 @@ user_milestone_claims_col = db_mongo["user_milestone_claims"]
 deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
 
+# 🎯 ৬টি টেবিল তৈরি এবং সেগুলোতে ২ মাসের অটো-ডিলিট ও স্পিড বুস্টার ইনডেক্স চালু করা
 try:
-    candles_col.create_index("createdAt", expireAfterSeconds=5184000)
-    print("✅ ক্যান্ডেল অটো-ডিলিট ইনডেক্স (২ মাস) সফলভাবে সক্রিয় হয়েছে!")
+    # ২ মাসের অটো-ডিলিট ইনডেক্স (TTL)
+    db_mongo['candles'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_5m'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_15m'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_1h'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_4h'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_1d'].create_index("createdAt", expireAfterSeconds=5184000)
+    
+    # চার্ট স্পিড বুস্টার ইনডেক্স (যাতে ডাটা দ্রুত লোড হয়)
+    db_mongo['candles'].create_index([("time", -1)])
+    db_mongo['candles_5m'].create_index([("time", -1)])
+    db_mongo['candles_15m'].create_index([("time", -1)])
+    db_mongo['candles_1h'].create_index([("time", -1)])
+    db_mongo['candles_4h'].create_index([("time", -1)])
+    db_mongo['candles_1d'].create_index([("time", -1)])
+
+    print("✅ ৬টি টাইমফ্রেমের সব ইনডেক্স সফলভাবে সক্রিয় হয়েছে!")
 except Exception as e:
-    print(f"⚠️ ইনডেক্স তৈরিতে সমস্যা (হয়তো আগে থেকেই আছে): {e}")
+    print(f"⚠️ ইনডেক্স তৈরিতে সমস্যা: {e}")
 
 # ================= NEW: Per-request async helper (no persistent client) =================
 def run_async(coro):
@@ -1072,48 +1088,60 @@ def market_price():
 @app.route("/api/market/update_candle", methods=["POST"])
 @login_required
 def update_candle():
-    """নতুন ট্রেড হলে ক্যান্ডেল আপডেট করে (২ মাসের অটো-ডিলিট ফিক্সসহ)"""
+    """নতুন ট্রেড হলে ৬টি আলাদা কালেকশনে ক্যান্ডেল প্রসেস ও সেভ করে"""
     try:
         data = request.get_json()
         price = data.get('price', 0)
-        
+        if not price:
+            return jsonify({"status": "error", "message": "Invalid price"}), 400
+            
         now = int(datetime.utcnow().timestamp())
-        current_minute = now - (now % 60)
-        
-        # বর্তমান মিনিটের ক্যান্ডেল খোঁজা
-        existing = candles_col.find_one({"time": current_minute})
-        
-        # 🎯 বর্তমান সময় (UTC ডেইট-টাইম অবজেক্ট)
         current_date_utc = datetime.utcnow()
-        
-        if existing:
-            # 🔥 ফিক্স ১: ক্যান্ডেল আপডেট হওয়ার সময়ও 'createdAt' টাইম রিফ্রেশ হবে
-            candles_col.update_one(
-                {"time": current_minute},
-                {
-                    "$set": {
-                        "high": max(existing.get("high", price), price),
-                        "low": min(existing.get("low", price), price),
-                        "close": price,
-                        "createdAt": current_date_utc # 👈 আপডেট টাইম লক করা হলো
+
+        # 🎯 আপনার ৬টি টাইমফ্রেমের সম্পূর্ণ ম্যাপ (মিনিট হিসেবে)
+        timeframes = {
+            "1": db_mongo['candles'],         # 1M
+            "5": db_mongo['candles_5m'],      # 5M
+            "15": db_mongo['candles_15m'],    # 15M
+            "60": db_mongo['candles_1h'],     # 1H
+            "240": db_mongo['candles_4h'],    # 4H (৪ ঘণ্টা = ২৪০ মিনিট)
+            "1440": db_mongo['candles_1d']    # 1D
+        }
+
+        # 🔄 লুপ চালিয়ে প্রতিটি টাইমফ্রেমের জন্য ক্যান্ডেল তৈরি বা আপডেট হচ্ছে
+        for tf_str, collection in timeframes.items():
+            tf_minutes = int(tf_str)
+            tf_seconds = tf_minutes * 60
+            
+            bucket_time = now - (now % tf_seconds)
+            existing = collection.find_one({"time": bucket_time})
+            
+            if existing:
+                collection.update_one(
+                    {"time": bucket_time},
+                    {
+                        "$set": {
+                            "high": max(existing.get("high", price), price),
+                            "low": min(existing.get("low", price), price),
+                            "close": price,
+                            "createdAt": current_date_utc
+                        }
                     }
-                }
-            )
-        else:
-            # 🔥 ফিক্স ২: একদম নতুন ক্যান্ডেল তৈরি হওয়ার সময় 'createdAt' সিল মারা হলো
-            candles_col.insert_one({
-                "time": current_minute,
-                "open": price,
-                "high": price,
-                "low": price,
-                "close": price,
-                "createdAt": current_date_utc # 👈 এই লাইনটিই ২ মাস পর ডাটা ডিলিট করবে
-            })
+                )
+            else:
+                collection.insert_one({
+                    "time": bucket_time,
+                    "open": price,
+                    "high": price,
+                    "low": price,
+                    "close": price,
+                    "createdAt": current_date_utc
+                })
         
         return jsonify({"status": "success"})
     except Exception as e:
+        print(f"🚨 Update Candle Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
