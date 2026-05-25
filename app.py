@@ -1931,5 +1931,11 @@ def claim_milestone():
 
 # ================= RUN =================
 if __name__ == "__main__":
+    # 🎯 ক্যান্ডেল ও লাইভ প্রাইস ইঞ্জিন ব্যাকগ্রাউন্ডে বাধ্যতামূলক চালু করার লক
+    print("🔔 [System]: Starting Background Price & Candle Engine Thread...")
+    price_thread = threading.Thread(target=update_price_loop, daemon=True)
+    price_thread.start()
+    
+    # 🚀 আপনার আগের পোর্ট এবং হোস্ট অনুযায়ী অ্যাপ রান করা
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
