@@ -490,7 +490,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             if (secs === 0 && mins % currentTimeframe === 0 && mins !== lastSavedMinute) {
                 lastSavedMinute = mins; 
                 log("🔄 নতুন মিনিটের ক্যান্ডেল ডাটাবেস থেকে সিঙ্ক হচ্ছে...");
-                setTimeout(loadChartHistoryFromMongo, 1500); 
+                setTimeout(loadChartHistoryFromMongo, 500); 
             }
         } catch (err) {}
     }
