@@ -483,15 +483,13 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
             }
 
-            // কাঁটায় কাঁটায় নতুন মিনিটে পৌঁছালে ডাটাবেস থেকে ফ্রেশ অল ক্যান্ডেল রিলোড করবে
-            const now = new Date();
-            const secs = now.getSeconds();
-            const mins = now.getMinutes();
-            if (secs === 0 && mins % currentTimeframe === 0 && mins !== lastSavedMinute) {
-                lastSavedMinute = mins; 
-                log("🔄 নতুন মিনিটের ক্যান্ডেল ডাটাবেস থেকে সিঙ্ক হচ্ছে...");
-                setTimeout(loadChartHistoryFromMongo, 500); 
+            // 🎯 এখানে পুরনো 'if' লজিকটি কেটে এই নতুন অংশটুকু বসে গেল
+            if (!window.lastChartRefreshTime || (Date.now() - window.lastChartRefreshTime >= 5000)) {
+                window.lastChartRefreshTime = Date.now();
+                log("🔄 রিয়েল-টাইমে মঙ্গোডিবি থেকে চার্ট সিঙ্ক হচ্ছে...");
+                loadChartHistoryFromMongo(); 
             }
+            
         } catch (err) {}
     }
 
