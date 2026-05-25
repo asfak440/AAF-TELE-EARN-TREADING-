@@ -926,119 +926,45 @@ def test_db():
         
 @app.route('/api/candles', methods=['GET'])
 def get_candles():
-    """মঙ্গোডিবি (MongoDB) থেকে ক্যান্ডেল হিস্ট্রি রিড করে ইউজারদের সিলেক্টেড টাইমফ্রেম অনুযায়ী গ্রুপ করে পাঠায়"""
+    """ফ্রন্টএন্ডের সিলেক্টেড টাইমফ্রেম অনুযায়ী রেডি কালেকশন থেকে ডাটা ১ মিলিসেকেন্ডে পাঠায়"""
     try:
-        # 🔥 ফিক্স ১: ফ্রন্টএন্ড থেকে পাঠানো টাইমফ্রেম রিসিভ করা (ডিফল্ট ১ মিনিট)
+        # ১. ফ্রন্টএন্ড থেকে পাঠানো টাইমফ্রেম রিসিভ করা (ডিফল্ট ১ মিনিট)
         tf = request.args.get('timeframe', default='1')
-        try:
-            tf_minutes = int(tf)
-        except:
-            tf_minutes = 1 # কোনো কারণে ভুল প্যারামিটার আসলে ১ মিনিট ফলব্যাক
-
-        candles = []
-
-        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে লেটেস্ট ৫০০টি ১ মিনিটের ডাটা লোড করা 
-        # (বেশি ডাটা আনলে ৫মি বা ১দিনের ক্যান্ডেল গ্রুপিং নিখুঁত হবে)
-        try:
-            candles_cursor = candles_col.find({}, {'_id': 0}).sort("time", -1).limit(500)
-            raw_candles = list(candles_cursor)
-            raw_candles.reverse()  # ওল্ড থেকে নিউ ক্রমানুসারে সাজানো
-            
-            for doc in raw_candles:
-                time_val = doc.get("time")
-                if time_val is None:
-                    continue
-                
-                try:
-                    time_val = int(time_val)
-                    if time_val > 9999999999:
-                        time_val = int(time_val / 1000)
-                except:
-                    continue
-
-                candles.append({
-                    "time": time_val,
-                    "open": float(doc.get("open", 1.0)),
-                    "high": float(doc.get("high", 1.0)),
-                    "low": float(doc.get("low", 1.0)),
-                    "close": float(doc.get("close", 1.0))
-                })
-                
-            if candles:
-                print(f"✅ MongoDB থেকে {len(candles)}টি রিল ক্যান্ডেল রিড হয়েছে।")
-                
-        except Exception as mongo_err:
-            print(f"⚠️ MongoDB Read Error: {mongo_err}")
-
-        # ⚡ ২. মঙ্গোডিবি যদি সম্পূর্ণ খালি থাকে তবে অটো-ডামি ক্যান্ডেল জেনারেট করা
-        if not candles:
-            print("⚠️ ডাটাবেস খালি বা এরর! চার্ট সচল রাখতে ইনস্ট্যান্ট ডামি ক্যান্ডেল জেনারেট হচ্ছে...")
-            base = int(time.time()) - (60 * 60)
-            start_price = 1.0000
-            
-            for i in range(60):
-                open_p = start_price
-                movement = random.uniform(-0.001, 0.0015)
-                close_p = start_price + movement
-                
-                if open_p < 0.9000: open_p = 0.9000
-                if close_p < 0.9000: close_p = 0.9000
-                
-                high_p = max(open_p, close_p) + random.uniform(0.0001, 0.0005)
-                low_p = min(open_p, close_p) - random.uniform(0.0001, 0.0005)
-                if low_p < 0.9000: low_p = 0.9000
-
-                candles.append({
-                    "time": int(base + (i * 60)),
-                    "open": float(open_p),
-                    "high": float(high_p),
-                    "low": float(low_p),
-                    "close": float(close_p)
-                })
-                start_price = close_p
-
-        # 🔥 ফিক্স ২: জাদুকরী গাণিতিক লজিক— ইউজার যদি ১ মিনিটের বেশি বড় টাইমফ্রেম সিলেক্ট করে (যেমন ৫মি, ১৫মি, ১দিন)
-        # তখন ১ মিনিটের ছোট ছোট মোমবাতিগুলোকে জোড়া লাগিয়ে বড় মোমবাতি বানানো হবে
-        if tf_minutes > 1:
-            grouped_candles = {}
-            tf_seconds = tf_minutes * 60
-            
-            for c in candles:
-                c_time = c["time"]
-                # টাইমস্ট্যাম্পকে নির্দিষ্ট টাইমফ্রেমের বাক্সে (Bucket) লক করা
-                bucket_time = c_time - (c_time % tf_seconds)
-                
-                if bucket_time not in grouped_candles:
-                    # ওই টাইমফ্রেমের প্রথম মোমবাতির ডাটা লক করা
-                    grouped_candles[bucket_time] = {
-                        "time": bucket_time,
-                        "open": c["open"],
-                        "high": c["high"],
-                        "low": c["low"],
-                        "close": c["close"]
-                    }
-                else:
-                    # চলমান বড় মোমবাতির হাই, লো এবং রিয়েল-টাইম ক্লোজ আপডেট করা
-                    grouped_candles[bucket_time]["high"] = max(grouped_candles[bucket_time]["high"], c["high"])
-                    grouped_candles[bucket_time]["low"] = min(grouped_candles[bucket_time]["low"], c["low"])
-                    grouped_candles[bucket_time]["close"] = c["close"]
-            
-            # ম্যাপ থেকে ফাইনাল লিস্টে রূপান্তর
-            candles = list(grouped_candles.values())
-
-        # 🎯 ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী ছোট থেকে বড় (Ascending) সাজানো
-        candles.sort(key=lambda x: x['time'])
         
-        # চার্ট যাতে সুন্দরভাবে স্ক্রিনে ফিট হয়, তাই শেষ ১০০টি নিখুঁত মোমবাতি ফ্রন্টএন্ডে পাঠানো হবে
+        # 🎯 ফিক্স: টাইমফ্রেম অনুযায়ী সঠিক রেডি কালেকশন বা টেবিল সিলেক্ট
+        if tf == '5':
+            current_col = db_mongo['candles_5m']
+        elif tf == '15':
+            current_col = db_mongo['candles_15m']
+        elif tf == '60':
+            current_col = db_mongo['candles_1h']
+        elif tf == '240':
+            current_col = db_mongo['candles_4h']  # 4H (৪ ঘণ্টা = ২৪০ মিনিট)
+        elif tf == '1440':
+            current_col = db_mongo['candles_1d']  # 1D (১ দিন = ১৪৪০ মিনিট)
+        else:
+            current_col = db_mongo['candles']     # ডিফল্ট 1M (১ মিনিট)
+
+        # 🍃 ২. সরাসরি ওই টেবিল থেকে শেষ ১০০টি রেডি ক্যান্ডেল তুলে আনা (কোনো স্লো লুপ বা জটলা ছাড়া)
+        candles_cursor = current_col.find({}, {'_id': 0}).sort("time", -1).limit(100)
+        candles = list(candles_cursor)
+        candles.reverse()  # চার্টের টাইমলাইন অনুযায়ী ওল্ড থেকে নিউ সাজানো
+        
+        # টাইমস্ট্যাম্প ফরম্যাট ঠিক করা
+        for c in candles:
+            if c.get("time") and c["time"] > 9999999999:
+                c["time"] = int(c["time"] / 1000)
+
+        # 🎯 ৩. সফলভাবে রেডি ক্যান্ডেল জেসন আকারে পাঠানো
         return jsonify({
             "status": "success",
-            "candles": candles[-100:]
+            "candles": candles
         })
-
-    except Exception as main_err:
-        print(f"🚨 Main API Crash: {main_err}")
-        return jsonify({"status": "error", "message": str(main_err)}), 500
-
+        
+    except Exception as e:
+        print(f"🚨 Get Candles API Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+                
 @app.route("/api/market/live-candle")
 def live_candle():
     if not fb_ref:
