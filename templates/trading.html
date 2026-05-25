@@ -382,7 +382,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         });
     }
     
-    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন
+    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [ফিক্সড ও রকেট স্পিড সংস্করণ]
     async function loadChartHistoryFromMongo() {
         try {
             log("📡 MongoDB থেকে চার্টের ক্যান্ডেল ডাটা আনা হচ্ছে...");
@@ -408,7 +408,9 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 // টাইম সিকোয়েন্স অনুযায়ী নিখুঁত সর্টিং
                 parsed.sort((a, b) => a.time - b.time); 
                 candleSeries.setData(parsed);
-                chart.timeScale().fitContent();
+                
+                // 🎯 ফিক্স: অতিরিক্ত ল্যাগ এবং স্ক্রিন ফাঁকা হওয়া বন্ধ করতে এই লাইনটি কমেন্ট করে দেওয়া হলো
+                // chart.timeScale().fitContent(); 
 
                 // গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেল লক করা
                 const lastValid = parsed[parsed.length - 1];
