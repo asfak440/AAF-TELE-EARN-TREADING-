@@ -354,10 +354,11 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 secondsVisible: false, 
                 borderColor: activeGrid,
                 barSpacing: 8, 
-                localTime: true, // 🎯 এই লাইনটি চার্টের নিচে আপনার মোবাইলের লোকাল বাংলাদেশ টাইম (১০:২০) দেখাবে
+                localTime: true, 
             }
         });
 
+        // 🎯 ফিক্স ১: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
         candleSeries = chart.addCandlestickSeries({
             upColor: '#00ffa3',         
             downColor: '#ff3366',       
@@ -366,6 +367,11 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             wickUpColor: '#00ffa3',     
             wickDownColor: '#ff3366',   
             borderColor: '#1e293b',
+            priceFormat: {
+                type: 'price',
+                precision: 6,      // ২ ঘরের বদলে এখন চার্টে ৬ ঘর দেখাবে (যেমন: 0.999956)
+                minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
+            },
         });
 
         chart.priceScale('right').applyOptions({
@@ -443,7 +449,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 // 🔥 ফিক্স ১: ক্যান্ডেল ডাটাবেসে থাকুক বা না থাকুক, হেডের লাইভ প্রাইস সবসময় আপডেট হবে!
                 const priceEl = document.getElementById('live-price');
                 if (priceEl) {
-                    priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
+                    priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(6)}`;
                     priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
                 }
 
