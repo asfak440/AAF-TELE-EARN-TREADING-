@@ -27,15 +27,7 @@
             --text: #64748b;
         }
 
-        /* 🎯 চার্টের ডানদিকের প্রাইস প্যানেলকে ১০০% গ্লাস ট্রান্সপারেন্ট করার জাদুকরী CSS */
-div[id^="chart-container"] canvas {
-    background-color: transparent !important;
-}
-
-/* চার্টের ইন্টারনাল টেবিল এবং ডানপাশের প্যানেলের ব্যাকগ্রাউন্ড মুছে ফেলা */
-.tv-lightweight-charts {
-    background-color: transparent !important;
-}
+        
 
         body {
             background-color: #05080d; /* 👈 বাইনান্সের মতো ডার্ক ব্যাকগ্রাউন্ড */
@@ -411,11 +403,13 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     }
     
     
-    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [বাংলাদেশ টাইম ও টাইমফ্রেম ফিক্সড সংস্করণ]
+    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [টাইমফ্রেম প্যারামিটার সহ]
     async function loadChartHistoryFromMongo() {
         try {
-            log("📡 MongoDB থেকে চার্টের ক্যান্ডেল ডাটা আনা হচ্ছে...");
-            const res = await fetch('/api/candles?_cb=' + Date.now(), { credentials: 'include' });
+            log(`📡 MongoDB থেকে ${currentTimeframe} মিনিটের চার্ট ডাটা আনা হচ্ছে...`);
+            
+            // 🔥 ফিক্স: ব্যাকএন্ড এপিআই-তে বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) পাঠিয়ে দেওয়া হলো
+            const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&_cb=` + Date.now(), { credentials: 'include' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
             const data = await res.json();
@@ -426,8 +420,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                     let t = parseInt(c.time);
                     if (t > 9999999999) t = Math.floor(t / 1000); 
                     
-                    // 🎯 ফিক্স ১: চার্টের নিচে নিখুঁত বাংলাদেশ টাইম (১০:৪৭) দেখানোর জন্য সরাসরি ৬ ঘণ্টা যোগ লক করা হলো
-                    t = t + (6 * 60 * 60); 
+                    t = t + (6 * 60 * 60); // বাংলাদেশ টাইম অফসেট
 
                     return {
                         time: t,
@@ -438,14 +431,10 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                     };
                 });
 
-                // টাইম সিকোয়েন্স অনুযায়ী নিখুঁত সর্টিং
                 parsed.sort((a, b) => a.time - b.time); 
                 candleSeries.setData(parsed);
-                
-                // 🎯 ফিক্স ২: টাইমফ্রেম বাটন ক্লিক করলে চার্ট যাতে মোমবাতিগুলো স্ক্রিনে সুন্দরভাবে মানিয়ে নেয়
                 chart.timeScale().fitContent(); 
 
-                // গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেল লক করা
                 const lastValid = parsed[parsed.length - 1];
                 lastPrice = lastValid.close;
                 currentBar = { ...lastValid };
@@ -453,7 +442,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
             } else {
                 log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
-                candleSeries.setData([]); // ডাটাবেস খালি হলে চার্টও খালি থাকবে
+                candleSeries.setData([]);
             }
         } catch (err) {
             log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
