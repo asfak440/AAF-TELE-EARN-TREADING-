@@ -54,6 +54,12 @@ user_milestone_claims_col = db_mongo["user_milestone_claims"]
 deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
 
+try:
+    candles_col.create_index("createdAt", expireAfterSeconds=5184000)
+    print("✅ ক্যান্ডেল অটো-ডিলিট ইনডেক্স (২ মাস) সফলভাবে সক্রিয় হয়েছে!")
+except Exception as e:
+    print(f"⚠️ ইনডেক্স তৈরিতে সমস্যা (হয়তো আগে থেকেই আছে): {e}")
+
 # ================= NEW: Per-request async helper (no persistent client) =================
 def run_async(coro):
     """প্রতি রিকোয়েস্টে নতুন ইভেন্ট লুপ তৈরি করে (persistent নয়)"""
@@ -902,18 +908,27 @@ def test_db():
             "message": str(e)
         }), 500
         
-@app.route('/api/candles', methods=['GET']) # আপনার এপিআই রাউট যদি এমন থাকে
+@app.route('/api/candles', methods=['GET'])
 def get_candles():
-    """মঙ্গোডিবি (MongoDB) থেকে সরাসরি ক্যান্ডেল হিস্ট্রি রিটার্ন করে, ক্র্যাশ-প্রুফ ফলব্যাকসহ"""
+    """মঙ্গোডিবি (MongoDB) থেকে ক্যান্ডেল হিস্ট্রি রিড করে ইউজারদের সিলেক্টেড টাইমফ্রেম অনুযায়ী গ্রুপ করে পাঠায়"""
     try:
+        # 🔥 ফিক্স ১: ফ্রন্টএন্ড থেকে পাঠানো টাইমফ্রেম রিসিভ করা (ডিফল্ট ১ মিনিট)
+        tf = request.args.get('timeframe', default='1')
+        try:
+            tf_minutes = int(tf)
+        except:
+            tf_minutes = 1 # কোনো কারণে ভুল প্যারামিটার আসলে ১ মিনিট ফলব্যাক
+
         candles = []
 
-        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে লেটেস্ট ক্যান্ডেল ডাটা লোড করা
+        # 🍃 ১. সরাসরি মঙ্গোডিবি (MongoDB) থেকে লেটেস্ট ৫০০টি ১ মিনিটের ডাটা লোড করা 
+        # (বেশি ডাটা আনলে ৫মি বা ১দিনের ক্যান্ডেল গ্রুপিং নিখুঁত হবে)
         try:
-            # ডাটাবেসে টাইমস্ট্যাম্প যাই থাকুক (অতীত বা ভবিষ্যৎ), সে লাস্ট ১০০টি ডাটা তুলে আনবে
-            candles_cursor = candles_col.find({}, {'_id': 0}).sort("time", -1).limit(100)
+            candles_cursor = candles_col.find({}, {'_id': 0}).sort("time", -1).limit(500)
+            raw_candles = list(candles_cursor)
+            raw_candles.reverse()  # ওল্ড থেকে নিউ ক্রমানুসারে সাজানো
             
-            for doc in list(candles_cursor):
+            for doc in raw_candles:
                 time_val = doc.get("time")
                 if time_val is None:
                     continue
@@ -923,7 +938,7 @@ def get_candles():
                     if time_val > 9999999999:
                         time_val = int(time_val / 1000)
                 except:
-                    continue # টাইম কনভার্ট করতে না পারলে স্কিপ করবে
+                    continue
 
                 candles.append({
                     "time": time_val,
@@ -934,12 +949,12 @@ def get_candles():
                 })
                 
             if candles:
-                print(f"✅ MongoDB থেকে {len(candles)}টি ক্যান্ডেল হিস্ট্রি সফলভাবে লোড হয়েছে")
+                print(f"✅ MongoDB থেকে {len(candles)}টি রিল ক্যান্ডেল রিড হয়েছে।")
                 
         except Exception as mongo_err:
             print(f"⚠️ MongoDB Read Error: {mongo_err}")
 
-        # ⚡ ২. মঙ্গোডিবি যদি সম্পূর্ণ খালি থাকে বা কোনো কারণে ডাটা না আসে, তবে চার্ট চালু রাখতে অটো-ফলব্যাক
+        # ⚡ ২. মঙ্গোডিবি যদি সম্পূর্ণ খালি থাকে তবে অটো-ডামি ক্যান্ডেল জেনারেট করা
         if not candles:
             print("⚠️ ডাটাবেস খালি বা এরর! চার্ট সচল রাখতে ইনস্ট্যান্ট ডামি ক্যান্ডেল জেনারেট হচ্ছে...")
             base = int(time.time()) - (60 * 60)
@@ -966,29 +981,47 @@ def get_candles():
                 })
                 start_price = close_p
 
-        # 🎯 ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী ছোট থেকে বড় (Ascending) সাজানো (ট্রেডিংভিউ চার্ট রুলস)
+        # 🔥 ফিক্স ২: জাদুকরী গাণিতিক লজিক— ইউজার যদি ১ মিনিটের বেশি বড় টাইমফ্রেম সিলেক্ট করে (যেমন ৫মি, ১৫মি, ১দিন)
+        # তখন ১ মিনিটের ছোট ছোট মোমবাতিগুলোকে জোড়া লাগিয়ে বড় মোমবাতি বানানো হবে
+        if tf_minutes > 1:
+            grouped_candles = {}
+            tf_seconds = tf_minutes * 60
+            
+            for c in candles:
+                c_time = c["time"]
+                # টাইমস্ট্যাম্পকে নির্দিষ্ট টাইমফ্রেমের বাক্সে (Bucket) লক করা
+                bucket_time = c_time - (c_time % tf_seconds)
+                
+                if bucket_time not in grouped_candles:
+                    # ওই টাইমফ্রেমের প্রথম মোমবাতির ডাটা লক করা
+                    grouped_candles[bucket_time] = {
+                        "time": bucket_time,
+                        "open": c["open"],
+                        "high": c["high"],
+                        "low": c["low"],
+                        "close": c["close"]
+                    }
+                else:
+                    # চলমান বড় মোমবাতির হাই, লো এবং রিয়েল-টাইম ক্লোজ আপডেট করা
+                    grouped_candles[bucket_time]["high"] = max(grouped_candles[bucket_time]["high"], c["high"])
+                    grouped_candles[bucket_time]["low"] = min(grouped_candles[bucket_time]["low"], c["low"])
+                    grouped_candles[bucket_time]["close"] = c["close"]
+            
+            # ম্যাপ থেকে ফাইনাল লিস্টে রূপান্তর
+            candles = list(grouped_candles.values())
+
+        # 🎯 ৩. ক্যান্ডেলগুলোকে টাইম সিকোয়েন্স অনুযায়ী ছোট থেকে বড় (Ascending) সাজানো
         candles.sort(key=lambda x: x['time'])
         
-        # জেসন রেসপন্স পাঠানো
+        # চার্ট যাতে সুন্দরভাবে স্ক্রিনে ফিট হয়, তাই শেষ ১০০টি নিখুঁত মোমবাতি ফ্রন্টএন্ডে পাঠানো হবে
         return jsonify({
             "status": "success",
-            "candles": candles
+            "candles": candles[-100:]
         })
-        
-    except Exception as e:
-        print(f"❌ Candles API Critical Error: {e}")
-        # কোনো অবস্থাতেই যেন এপিআই ব্ল্যাঙ্ক না যায়, ক্র্যাশ রুখতে চূড়ান্ত ব্যাকআপ ডাটা
-        base = int(time.time()) - (60 * 60)
-        fallback_candles = []
-        for i in range(60):
-            fallback_candles.append({
-                "time": int(base + (i * 60)),
-                "open": 1.0, "high": 1.01, "low": 0.90, "close": 1.0
-            })
-        return jsonify({
-            "status": "success", # এরর হলেও চার্ট সচল রাখতে সাকসেস পাঠানো হলো
-            "candles": fallback_candles
-        })
+
+    except Exception as main_err:
+        print(f"🚨 Main API Crash: {main_err}")
+        return jsonify({"status": "error", "message": str(main_err)}), 500
 
 @app.route("/api/market/live-candle")
 def live_candle():
@@ -1039,7 +1072,7 @@ def market_price():
 @app.route("/api/market/update_candle", methods=["POST"])
 @login_required
 def update_candle():
-    """নতুন ট্রেড হলে ক্যান্ডেল আপডেট করে"""
+    """নতুন ট্রেড হলে ক্যান্ডেল আপডেট করে (২ মাসের অটো-ডিলিট ফিক্সসহ)"""
     try:
         data = request.get_json()
         price = data.get('price', 0)
@@ -1050,32 +1083,36 @@ def update_candle():
         # বর্তমান মিনিটের ক্যান্ডেল খোঁজা
         existing = candles_col.find_one({"time": current_minute})
         
+        # 🎯 বর্তমান সময় (UTC ডেইট-টাইম অবজেক্ট)
+        current_date_utc = datetime.utcnow()
+        
         if existing:
-            # আপডেট
+            # 🔥 ফিক্স ১: ক্যান্ডেল আপডেট হওয়ার সময়ও 'createdAt' টাইম রিফ্রেশ হবে
             candles_col.update_one(
                 {"time": current_minute},
                 {
                     "$set": {
                         "high": max(existing.get("high", price), price),
                         "low": min(existing.get("low", price), price),
-                        "close": price
+                        "close": price,
+                        "createdAt": current_date_utc # 👈 আপডেট টাইম লক করা হলো
                     }
                 }
             )
         else:
-            # নতুন ক্যান্ডেল তৈরি
+            # 🔥 ফিক্স ২: একদম নতুন ক্যান্ডেল তৈরি হওয়ার সময় 'createdAt' সিল মারা হলো
             candles_col.insert_one({
                 "time": current_minute,
                 "open": price,
                 "high": price,
                 "low": price,
-                "close": price
+                "close": price,
+                "createdAt": current_date_utc # 👈 এই লাইনটিই ২ মাস পর ডাটা ডিলিট করবে
             })
         
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 
 @app.route("/api/trade/execute", methods=["POST"])
