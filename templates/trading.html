@@ -382,7 +382,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
         });
     }
     
-    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [ফিক্সড ও রকেট স্পিড সংস্করণ]
+    // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [বাংলাদেশ টাইম ও টাইমফ্রেম ফিক্সড সংস্করণ]
     async function loadChartHistoryFromMongo() {
         try {
             log("📡 MongoDB থেকে চার্টের ক্যান্ডেল ডাটা আনা হচ্ছে...");
@@ -396,6 +396,10 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 let parsed = historyCandles.map(c => {
                     let t = parseInt(c.time);
                     if (t > 9999999999) t = Math.floor(t / 1000); 
+                    
+                    // 🎯 ফিক্স ১: চার্টের নিচে নিখুঁত বাংলাদেশ টাইম (১০:৪৭) দেখানোর জন্য সরাসরি ৬ ঘণ্টা যোগ লক করা হলো
+                    t = t + (6 * 60 * 60); 
+
                     return {
                         time: t,
                         open: parseFloat(c.open),
@@ -409,8 +413,8 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 parsed.sort((a, b) => a.time - b.time); 
                 candleSeries.setData(parsed);
                 
-                // 🎯 ফিক্স: অতিরিক্ত ল্যাগ এবং স্ক্রিন ফাঁকা হওয়া বন্ধ করতে এই লাইনটি কমেন্ট করে দেওয়া হলো
-                // chart.timeScale().fitContent(); 
+                // 🎯 ফিক্স ২: টাইমফ্রেম বাটন ক্লিক করলে চার্ট যাতে মোমবাতিগুলো স্ক্রিনে সুন্দরভাবে মানিয়ে নেয়
+                chart.timeScale().fitContent(); 
 
                 // গ্লোবাল মেমরিতে ডাটাবেসের শেষ ক্যান্ডেল লক করা
                 const lastValid = parsed[parsed.length - 1];
@@ -420,13 +424,14 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
             } else {
                 log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
+                candleSeries.setData([]); // ডাটাবেস খালি হলে চার্টও খালি থাকবে
             }
         } catch (err) {
             log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
         }
     }
 
-    // 🎯 ২. লাইভ সিঙ্ক ফাংশন (ফিক্সড: ফ্রন্টএন্ড কোনো ডামি ক্যান্ডেল বানাবে না, ব্যাকএন্ডের রিয়েল টাইম ডাটা ফলো করবে)
+    // 🎯 ২. লাইভ সিঙ্ক ফাংশন [১০০% ফিক্সড: হেড প্রাইস, ক্যালকুলেটর এবং বাংলাদেশ টাইম জোন লকিং]
     async function syncMongoDBLive() {
         try {
             const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
@@ -435,6 +440,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             if (data && data.live_price) {
                 const livePriceFromMongo = parseFloat(data.live_price);
                 
+                // 🔥 ফিক্স ১: ক্যান্ডেল ডাটাবেসে থাকুক বা না থাকুক, হেডের লাইভ প্রাইস সবসময় আপডেট হবে!
                 const priceEl = document.getElementById('live-price');
                 if (priceEl) {
                     priceEl.innerHTML = `৳ ${livePriceFromMongo.toFixed(4)}`;
@@ -442,11 +448,12 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 }
 
                 if (candleSeries && currentBar) {
-                    // ব্যাকএন্ডের বর্তমান মিনিটের সঠিক লক নিয়ে রিয়েল-টাইম মোমবাতি আপডেট
-                    const currentSystemMinute = Math.floor(Date.now() / 1000) - (Math.floor(Date.now() / 1000) % 60);
+                    // 🎯 ফিক্স ২: লাইভ ক্যান্ডেল ট্র্যাকিংয়ের সময়ও ম্যানুয়ালি ৬ ঘণ্টা (২১৬০০ সেকেন্ড) যোগ করে লক করা হলো
+                    const baseTime = Math.floor(Date.now() / 1000) + (6 * 60 * 60);
+                    const currentSystemMinute = baseTime - (baseTime % 60);
                     
                     if (currentSystemMinute > currentBar.time) {
-                        // ব্যাকএন্ডে নতুন মিনিট শুরু হলে ফ্রন্টএন্ডে নতুন ক্যান্ডেল ব্লক তৈরি হবে
+                        // ব্যাকএন্ডে নতুন মিনিট শুরু হলে ফ্রন্টএন্ডে নতুন টাইমফ্রেমের ক্যান্ডেল ব্লক তৈরি হবে
                         currentBar = {
                             time: currentSystemMinute,
                             open: livePriceFromMongo,
@@ -464,6 +471,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                     candleSeries.update(currentBar);
                 }
 
+                // 🔥 ফিক্স ৩: গ্লোবাল মেমরি ও ক্যালকুলেটর সচল রাখা
                 lastPrice = livePriceFromMongo;
                 
                 if (typeof window.updateTradeCalculator === 'function') {
@@ -472,7 +480,6 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             }
         } catch (e) {}
     }
-
     
     // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক
     async function syncUserDataAndClosing() {
