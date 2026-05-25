@@ -1014,10 +1014,12 @@ def market_price():
 @app.route("/api/market/update_candle", methods=["POST"])
 @login_required
 def update_candle():
-    """নতুন ট্রেড হলে ৬টি আলাদা কালেকশনে ক্যান্ডেল প্রসেস ও সেভ করে"""
+    """নতুন ট্রেড হলে ৬টি আলাদা কালেকশনে ক্যান্ডেল প্রসেস ও সেভ করে (ডাটা টাইপ ফিক্সসহ)"""
     try:
         data = request.get_json()
-        price = data.get('price', 0)
+        
+        # 🎯 নতুন দামকে শুরুতেই খাঁটি দশমিক সংখ্যা (Float)-এ রূপান্তর করা
+        price = float(data.get('price', 0))
         if not price:
             return jsonify({"status": "error", "message": "Invalid price"}), 400
             
@@ -1030,7 +1032,7 @@ def update_candle():
             "5": db_mongo['candles_5m'],      # 5M
             "15": db_mongo['candles_15m'],    # 15M
             "60": db_mongo['candles_1h'],     # 1H
-            "240": db_mongo['candles_4h'],    # 4H (৪ ঘণ্টা = ২৪০ মিনিট)
+            "240": db_mongo['candles_4h'],    # 4H
             "1440": db_mongo['candles_1d']    # 1D
         }
 
@@ -1043,18 +1045,26 @@ def update_candle():
             existing = collection.find_one({"time": bucket_time})
             
             if existing:
+                # 🔥 ফিক্স: আগের হাই এবং লো-কেও খাঁটি Float-এ কনভার্ট করে নিখুঁত তুলনা করা
+                old_high = float(existing.get("high", price))
+                old_low = float(existing.get("low", price))
+                
+                new_high = max(old_high, price)
+                new_low = min(old_low, price)
+                
                 collection.update_one(
                     {"time": bucket_time},
                     {
                         "$set": {
-                            "high": max(existing.get("high", price), price),
-                            "low": min(existing.get("low", price), price),
-                            "close": price,
-                            "createdAt": current_date_utc
+                            "high": new_high,
+                            "low": new_low,
+                            "close": price,               # রিয়েল-টাইম শেষ দাম
+                            "createdAt": current_date_utc # ২ মাসের মেয়াদের সিল রিফ্রেশ
                         }
                     }
                 )
             else:
+                # ক্যান্ডেল না থাকলে একদম নতুন একটা মোমবাতি তৈরি হবে (সব Float ডাটাসহ)
                 collection.insert_one({
                     "time": bucket_time,
                     "open": price,
@@ -1068,6 +1078,8 @@ def update_candle():
     except Exception as e:
         print(f"🚨 Update Candle Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
 
 @app.route("/api/trade/execute", methods=["POST"])
 @login_required
