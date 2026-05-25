@@ -152,8 +152,8 @@ def update_price_loop():
     while True:
         try:
             now = datetime.utcnow()
-            now_ts = int(time.time())
-            # ⏰ কারেন্ট মিনিটের একদম শুরুর নিখুঁত টাইমস্ট্যাম্প লক
+            # 🎯 রেন্ডার সার্ভার (UTC) টাইমস্ট্যাম্পের সাথে ৬ ঘণ্টা (২১৬০০ সেকেন্ড) যোগ করে বাংলাদেশ টাইম লক
+            now_ts = int(time.time()) + (6 * 60 * 60) 
             current_minute_timestamp = now_ts - (now_ts % 60)
 
             # ১. এডমিন কনফিগ থেকে volatility এবং লাইভ প্রাইস সিঙ্ক করা (ট্রেড ইমপ্যাক্ট লক)
