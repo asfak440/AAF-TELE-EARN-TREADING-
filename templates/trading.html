@@ -323,7 +323,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     let currentBar = null; 
     let lastSavedMinute = -1; 
 
-    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড বাংলাদেশ টাইম জোন)
+    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড: বাইন্যান্সের মতো ক্যান্ডেল প্যানেলের নিচেও দেখা যাবে)
     function initTradingViewChart() {
         if (!window.LightweightCharts) return;
         
@@ -355,10 +355,20 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 borderColor: activeGrid,
                 barSpacing: 8, 
                 localTime: true, 
+            },
+            // 🔥 গুরুত্বপূর্ণ ফিক্স ১: ডানদিকের প্রাইস স্কেলকে চার্টের উপরে ভাসিয়ে দেওয়া হলো (Overlay Mode)
+            // এর ফলে ক্যান্ডেল ডানদিকের প্যানেলের ভেতরে ঢুকে গেলেও পুরোটা ব্যাকগ্রাউন্ডে পরিষ্কার দেখা যাবে!
+            rightPriceScale: {
+                visible: true,
+                borderVisible: false, // বাইন্যান্স লুকের জন্য বর্ডার লাইন হাইড করা হলো
+            },
+            overlayPriceScales: {
+                ticksVisible: true,
+                borderVisible: false,
             }
         });
 
-        // 🎯 ফিক্স ১: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
+        // 🎯 ফিক্স ২: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
         candleSeries = chart.addCandlestickSeries({
             upColor: '#00ffa3',         
             downColor: '#ff3366',       
@@ -370,15 +380,17 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             priceFormat: {
                 type: 'price',
                 precision: 6,      // ২ ঘরের বদলে এখন চার্টে ৬ ঘর দেখাবে (যেমন: 0.999956)
-                minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
+                minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
             },
         });
 
+        // 🔥 গুরুত্বপূর্ণ ফিক্স ৩: প্রাইস স্কেলের মোড '0' (Normal/Overlay) তে ফিক্স করা হলো
         chart.priceScale('right').applyOptions({
             autoScale: true,
             borderColor: activeGrid, 
             textColor: activeText,   
             scaleMargins: { top: 0.3, bottom: 0.3 },
+            mode: 0, // 🎯 এই মোডটি ক্যান্ডেলকে প্রাইস লিস্টের পেছনেও দৃশ্যমান রাখতে সাহায্য করে
         });
 
         candleSeries.applyOptions({
@@ -387,6 +399,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             priceLineStyle: 2,        
         });
     }
+    
     
     // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [বাংলাদেশ টাইম ও টাইমফ্রেম ফিক্সড সংস্করণ]
     async function loadChartHistoryFromMongo() {
