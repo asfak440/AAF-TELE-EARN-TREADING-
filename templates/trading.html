@@ -323,7 +323,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     let currentBar = null; 
     let lastSavedMinute = -1; 
 
-    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ
+    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড বাংলাদেশ টাইম জোন)
     function initTradingViewChart() {
         if (!window.LightweightCharts) return;
         
@@ -354,6 +354,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
                 secondsVisible: false, 
                 borderColor: activeGrid,
                 barSpacing: 8, 
+                localTime: true, // 🎯 এই লাইনটি চার্টের নিচে আপনার মোবাইলের লোকাল বাংলাদেশ টাইম (১০:২০) দেখাবে
             }
         });
 
@@ -380,7 +381,7 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
             priceLineStyle: 2,        
         });
     }
-
+    
     // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন
     async function loadChartHistoryFromMongo() {
         try {
