@@ -54,11 +54,6 @@ user_milestone_claims_col = db_mongo["user_milestone_claims"]
 deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
 
-
-print("🔔 [System]: Starting Background Price Thread for Gunicorn/Render...")
-
-threading.Thread(target=update_price_loop, daemon=True).start()
-
 # ================= NEW: Per-request async helper (no persistent client) =================
 def run_async(coro):
     """প্রতি রিকোয়েস্টে নতুন ইভেন্ট লুপ তৈরি করে (persistent নয়)"""
@@ -218,6 +213,9 @@ def update_price_loop():
         except Exception as e:
             print(f"Price update error: {e}")
             time.sleep(5)
+
+print("🔔 [System]: Starting Background Price Thread for Gunicorn/Render...")
+threading.Thread(target=update_price_loop, daemon=True).start()
 
 def init_candles_collection():
     """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ১ ঘণ্টার রিয়ালিস্টিক (আপ/ডাউন) ডামি ডাটা যোগ করে"""
