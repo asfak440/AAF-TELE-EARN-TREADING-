@@ -27,6 +27,16 @@
             --text: #64748b;
         }
 
+        /* 🎯 চার্টের ডানদিকের প্রাইস প্যানেলকে ১০০% গ্লাস ট্রান্সপারেন্ট করার জাদুকরী CSS */
+div[id^="chart-container"] canvas {
+    background-color: transparent !important;
+}
+
+/* চার্টের ইন্টারনাল টেবিল এবং ডানপাশের প্যানেলের ব্যাকগ্রাউন্ড মুছে ফেলা */
+.tv-lightweight-charts {
+    background-color: transparent !important;
+}
+
         body {
             background-color: #05080d; /* 👈 বাইনান্সের মতো ডার্ক ব্যাকগ্রাউন্ড */
             color: #ffffff;
