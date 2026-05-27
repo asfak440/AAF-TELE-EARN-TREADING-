@@ -595,32 +595,37 @@ async function syncMongoDBLive() {
 
     // ⏳ টাইমফ্রেম লিসেনার
     function setupTimeframeListeners() {
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.replaceWith(btn.cloneNode(true));
-        });
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+    });
 
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            const tfVal = parseInt(btn.getAttribute('data-tf'));
-            if (tfVal === currentTimeframe) {
-                btn.style.background = "var(--cyan, #00f2fe)";
-                btn.style.color = "#000";
-            } else {
-                btn.style.background = "";
-                btn.style.color = "";
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+        const tfVal = parseInt(btn.getAttribute('data-tf'));
+        if (tfVal === currentTimeframe) {
+            btn.style.background = "var(--cyan, #00f2fe)";
+            btn.style.color = "#000";
+        } else {
+            btn.style.background = "";
+            btn.style.color = "";
+        }
+
+        btn.addEventListener('click', function() {
+            const selectedTf = parseInt(this.getAttribute('data-tf'));
+            if (selectedTf && selectedTf !== currentTimeframe) {
+                currentTimeframe = selectedTf;
+                lastSavedMinute = -1; 
+                
+                // 🔥 চূড়ান্ত ফিক্স: ১ মিনিটের পুরনো মেমরি এবং ট্র্যাকার সম্পূর্ণ মুছে ফ্রেশ করা হলো
+                currentBar = null; 
+                lastPrice = 0;
+                
+                log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
+                initTradingViewChart();
+                loadChartHistoryFromMongo(); 
+                setupTimeframeListeners();
             }
-
-            btn.addEventListener('click', function() {
-                const selectedTf = parseInt(this.getAttribute('data-tf'));
-                if (selectedTf && selectedTf !== currentTimeframe) {
-                    currentTimeframe = selectedTf;
-                    lastSavedMinute = -1; 
-                    log(`⏳ টাইমফ্রেম সুইচ: ${currentTimeframe}M`);
-                    initTradingViewChart();
-                    loadChartHistoryFromMongo(); 
-                    setupTimeframeListeners();
-                }
-            });
         });
+    });
     }
 
 
