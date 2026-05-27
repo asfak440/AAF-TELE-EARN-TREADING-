@@ -325,129 +325,144 @@ body.light .dock-nav { background: rgba(255, 255, 255, 0.95); }
     let currentBar = null; 
     let lastSavedMinute = -1; 
 
-    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড: বাইন্যান্সের মতো ক্যান্ডেল প্যানেলের নিচেও দেখা যাবে)
-    function initTradingViewChart() {
-        if (!window.LightweightCharts) return;
-        
-        // 🎯 ফিক্স: নতুন চার্ট তৈরির আগে পুরনো চার্ট অবজেক্ট মেমরি থেকে পুরোপুরি ডিলিট করা
-        if (chart) {
-            chart.remove();
-            chart = null;
-        }
-        container.innerHTML = '';
-        
-        const activeBg = isDarkTheme ? '#05080d' : '#ffffff';
-        const activeText = isDarkTheme ? '#94a3b8' : '#333333';
-        const activeGrid = isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0,0,0,0.05)';
-
-        chart = LightweightCharts.createChart(container, {
-            width: container.clientWidth || window.innerWidth,
-            height: 250, 
-            layout: { 
-                background: { type: 'solid', color: activeBg }, 
-                textColor: activeText 
-            },
-            grid: { 
-                vertLines: { color: activeGrid }, 
-                horzLines: { color: activeGrid } 
-            },
-            timeScale: { 
-                timeVisible: true, 
-                secondsVisible: false, 
-                borderColor: activeGrid,
-                barSpacing: 8, 
-                localTime: true, 
-            },
-            // 🔥 গুরুত্বপূর্ণ ফিক্স ১: ডানদিকের প্রাইস স্কেলকে চার্টের উপরে ভাসিয়ে দেওয়া হলো (Overlay Mode)
-            // এর ফলে ক্যান্ডেল ডানদিকের প্যানেলের ভেতরে ঢুকে গেলেও পুরোটা ব্যাকগ্রাউন্ডে পরিষ্কার দেখা যাবে!
-            rightPriceScale: {
-                visible: true,
-                borderVisible: false, // বাইন্যান্স লুকের জন্য বর্ডার লাইন হাইড করা হলো
-            },
-            overlayPriceScales: {
-                ticksVisible: true,
-                borderVisible: false,
-            }
-        });
-
-        // 🎯 ফিক্স ২: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#00ffa3',         
-            downColor: '#ff3366',       
-            borderUpColor: '#00ffa3',
-            borderDownColor: '#ff3366',
-            wickUpColor: '#00ffa3',     
-            wickDownColor: '#ff3366',   
-            borderColor: '#1e293b',
-            priceFormat: {
-                type: 'price',
-                precision: 6,      // ২ ঘরের বদলে এখন চার্টে ৬ ঘর দেখাবে (যেমন: 0.999956)
-                minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
-            },
-        });
-
-        // 🔥 গুরুত্বপূর্ণ ফিক্স ৩: প্রাইস স্কেলের মোড '0' (Normal/Overlay) তে ফিক্স করা হলো
-        chart.priceScale('right').applyOptions({
-            autoScale: true,
-            borderColor: activeGrid, 
-            textColor: activeText,   
-            scaleMargins: { top: 0.3, bottom: 0.3 },
-            mode: 0, // 🎯 এই মোডটি ক্যান্ডেলকে প্রাইস লিস্টের পেছনেও দৃশ্যমান রাখতে সাহায্য করে
-        });
-
-        candleSeries.applyOptions({
-            priceLineColor: '#00ffa3', 
-            priceLineWidth: 1,         
-            priceLineStyle: 2,        
-        });
+    // 📊 চার্ট আর্কিটেকচার বুটস্ট্র্যাপ (ফিক্সড: একদম বাইন্যান্স স্টাইল জুম ও ওয়ান-টাইম পারফেক্ট রেন্ডারিং)
+function initTradingViewChart() {
+    if (!window.LightweightCharts) return;
+    
+    // 🎯 ফিক্স: নতুন চার্ট তৈরির আগে পুরনো চার্ট অবজেক্ট মেমরি থেকে পুরোপুরি ডিলিট করা
+    if (chart) {
+        chart.remove();
+        chart = null;
     }
+    container.innerHTML = '';
+    
+    const activeBg = isDarkTheme ? '#05080d' : '#ffffff';
+    const activeText = isDarkTheme ? '#94a3b8' : '#333333';
+    const activeGrid = isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0,0,0,0.05)';
+
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || window.innerWidth,
+        height: 250, 
+        layout: { 
+            background: { type: 'solid', color: activeBg }, 
+            textColor: activeText 
+        },
+        grid: { 
+            vertLines: { color: activeGrid }, 
+            horzLines: { color: activeGrid } 
+        },
+        timeScale: { 
+            timeVisible: true, 
+            secondsVisible: false, 
+            borderColor: activeGrid,
+            // 🔥 ফিক্স ১: barSpacing ৮ থেকে বাড়িয়ে ২৫ করা হলো, যাতে ক্যান্ডেলগুলো চিকন সুতার মতো না দেখিয়ে মোটা ও প্রফেশনাল দেখায়
+            barSpacing: 25, 
+            // 🔥 ফিক্স ২: বাইন্যান্সের মতো ডানপাশের লাইভ প্রাইস লাইনের আগে ৪টি ক্যান্ডেলের সমান ফাঁকা জায়গা (Offset) রাখা হলো
+            rightOffset: 4, 
+            localTime: true,
+            fixLeftEdge: false,
+            fixRightEdge: false
+        },
+        // 🔥 গুরুত্বপূর্ণ ফিক্স ৩: ডানদিকের প্রাইস স্কেলকে চার্টের উপরে ভাসিয়ে দেওয়া হলো (Overlay Mode)
+        // এর ফলে ক্যান্ডেল ডানদিকের প্যানেলের ভেতরে ঢুকে গেলেও পুরোটা ব্যাকগ্রাউন্ডে পরিষ্কার দেখা যাবে!
+        rightPriceScale: {
+            visible: true,
+            borderVisible: false, // বাইন্যান্স লুকের জন্য বর্ডার লাইন হাইড করা হলো
+        },
+        overlayPriceScales: {
+            ticksVisible: true,
+            borderVisible: false,
+        }
+    });
+
+    // 🎯 ফিক্স ৪: চার্টের মোমবাতি এবং ডানপাশের প্রাইস স্কেলকে দশমিকের পর ৬ ঘর দেখানোর জন্য কনফিগার করা হলো
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#00ffa3',         
+        downColor: '#ff3366',       
+        borderUpColor: '#00ffa3',
+        borderDownColor: '#ff3366',
+        wickUpColor: '#00ffa3',     
+        wickDownColor: '#ff3366',   
+        borderColor: '#1e293b',
+        priceFormat: {
+            type: 'price',
+            precision: 6,      // ২ ঘরের বদলে এখন চার্টে ৬ ঘর দেখাবে (যেমন: 0.999956)
+            minMove: 0.000001, // সর্বনিম্ন কতটুকু নড়াচড়া ট্র্যাক করবে
+        },
+    });
+
+    // 🔥 গুরুত্বপূর্ণ ফিক্স ৫: প্রাইস স্কেলের মোড '0' (Normal/Overlay) তে ফিক্স করা হলো
+    chart.priceScale('right').applyOptions({
+        autoScale: true,
+        borderColor: activeGrid, 
+        textColor: activeText,   
+        scaleMargins: { top: 0.2, bottom: 0.2 }, // ক্যান্ডেল যেন স্ক্রিনের একদম উপরে-নিচে ঠেকে না যায়
+        mode: 0, // 🎯 এই মোডটি ক্যান্ডেলকে প্রাইস লিস্টের পেছনেও দৃশ্যমান রাখতে সাহায্য করে
+    });
+
+    candleSeries.applyOptions({
+        priceLineColor: '#00ffa3', 
+        priceLineWidth: 1,         
+        priceLineStyle: 2,        
+    });
+}
     
     
     // 🎯 ১. MongoDB থেকে ক্যান্ডেল হিস্ট্রি লোড করার ফাংশন [টাইমফ্রেম প্যারামিটার সহ]
-    async function loadChartHistoryFromMongo() {
-        try {
-            log(`📡 MongoDB থেকে ${currentTimeframe} মিনিটের চার্ট ডাটা আনা হচ্ছে...`);
+async function loadChartHistoryFromMongo() {
+    try {
+        log(`📡 MongoDB থেকে ${currentTimeframe} মিনিটের চার্ট ডাটা আনা হচ্ছে...`);
+        
+        // 🔥 ফিক্স: ব্যাকএন্ড এপিআই-তে বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) পাঠিয়ে দেওয়া হলো
+        const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&_cb=` + Date.now(), { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        let historyCandles = data.candles || [];
+
+        if (candleSeries && historyCandles.length > 0) {
+            let parsed = historyCandles.map(c => {
+                let t = parseInt(c.time);
+                if (t > 9999999999) t = Math.floor(t / 1000); 
+                
+                t = t + (6 * 60 * 60); // বাংলাদেশ টাইম অফসেট
+
+                return {
+                    time: t,
+                    open: parseFloat(c.open),
+                    high: parseFloat(c.high),
+                    low: parseFloat(c.low),
+                    close: parseFloat(c.close)
+                };
+            });
+
+            parsed.sort((a, b) => a.time - b.time); 
+            candleSeries.setData(parsed);
             
-            // 🔥 ফিক্স: ব্যাকএন্ড এপিআই-তে বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) পাঠিয়ে দেওয়া হলো
-            const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&_cb=` + Date.now(), { credentials: 'include' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // ❌ পুরনো স্লো জুম-আউট লাইনটি ডিলিট করা হলো: chart.timeScale().fitContent(); 
             
-            const data = await res.json();
-            let historyCandles = data.candles || [];
+            // 🔥 ফিক্স: চার্ট লোড হওয়ামাত্রই যেন শেষ ২০টি ক্যান্ডেলকে প্রফেশনাল জুম-ইন করে ফোকাসে আনে
+            const totalCandles = parsed.length;
+            const viewCount = totalCandles > 20 ? 20 : totalCandles; 
+            
+            chart.timeScale().setVisibleLogicalRange({
+                from: totalCandles - viewCount,
+                to: totalCandles + 2 // ডানপাশে একটু এক্সট্রা প্রফেশনাল স্পেস রাখা হলো
+            });
 
-            if (candleSeries && historyCandles.length > 0) {
-                let parsed = historyCandles.map(c => {
-                    let t = parseInt(c.time);
-                    if (t > 9999999999) t = Math.floor(t / 1000); 
-                    
-                    t = t + (6 * 60 * 60); // বাংলাদেশ টাইম অফসেট
+            const lastValid = parsed[parsed.length - 1];
+            lastPrice = lastValid.close;
+            currentBar = { ...lastValid };
 
-                    return {
-                        time: t,
-                        open: parseFloat(c.open),
-                        high: parseFloat(c.high),
-                        low: parseFloat(c.low),
-                        close: parseFloat(c.close)
-                    };
-                });
-
-                parsed.sort((a, b) => a.time - b.time); 
-                candleSeries.setData(parsed);
-                chart.timeScale().fitContent(); 
-
-                const lastValid = parsed[parsed.length - 1];
-                lastPrice = lastValid.close;
-                currentBar = { ...lastValid };
-
-                log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
-            } else {
-                log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
-                candleSeries.setData([]);
-            }
-        } catch (err) {
-            log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
+            log(`✅ MongoDB থেকে ${parsed.length}টি ক্যান্ডেল চার্টে রেন্ডার হয়েছে!`);
+        } else {
+            log("⚠️ ডাটাবেস রেডি হচ্ছে, সামান্য পেন্ডিং...");
+            candleSeries.setData([]);
         }
+    } catch (err) {
+        log("⚠️ মঙ্গোডিবি চার্ট ডাটা প্রসেস হতে সামান্য পেন্ডিং...");
     }
+}
 
     // 🎯 ২. লাইভ সিঙ্ক ফাংশন [১০০% ফিক্সড: হেড প্রাইস, ক্যালকুলেটর এবং বাংলাদেশ টাইম জোন লকিং]
     async function syncMongoDBLive() {
