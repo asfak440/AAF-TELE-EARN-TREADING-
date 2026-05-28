@@ -118,20 +118,49 @@ def get_admin_config():
             "live_price": 1.0,
             "channel_url": "",
             "bot_token": "",
+            "channel_id": "",                    # 🆕 যোগ করুন
             "min_trades": 5,
             "ip_limit": "off",
             "extra_users": 0,
+            "banner_ad_code": "",               # 🆕 যোগ করুন
+            "referral_bonus": 0,                # 🆕 যোগ করুন
+            "trade_impact_factor": 0.0001,      # 🆕 যোগ করুন
+            "price_volatility": 0.0005,         # 🆕 যোগ করুন
             "task_rules": {
-            "device_check": True,
-            "price_volatility": 0.0001,
-            "ip_check": False,
-            "account_check": True
+                "device_check": True,
+                "ip_check": False,
+                "account_check": True
             },
             "ip_limit_per_hour": 5,
             "default_task_expiry_hours": 168
         }
         admin_config_col.insert_one(doc)
     
+    else:
+        # 🔥 পুরনো ডকুমেন্টে নতুন ফিল্ড যোগ করা (যদি না থাকে)
+        updates = {}
+        
+        if "channel_id" not in doc:
+            updates["channel_id"] = ""
+        if "banner_ad_code" not in doc:
+            updates["banner_ad_code"] = ""
+        if "referral_bonus" not in doc:
+            updates["referral_bonus"] = 0
+        if "trade_impact_factor" not in doc:
+            updates["trade_impact_factor"] = 0.0001
+        if "price_volatility" not in doc:
+            updates["price_volatility"] = 0.0005
+        
+        # 🆕 task_rules থেকে ভুল জায়গায় থাকা price_volatility সরানো (যদি থাকে)
+        if "task_rules" in doc and "price_volatility" in doc["task_rules"]:
+            updates["price_volatility"] = doc["task_rules"].pop("price_volatility")
+            admin_config_col.update_one({"_id": "global"}, {"$set": {"task_rules": doc["task_rules"]}})
+        
+        if updates:
+            admin_config_col.update_one({"_id": "global"}, {"$set": updates})
+            doc.update(updates)
+    
+    return doc
     # ========== নিচের অংশটুকু ফাংশনের ভিতরেই থাকবে (ইন্ডেন্টেশন ঠিক করুন) ==========
     need_update = False
     if "task_rules" not in doc:
