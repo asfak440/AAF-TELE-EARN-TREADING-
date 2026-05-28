@@ -1285,18 +1285,6 @@ function initAdmin(){
     loadMilestones();   // ← এই লাইনটি যোগ করুন
 }
 
-async function setGlobalFee() {
-    const fee = parseFloat(document.getElementById('c-fee').value);
-    if (isNaN(fee)) return alert('সঠিক সংখ্যা দিন');
-    const res = await fetch('/api/admin/set_fee', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ fee })
-    });
-    if (res.ok) alert('✅ ফি আপডেট হয়েছে');
-    else alert('❌ আপডেট ব্যর্থ');
-}
 
 
 async function updateUserBalance() {
@@ -1653,30 +1641,86 @@ async function deleteMilestone(id) {
     } else alert('❌ ব্যর্থ');
     }
 
-    async function saveVolatilitySettings() {
-    const trade_impact_factor = parseFloat(document.getElementById('trade_impact_factor')?.value) || 0.0001;
-    const price_volatility = parseFloat(document.getElementById('price_volatility')?.value) || 0.0005;
-    
+    // 🎯 ১. নতুন মার্কেট প্রাইস ফিক্সড করার ফাংশন
+async function forceMarketPrice() {
+    const priceInput = document.getElementById('inp-price');
+    if (!priceInput || parseFloat(priceInput.value) <= 0) {
+        alert("দয়া করে সঠিক প্রাইস লিখুন!");
+        return;
+    }
+    const newPrice = parseFloat(priceInput.value);
+
     try {
-        const res = await fetch('/api/admin/update_settings', {
+        const response = await fetch('/api/admin/update-settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ trade_impact_factor, price_volatility })
+            body: JSON.stringify({ live_price: newPrice }) // পাইথন গ্লোবাল ডকের 'live_price' আপডেট হবে
         });
-        const data = await res.json();
-        if (data.success) {
-            alert('✅ ভোলাটিলিটি সেটিংস সেভ হয়েছে');
-            // (ঐচ্ছিক) পেজ রিলোড না করেই লোড করুন
-            if (typeof loadAdminStats === 'function') loadAdminStats();
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert("✅ মার্কেট প্রাইস সফলভাবে লক করা হয়েছে!");
+            priceInput.value = "";
         } else {
-            alert('❌ সেভ ব্যর্থ: ' + (data.error || 'Unknown error'));
+            alert("❌ এরর: " + result.message);
         }
-    } catch(err) {
-        console.error(err);
-        alert('❌ সার্ভার ত্রুটি: ' + err.message);
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! প্রাইস আপডেট হয়নি।");
     }
+}
+
+// 🎯 ২. ট্রেডিং ফি লাইভ আপডেট করার ফাংশন
+async function setGlobalFee() {
+    const feeInput = document.getElementById('c-fee');
+    if (!feeInput || feeInput.value === "") {
+        alert("দয়া করে ফি-র পারসেন্টেজ লিখুন!");
+        return;
     }
+    const newFee = parseFloat(feeInput.value);
+
+    try {
+        const response = await fetch('/api/admin/update-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trading_fee: newFee }) // আপনার পাইথনের 'trading_fee' এর সাথে মিলিয়ে দেওয়া হলো
+        });
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert("✅ ট্রেডিং ফি সফলভাবে আপডেট হয়েছে!");
+            feeInput.value = "";
+        } else {
+            alert("❌ এরর: " + result.message);
+        }
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! ফি আপডেট হয়নি।");
+    }
+}
+
+// 🎯 ৩. মার্কেট ভোলাটিলিটি কন্ট্রোল সেভ করার ফাংশน
+async function saveVolatilitySettings() {
+    const impactInput = document.getElementById('trade_impact_factor');
+    const volatilityInput = document.getElementById('price_volatility');
+    
+    if (!impactInput || !volatilityInput) return;
+
+    try {
+        const response = await fetch('/api/admin/update-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                "task_rules.price_volatility": parseFloat(volatilityInput.value), // আপনার পাইথন স্ট্রাকচার অনুযায়ী অবজেক্টে যাবে
+                "trade_impact_factor": parseFloat(impactInput.value)
+            })
+        });
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert("💾 ভোলাটিলিটি সেটিংস সফলভাবে সেভ হয়েছে!");
+        } else {
+            alert("❌ এরর: " + result.message);
+        }
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
+    }
+}
 </script>
     
 </body>
