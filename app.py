@@ -1038,11 +1038,17 @@ def update_candle():
     try:
         data = request.get_json()
         
-        # 🎯 নতুন দামকে শুরুতেই খাঁটি দশমিক সংখ্যা (Float)-এ রূপান্তর করা
-        price = float(data.get('price', 0))
-        if not price:
-            return jsonify({"status": "error", "message": "Invalid price"}), 400
+        # 🎯 ফিক্স: ডাটাবেজের এডমিন কনফিগ থেকে লাইভ প্রাইস চেক করা
+        admin_doc = admin_config_col.find_one({"_id": "global"})
+        
+        # যদি এডমিন প্যানেলে লাইভ প্রাইস দেওয়া থাকে তবে সেটাই চার্টের মোমবাতি বানাবে
+        if admin_doc and admin_doc.get("live_price"):
+            price = float(admin_doc.get("live_price"))
+        else:
+            price = float(data.get('price', 0))
             
+        if not price:
+            return jsonify({"status": "error", "message": "Invalid price"}), 400            
         now = int(datetime.utcnow().timestamp())
         current_date_utc = datetime.utcnow()
 
