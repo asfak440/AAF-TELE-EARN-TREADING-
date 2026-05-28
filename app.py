@@ -966,7 +966,7 @@ def get_candles():
             current_col = db_mongo['candles']     # ডিফল্ট 1M (১ মিনিট)
 
         # 🍃 ২. সরাসরি ওই টেবিল থেকে শেষ ১০০টি রেডি ক্যান্ডেল তুলে আনা (কোনো স্লো লুপ বা জটলা ছাড়া)
-        candles_cursor = current_col.find({}, {'_id': 0}).sort("time", -1).limit(100)
+        candles_cursor = current_col.find({}, {'_id': 0}).sort("time", -1).limit(5000)
         candles = list(candles_cursor)
         candles.reverse()  # চার্টের টাইমলাইন অনুযায়ী ওল্ড থেকে নিউ সাজানো
         
