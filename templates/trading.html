@@ -464,8 +464,7 @@ async function loadChartHistoryFromMongo() {
     }
 }
 
-    // 🎯 ২. লাইভ সিঙ্ক ফাংশন [১০০% ফিক্সড: মাল্টি-টাইমফ্রেম ক্যান্ডেল লকিং ও ক্র্যাশ প্রোটেকশন]
-async function syncMongoDBLive() {
+    async function syncMongoDBLive() {
     try {
         const res = await fetch('/api/market/price?_cb=' + Date.now(), { credentials: 'include' });
         const data = await res.json();
@@ -480,19 +479,27 @@ async function syncMongoDBLive() {
                 priceEl.style.color = (livePriceFromMongo >= lastPrice) ? '#00ffa3' : '#ff3366';
             }
 
+            // 🎯 জাদুকরী ফিক্স ২: এডমিন প্যানেল থেকে আসা লাইভ ফি (trade_fee) স্ক্রিনের HTML-এ পুশ করা
+            // এর ফলে এডমিন প্যানেলে ফি চেঞ্জ করলে ইউজারের স্ক্রিনেও সাথে সাথে পারসেন্টেজ বদলে যাবে!
+            if (data.trade_fee !== undefined) {
+                const feePercEl = document.getElementById('fee-perc');
+                if (feePercEl) {
+                    feePercEl.innerText = parseFloat(data.trade_fee);
+                }
+            }
+
             if (candleSeries && currentBar) {
-                // 🎯 ফিক্স ২: লাইভ ক্যান্ডেল ট্র্যাকিংয়ের সময় ম্যানুয়ালি ৬ ঘণ্টা যোগ করে লক করা হলো
+                // লাইভ ক্যান্ডেল ট্র্যাকিংয়ের সময় ম্যানুয়ালি ৬ ঘণ্টা যোগ করে লক করা হলো
                 const baseTime = Math.floor(Date.now() / 1000) + (6 * 60 * 60);
                 
-                // 🔥 জাদুকরী ফিক্স ৩: বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) অনুযায়ী লাইভ টাইমকে বকেটে কনভার্ট করা
-                let tfMinutes = parseInt(window.currentTimeframe) || 1; // যদি গ্লোবাল ভ্যারিয়েবল currentTimeframe হয়
+                // বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) অনুযায়ী লাইভ টাইমকে বকেটে কনভার্ট করা
+                let tfMinutes = parseInt(currentTimeframe) || 1; 
                 let tfSeconds = tfMinutes * 60;
                 
-                // বর্তমান টাইমফ্রেম অনুযায়ী ক্যান্ডেলের মূল শুরুর সময় (Bucket Time)
+                // বর্তমান টাইমফ্রেম অনুযায়ী ক্যান্ডেলের মূল শুরুর সময় (Bucket Time)
                 const currentBucketTime = baseTime - (baseTime % tfSeconds);
                 
                 if (currentBucketTime > currentBar.time) {
-                    // ব্যাকএন্ডে বা ঘড়ির কাঁটায় নতুন ৫মি/১৫মি/১মি শুরু হলে ফ্রন্টএন্ডে নতুন ক্যান্ডেল ব্লক তৈরি হবে
                     currentBar = {
                         time: currentBucketTime,
                         open: livePriceFromMongo,
@@ -501,19 +508,19 @@ async function syncMongoDBLive() {
                         close: livePriceFromMongo
                     };
                 } else {
-                    // একই টাইমফ্রেমের ভেতর অনবরত হাই, লো, ক্লোজ নিখুঁতভাবে সিঙ্ক হবে
                     currentBar.high = Math.max(currentBar.high, livePriceFromMongo);
                     currentBar.low = Math.min(currentBar.low, livePriceFromMongo);
                     currentBar.close = livePriceFromMongo;
                 }
 
-                // চার্টে মোমবাতি আপডেট পুশ (এখন আর ব্লাঙ্ক বা ক্র্যাশ হবে না)
+                // চার্টে মোমবাতি আপডেট পুশ
                 candleSeries.update(currentBar);
             }
 
-            // 🔥 ফিক্স ৪: গ্লোবাল মেমরি ও ক্যালকুলেটর সচল রাখা
+            // গ্লোবাল মেমরি ও ক্যালকুলেটর সচল রাখা
             lastPrice = livePriceFromMongo;
             
+            // 🔥 ফিক্স ৩: লাইভ প্রাইস বা ফি প্রতি সেকেন্ডে চেঞ্জ হলে ক্যালকুলেটরকে জোর করে রি-ক্যালকুলেট করানো
             if (typeof window.updateTradeCalculator === 'function') {
                 window.updateTradeCalculator('taka_live');
             }
@@ -521,7 +528,7 @@ async function syncMongoDBLive() {
     } catch (e) {
         console.error("🚨 Live Sync Error:", e);
     }
-}
+    }
     
     // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক [এডমিন কন্ট্রোল ও বড় ক্যান্ডেল ফিক্সড]
     async function syncUserDataAndClosing() {
@@ -712,7 +719,7 @@ async function syncMongoDBLive() {
         }
     }; 
 
-    // 🚀 ট্রেড অর্ডার এক্সিকিউশন ও ব্যাকএন্ডে সাবমিট লজিক
+    // 🚀 ট্রেড অর্ডার এক্সিকিউশন ও ব্যাকএন্ডে সাবমিট লজিক (সব ফিক্সসহ)
     window.executeTradeAction = async function() {
         const takaInput = document.getElementById('taka-input') || document.getElementById('bdt-amount') || document.querySelector('input[placeholder*="BDT"]') || document.querySelector('input[type="number"]');
         if (!takaInput || parseFloat(takaInput.value) <= 0) {
@@ -732,12 +739,16 @@ async function syncMongoDBLive() {
         log(`⏳ ${actionType.toUpperCase()} অর্ডার প্রসেস হচ্ছে...`);
 
         try {
+            // চার্টের লেটেস্ট লাইভ প্রাইস ব্যাকব্যাক হিসেবে ব্যাকএন্ডে পাঠানো হচ্ছে
+            const currentPrice = typeof lastPrice !== 'undefined' ? lastPrice : 1.0;
+
             const response = await fetch('/api/trade/execute', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: actionType,    
-                    amount: bdtAmount      
+                    amount: bdtAmount,
+                    current_price: currentPrice
                 }),
                 credentials: 'include'
             });
@@ -756,23 +767,37 @@ async function syncMongoDBLive() {
                 if (typeof syncUserDataAndClosing === 'function') {
                     await syncUserDataAndClosing(); 
                 }
-                setTimeout(() => { window.location.reload(); }, 800);
+                
+                // অর্ডার হওয়ার পর চার্ট ও ক্যান্ডেল আপডেট সিঙ্ক করতে ৪০০ms ফাস্ট রিলোড
+                setTimeout(() => { window.location.reload(); }, 400);
             } else {
                 log(`❌ এরর: ${result.message}`);
                 alert(`ট্রেড ব্যর্থ হয়েছে: ${result.message}`);
             }
         } catch (error) {
-            log("❌ সার্ভার এরর! ট্রেড সাবমিট হয়নি।");
+            log("❌ সার্ভার এরর! ট্রেড সাবমিট হয়নি।");
             alert("সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।");
         }
     };
     
-    // বুট রানার
+    // উইন্ডো রেসপন্সিভনেস ফিক্স (মোবাইলে স্ক্রিন ঘুরিয়ে নিলেও চার্ট ভাঙবে না)
+    window.addEventListener('resize', () => {
+        if (chart && container) {
+            chart.resize(container.clientWidth, 250);
+        }
+    });
+
+    // বুট রানার (ইঞ্জিন স্টার্টার)
     function startTradingEngine() {
         initTradingViewChart();
         loadChartHistoryFromMongo(); 
         setupThemeToggleListener();
         setupTimeframeListeners();
+        
+        // পেজ লোড হওয়ামাত্রই প্রথম সেকেন্ডে ক্যালকুলেটর এক্টিভেট করা
+        if (typeof window.updateTradeCalculator === 'function') {
+            window.updateTradeCalculator('taka');
+        }
         
         setInterval(syncMongoDBLive, 1000);
         setInterval(syncUserDataAndClosing, 3000);
@@ -780,6 +805,7 @@ async function syncMongoDBLive() {
         log("🚀 মঙ্গোডিবি ইঞ্জিনের সাথে চার্ট সিঙ্কড ও লাইভ!");
     }
 
+    // 🎯 ফিক্স: আগের ভাঙা 'window.addEventListener' বানানটি এখানে জোড়া লাগিয়ে নিখুঁত করা হলো
     if (document.readyState === 'complete') {
         startTradingEngine();
     } else {
