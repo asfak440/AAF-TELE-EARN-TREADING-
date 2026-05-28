@@ -946,36 +946,50 @@ def test_db():
         
 @app.route('/api/candles', methods=['GET'])
 def get_candles():
-    """ফ্রন্টএন্ডের সিলেক্টেড টাইমফ্রেম অনুযায়ী রেডি কালেকশন থেকে ডাটা ১ মিলিসেকেন্ডে পাঠায়"""
     try:
-        # ১. ফ্রন্টএন্ড থেকে পাঠানো টাইমফ্রেম রিসিভ করা (ডিফল্ট ১ মিনিট)
-        tf = request.args.get('timeframe', default='1')
+        # ফ্রন্টএন্ড থেকে টাইমফ্রেম গ্রহণ
+        tf = request.args.get('timeframe') or request.args.get('tf') or '1'
+        limit = request.args.get('limit', 500, type=int)
         
-        # 🎯 ফিক্স: টাইমফ্রেম অনুযায়ী সঠিক রেডি কালেকশন বা টেবিল সিলেক্ট
+        # 🎯 টাইমফ্রেম অনুযায়ী সঠিক কালেকশন নির্বাচন
         if tf == '5':
-            current_col = db_mongo['candles_5m']
+            collection_name = 'candles_5m'
         elif tf == '15':
-            current_col = db_mongo['candles_15m']
+            collection_name = 'candles_15m'
         elif tf == '60':
-            current_col = db_mongo['candles_1h']
+            collection_name = 'candles_1h'
         elif tf == '240':
-            current_col = db_mongo['candles_4h']  # 4H (৪ ঘণ্টা = ২৪০ মিনিট)
+            collection_name = 'candles_4h'
         elif tf == '1440':
-            current_col = db_mongo['candles_1d']  # 1D (১ দিন = ১৪৪০ মিনিট)
+            collection_name = 'candles_1d'
         else:
-            current_col = db_mongo['candles']     # ডিফল্ট 1M (১ মিনিট)
-
-        # 🍃 ২. সরাসরি ওই টেবিল থেকে শেষ ১০০টি রেডি ক্যান্ডেল তুলে আনা (কোনো স্লো লুপ বা জটলা ছাড়া)
-        candles_cursor = current_col.find({}, {'_id': 0}).sort("time", -1).limit(5000)
-        candles = list(candles_cursor)
-        candles.reverse()  # চার্টের টাইমলাইন অনুযায়ী ওল্ড থেকে নিউ সাজানো
+            collection_name = 'candles'  # 1M
         
-        # টাইমস্ট্যাম্প ফরম্যাট ঠিক করা
+        current_col = db_mongo[collection_name]
+        
+        # ক্যান্ডেল ডাটা আনা
+        candles_cursor = current_col.find({}, {'_id': 0}).sort("time", -1).limit(limit)
+        candles = list(candles_cursor)
+        candles.reverse()  # পুরনো থেকে নতুন সাজানো
+        
+        # টাইমস্ট্যাম্প ফরম্যাট ঠিক করা (মিলিসেকেন্ড থেকে সেকেন্ডে রূপান্তর)
         for c in candles:
             if c.get("time") and c["time"] > 9999999999:
                 c["time"] = int(c["time"] / 1000)
-
-        # 🎯 ৩. সফলভাবে রেডি ক্যান্ডেল জেসন আকারে পাঠানো
+        
+        # 🆕 যদি কোনো ডাটা না থাকে, মক ডাটা তৈরি করুন
+        if not candles:
+            base = int(datetime.utcnow().timestamp()) - (int(tf) * 60 * 100)
+            for i in range(100):
+                price = 1.0 + (i * 0.001)
+                candles.append({
+                    "time": base + (i * int(tf) * 60),
+                    "open": price,
+                    "high": price * 1.002,
+                    "low": price * 0.998,
+                    "close": price * 1.001
+                })
+        
         return jsonify({
             "status": "success",
             "candles": candles
@@ -983,8 +997,12 @@ def get_candles():
         
     except Exception as e:
         print(f"🚨 Get Candles API Error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-                
+        return jsonify({
+            "status": "error",
+            "candles": [],
+            "message": str(e)
+        }), 500
+
 @app.route("/api/market/live-candle")
 def live_candle():
     if not fb_ref:
@@ -1010,26 +1028,31 @@ def live_candle():
 @app.route("/api/market/price")
 def market_price():
     try:
-        # ১. আপনার মঙ্গোডিবি থেকে কারেন্ট প্রাইস রিড করা
-        # current_db_price = mongo.db.market.find_one()["price"]
-        current_db_price = None  # ধরুন ডাটাবেস এখনো খালি
-
-        # ২. ডাটাবেসে কোনো ডাটা না থাকলে শুরুর প্রাইস হবে ১.০০ টাকা
-        if current_db_price is None:
-            live_price = 1.0000
-        else:
-            live_price = float(current_db_price)
-
-        # ⚡ ৩. আপনার নতুন রিয়েল লজিক: প্রাইস ৯০ পয়সার নিচে নামতে পারবে না
-        if live_price < 0.9000:
-            live_price = 0.9000
-
-        return jsonify({"live_price": live_price, "status": "success"})
-
+        admin = get_admin_config()
+        live_price = float(admin.get("live_price", 1.0))
+        trade_fee = float(admin.get("trading_fee", 0.5))
+        price_volatility = float(admin.get("price_volatility", 0.0005))
+        trade_impact_factor = float(admin.get("trade_impact_factor", 0.0001))
+        
+        # প্রাইস লিমিট (০.৯০ টাকার নিচে নামতে পারবে না)
+        if live_price < 0.90:
+            live_price = 0.90
+            
+        return jsonify({
+            "live_price": live_price,
+            "trade_fee": trade_fee,
+            "price_volatility": price_volatility,
+            "trade_impact_factor": trade_impact_factor,
+            "status": "success"
+        })
     except Exception as e:
-        return jsonify({"live_price": 1.0000, "status": "error"})
-
-
+        return jsonify({
+            "live_price": 1.0, 
+            "trade_fee": 0.5,
+            "price_volatility": 0.0005,
+            "trade_impact_factor": 0.0001,
+            "status": "error"
+        })
 
 @app.route("/api/market/update_candle", methods=["POST"])
 @login_required
@@ -1116,10 +1139,11 @@ def execute_trade():
     if not uid:
         return jsonify({"status": "error", "message": "session_expired"}), 401
 
-    trade_type = str(data.get("type", "")).lower().strip()
-    taka = float(data.get("taka", 0) or 0)
+    # 🔥 ফিক্স: ফ্রন্টএন্ডের action/amount ফরম্যাট সাপোর্ট
+    trade_type = str(data.get("action") or data.get("type", "")).lower().strip()
+    taka = float(data.get("amount") or data.get("taka", 0) or 0)
     coin = float(data.get("coin", 0) or 0)
-    price = float(data.get("price", 0) or 0)
+    price = float(data.get("current_price") or data.get("price", 0) or 0)
 
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
@@ -1128,7 +1152,7 @@ def execute_trade():
     admin = get_admin_config() or {}
     fee_percent = float(admin.get("trading_fee", 0.5) or 0.5)
     
-    # 🆕 ইমপ্যাক্ট ফ্যাক্টর এডমিন কনফিগ থেকে নেওয়া (ডিফল্ট 0.0001)
+    # 🆕 ইমপ্যাক্ট ফ্যাক্টর এডমিন কনফিগ থেকে নেওয়া
     impact_factor = float(admin.get("trade_impact_factor", 0.0001))
 
     if price <= 0:
@@ -1139,7 +1163,7 @@ def execute_trade():
     # --------------------------------------------------------------
     if trade_type == "buy":
         if taka <= 0:
-            return jsonify({"status": "error", "message": "Invalid taka amount"}), 400
+            return jsonify({"status": "error", "message": "Invalid amount"}), 400
 
         if coin <= 0:
             coin = taka / price
@@ -1173,17 +1197,15 @@ def execute_trade():
             "timestamp": datetime.utcnow()
         })
 
-        # 🆕 ---------- বাই ট্রেডের ফলে প্রাইস বাড়ানো ----------
+        # 🆕 বাই ট্রেডের ফলে প্রাইস বাড়ানো
         current_live_price = float(admin.get("live_price", 1.0))
         price_change = taka * impact_factor
         new_price = current_live_price + price_change
-        new_price = max(0.1, new_price)   # দাম যেন ০.১ টাকার নিচে না যায়
+        new_price = max(0.1, new_price)
         admin_config_col.update_one(
             {"_id": "global"},
             {"$set": {"live_price": new_price}}
         )
-        # 🆕 (ঐচ্ছিক) গ্লোবাল ভেরিয়েবল আপডেট করতে চাইলে এখানে current_price = new_price সেট করুন
-        # ---------------------------------------------------------------
 
         return jsonify({"status": "success", "message": f"Bought {coin:.4f} AAF successfully"})
 
@@ -1192,7 +1214,11 @@ def execute_trade():
     # --------------------------------------------------------------
     elif trade_type == "sell":
         if coin <= 0:
-            return jsonify({"status": "error", "message": "Invalid coin amount"}), 400
+            # সেল মোডে amount থেকে কয়েন বের করা
+            if taka > 0:
+                coin = taka / price
+            else:
+                return jsonify({"status": "error", "message": "Invalid coin amount"}), 400
 
         if taka <= 0:
             taka = coin * price
@@ -1226,16 +1252,15 @@ def execute_trade():
             "timestamp": datetime.utcnow()
         })
 
-        # 🆕 ---------- সেল ট্রেডের ফলে প্রাইস কমানো ----------
+        # 🆕 সেল ট্রেডের ফলে প্রাইস কমানো
         current_live_price = float(admin.get("live_price", 1.0))
         price_change = taka * impact_factor
         new_price = current_live_price - price_change
-        new_price = max(0.1, new_price)   # দাম যেন ০.১ টাকার নিচে না যায়
+        new_price = max(0.1, new_price)
         admin_config_col.update_one(
             {"_id": "global"},
             {"$set": {"live_price": new_price}}
         )
-        # ---------------------------------------------------------------
 
         return jsonify({"status": "success", "message": f"Sold {coin:.4f} AAF successfully"})
 
