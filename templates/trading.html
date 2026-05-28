@@ -414,7 +414,7 @@ async function loadChartHistoryFromMongo() {
         log(`📡 MongoDB থেকে ${currentTimeframe} মিনিটের চার্ট ডাটা আনা হচ্ছে...`);
         
         // 🔥 ফিক্স: ব্যাকএন্ড এপিআই-তে বর্তমান সিলেক্টেড টাইমফ্রেম (currentTimeframe) পাঠিয়ে দেওয়া হলো
-        const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&_cb=` + Date.now(), { credentials: 'include' });
+        const res = await fetch(`/api/candles?timeframe=${currentTimeframe}&limit=50000&_cb=` + Date.now(), { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const data = await res.json();
@@ -523,7 +523,7 @@ async function syncMongoDBLive() {
     }
 }
     
-    // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক
+    // 🔄 ৩. ইউজার ডাটা এবং লাইভ চার্ট রিফ্রেশ সিঙ্ক [এডমিন কন্ট্রোল ও বড় ক্যান্ডেল ফিক্সড]
     async function syncUserDataAndClosing() {
         try {
             const res = await fetch('/api/user/me?_cb=' + Date.now(), { credentials: 'include' });
@@ -535,15 +535,12 @@ async function syncMongoDBLive() {
                 if(document.getElementById('user-aaf')) document.getElementById('user-aaf').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
             }
 
-            // 🎯 এখানে পুরনো 'if' লজিকটি কেটে এই নতুন অংশটুকু বসে গেল
-            if (!window.lastChartRefreshTime || (Date.now() - window.lastChartRefreshTime >= 5000)) {
-                window.lastChartRefreshTime = Date.now();
-                log("🔄 রিয়েল-টাইমে মঙ্গোডিবি থেকে চার্ট সিঙ্ক হচ্ছে...");
-                loadChartHistoryFromMongo(); 
-            }
+            // ❌ চার্ট ধ্বংসকারী পুরনো loadChartHistoryFromMongo() কলটি এখান থেকে সম্পূর্ণ রিমুভ করা হলো!
+            // এর ফলে এডমিন প্যানেলের লাইভ প্রাইস লক সাথে সাথে কাজ করবে এবং ভূতুড়ে বড় ক্যান্ডেল তৈরি হওয়া চিরতরে বন্ধ হবে।
             
         } catch (err) {}
     }
+    
 
     // 🎨 থিম সুইচার লিসেনার
     function setupThemeToggleListener() {
