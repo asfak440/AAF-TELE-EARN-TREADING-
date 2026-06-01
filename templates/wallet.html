@@ -271,27 +271,35 @@
 
         // লাইভ ডেটা ও এডমিন প্যানেল ব্যানার অ্যাড ফেচ লজিক
         async function loadUserWalletData() {
-            const TG_ID = getTG();
-            try {
-                const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: 'include' });
-                const data = await res.json();
-                
-                if (data.status === 'success') {
-                    document.getElementById('u-name').innerText = data.user.username || "AAF USER";
-                    document.getElementById('u-tg-val').innerText = "ID: " + (data.user.telegram_id || "N/A");
-                    
-                    document.getElementById('wallet-bal').innerText = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
-                    document.getElementById('coin-bal').innerText = (parseFloat(data.user.aaf) || 0).toFixed(4);
+    const TG_ID = getTG();
+    try {
+        const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            // 🆕 প্রথম নাম + শেষ নাম একসাথে দেখানো
+            let fullName = '';
+            if (data.user.first_name) fullName += data.user.first_name;
+            if (data.user.last_name) fullName += ' ' + data.user.last_name;
+            fullName = fullName.trim() || data.user.username || "AAF USER";
+            
+            document.getElementById('u-name').innerHTML = fullName;
+            document.getElementById('u-tg-val').innerHTML = "ID: " + (data.user.telegram_id || "N/A");
+            
+            document.getElementById('wallet-bal').innerHTML = `৳ ${(parseFloat(data.user.cash) || 0).toFixed(2)}`;
+            document.getElementById('coin-bal').innerHTML = (parseFloat(data.user.aaf) || 0).toFixed(4);
 
-                    // এডমিন কোড ইনজেকশন
-                    if(data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== ""){
-                        injectSafeAdHTML(data.admin.banner_ad_code);
-                    }
-                }
-            } catch (err) {
-                console.error("🚨 ডাটাবেজ সিঙ্ক এরর:", err);
+            // এডমিন কোড ইনজেকশন
+            if(data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== ""){
+                injectSafeAdHTML(data.admin.banner_ad_code);
             }
         }
+    } catch (err) {
+        console.error("🚨 ডাটাবেজ সিঙ্ক এরর:", err);
+        document.getElementById('u-name').innerHTML = "NETWORK ERROR";
+        document.getElementById('u-tg-val').innerHTML = "ID: ----";
+    }
+    }
 
         // নিরাপদ অ্যাড ইনজেকশন ইঞ্জিন
         function injectSafeAdHTML(htmlString) {
