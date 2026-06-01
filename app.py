@@ -1936,51 +1936,73 @@ def admin_chat_messages():
     except Exception as e:
         return jsonify({"success": False, "error": f"{type(e).__name__}: {str(e)}"})
 
+
+# ================= PENDING CLAIMS & MILESTONES =================
 @app.route("/api/admin/pending_claims")
-@login_required
 def admin_pending_claims():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
-    claims = list(task_claims_col.find({"status": "pending"}).sort("created_at", -1))
-    for c in claims:
-        c["_id"] = str(c["_id"])
-        user = users_col.find_one({"telegram_id": c["telegram_id"]}, {"username": 1})
-        c["username"] = user.get("username", "N/A") if user else "N/A"
-        task = fb_ref.child(f"tasks/{c['task_id']}").get() if fb_ref else None
-        c["task_title"] = task.get("title", "N/A") if task else "N/A"
+    claims = list(task_claims_col.find({"status": "pending"}))
+    for claim in claims:
+        claim["_id"] = str(claim["_id"])
     return jsonify({"claims": claims})
 
 @app.route("/api/admin/approve_claim", methods=["POST"])
-@login_required
 def admin_approve_claim():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     claim_id = data.get("claim_id")
-    action = data.get("action")  # 'approve' or 'reject'
-    if not claim_id:
-        return jsonify({"error": "Claim ID required"}), 400
+    action = data.get("action")
     claim = task_claims_col.find_one({"_id": ObjectId(claim_id)})
-    if not claim or claim["status"] != "pending":
-        return jsonify({"error": "Invalid claim"}), 400
+    if not claim:
+        return jsonify({"success": False, "message": "Claim not found"}), 404
     if action == "approve":
-        # টাকা দিন
         user = users_col.find_one({"telegram_id": claim["telegram_id"]})
-        if claim["currency"] == "aaf":
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": claim["reward"]}})
-        else:
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": claim["reward"]}})
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-        task_claims_col.update_one({"_id": claim["_id"]}, {"$set": {"status": "approved"}})
-        # প্রয়োজনে ডিভাইস ট্র্যাকিং
-        if fb_ref:
-            fb_ref.child(f"device_tasks/{claim['task_id']}/{claim['device_id']}").set(True)
-        return jsonify({"success": True})
-    elif action == "reject":
-        task_claims_col.update_one({"_id": claim["_id"]}, {"$set": {"status": "rejected"}})
-        return jsonify({"success": True})
+        if user:
+            if claim.get("currency") == "aaf":
+                users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": claim["reward"]}})
+            else:
+                users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": claim["reward"]}})
+        task_claims_col.update_one({"_id": ObjectId(claim_id)}, {"$set": {"status": "approved"}})
     else:
-        return jsonify({"error": "Invalid action"}), 400
+        task_claims_col.update_one({"_id": ObjectId(claim_id)}, {"$set": {"status": "rejected"}})
+    return jsonify({"success": True})
+
+@app.route("/api/admin/milestones")
+def admin_milestones():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    milestones = list(milestones_col.find({}))
+    for m in milestones:
+        m["_id"] = str(m["_id"])
+    return jsonify({"milestones": milestones})
+
+@app.route("/api/admin/milestone/save", methods=["POST"])
+def admin_save_milestone():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    milestone = {
+        "target": data["target"],
+        "reward_type": data["reward_type"],
+        "reward_amount": data["reward_amount"],
+        "days": data.get("days"),
+        "type": data["type"],
+        "active": data["active"],
+        "created_at": datetime.utcnow()
+    }
+    milestones_col.insert_one(milestone)
+    return jsonify({"success": True})
+
+@app.route("/api/admin/milestone/delete", methods=["POST"])
+def admin_delete_milestone():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.json
+    mid = data.get("id")
+    milestones_col.delete_one({"_id": ObjectId(mid)})
+    return jsonify({"success": True})
 
 
 @app.route("/api/admin/clear_field", methods=["POST"])
@@ -2001,37 +2023,6 @@ def admin_clear_field():
     )
     return jsonify({"success": True})
 
-# ================== মাইলেসটোন অ্যাডমিন এন্ডপয়েন্ট ==================
-@app.route('/api/admin/milestone/save', methods=['POST'])
-@login_required
-def save_milestone():
-    data = request.json
-    milestone = {
-        "target": data['target'],
-        "reward_type": data['reward_type'],
-        "reward_amount": data['reward_amount'],
-        "days": data.get('days'),
-        "type": data['type'],
-        "active": data['active'],
-        "created_at": datetime.utcnow()
-    }
-    milestones_col.insert_one(milestone)
-    return jsonify({"success": True})
-
-@app.route('/api/admin/milestones', methods=['GET'])
-@login_required
-def admin_milestones():
-    milestones = list(milestones_col.find({}))
-    for m in milestones:
-        m['_id'] = str(m['_id'])
-    return jsonify({"milestones": milestones})
-
-@app.route('/api/admin/milestone/delete', methods=['POST'])
-@login_required
-def delete_milestone():
-    data = request.json
-    milestones_col.delete_one({"_id": ObjectId(data['id'])})
-    return jsonify({"success": True})
 
 # ================== ইউজার মাইলেসটোন এন্ডপয়েন্ট ==================
 @app.route('/api/user/milestones', methods=['GET'])
