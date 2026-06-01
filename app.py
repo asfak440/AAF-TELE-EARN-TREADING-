@@ -562,34 +562,90 @@ def verify_login():
         traceback.print_exc()
         return jsonify({"success": False, "message": str(e)})
 
-
 @app.route("/api/user/data/<telegram_id>")
 def user_data(telegram_id):
     uid = session.get("uid")
     if not uid:
         return jsonify({"status": "error", "message": "session_expired"})
+    
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
+    
     admin = get_admin_config()
-    user["_id"] = str(user["_id"])
-    return jsonify({"status": "success", "user": user, "admin": admin})
+    wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
+    
+    safe_user = {
+        "_id": str(user["_id"]),
+        "telegram_id": user.get("telegram_id"),
+        "username": user.get("username"),
+        "first_name": user.get("first_name", ""),
+        "last_name": user.get("last_name", ""),
+        "cash": user.get("cash", 0),
+        "aaf": user.get("aaf", 0)
+    }
+    
+    safe_admin = {
+        "banner_ad_code": admin.get("banner_ad_code", ""),
+        "wallet": {
+            "nagad": wallet_data.get("nagad", ""),
+            "bkash": wallet_data.get("bkash", "")
+        }
+    }
+    
+    return jsonify({
+        "status": "success", 
+        "user": safe_user, 
+        "admin": safe_admin
+    })
+
 
 @app.route("/api/user/me")
 def user_me():
     uid = session.get("uid")
     if not uid:
         return jsonify({"status": "error", "message": "session_expired"})
+    
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
+    
     admin = get_admin_config()
-    user["_id"] = str(user["_id"])
-    return jsonify({"status": "success", "user": user, "admin": admin})
-
-
+    wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
+    
+    # ইউজার ডাটা পরিষ্কার করা (সিকিউরিটি)
+    safe_user = {
+        "_id": str(user["_id"]),
+        "telegram_id": user.get("telegram_id"),
+        "username": user.get("username"),
+        "first_name": user.get("first_name", ""),
+        "last_name": user.get("last_name", ""),
+        "cash": user.get("cash", 0),
+        "aaf": user.get("aaf", 0),
+        "refer_count": user.get("refer_count", 0),
+        "tasks_done": user.get("tasks_done", 0),
+        "is_joined": user.get("is_joined", False)
+    }
+    
+    # অ্যাডমিন ডাটা (শুধু প্রয়োজনীয় অংশ)
+    safe_admin = {
+        "live_price": admin.get("live_price", 1.0),
+        "trading_fee": admin.get("trading_fee", 0.5),
+        "banner_ad_code": admin.get("banner_ad_code", ""),
+        "trading_ad_text": admin.get("trading_ad_text", ""),
+        "wallet": {
+            "nagad": wallet_data.get("nagad", ""),
+            "bkash": wallet_data.get("bkash", "")
+        }
+    }
+    
+    return jsonify({
+        "status": "success", 
+        "user": safe_user, 
+        "admin": safe_admin
+    })
 
 
 @app.route("/api/silent_join", methods=["POST"])
