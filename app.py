@@ -1295,7 +1295,7 @@ def execute_trade():
 
     return jsonify({"status": "error", "message": "Invalid type"}), 400
 
-//ওয়ালেট এপিআই
+
 @app.route("/api/wallet/deposit", methods=["POST"])
 @login_required
 def deposit_request():
@@ -1309,11 +1309,16 @@ def deposit_request():
     reference = data.get("reference") or data.get("trx")
     
     if not method or amount <= 0 or not reference:
-        return jsonify({"status": "error", "message": "Invalid data"}), 400
+        return jsonify({"status": "error", "message": "Method, amount and transaction ID required"}), 400
     
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         return jsonify({"status": "error", "message": "User not found"}), 404
+    
+    # চেক করা: একই রেফারেন্স ইতিমধ্যে জমা হয়েছে কিনা
+    existing = deposits_col.find_one({"reference": reference})
+    if existing:
+        return jsonify({"status": "error", "message": "This transaction ID already submitted"}), 400
     
     deposits_col.insert_one({
         "telegram_id": user.get("telegram_id"),
@@ -1324,7 +1329,43 @@ def deposit_request():
         "created_at": datetime.utcnow()
     })
     
-    return jsonify({"status": "success", "message": "Deposit request submitted"})
+    return jsonify({"status": "success", "message": f"Deposit request of ৳{amount} submitted. Wait for admin approval."})
+
+
+@app.route("/api/wallet/withdraw", methods=["POST"])
+@login_required
+def withdraw_request():
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    data = request.json
+    account_number = str(data.get("account_number") or data.get("number") or "").strip()
+    amount = float(data.get("amount", 0))
+    
+    if not account_number or amount <= 0:
+        return jsonify({"status": "error", "message": "Valid account number and amount required"}), 400
+    
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+    
+    if user.get("cash", 0) < amount:
+        return jsonify({"status": "error", "message": f"Insufficient balance. Available: ৳{user.get('cash', 0)}"}), 400
+    
+    # ন্যূনতম উইথড্রোয়াল লিমিট (ঐচ্ছিক)
+    if amount < 100:
+        return jsonify({"status": "error", "message": "Minimum withdrawal amount is ৳100"}), 400
+    
+    withdraws_col.insert_one({
+        "telegram_id": user.get("telegram_id"),
+        "account_number": account_number,
+        "amount": amount,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    })
+    
+    return jsonify({"status": "success", "message": f"Withdraw request of ৳{amount} submitted. Wait for admin approval."})
 
 
 @app.route("/api/wallet/transfer", methods=["POST"])
@@ -1336,72 +1377,46 @@ def transfer_funds():
     
     data = request.json
     transfer_type = data.get("type")  # 'cash' or 'coin'
-    
-    # 🔥 ফিক্স: receiver_id বা to যাই আসুক ধরা
-    receiver_tg_id = data.get("receiver_id") or data.get("to")
+    receiver_tg_id = str(data.get("receiver_id") or data.get("to") or "").strip()
     amount = float(data.get("amount", 0))
     
     if not receiver_tg_id or amount <= 0:
-        return jsonify({"status": "error", "message": "Invalid data"}), 400
+        return jsonify({"status": "error", "message": "Receiver ID and valid amount required"}), 400
     
-    # প্রেরক ইউজার
+    if transfer_type not in ["cash", "coin", "aaf"]:
+        return jsonify({"status": "error", "message": "Invalid transfer type. Use 'cash' or 'coin'"}), 400
+    
+    # প্রেরক ইউজার (লগইন করা ইউজার)
     sender = users_col.find_one({"_id": ObjectId(uid)})
     if not sender:
         return jsonify({"status": "error", "message": "Sender not found"}), 404
     
-    # প্রাপক ইউজার
-    receiver = users_col.find_one({"telegram_id": str(receiver_tg_id)})
-    if not receiver:
-        return jsonify({"status": "error", "message": "Receiver not found"}), 404
+    # নিজেকে নিজে ট্রান্সফার?
+    if sender.get("telegram_id") == receiver_tg_id:
+        return jsonify({"status": "error", "message": "Cannot transfer to yourself"}), 400
     
-    # ব্যালেন্স চেক ও আপডেট
+    # প্রাপক ইউজার (টেলিগ্রাম আইডি দিয়ে)
+    receiver = users_col.find_one({"telegram_id": receiver_tg_id})
+    if not receiver:
+        return jsonify({"status": "error", "message": f"User {receiver_tg_id} not found. Make sure they have logged in at least once."}), 404
+    
+    # ট্রান্সফার প্রসেস
     if transfer_type == "cash":
         if sender.get("cash", 0) < amount:
-            return jsonify({"status": "error", "message": "Insufficient cash"}), 400
+            return jsonify({"status": "error", "message": f"Insufficient cash. Available: ৳{sender.get('cash', 0)}"}), 400
         users_col.update_one({"_id": sender["_id"]}, {"$inc": {"cash": -amount}})
         users_col.update_one({"_id": receiver["_id"]}, {"$inc": {"cash": amount}})
-    elif transfer_type == "coin" or transfer_type == "aaf":
-        if sender.get("aaf", 0) < amount:
-            return jsonify({"status": "error", "message": "Insufficient AAF coins"}), 400
+        message = f"Successfully transferred ৳{amount} to {receiver.get('username', receiver_tg_id)}"
+        
+    else:  # transfer_type == "coin" or "aaf"
+        coin_balance = sender.get("aaf", 0)
+        if coin_balance < amount:
+            return jsonify({"status": "error", "message": f"Insufficient AAF coins. Available: {coin_balance}"}), 400
         users_col.update_one({"_id": sender["_id"]}, {"$inc": {"aaf": -amount}})
         users_col.update_one({"_id": receiver["_id"]}, {"$inc": {"aaf": amount}})
-    else:
-        return jsonify({"status": "error", "message": "Invalid transfer type"}), 400
+        message = f"Successfully transferred {amount} AAF coins to {receiver.get('username', receiver_tg_id)}"
     
-    return jsonify({"status": "success", "message": "Transfer successful"})
-
-
-@app.route("/api/wallet/withdraw", methods=["POST"])
-@login_required
-def withdraw_request():
-    uid = session.get("uid")
-    if not uid:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
-    
-    data = request.json
-    account_number = data.get("account_number") or data.get("number")
-    amount = float(data.get("amount", 0))
-    
-    if not account_number or amount <= 0:
-        return jsonify({"status": "error", "message": "Invalid data"}), 400
-    
-    user = users_col.find_one({"_id": ObjectId(uid)})
-    if not user:
-        return jsonify({"status": "error", "message": "User not found"}), 404
-    
-    if user.get("cash", 0) < amount:
-        return jsonify({"status": "error", "message": "Insufficient balance"}), 400
-    
-    withdraws_col.insert_one({
-        "telegram_id": user.get("telegram_id"),
-        "account_number": account_number,
-        "amount": amount,
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    })
-    
-    return jsonify({"status": "success", "message": "Withdraw request submitted"})
-
+    return jsonify({"status": "success", "message": message})
 
 # ================= API: REFERRAL & PAYMENT HISTORY =================
 @app.route("/api/user/referrals/<telegram_id>")
