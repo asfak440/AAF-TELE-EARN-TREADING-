@@ -1641,7 +1641,8 @@ async function deleteMilestone(id) {
     } else alert('❌ ব্যর্থ');
     }
 
-    // 🎯 ১. নতুন মার্কেট প্রাইস ফিক্সড করার ফাংশন
+
+// প্রাইস ফিক্সড করার সঠিক ফাংশন
 async function forceMarketPrice() {
     const priceInput = document.getElementById('inp-price');
     if (!priceInput || parseFloat(priceInput.value) <= 0) {
@@ -1649,26 +1650,26 @@ async function forceMarketPrice() {
         return;
     }
     const newPrice = parseFloat(priceInput.value);
-
     try {
-        const response = await fetch('/api/admin/update-settings', {
+        const response = await fetch('/api/admin/set_price', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ live_price: newPrice }) // পাইথন গ্লোবাল ডকের 'live_price' আপডেট হবে
+            credentials: 'include',
+            body: JSON.stringify({ price: newPrice })
         });
         const result = await response.json();
-        if (result.status === 'success') {
-            alert("✅ মার্কেট প্রাইস সফলভাবে লক করা হয়েছে!");
+        if (result.success) {
+            alert("✅ মার্কেট প্রাইস সফলভাবে আপডেট হয়েছে!");
             priceInput.value = "";
         } else {
-            alert("❌ এরর: " + result.message);
+            alert("❌ এরর: " + (result.error || "Unknown error"));
         }
     } catch (error) {
         alert("🚨 সার্ভার এরর! প্রাইস আপডেট হয়নি।");
     }
 }
 
-// 🎯 ২. ট্রেডিং ফি লাইভ আপডেট করার ফাংশন
+// ট্রেডিং ফি আপডেট করার সঠিক ফাংশন
 async function setGlobalFee() {
     const feeInput = document.getElementById('c-fee');
     if (!feeInput || feeInput.value === "") {
@@ -1676,46 +1677,47 @@ async function setGlobalFee() {
         return;
     }
     const newFee = parseFloat(feeInput.value);
-
     try {
-        const response = await fetch('/api/admin/update-settings', {
+        const response = await fetch('/api/admin/set_fee', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trading_fee: newFee }) // আপনার পাইথনের 'trading_fee' এর সাথে মিলিয়ে দেওয়া হলো
+            credentials: 'include',
+            body: JSON.stringify({ fee: newFee })
         });
         const result = await response.json();
-        if (result.status === 'success') {
+        if (result.success) {
             alert("✅ ট্রেডিং ফি সফলভাবে আপডেট হয়েছে!");
             feeInput.value = "";
         } else {
-            alert("❌ এরর: " + result.message);
+            alert("❌ এরর: " + (result.error || "Unknown error"));
         }
     } catch (error) {
         alert("🚨 সার্ভার এরর! ফি আপডেট হয়নি।");
     }
 }
 
-// 🎯 ৩. মার্কেট ভোলাটিলিটি কন্ট্রোল সেভ করার ফাংশน
+// ভোলাটিলিটি সেটিংস সেভ করার সঠিক ফাংশন
 async function saveVolatilitySettings() {
     const impactInput = document.getElementById('trade_impact_factor');
     const volatilityInput = document.getElementById('price_volatility');
-    
     if (!impactInput || !volatilityInput) return;
-
+    const impact = parseFloat(impactInput.value);
+    const volatility = parseFloat(volatilityInput.value);
     try {
-        const response = await fetch('/api/admin/update-settings', {
+        const response = await fetch('/api/admin/update_settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                "task_rules.price_volatility": parseFloat(volatilityInput.value), // আপনার পাইথন স্ট্রাকচার অনুযায়ী অবজেক্টে যাবে
-                "trade_impact_factor": parseFloat(impactInput.value)
+            credentials: 'include',
+            body: JSON.stringify({ 
+                trade_impact_factor: impact, 
+                price_volatility: volatility 
             })
         });
         const result = await response.json();
-        if (result.status === 'success') {
+        if (result.success) {
             alert("💾 ভোলাটিলিটি সেটিংস সফলভাবে সেভ হয়েছে!");
         } else {
-            alert("❌ এরর: " + result.message);
+            alert("❌ এরর: " + (result.error || "Unknown error"));
         }
     } catch (error) {
         alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
