@@ -1418,6 +1418,52 @@ def transfer_funds():
     
     return jsonify({"status": "success", "message": message})
 
+@app.route("/api/admin/pending_deposits")
+def admin_pending_deposits():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    deposits = list(deposits_col.find({"status": "pending"}))
+    for d in deposits:
+        d["_id"] = str(d["_id"])
+    return jsonify({"deposits": deposits})
+
+@app.route("/api/admin/approve_deposit", methods=["POST"])
+def admin_approve_deposit():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    deposit_id = data.get("id")
+    
+    deposit = deposits_col.find_one({"_id": ObjectId(deposit_id)})
+    if deposit and deposit["status"] == "pending":
+        user = users_col.find_one({"telegram_id": deposit["telegram_id"]})
+        if user:
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": deposit["amount"]}})
+            deposits_col.update_one({"_id": ObjectId(deposit_id)}, {"$set": {"status": "approved"}})
+            return jsonify({"success": True})
+    
+    return jsonify({"success": False, "message": "Deposit not found or already processed"}), 404
+    
+
+@app.route("/api/admin/reject_deposit", methods=["POST"])
+def admin_reject_deposit():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    deposit_id = data.get("id")
+    
+    deposit = deposits_col.find_one({"_id": ObjectId(deposit_id)})
+    if deposit and deposit["status"] == "pending":
+        deposits_col.update_one({"_id": ObjectId(deposit_id)}, {"$set": {"status": "rejected"}})
+        return jsonify({"success": True})
+    
+    return jsonify({"success": False, "message": "Deposit not found"}), 404
+
+
+
 # ================= API: REFERRAL & PAYMENT HISTORY =================
 @app.route("/api/user/referrals/<telegram_id>")
 @login_required
