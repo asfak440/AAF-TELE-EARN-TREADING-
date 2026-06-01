@@ -1725,6 +1725,39 @@ async function saveVolatilitySettings() {
         alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
     }
 }
+
+
+
+    async function updateAdminInfo() {
+    const method = document.getElementById('dep-method').value;
+    const infoBox = document.getElementById('admin-payment-info');
+    
+    try {
+        const res = await fetch('/api/user/me', { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.admin && data.admin.wallet) {
+            const nagad = data.admin.wallet.nagad || '01XXXXXXXXX';
+            const bkash = data.admin.wallet.bkash || '01XXXXXXXXX';
+            
+            if (method === "Nagad") {
+                infoBox.innerHTML = `🎯 নগদ নম্বর: ${nagad} (Send Money)`;
+                infoBox.style.color = "#f47321";
+            } else if (method === "Binance") {
+                infoBox.innerHTML = `ID: ${bkash} (Binance Pay)`;
+                infoBox.style.color = "#F3BA2F";
+            }
+        } else {
+            infoBox.innerHTML = "🔒 এডমিন নম্বর সেট করা হয়নি";
+        }
+    } catch (err) {
+        console.error("Error loading wallet numbers:", err);
+        infoBox.innerHTML = "⚠️ নম্বর লোড করতে ব্যর্থ";
+    }
+}
+
+// পেজ লোডে এবং মেথড চেঞ্জে কল করুন
+document.getElementById('dep-method')?.addEventListener('change', updateAdminInfo);
 </script>
     
 </body>
