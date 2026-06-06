@@ -346,62 +346,77 @@ window.addEventListener('load', async () => {
   setInterval(initTaskPage, 15000);
 });
 
-async function initTaskPage(){
-  const TG_ID = getTG();
-  try{
-    const res = await fetch(`${API}/api/user/data/${TG_ID}`,{
-      headers:{ 'x-device-id': DEVICE_ID },
-      credentials:"include"
-    });
-    const data = await res.json();
-    if(data.status !== "success") return;
-    const tasksRes = await fetch(`${API}/api/tasks`);
-    const tasksData = await tasksRes.json();
-    const tasks = tasksData.tasks || [];
-    const milestonesRes = await fetch(`${API}/api/user/milestones`, { credentials: 'include' });
-    const milestonesData = await milestonesRes.json();
-    const milestones = milestonesData.milestones || [];
-    renderTaskUI(data.user, data.admin, tasks, milestones);
-  } catch(err){ console.log("Init Error", err); }
+// ========== initTaskPage ঠিক করুন ==========
+async function initTaskPage() {
+    const TG_ID = getTG();
+    try {
+        // ইউজার ডাটা লোড (সঠিক এন্ডপয়েন্ট)
+        const userRes = await fetch(`${API}/api/user/me`, {
+            headers: { 'x-device-id': DEVICE_ID },
+            credentials: "include"
+        });
+        const userData = await userRes.json();
+        
+        if (userData.status !== "success") {
+            console.log("User not authenticated");
+            return;
+        }
+        
+        // টাস্ক লোড
+        const tasksRes = await fetch(`${API}/api/tasks`);
+        const tasksData = await tasksRes.json();
+        const tasks = tasksData.tasks || [];
+        
+        // মাইলস্টোন লোড
+        const milestonesRes = await fetch(`${API}/api/user/milestones`, { 
+            credentials: 'include' 
+        });
+        const milestonesData = await milestonesRes.json();
+        const milestones = milestonesData.milestones || [];
+        
+        // UI রেন্ডার
+        renderTaskUI(userData.user, userData.admin, tasks, milestones);
+        
+    } catch (err) {
+        console.log("Init Error", err);
+    }
 }
 
+// ========== renderTaskUI ঠিক করুন ==========
 function renderTaskUI(user, admin, tasks, milestones) {
-    // সুরক্ষিতভাবে ব্যালেন্স আপডেট
+    // ব্যালেন্স আপডেট
     if (user) {
         updateBalance(user.cash || 0, user.aaf || 0);
         USER_JOINED = user.is_joined === true;
-    } else {
-        updateBalance(0, 0);
-        USER_JOINED = false;
     }
     
-    // জয়েন ওয়ার্নিং টগল
+    // জয়েন ওয়ার্নিং
     const joinWarning = document.getElementById('join-warning');
     if (joinWarning) {
         joinWarning.style.display = USER_JOINED ? 'none' : 'flex';
     }
     
-    // মাইলস্টোন ও টাস্ক রেন্ডার
+    // মাইলস্টোন রেন্ডার
     if (milestones && milestones.length > 0) {
         renderMilestones(milestones);
     }
     
+    // টাস্ক রেন্ডার
     if (tasks && tasks.length > 0) {
         renderTasks(tasks);
+    } else {
+        document.getElementById('main-task-list').innerHTML = `
+            <div style="text-align:center; padding:40px;">
+                <i class="fas fa-inbox"></i> কোনো টাস্ক নেই
+            </div>
+        `;
     }
     
     // ব্যানার অ্যাড
-    if (admin && admin.banner_ad_code && admin.banner_ad_code.trim() !== "") {
+    if (admin && admin.banner_ad_code) {
         injectSafeAdHTML(admin.banner_ad_code);
     }
-    
-    // পপআপ অ্যাড
-    if (admin && admin.popup_ad_code) {
-        showTimedAd(admin.popup_ad_code);
-    }
 }
-
-
 
 // ========== renderTasks with type ==========
 function renderTasks(tasks){
