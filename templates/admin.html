@@ -1135,8 +1135,7 @@ async function loadWithdraws() {
         `;
         
         data.list.forEach(w => {
-            let date = new Date(w.created_at);
-            let dateStr = date.toLocaleString('bn-BD');
+            let date = w.created_at ? new Date(w.created_at).toLocaleString('bn-BD') : 'তারিখ নেই';
             let mobileNumber = w.account_number || w.number || 'N/A';
             
             html += `
@@ -1144,15 +1143,16 @@ async function loadWithdraws() {
                     <td><i class="fas fa-user"></i> ${escapeHtml(w.telegram_id)}</td>
                     <td><span class="amount">৳ ${parseFloat(w.amount).toLocaleString()}</span></td>
                     <td><i class="fas fa-phone"></i> ${escapeHtml(mobileNumber)}</td>
-                    <td>${dateStr}</td>
+                    <td>${date}</td>
                     <td>
                         <button onclick="approveWithdraw('${w.id}')" class="approve-btn">✅ অনুমোদন</button>
+                        <button onclick="rejectWithdraw('${w.id}')" class="reject-btn">❌ বাতিল</button>
                     </td>
-                <tr>
+                </tr>
             `;
         });
         
-        html += `</tbody>:</table>`;
+        html += `</tbody></tr></div>`;
         container.innerHTML = html;
         
     } catch(e) {
@@ -1161,6 +1161,30 @@ async function loadWithdraws() {
     }
 }
 
+// 🆕 উইথড্র রিজেক্ট করার ফাংশন
+async function rejectWithdraw(id) {
+    if (!confirm("উইথড্র রিকোয়েস্টটি বাতিল করতে চান?")) return;
+    
+    try {
+        const res = await fetch('/api/admin/reject_withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ id: id })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert("❌ উইথড্র রিকোয়েস্ট বাতিল করা হয়েছে!");
+            loadWithdraws(); // লিস্ট রিফ্রেশ
+        } else {
+            alert("❌ ব্যর্থ: " + (data.message || "Unknown error"));
+        }
+    } catch(err) {
+        console.error(err);
+        alert("🚨 সার্ভার ত্রুটি!");
+    }
+}
 async function approveWithdraw(id){
   await fetch(`${API}/api/admin/withdraw/approve`, {
     method:'POST',
