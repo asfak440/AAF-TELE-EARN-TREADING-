@@ -638,6 +638,15 @@ async function claimMilestone(milestoneId) {
   }
 }
 
+    / ========== ব্যালেন্স আপডেট ফাংশন (যোগ করুন) ==========
+function updateBalance(cash, aaf) {
+    const cashEl = document.getElementById('u-bal');
+    const coinEl = document.getElementById('u-coin');
+    if (cashEl) cashEl.innerText = parseFloat(cash || 0).toFixed(2);
+    if (coinEl) coinEl.innerText = parseFloat(aaf || 0).toFixed(2);
+    }
+    
+
     function showAnimatedNotification(message, type = 'info', duration = 3000) {
     let icon = '';
     if (type === 'success') icon = '✅';
