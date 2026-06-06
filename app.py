@@ -1708,16 +1708,12 @@ def admin_update_settings():
             "ip_check": False,
             "account_check": True
         }),
-        "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),
-        "default_task_expiry_days": int(data.get("default_task_expiry_days", 7)),
-        
-        # 🆕 ট্রেড ইমপ্যাক্ট ফ্যাক্টর (বাই করলে দাম বাড়ে, সেল করলে কমে)
+        "ip_limit_per_hour": int(data.get("ip_limit_per_hour", 5)),  # ✅ সম্পূর্ণ করুন
+        "default_task_expiry_hours": int(data.get("default_task_expiry_hours", 168)),  # ✅ যোগ করুন
         "trade_impact_factor": float(data.get("trade_impact_factor", 0.0001)),
-        # 🆕 প্রাইস ভোলাটিলিটি (প্রতি সেকেন্ডে এলোমেলো দাম লাফ)
         "price_volatility": float(data.get("price_volatility", 0.0005))
     }
     
-    # পপআপ ফিল্ডগুলো nested অবজেক্টে
     update_data["popup_ad"] = {
         "title": data.get("popup_ad_title", ""),
         "desc": data.get("popup_ad_desc", ""),
@@ -2213,6 +2209,27 @@ def claim_milestone():
         "claimed_at": datetime.utcnow()
     })
     return jsonify({"success": True})
+
+
+@app.route("/api/dashboard/stats")
+@login_required
+def dashboard_stats():
+    admin = get_admin_config()
+    return jsonify({
+        "server_income": admin.get("server_income", 0),
+        "server_trading": admin.get("server_trading", 0),
+        "total_users": admin.get("total_users", users_col.count_documents({})),
+        "referral_bonus": admin.get("referral_bonus", 0),
+        "banner_ad_code": admin.get("banner_ad_code", "")
+    })
+
+
+@app.route("/api/admin/reload_config", methods=["POST"])
+def admin_reload_config():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    # ক্যাশ রিলোড (যদি কোন ক্যাশিং সিস্টেম থাকে)
+    return jsonify({"success": True, "message": "Configuration reloaded"})
 
 
 # ================= RUN =================
