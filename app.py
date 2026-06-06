@@ -1637,8 +1637,26 @@ def admin_ads():
 def admin_withdraws():
     if not session.get("admin_logged_in"):
         return jsonify({"error": "Unauthorized"}), 401
-    pending = list(withdraws_col.find({"status": "pending"}, {"_id": 1, "telegram_id": 1, "amount": 1}))
-    result = [{"id": str(w["_id"]), "telegram_id": w["telegram_id"], "amount": w["amount"]} for w in pending]
+    
+    pending = list(withdraws_col.find({"status": "pending"}, {
+        "_id": 1, 
+        "telegram_id": 1, 
+        "amount": 1,
+        "account_number": 1,    # 🆕 যোগ করুন
+        "number": 1,             # 🆕 বিকল্প নাম্বার ফিল্ড
+        "created_at": 1
+    }))
+    
+    result = []
+    for w in pending:
+        result.append({
+            "id": str(w["_id"]),
+            "telegram_id": w["telegram_id"],
+            "amount": w["amount"],
+            "account_number": w.get("account_number") or w.get("number", "N/A"),  # 🆕 নাম্বার যোগ
+            "created_at": w.get("created_at").isoformat() if w.get("created_at") else ""
+        })
+    
     return jsonify({"list": result})
 
 @app.route("/api/admin/withdraw/approve", methods=["POST"])
