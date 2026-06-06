@@ -1424,6 +1424,24 @@ def withdraw_request():
     return jsonify({"status": "success", "message": f"Withdraw request of ৳{amount} submitted. Wait for admin approval."})
 
 
+@app.route("/api/admin/reject_withdraw", methods=["POST"])
+def admin_reject_withdraw():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    w_id = data.get("id")
+    
+    withdraw = withdraws_col.find_one({"_id": ObjectId(w_id)})
+    if not withdraw or withdraw["status"] != "pending":
+        return jsonify({"success": False, "message": "Withdraw request not found or already processed"}), 404
+    
+    # স্ট্যাটাস rejected এ আপডেট করুন (ব্যালেন্স কাটবেন না)
+    withdraws_col.update_one({"_id": ObjectId(w_id)}, {"$set": {"status": "rejected"}})
+    
+    return jsonify({"success": True, "message": "Withdraw request rejected"})
+
+
 @app.route("/api/wallet/transfer", methods=["POST"])
 @login_required
 def transfer_funds():
