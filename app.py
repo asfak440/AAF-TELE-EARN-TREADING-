@@ -588,6 +588,9 @@ def user_data(telegram_id):
     
     safe_admin = {
         "banner_ad_code": admin.get("banner_ad_code", ""),
+        "server_income": admin.get("server_income", 0),     # 🆕 যোগ করুন
+        "server_trading": admin.get("server_trading", 0),   # 🆕 যোগ করুন
+        "referral_bonus": admin.get("referral_bonus", 0),   # 🆕 যোগ করুন
         "wallet": {
             "nagad": wallet_data.get("nagad", ""),
             "bkash": wallet_data.get("bkash", "")
@@ -599,7 +602,6 @@ def user_data(telegram_id):
         "user": safe_user, 
         "admin": safe_admin
     })
-
 
 @app.route("/api/user/me")
 def user_me():
@@ -615,7 +617,9 @@ def user_me():
     admin = get_admin_config()
     wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
     
-    # ইউজার ডাটা পরিষ্কার করা (সিকিউরিটি)
+    # মোট ইউজার কাউন্ট
+    total_users = admin.get("total_users", users_col.count_documents({}))
+    
     safe_user = {
         "_id": str(user["_id"]),
         "telegram_id": user.get("telegram_id"),
@@ -629,12 +633,16 @@ def user_me():
         "is_joined": user.get("is_joined", False)
     }
     
-    # অ্যাডমিন ডাটা (শুধু প্রয়োজনীয় অংশ)
     safe_admin = {
         "live_price": admin.get("live_price", 1.0),
         "trading_fee": admin.get("trading_fee", 0.5),
         "banner_ad_code": admin.get("banner_ad_code", ""),
         "trading_ad_text": admin.get("trading_ad_text", ""),
+        # 🆕 নিচের ৩টি লাইন যোগ করুন
+        "server_income": admin.get("server_income", 0),
+        "server_trading": admin.get("server_trading", 0),
+        "total_users": total_users,
+        "referral_bonus": admin.get("referral_bonus", 0),
         "wallet": {
             "nagad": wallet_data.get("nagad", ""),
             "bkash": wallet_data.get("bkash", "")
@@ -646,7 +654,6 @@ def user_me():
         "user": safe_user, 
         "admin": safe_admin
     })
-
 
 @app.route("/api/silent_join", methods=["POST"])
 @login_required
