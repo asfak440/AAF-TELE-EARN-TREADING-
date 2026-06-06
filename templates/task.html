@@ -365,24 +365,43 @@ async function initTaskPage(){
   } catch(err){ console.log("Init Error", err); }
 }
 
-function renderTaskUI(user, admin, tasks, milestones){
-  updateBalance(user.cash, user.aaf);
-  USER_JOINED = user.is_joined;
-  document.getElementById('join-warning').style.display = USER_JOINED ? 'none':'flex';
-  renderMilestones(milestones);
-  renderTasks(tasks);
-  if(admin.banner_ad_code && admin.banner_ad_code.trim() !== ""){
-    injectSafeAdHTML(admin.banner_ad_code);
-  }
-  showTimedAd(admin.popup_ad_code);
+function renderTaskUI(user, admin, tasks, milestones) {
+    // সুরক্ষিতভাবে ব্যালেন্স আপডেট
+    if (user) {
+        updateBalance(user.cash || 0, user.aaf || 0);
+        USER_JOINED = user.is_joined === true;
+    } else {
+        updateBalance(0, 0);
+        USER_JOINED = false;
+    }
+    
+    // জয়েন ওয়ার্নিং টগল
+    const joinWarning = document.getElementById('join-warning');
+    if (joinWarning) {
+        joinWarning.style.display = USER_JOINED ? 'none' : 'flex';
+    }
+    
+    // মাইলস্টোন ও টাস্ক রেন্ডার
+    if (milestones && milestones.length > 0) {
+        renderMilestones(milestones);
+    }
+    
+    if (tasks && tasks.length > 0) {
+        renderTasks(tasks);
+    }
+    
+    // ব্যানার অ্যাড
+    if (admin && admin.banner_ad_code && admin.banner_ad_code.trim() !== "") {
+        injectSafeAdHTML(admin.banner_ad_code);
+    }
+    
+    // পপআপ অ্যাড
+    if (admin && admin.popup_ad_code) {
+        showTimedAd(admin.popup_ad_code);
+    }
 }
 
-function updateBalance(cash, coin){
-  const balEl = document.getElementById('u-bal');
-  const coinEl = document.getElementById('u-coin');
-  if (balEl) balEl.innerText = parseFloat(cash || 0).toFixed(2);
-  if (coinEl) coinEl.innerText = parseFloat(coin || 0).toFixed(2);
-}
+
 
 // ========== renderTasks with type ==========
 function renderTasks(tasks){
