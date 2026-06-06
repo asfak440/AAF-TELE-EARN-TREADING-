@@ -255,19 +255,39 @@
             }
         }
 
-        // ডাইনামিক এডমিন পেমেন্ট নম্বর আপডেট
-        function updateAdminInfo() {
-            const method = document.getElementById('dep-method').value;
-            const infoBox = document.getElementById('admin-payment-info');
+        // ডাইনামিক এডমিন পেমেন্ট নম্বর আপডেট (ব্যাকএন্ড থেকে আসল নম্বর দেখাবে)
+async function updateAdminInfo() {
+    const method = document.getElementById('dep-method').value;
+    const infoBox = document.getElementById('admin-payment-info');
+    
+    // লোডিং স্ট্যাটাস দেখান
+    infoBox.innerHTML = "⏳ লোড হচ্ছে...";
+    
+    try {
+        // ব্যাকএন্ড থেকে ইউজার ও অ্যাডমিন ডাটা আনা
+        const TG_ID = getTG();
+        const res = await fetch(`${API}/api/user/data/${TG_ID}`, { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.admin && data.admin.wallet) {
+            const nagad = data.admin.wallet.nagad || '01XXXXXXXXX';
+            const bkash = data.admin.wallet.bkash || '01XXXXXXXXX';
             
             if (method === "Nagad") {
-                infoBox.innerHTML = "🎯 নগদ পার্সোনাল: 01XXXXXXXXX (Send Money)";
+                infoBox.innerHTML = `🎯 নগদ নম্বর: ${nagad} (Send Money)`;
                 infoBox.style.color = "var(--nagad)";
             } else if (method === "Binance") {
-                infoBox.innerHTML = "ID: 57XXXXXXX (Binance Pay)";
+                infoBox.innerHTML = `🪙 বাইনান্স আইডি: ${bkash} (Binance Pay)`;
                 infoBox.style.color = "var(--binance)";
             }
+        } else {
+            infoBox.innerHTML = "⚠️ এডমিন নম্বর সেট করা হয়নি";
         }
+    } catch (error) {
+        console.error("নম্বর লোড করতে ব্যর্থ:", error);
+        infoBox.innerHTML = "❌ নম্বর লোড করতে ব্যর্থ, আবার চেষ্টা করুন";
+    }
+                }
 
         // লাইভ ডেটা ও এডমিন প্যানেল ব্যানার অ্যাড ফেচ লজিক
         async function loadUserWalletData() {
