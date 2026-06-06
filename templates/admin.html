@@ -164,6 +164,75 @@
         }  
     }  
 
+    /* রিকোয়েস্ট টেবিল স্টাইল */
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.request-table th {
+    background: #1e293b;
+    color: #00f2fe;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid #00f2fe;
+}
+
+.request-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #2d3a5e;
+    vertical-align: middle;
+}
+
+.deposit-row .amount {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.withdraw-row .amount {
+    color: #ffaa00;
+    font-weight: bold;
+}
+
+.approve-btn {
+    background: #00ff88;
+    color: #000;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.reject-btn {
+    background: #ff5555;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.empty-state, .error-state {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+}
+
+.error-state {
+    color: #ff5555;
+}
+
+code {
+    background: #000;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
     /* Admin Login Overlay */  
     #admin-login-overlay {  
         position: fixed;  
@@ -1037,22 +1106,51 @@ async function loadAds(){
 }
 
 /* ================= WITHDRAW ================= */
-async function loadWithdraws(){
-  const r = await fetch(`${API}/api/admin/withdraws`, {credentials:'include'});
-  const d = await r.json();
-
-  const box = $('withdraw-list');
-  if(!box || !d.list) return;
-
-  box.innerHTML = "";
-
-  d.list.forEach(w=>{
-    box.innerHTML += `
-      <div>
-        ${w.telegram_id} | ৳${w.amount}
-        <button onclick="approveWithdraw('${w.id}')">Approve</button>
-      </div>`;
-  });
+async function loadWithdraws() {
+    const container = document.getElementById('withdraw-list');
+    if (!container) return;
+    
+    try {
+        const res = await fetch('/api/admin/withdraws', { credentials: 'include' });
+        const data = await res.json();
+        
+        if (!data.list || data.list.length === 0) {
+            container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং উইথড্র নেই।</div>';
+            return;
+        }
+        
+        let html = `
+            <div class="card-title"><i class="fas fa-money-bill-wave"></i> পেন্ডিং উইথড্র রিকোয়েস্ট</div>
+            <table class="request-table">
+                <thead>
+                    <tr>
+                        <th>ইউজার আইডি</th>
+                        <th>পরিমাণ (৳)</th>
+                        <th>অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        data.list.forEach(w => {
+            html += `
+                <tr class="withdraw-row">
+                    <td><i class="fas fa-user"></i> ${escapeHtml(w.telegram_id)}</td>
+                    <td><span class="amount">৳ ${parseFloat(w.amount).toLocaleString()}</span></td>
+                    <td>
+                        <button onclick="approveWithdraw('${w.id}')" class="approve-btn">✅ অনুমোদন</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+        
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ</div>';
+    }
 }
 
 async function approveWithdraw(id){
@@ -1431,34 +1529,53 @@ async function processClaim(claimId, action) {
         const data = await res.json();
         
         if (!data.deposits || data.deposits.length === 0) {
-            container.innerHTML = '<div>✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
+            container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
             return;
         }
         
-        let html = '<table style="width:100%; border-collapse:collapse;">';
-        html += '<thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead><tbody>';
+        let html = `
+            <table class="request-table">
+                <thead>
+                    <tr>
+                        <th>ক্রিয়েটর</th>
+                        <th>মেথড</th>
+                        <th>পরিমাণ (৳)</th>
+                        <th>রেফারেন্স ID</th>
+                        <th>তারিখ</th>
+                        <th>অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
         
         data.deposits.forEach(d => {
-            html += `<tr>
-                <td>${escapeHtml(d.telegram_id || d.user_id)}</td>
-                <td>৳${d.amount}</td>
-                <td>${d.method || 'N/A'}</td>
-                <td>
-                    <button onclick="approveDeposit('${d._id}')" style="background:#00ff88; margin-right:5px;">✅ Approve</button>
-                    <button onclick="rejectDeposit('${d._id}')" style="background:#ff5555;">❌ Reject</button>
-                </td>
-            </tr>`;
+            // টাইম ফরম্যাট সাজানো
+            let date = new Date(d.created_at);
+            let dateStr = date.toLocaleString('bn-BD');
+            
+            html += `
+                <tr class="deposit-row">
+                    <td><i class="fas fa-user"></i> ${escapeHtml(d.telegram_id)}</td>
+                    <td><i class="fas fa-university"></i> ${escapeHtml(d.method)}</td>
+                    <td><span class="amount">৳ ${parseFloat(d.amount).toLocaleString()}</span></td>
+                    <td><code>${escapeHtml(d.reference)}</code></td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button onclick="approveDeposit('${d._id}')" class="approve-btn">✅ অনুমোদন</button>
+                        <button onclick="rejectDeposit('${d._id}')" class="reject-btn">❌ বাতিল</button>
+                    </td>
+                </tr>
+            `;
         });
         
-        html += '</tbody></table>';
+        html += `</tbody></table>`;
         container.innerHTML = html;
         
     } catch(e) {
         console.error(e);
-        container.innerHTML = '<div>❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
+        container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
     }
 }
-
 // 필요한 헬퍼 함수들
 async function approveDeposit(id) {
     const res = await fetch('/api/admin/approve_deposit', {
