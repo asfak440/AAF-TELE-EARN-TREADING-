@@ -39,6 +39,16 @@ MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable not set")
 
+
+# Firebase ইনি‌শিয়ালাইজ
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_KEY_PATH)
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': FIREBASE_DB_URL
+    })
+
+fb_ref = db.reference('/')   # 🆕 এই লাইনটি যোগ করুন
+
 # ================= DB =================
 client = MongoClient(MONGO_URI)
 db_mongo = client["aaf_tele_earn_db"]
