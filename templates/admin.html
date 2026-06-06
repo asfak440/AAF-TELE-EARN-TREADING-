@@ -1126,6 +1126,8 @@ async function loadWithdraws() {
                     <tr>
                         <th>ইউজার আইডি</th>
                         <th>পরিমাণ (৳)</th>
+                        <th>মোবাইল নাম্বার</th>
+                        <th>তারিখ</th>
                         <th>অ্যাকশন</th>
                     </tr>
                 </thead>
@@ -1133,18 +1135,24 @@ async function loadWithdraws() {
         `;
         
         data.list.forEach(w => {
+            let date = new Date(w.created_at);
+            let dateStr = date.toLocaleString('bn-BD');
+            let mobileNumber = w.account_number || w.number || 'N/A';
+            
             html += `
                 <tr class="withdraw-row">
                     <td><i class="fas fa-user"></i> ${escapeHtml(w.telegram_id)}</td>
                     <td><span class="amount">৳ ${parseFloat(w.amount).toLocaleString()}</span></td>
+                    <td><i class="fas fa-phone"></i> ${escapeHtml(mobileNumber)}</td>
+                    <td>${dateStr}</td>
                     <td>
                         <button onclick="approveWithdraw('${w.id}')" class="approve-btn">✅ অনুমোদন</button>
                     </td>
-                </tr>
+                <tr>
             `;
         });
         
-        html += `</tbody></table>`;
+        html += `</tbody>:</table>`;
         container.innerHTML = html;
         
     } catch(e) {
