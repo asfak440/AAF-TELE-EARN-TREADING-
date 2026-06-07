@@ -5,394 +5,60 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>  
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>  
 
-<style>  
-    /* General Styles */
-    .nav-links li.active,
-.bottom-nav i.active{
-    color: var(--cyan);
-    background: rgba(0,242,254,0.08);
-    border-radius: 10px;
-}  
-    :root {  
-        --bg: #020617;  
-        --card: #0d111c;  
-        --border: rgba(0, 242, 254, 0.15);  
-        --cyan: #00f2fe;  
-        --purple: #7000ff;  
-        --accent: #00ff88;  
-        --danger: #ff0055;  
-        --gold: #ffaa00;  
-        --sidebar-width: 260px;  
-    }  
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+:root{--bg:#020617;--card:#0d111c;--border:rgba(0,242,254,0.15);--cyan:#00f2fe;--purple:#7000ff;--accent:#00ff88;--danger:#ff0055;--gold:#ffaa00;--sidebar-width:260px}
+body{background:var(--bg);color:#fff;font-family:'Hind Siliguri',sans-serif;margin:0;overflow-x:hidden}
+.sidebar{width:var(--sidebar-width);background:var(--card);height:100vh;position:fixed;border-right:1px solid var(--border);z-index:100;transition:0.3s}
+.nav-links li.active,.bottom-nav i.active{color:var(--cyan);background:rgba(0,242,254,0.08);border-radius:10px}
+.main-content{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width));min-height:100vh;padding:30px;position:relative;z-index:0}
+.page-section{position:absolute;inset:0;display:none;overflow-y:auto;padding-bottom:100px;background:var(--bg)}
+.page-section.active{display:block}
+.premium-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:15px;margin-bottom:15px;overflow-x:auto}
+.card-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--cyan);display:flex;align-items:center;gap:6px}
+input,textarea,select{width:100%;background:#000;border:1px solid var(--border);border-radius:14px;padding:8px 12px;margin-bottom:8px;color:#fff;font-size:13px}
+label{font-size:12px;margin-bottom:2px;display:inline-block}
+.btn-main{width:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border:none;border-radius:14px;padding:10px;margin-top:5px;color:#fff;font-weight:700;cursor:pointer;font-size:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:5px}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;background:var(--card);border-top:1px solid var(--border);z-index:1000;justify-content:space-around;padding:6px 0}
+.bottom-nav i{font-size:16px;color:#94a3b8;cursor:pointer}
+.request-table,.user-table{width:100%;border-collapse:collapse}
+.request-table th,.user-table th{background:#1e293b;color:#00f2fe;padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--cyan)}
+.request-table td,.user-table td{padding:8px;border-bottom:1px solid #2d3a5e}
+.deposit-row .amount{color:#00ff88;font-weight:700}
+.withdraw-row .amount{color:#ffaa00;font-weight:700}
+.approve-btn{background:#00ff88;color:#000;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:5px}
+.reject-btn{background:#ff5555;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
+.empty-state,.error-state{text-align:center;padding:20px;color:#94a3b8}
+.error-state{color:#ff5555}
+code{background:#000;padding:4px 6px;border-radius:4px;font-size:11px}
+#admin-login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;justify-content:center;align-items:center}
+table{min-width:500px}
+.user-table td:nth-child(1){font-weight:600;color:#ffaa00}
+.user-table td:nth-child(2){font-family:monospace}
+.user-table td:nth-child(3){color:#a0c4ff}
+.user-table td:nth-child(4){color:#00ff88;font-weight:700}
+.user-table td:nth-child(5){font-size:10px;font-family:monospace;background:rgba(0,242,254,0.05)}
+.user-table td:nth-child(6){text-align:center}
+#member-list-body{overflow-x:auto}
+#member-list-body table{white-space:nowrap}
+button[onclick*="clearField"]{padding:4px 8px!important;font-size:12px!important;margin-top:0!important}
+#admin-task-list div{padding:6px 0!important}
 
-    body {  
-        background: var(--bg);  
-        color: #fff;  
-        font-family: 'Hind Siliguri', sans-serif;  
-        margin: 0;    
-        overflow-x: hidden;  
-    }  
-
-    /* Sidebar */  
-    .sidebar {  
-        width: var(--sidebar-width);  
-        background: var(--card);  
-        height: 100vh;  
-        position: fixed;  
-        border-right: 1px solid var(--border);  
-        z-index: 100;  
-        transition: 0.3s;  
-    }  
-
-    .main-content {  
-    margin-left: var(--sidebar-width);  
-    width: calc(100% - var(--sidebar-width));  
-    min-height: 100vh;  
-    padding: 30px;  
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
-    z-index: 0;
-}
-
-  .page-section{
-    position: absolute;
-    inset: 0;
-    display: none;
-    overflow-y: auto;
-    padding-bottom: 100px;
-    background: var(--bg);
-}
-
-.page-section.active{
-    display: block;
-}
-
-    /* UI Elements */  
-    .premium-card {  
-        background: var(--card);  
-        border: 1px solid var(--border);  
-        padding: 25px;  
-        border-radius: 24px;  
-        margin-bottom: 25px;  
-    }  
-
-    .card-title {  
-        font-size: 18px;  
-        font-weight: 700;  
-        margin-bottom: 20px;  
-        color: var(--cyan);  
-        display: flex;  
-        align-items: center;  
-        gap: 10px;  
-    }  
-
-    input,  
-    textarea,  
-    select {  
-        width: 100%;  
-        background: #000;  
-        border: 1px solid var(--border);  
-        padding: 15px;  
-        border-radius: 14px;  
-        color: #fff;  
-        margin-top: 5px;  
-        margin-bottom: 15px;  
-        box-sizing: border-box;  
-    }  
-
-    .btn-main {  
-        width: 100%;  
-        padding: 16px;  
-        border-radius: 14px;  
-        border: none;  
-        font-weight: 700;  
-        cursor: pointer;  
-        background: linear-gradient(90deg, var(--cyan), var(--purple));  
-        color: #fff;  
-        margin-top: 10px;  
-    }  
-
-    .row {  
-        display: grid;  
-        grid-template-columns: 1fr 1fr;  
-        gap: 15px;  
-    }  
-
-    /* Bottom Nav (Mobile Only) */  
-    .bottom-nav {  
-        display: none;  
-        position: fixed;  
-        bottom: 0;  
-        left: 0;  
-        width: 100%;  
-        background: var(--card);  
-        border-top: 1px solid var(--border);  
-        z-index: 1000;  
-        justify-content: space-around;  
-        padding: 10px 0;  
-    }  
-
-    .bottom-nav i {  
-        font-size: 20px;  
-        color: #94a3b8;  
-        cursor: pointer;  
-    }  
-
-    .bottom-nav i.active {  
-        color: var(--cyan);  
-    }  
-
-    @media (max-width: 768px) {  
-        .sidebar {  
-            display: none;  
-        }  
-
-        .main-content {  
-            margin-left: 0;  
-            width: 100%;  
-            padding: 15px;  
-            padding-bottom: 80px;  
-        }  
-
-        .bottom-nav {  
-            display: flex;  
-        }  
-
-        .row {  
-            grid-template-columns: 1fr;  
-        }  
-    }  
-
-    /* রিকোয়েস্ট টেবিল স্টাইল */
-.request-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 13px;
-}
-
-.request-table th {
-    background: #1e293b;
-    color: #00f2fe;
-    padding: 12px 8px;
-    text-align: left;
-    font-weight: 700;
-    border-bottom: 2px solid #00f2fe;
-}
-
-.request-table td {
-    padding: 10px 8px;
-    border-bottom: 1px solid #2d3a5e;
-    vertical-align: middle;
-}
-
-.deposit-row .amount {
-    color: #00ff88;
-    font-weight: bold;
-}
-
-.withdraw-row .amount {
-    color: #ffaa00;
-    font-weight: bold;
-}
-
-.approve-btn {
-    background: #00ff88;
-    color: #000;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-right: 5px;
-}
-
-.reject-btn {
-    background: #ff5555;
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.empty-state, .error-state {
-    text-align: center;
-    padding: 20px;
-    color: #94a3b8;
-}
-
-.error-state {
-    color: #ff5555;
-}
-
-code {
-    background: #000;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-}
-
-    /* Admin Login Overlay */  
-    #admin-login-overlay {  
-        position: fixed;  
-        inset: 0;  
-        background: var(--bg);  
-        z-index: 9999;  
-        display: flex;  
-        justify-content: center;  
-        align-items: center;  
-    }  
-
-    .premium-card {
-    overflow-x: auto;
-}
-table {
-    min-width: 500px;
-}
-
-    /* টেবেলের শিরোনাম ও কলাম আলাদা করতে */
-.user-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-.user-table th {
-    background: #1e293b;
-    color: #00f2fe;
-    padding: 10px 8px;
-    text-align: left;
-    font-weight: 700;
-    border-bottom: 2px solid var(--cyan);
-}
-.user-table td {
-    padding: 8px;
-    border-bottom: 1px solid #2d3a5e;
-}
-/* কলাম অনুযায়ী স্টাইল (ঐচ্ছিক) */
-.user-table td:nth-child(1) { font-weight: 600; color: #ffaa00; } /* User */
-.user-table td:nth-child(2) { font-family: monospace; } /* ID */
-.user-table td:nth-child(3) { color: #a0c4ff; } /* Phone */
-.user-table td:nth-child(4) { color: #00ff88; font-weight: bold; } /* Cash */
-.user-table td:nth-child(5) { font-size: 10px; font-family: monospace; background: rgba(0,242,254,0.05); } /* Session */
-.user-table td:nth-child(6) { text-align: center; } /* Copy বাটন */
-
-/* মোবাইল (ছোট স্ক্রিন) এর জন্য সেশন কলাম লুকানো ও প্যাডিং কমানো */
-@media (max-width: 768px) {
-    .user-table th, .user-table td {
-        padding: 5px;
-        font-size: 10px;
-    }
-    .user-table td:nth-child(5),
-    .user-table th:nth-child(5) {
-        display: none; /* মোবাইলে সেশন স্ট্রিং লুকান */
-    }
-    .premium-card {
-        padding: 15px;
-    }
-    /* অন্যান্য টেবিলের জন্য (যদি অন্য কোন টেবিল থাকে) */
-    table:not(.user-table) {
-        font-size: 11px;
-        min-width: 100%;
-    }
-    th, td {
-        padding: 6px 4px !important;
-        white-space: nowrap;
-    }
-}
-
-    /* টেবিল স্ক্রল ফিক্স */
-#member-list-body {
-    overflow-x: auto;
-}
-#member-list-body table {
-    white-space: nowrap;
-}
-/* মোবাইলে ফন্ট সাইজ ছোট */
-@media (max-width: 768px) {
-    #member-list-body table {
-        font-size: 10px;
-    }
-    #member-list-body th, #member-list-body td {
-        padding: 5px 4px;
-    }
-}
-
-    /* কম্প্যাক্ট ভিউ – সব জায়গায় প্যাডিং ও মার্জিন কমানো */
-.premium-card {
-    padding: 15px !important;
-    margin-bottom: 15px !important;
-}
-.card-title {
-    font-size: 14px !important;
-    margin-bottom: 12px !important;
-    gap: 6px !important;
-}
-input, textarea, select {
-    padding: 8px 12px !important;
-    margin-bottom: 8px !important;
-    font-size: 13px !important;
-}
-.btn-main {
-    padding: 10px !important;
-    font-size: 12px !important;
-    margin-top: 5px !important;
-}
-.row {
-    gap: 8px !important;
-    margin-bottom: 5px !important;
-}
-/* ডিভাইস চেক সিলেক্ট বক্স ছোট করা */
-select {
-    padding: 6px 8px !important;
-}
-/* লেবেলের ফন্ট সাইজ */
-label {
-    font-size: 12px;
-    margin-bottom: 2px;
-    display: inline-block;
-}
-/* রিমুভ বাটন ছোট করা */
-button[onclick*="clearField"] {
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-    margin-top: 0 !important;
-}
-/* টেক্সটএরিয়া রো সংখ্যা কমানো */
-textarea {
-    padding: 6px 10px !important;
-}
-/* টাস্ক লিস্টের কার্ডের মধ্যে ডিভের প্যাডিং কমানো */
-#admin-task-list div {
-    padding: 6px 0 !important;
-}
-/* নিচের বটম নেভিগেশন স্পেস */
-.bottom-nav {
-    padding: 6px 0 !important;
-}
-.bottom-nav i {
-    font-size: 16px !important;
-}
-/* টেবিল ফন্ট ও স্পেস কমানো */
-.user-table th, .user-table td {
-    padding: 6px 4px !important;
-    font-size: 11px !important;
-}
-/* মোবাইলে আরও ছোট */
-@media (max-width: 768px) {
-    .premium-card {
-        padding: 10px !important;
-    }
-    input, textarea, select {
-        padding: 6px 8px !important;
-        font-size: 12px !important;
-    }
-    .btn-main {
-        padding: 8px !important;
-    }
-    .card-title {
-        font-size: 12px !important;
-    }
+@media (max-width:768px){
+.sidebar{display:none}
+.main-content{margin-left:0;width:100%;padding:15px;padding-bottom:80px}
+.bottom-nav{display:flex}
+.row{grid-template-columns:1fr}
+.user-table td:nth-child(5),.user-table th:nth-child(5){display:none}
+.premium-card{padding:10px!important}
+input,textarea,select{padding:6px 8px!important;font-size:12px!important}
+.btn-main{padding:8px!important}
+.card-title{font-size:12px!important}
+#member-list-body table{font-size:10px}
+#member-list-body th,#member-list-body td{padding:5px 4px}
+table:not(.user-table){font-size:11px;min-width:100%}
+th,td{padding:6px 4px!important;white-space:nowrap}
 }
 </style>
 
@@ -517,7 +183,6 @@ textarea {
         <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>  
         <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>  
     </div>
-    
 </div>  
     
     <div id="task" class="page-section">
@@ -526,7 +191,6 @@ textarea {
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
 
-        <!-- টাস্কের সাধারণ তথ্য -->
         <input type="text" id="task_title" placeholder="টাস্কের শিরোনাম (যেমন: ফেসবুক পোস্ট লাইক)">
         <input type="url" id="task_link" placeholder="টাস্ক লিংক (URL)">
 
@@ -546,7 +210,6 @@ textarea {
                 <option value="telegram_channel">টেলিগ্রাম চ্যানেল জয়েন (বট ভেরিফাই)</option>
                 <option value="telegram_deeplink">টেলিগ্রাম ডিপ লিংক (বটের ক্লিক ট্র্যাক)</option>
                 <option value="admin_approval">এডমিন এপ্রুভাল (প্রমাণ আপলোড)</option>
-                </select>
             </select>
         </div>
 
@@ -562,7 +225,7 @@ textarea {
             </div>
         </div>
 
-        <!-- ভেরিফিকেশন রুলস (এই টাস্কের জন্য আলাদা) -->
+        <!-- ভেরিফিকেশন রুলস -->
         <div class="card-title" style="font-size:14px; margin-top:15px;"><i class="fas fa-shield-alt"></i> ভেরিফিকেশন (প্রতি টাস্কের জন্য আলাদা)</div>
         <div class="row">
             <div>
@@ -588,9 +251,9 @@ textarea {
             </div>
         </div>
 
-        <!-- এডমিন এপ্রুভাল হলে প্রমান নির্দেশনা -->
+        <!-- এডমিন এপ্রুভাল হলে প্রমাণ নির্দেশনা -->
         <div id="proof_instruction_box" style="display: none; margin-top: 10px;">
-            <label>প্রমান জমা দেওয়ার নির্দেশনা (ইউজারকে কী দেখাতে হবে?)</label>
+            <label>প্রমাণ জমা দেওয়ার নির্দেশনা (ইউজারকে কী দেখাতে হবে?)</label>
             <textarea id="task_proof_instruction" rows="3" placeholder="যেমন: স্ক্রিনশট আপলোড করুন, লিংক দিন ইত্যাদি"></textarea>
             <small>ইউজার টাস্ক ক্লেইম করলে এই নির্দেশনা দেখাবে</small>
         </div>
@@ -598,13 +261,13 @@ textarea {
         <button class="btn-main" onclick="createNewTask()" style="margin-top: 20px;">📌 টাস্ক তৈরি করুন</button>
     </div>
 
-    <!-- ২. টাস্ক লিস্ট (এখানে সব টাস্ক দেখা যাবে) -->
+    <!-- ২. টাস্ক লিস্ট -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-list-ul"></i> টাস্ক লিস্ট</div>
         <div id="admin-task-list">লোড হচ্ছে...</div>
     </div>
 
-    <!-- ৩. গ্লোবাল ডিফল্ট (ঐচ্ছিক) – শুধুমাত্র ডিফল্ট ভ্যালু সেট করতে -->
+    <!-- ৩. গ্লোবাল ডিফল্ট সেটিংস -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-cog"></i> গ্লোবাল ডিফল্ট সেটিংস</div>
         <div class="row">
@@ -620,60 +283,59 @@ textarea {
         <button class="btn-main" onclick="saveGlobalDefaults()">ডিফল্ট সংরক্ষণ</button>
     </div>
 
-        <!-- ==================== মাইলেসটোন ও ইনবক্স সেকশন ==================== -->
-<div class="premium-card">
-    <div class="card-title"><i class="fas fa-flag-checkered"></i> মাইলেসটোন / বোনাস কন্ট্রোল</div>
-    
-    <div class="row">
-        <div><label>টার্গেট (যেমন ১০ টাস্ক)</label><input type="number" id="ms_target" placeholder="সংখ্যা"></div>
-        <div><label>রিওয়ার্ড টাইপ</label><select id="ms_reward_type"><option value="bdt">BDT</option><option value="aaf">AAF</option></select></div>
-        <div><label>রিওয়ার্ড পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
-    </div>
-    <div class="row">
-        <div><label>মেয়াদ (দিন, খালি থাকলে লাইফটাইম)</label><input type="number" id="ms_days"></div>
-        <div><label>মাইলেসটোন টাইপ</label><select id="ms_type"><option value="task">টাস্ক</option><option value="referral">রেফারেল</option><option value="deposit">ডিপোজিট</option></select></div>
-        <div><label>সক্রিয়</label><select id="ms_active"><option value="true">হ্যাঁ</option><option value="false">না</option></select></div>
-    </div>
-    <button class="btn-main" onclick="saveMilestone()">📌 মাইলেসটোন সেভ করুন</button>
-    <hr>
-    <div class="card-title" style="font-size:14px;">📋 সংরক্ষিত মাইলেসটোন লিস্ট</div>
-    <div id="milestone-list">লোড হচ্ছে...</div>
-</div>
+    <!-- ৪. মাইলস্টোন / বোনাস কন্ট্রোল -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-flag-checkered"></i> মাইলস্টোন / বোনাস কন্ট্রোল</div>
 
-        <!-- টাস্ক অর্ডার সার্ভিস রেট সেটিংস -->
-<div class="premium-card">
-    <div class="card-title"><i class="fas fa-chart-line"></i> টাস্ক অর্ডার সার্ভিস রেট</div>
-    
-    <div class="row">
-        <div>
-            <label>📊 প্রিমিয়াম ফলোয়ার (প্রতি টি)</label>
-            <input type="number" id="rate_followers" step="0.01" placeholder="0.20">
+        <div class="row">
+            <div><label>টার্গেট (যেমন ১০ টাস্ক)</label><input type="number" id="ms_target" placeholder="সংখ্যা"></div>
+            <div><label>রিওয়ার্ড টাইপ</label><select id="ms_reward_type"><option value="bdt">BDT</option><option value="aaf">AAF</option></select></div>
+            <div><label>রিওয়ার্ড পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
         </div>
-        <div>
-            <label>👥 প্রিমিয়াম মেম্বার (প্রতি টি)</label>
-            <input type="number" id="rate_members" step="0.01" placeholder="0.15">
+        <div class="row">
+            <div><label>মেয়াদ (দিন, খালি থাকলে লাইফটাইম)</label><input type="number" id="ms_days"></div>
+            <div><label>মাইলস্টোন টাইপ</label><select id="ms_type"><option value="task">টাস্ক</option><option value="referral">রেফারেল</option><option value="deposit">ডিপোজিট</option></select></div>
+            <div><label>সক্রিয়</label><select id="ms_active"><option value="true">হ্যাঁ</option><option value="false">না</option></select></div>
         </div>
+        <button class="btn-main" onclick="saveMilestone()">📌 মাইলস্টোন সেভ করুন</button>
+        <hr>
+        <div class="card-title" style="font-size:14px;">📋 সংরক্ষিত মাইলস্টোন লিস্ট</div>
+        <div id="milestone-list">লোড হচ্ছে...</div>
     </div>
-    <div class="row">
-        <div>
-            <label>👁️ প্রিমিয়াম ভিউ (প্রতি টি)</label>
-            <input type="number" id="rate_views" step="0.01" placeholder="0.05">
-        </div>
-        <div>
-            <label>❤️ প্রিমিয়াম লাইক (প্রতি টি)</label>
-            <input type="number" id="rate_likes" step="0.01" placeholder="0.10">
-        </div>
-    </div>
-    <div class="row">
-        <div>
-            <label>💬 প্রিমিয়াম কমেন্ট (প্রতি টি)</label>
-            <input type="number" id="rate_comments" step="0.01" placeholder="0.50">
-        </div>
-    </div>
-    
-    <button class="btn-main" onclick="saveOrderRates()">💾 সার্ভিস রেট সেভ করুন</button>
-</div>
 
+    <!-- ৫. টাস্ক অর্ডার সার্ভিস রেট সেটিংস -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-chart-line"></i> টাস্ক অর্ডার সার্ভিস রেট</div>
+
+        <div class="row">
+            <div>
+                <label>📊 প্রিমিয়াম ফলোয়ার (প্রতি টি)</label>
+                <input type="number" id="rate_followers" step="0.01" placeholder="0.20">
+            </div>
+            <div>
+                <label>👥 প্রিমিয়াম মেম্বার (প্রতি টি)</label>
+                <input type="number" id="rate_members" step="0.01" placeholder="0.15">
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>👁️ প্রিমিয়াম ভিউ (প্রতি টি)</label>
+                <input type="number" id="rate_views" step="0.01" placeholder="0.05">
+            </div>
+            <div>
+                <label>❤️ প্রিমিয়াম লাইক (প্রতি টি)</label>
+                <input type="number" id="rate_likes" step="0.01" placeholder="0.10">
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>💬 প্রিমিয়াম কমেন্ট (প্রতি টি)</label>
+                <input type="number" id="rate_comments" step="0.01" placeholder="0.50">
+            </div>
+        </div>
+
+        <button class="btn-main" onclick="saveOrderRates()">💾 সার্ভিস রেট সেভ করুন</button>
+    </div>
 </div>
 
     <!-- Trading Section -->  
