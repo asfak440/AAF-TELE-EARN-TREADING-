@@ -715,14 +715,23 @@ def verify_join():
 
 
 # ================= API: TASKS (Firebase) =================
-
 @app.route("/api/task_order/active")
 @login_required
 def get_active_orders():
     uid = session.get("uid")
-    orders = list(task_orders_col.find({"user_id": uid, "status": {"$ne": "completed"}}))
+    if not uid:
+        return jsonify({"orders": []})
+    
+    orders = list(task_orders_col.find(
+        {"user_id": uid, "status": {"$ne": "completed"}},
+        {"_id": 0}  # 🆕 _id বাদ দেওয়া
+    ).sort("created_at", -1))  # 🆕 নতুন অর্ডার আগে দেখাবে
+    
+    # ObjectId স্ট্রিংয়ে কনভার্ট (যদি _id রাখতে চান)
     for o in orders:
-        o["_id"] = str(o["_id"])
+        if "_id" in o:
+            o["_id"] = str(o["_id"])
+    
     return jsonify({"orders": orders})
 
 @app.route("/api/task_order/submit", methods=["POST"])
@@ -745,6 +754,7 @@ def submit_task_order():
     # অর্ডার সেভ করা
     order = {
         "user_id": uid,
+        "telegram_id": user.get("telegram_id"),  # 🆕 এডমিনের জন্য টেলিগ্রাম আইডি
         "link": data.get("link"),
         "service": data.get("service"),
         "quantity": data.get("quantity"),
@@ -756,6 +766,31 @@ def submit_task_order():
     task_orders_col.insert_one(order)
     
     return jsonify({"success": True, "message": "Order submitted"})
+
+
+@app.route("/api/admin/order_rates", methods=["GET", "POST"])
+@login_required
+def order_rates():
+    if request.method == "POST":
+        rates = request.json
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$set": {"task_order_rates": rates}},
+            upsert=True
+        )
+        return jsonify({"success": True})
+    
+    else:
+        admin = get_admin_config()
+        rates = admin.get("task_order_rates", {
+            "followers": 2.00,
+            "members": 1.50,
+            "views": 0.50,
+            "likes": 0.50,
+            "comments": 1.00
+        })
+        return jsonify({"rates": rates})
+        
 
 
 @app.route("/api/tasks")
@@ -2165,32 +2200,6 @@ def admin_clear_field():
         {"$set": {field_name: ""}}
     )
     return jsonify({"success": True})
-
-
-# টাস্ক অর্ডার রেট সেভ API
-@app.route("/api/admin/order_rates", methods=["GET", "POST"])
-@login_required
-def order_rates():
-    if request.method == "POST":
-        rates = request.json
-        admin_config_col.update_one(
-            {"_id": "global"},
-            {"$set": {"task_order_rates": rates}},
-            upsert=True
-        )
-        return jsonify({"success": True})
-    
-    else:
-        admin = get_admin_config()
-        rates = admin.get("task_order_rates", {
-            "followers": 2.00,
-            "members": 1.50,
-            "views": 0.50,
-            "likes": 0.50,
-            "comments": 1.00
-        })
-        return jsonify({"rates": rates})
-
 
 # ================== ইউজার মাইলেসটোন এন্ডপয়েন্ট ==================
 @app.route('/api/user/milestones', methods=['GET'])
