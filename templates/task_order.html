@@ -249,7 +249,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-<script>
+    <script>
 const API = window.location.origin;
 const TG_KEY = "telegram_id";
 let DEVICE_ID = "";
@@ -285,6 +285,18 @@ function updateCharge() {
     const rate = serviceRates[service] || 0.05;
     const total = quantity * rate;
     document.getElementById('chargeAmount').innerText = total.toFixed(2);
+}
+
+// এডমিন প্যানেল থেকে রেট লোড করে serviceRates আপডেট করা
+async function loadOrderRatesFromAdmin() {
+    try {
+        const res = await fetch('/api/admin/order_rates', { credentials: 'include' });
+        const data = await res.json();
+        if (data.rates) {
+            serviceRates = data.rates;
+            updateCharge();
+        }
+    } catch (e) { console.log("Load rates error", e); }
 }
 
 async function submitOrder() {
@@ -323,37 +335,7 @@ async function submitOrder() {
     btn.innerText = "📦 অর্ডার কনফার্ম";
 }
 
-async function loadUserData() {
-    try {
-        const res = await fetch(`${API}/api/user/me`, { credentials: 'include' });
-        const data = await res.json();
-        if (data.status === "success") {
-            updateBalance(data.user.cash || 0, data.user.aaf || 0);
-            USER_JOINED = data.user.is_joined === true;
-            
-            // 🎯 অ্যাডমিন প্যানেল থেকে ব্যানার অ্যাড লোড
-            if (data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== "") {
-                injectSafeAdHTML(data.admin.banner_ad_code);
-            } else {
-                // ডিফল্ট ব্যানার
-                const bannerBox = document.getElementById('banner-ad');
-                if (bannerBox) {
-                    bannerBox.innerHTML = `<p style="font-size: 9px; letter-spacing: 2px; color: var(--text-gray); margin: 0;">
-                        <i class="fas fa-ad" style="margin-right:5px;"></i> GLOBAL ADVERTISING UNIT
-                    </p>`;
-                }
-            }
-            
-            // 🎯 পপআপ অ্যাড (যদি এডমিন সেট করে থাকেন)
-            if (data.admin && data.admin.popup_ad_code && data.admin.popup_ad_code.trim() !== "") {
-                showTimedAd(data.admin.popup_ad_code);
-            }
-        }
-    } catch (e) { 
-        console.log("Load user error", e); 
-    }
-}
-  
+// ========== একমাত্র loadUserData ফাংশন (ডুপ্লিকেট মুছে ফেলা হয়েছে) ==========
 async function loadUserData() {
     try {
         const res = await fetch(`${API}/api/user/me`, { credentials: 'include' });
@@ -366,7 +348,6 @@ async function loadUserData() {
             if (data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== "") {
                 injectSafeAdHTML(data.admin.banner_ad_code);
             } else {
-                // ডিফল্ট ব্যানার
                 const bannerBox = document.getElementById('banner-ad');
                 if (bannerBox) {
                     bannerBox.innerHTML = `<p style="font-size: 9px; letter-spacing: 2px; color: var(--text-gray); margin: 0;">
@@ -420,6 +401,7 @@ window.addEventListener('load', async () => {
     const fp = await FingerprintJS.load();
     const result = await fp.get();
     DEVICE_ID = result.visitorId;
+    await loadOrderRatesFromAdmin();  // এডমিন থেকে রেট লোড
     await loadUserData();
     await loadActiveOrders();
     setInterval(loadUserData, 30000);
@@ -437,7 +419,6 @@ function showAnimatedNotification(message, type = 'info') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// অ্যাড লোড করার ফাংশন (আপনার কোডে ইতিমধ্যে injectSafeAdHTML আছে)
 function injectSafeAdHTML(htmlString) {
     const container = document.getElementById('banner-ad');
     if (!container) return;
@@ -459,7 +440,7 @@ function injectSafeAdHTML(htmlString) {
         }
         container.appendChild(newScript);
     });
-    }
+}
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -471,13 +452,12 @@ function escapeHtml(str) {
     });
 }
 
-  // পপআপ অ্যাড দেখানোর ফাংশন
 function showTimedAd(adCode) {
     if (!adCode || adCode.trim() === "") return;
     const TG_ID = getTG();
     const key = `popup_ad_seen_${TG_ID}`;
     const last = localStorage.getItem(key);
-    const SIX_HOURS = 21600000; // 6 ঘন্টা
+    const SIX_HOURS = 21600000;
     if (!last || Date.now() - last > SIX_HOURS) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = adCode;
@@ -492,8 +472,7 @@ function showTimedAd(adCode) {
     }
 }
 
-
-    async function loadActiveOrders() {
+async function loadActiveOrders() {
     try {
         const res = await fetch(`${API}/api/task_order/active`, { credentials: 'include' });
         const data = await res.json();
@@ -517,8 +496,8 @@ function showTimedAd(adCode) {
         html += '</div>';
         container.innerHTML = html;
     } catch (e) { console.log("Load orders error", e); }
-    }
-    
+}
+
 </script>
 </body>
 </html>
