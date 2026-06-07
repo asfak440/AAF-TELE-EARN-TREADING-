@@ -361,9 +361,28 @@ async function loadUserData() {
         if (data.status === "success") {
             updateBalance(data.user.cash || 0, data.user.aaf || 0);
             USER_JOINED = data.user.is_joined === true;
-            if (data.admin && data.admin.banner_ad_code) injectSafeAdHTML(data.admin.banner_ad_code);
+            
+            // ব্যানার অ্যাড লোড
+            if (data.admin && data.admin.banner_ad_code && data.admin.banner_ad_code.trim() !== "") {
+                injectSafeAdHTML(data.admin.banner_ad_code);
+            } else {
+                // ডিফল্ট ব্যানার
+                const bannerBox = document.getElementById('banner-ad');
+                if (bannerBox) {
+                    bannerBox.innerHTML = `<p style="font-size: 9px; letter-spacing: 2px; color: var(--text-gray); margin: 0;">
+                        <i class="fas fa-ad" style="margin-right:5px;"></i> GLOBAL ADVERTISING UNIT
+                    </p>`;
+                }
+            }
+            
+            // পপআপ অ্যাড (যদি এডমিন সেট করে থাকেন)
+            if (data.admin && data.admin.popup_ad_code && data.admin.popup_ad_code.trim() !== "") {
+                showTimedAd(data.admin.popup_ad_code);
+            }
         }
-    } catch (e) { console.log(e); }
+    } catch (e) { 
+        console.log("Load user error", e); 
+    }
 }
 
 // ড্রপডাউন ফাংশন
@@ -474,25 +493,32 @@ function showTimedAd(adCode) {
 }
 
 
-      async function loadUserData() {
+    async function loadActiveOrders() {
     try {
-        const res = await fetch(`${API}/api/user/me`, { credentials: 'include' });
+        const res = await fetch(`${API}/api/task_order/active`, { credentials: 'include' });
         const data = await res.json();
-        if (data.status === "success") {
-            updateBalance(data.user.cash || 0, data.user.aaf || 0);
-            USER_JOINED = data.user.is_joined === true;
-            
-            // 🔥 অ্যাড লোড করা - এডমিন প্যানেল থেকে কন্ট্রোল হবে
-            if (data.admin && data.admin.banner_ad_code) {
-                injectSafeAdHTML(data.admin.banner_ad_code);
-            }
-            // পপআপ অ্যাড (যদি থাকে)
-            if (data.admin && data.admin.popup_ad_code) {
-                showTimedAd(data.admin.popup_ad_code);
-            }
-        }
-    } catch (e) { console.log(e); }
-  }
+        const orders = data.orders || [];
+        const container = document.getElementById('active-orders-container');
+        if (!container) return;
+        if (orders.length === 0) { container.innerHTML = ''; return; }
+        
+        let html = '<div class="order-form-card"><div style="font-size:11px; margin-bottom:10px;"><i class="fas fa-clock"></i> চলমান অর্ডার ও অগ্রগতি</div>';
+        orders.forEach(order => {
+            const percent = order.progress || 0;
+            html += `
+                <div class="task-card" style="animation: fadeInUp 0.3s ease;">
+                    <div><strong>${order.service}</strong> - ${order.quantity} টি</div>
+                    <div style="font-size:9px; color:#aaa;">${(order.link || '').substring(0, 50)}...</div>
+                    <div class="progress-meter"><div class="progress-fill-order" style="width: ${percent}%; transition: width 0.5s ease;"></div></div>
+                    <div class="order-status">📊 অগ্রগতি: ${percent}% | 💰 চার্জ: ${order.total_charge} ৳</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (e) { console.log("Load orders error", e); }
+    }
+    
 </script>
 </body>
 </html>
