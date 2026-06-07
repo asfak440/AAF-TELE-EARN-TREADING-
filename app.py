@@ -59,6 +59,7 @@ deposits_col = db_mongo["deposits"]
 withdraws_col = db_mongo["withdraws"]
 trades_col = db_mongo["trades"]
 task_claims_col = db_mongo["task_claims"]
+task_orders_col = db_mongo["task_orders"]
 milestones_col = db_mongo["milestones"] 
 user_milestone_claims_col = db_mongo["user_milestone_claims"]
 deeplink_clicks_col = db_mongo["deeplink_clicks"]
@@ -364,6 +365,13 @@ def dashboard():
 @login_required
 def task():
     return render_template("task.html")
+
+
+@app.route("/task_order")
+@login_required
+def task_order():
+    return render_template("task_order.html")
+    
 
 @app.route("/trading")
 @login_required
@@ -707,6 +715,49 @@ def verify_join():
 
 
 # ================= API: TASKS (Firebase) =================
+
+@app.route("/api/task_order/active")
+@login_required
+def get_active_orders():
+    uid = session.get("uid")
+    orders = list(task_orders_col.find({"user_id": uid, "status": {"$ne": "completed"}}))
+    for o in orders:
+        o["_id"] = str(o["_id"])
+    return jsonify({"orders": orders})
+
+@app.route("/api/task_order/submit", methods=["POST"])
+@login_required
+def submit_task_order():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"})
+    
+    data = request.json
+    total_charge = float(data.get("total_charge", 0))
+    
+    if user.get("cash", 0) < total_charge:
+        return jsonify({"success": False, "message": "Insufficient balance"})
+    
+    # ব্যালেন্স কাটা
+    users_col.update_one({"_id": ObjectId(uid)}, {"$inc": {"cash": -total_charge}})
+    
+    # অর্ডার সেভ করা
+    order = {
+        "user_id": uid,
+        "link": data.get("link"),
+        "service": data.get("service"),
+        "quantity": data.get("quantity"),
+        "total_charge": total_charge,
+        "progress": 0,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    }
+    task_orders_col.insert_one(order)
+    
+    return jsonify({"success": True, "message": "Order submitted"})
+
+
 @app.route("/api/tasks")
 def get_tasks():
     if not fb_ref:
