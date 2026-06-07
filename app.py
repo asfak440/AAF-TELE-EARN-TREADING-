@@ -2167,6 +2167,34 @@ def admin_clear_field():
     return jsonify({"success": True})
 
 
+# টাস্ক অর্ডার রেট সেভ API
+@app.route("/api/admin/order_rates", methods=["GET", "POST"])
+@login_required
+def order_rates():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if request.method == "POST":
+        rates = request.json
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$set": {"task_order_rates": rates}},
+            upsert=True
+        )
+        return jsonify({"success": True})
+    
+    else:
+        admin = get_admin_config()
+        rates = admin.get("task_order_rates", {
+            "followers": 0.20,
+            "members": 0.15,
+            "views": 0.05,
+            "likes": 0.10,
+            "comments": 0.50
+        })
+        return jsonify({"rates": rates})
+
+
 # ================== ইউজার মাইলেসটোন এন্ডপয়েন্ট ==================
 @app.route('/api/user/milestones', methods=['GET'])
 @login_required
