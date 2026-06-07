@@ -142,20 +142,30 @@
         .progress-meter { background: rgba(0,0,0,0.3); border-radius: 10px; height: 8px; overflow: hidden; margin: 8px 0; }
         .progress-fill-order { background: linear-gradient(90deg, #00f2fe, #00ff88); width: 0%; height: 100%; transition: width 0.5s ease; }
         .order-status { font-size: 10px; color: var(--text-gray); text-align: center; margin-top: 6px; }
-        
        
-#taskDropdownBtn {
-    padding: 7px 10px !important;
-    font-size: 9px !important;
-    gap: 4px !important;
-}
-#dropdownIcon, #dropdownText {
-    font-size: 10px !important;
-}
-#dropdownArrow {
-    font-size: 7px !important;
-}
-    </style>
+        /* হেডারের ড্রপডাউন বাটনের লেখা স্পষ্ট করা */
+        #taskDropdownBtn {
+             background: linear-gradient(135deg, #00f2fe, #00c8ff) !important;
+             color: #000 !important;  /* 👈 লেখার রং কালো করে দিচ্ছি, যাতে স্পষ্ট দেখা যায় */
+             font-weight: bold !important;
+             text-shadow: none !important;
+         }
+         #dropdownIcon, #dropdownText {
+             color: #000 !important;  /* 👈 আইকন ও লেখা কালো */
+         }
+       
+         #taskDropdownBtn {
+             padding: 7px 10px !important;
+             font-size: 9px !important;
+             gap: 4px !important;
+         }
+         #dropdownIcon, #dropdownText {
+             font-size: 10px !important;
+         }
+         #dropdownArrow {
+             font-size: 7px !important;
+         }
+ </style>
 </head>
 <body>
 
