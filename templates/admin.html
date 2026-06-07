@@ -640,6 +640,40 @@ textarea {
     <div id="milestone-list">লোড হচ্ছে...</div>
 </div>
 
+        <!-- টাস্ক অর্ডার সার্ভিস রেট সেটিংস -->
+<div class="premium-card">
+    <div class="card-title"><i class="fas fa-chart-line"></i> টাস্ক অর্ডার সার্ভিস রেট</div>
+    
+    <div class="row">
+        <div>
+            <label>📊 প্রিমিয়াম ফলোয়ার (প্রতি টি)</label>
+            <input type="number" id="rate_followers" step="0.01" placeholder="0.20">
+        </div>
+        <div>
+            <label>👥 প্রিমিয়াম মেম্বার (প্রতি টি)</label>
+            <input type="number" id="rate_members" step="0.01" placeholder="0.15">
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            <label>👁️ প্রিমিয়াম ভিউ (প্রতি টি)</label>
+            <input type="number" id="rate_views" step="0.01" placeholder="0.05">
+        </div>
+        <div>
+            <label>❤️ প্রিমিয়াম লাইক (প্রতি টি)</label>
+            <input type="number" id="rate_likes" step="0.01" placeholder="0.10">
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            <label>💬 প্রিমিয়াম কমেন্ট (প্রতি টি)</label>
+            <input type="number" id="rate_comments" step="0.01" placeholder="0.50">
+        </div>
+    </div>
+    
+    <button class="btn-main" onclick="saveOrderRates()">💾 সার্ভিস রেট সেভ করুন</button>
+</div>
+
 </div>
 
     <!-- Trading Section -->  
@@ -1875,6 +1909,49 @@ async function saveVolatilitySettings() {
     }
 }
 
+
+    // টাস্ক অর্ডার সার্ভিস রেট সেভ
+async function saveOrderRates() {
+    const rates = {
+        followers: parseFloat(document.getElementById('rate_followers').value) || 0.20,
+        members: parseFloat(document.getElementById('rate_members').value) || 0.15,
+        views: parseFloat(document.getElementById('rate_views').value) || 0.05,
+        likes: parseFloat(document.getElementById('rate_likes').value) || 0.10,
+        comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
+    };
+    
+    try {
+        const res = await fetch('/api/admin/order_rates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(rates)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ সার্ভিস রেট সেভ হয়েছে!');
+        } else {
+            alert('❌ সেভ করতে ব্যর্থ');
+        }
+    } catch (e) {
+        alert('সার্ভার ত্রুটি');
+    }
+}
+
+// পেজ লোডে রেট লোড করা
+async function loadOrderRates() {
+    try {
+        const res = await fetch('/api/admin/order_rates', { credentials: 'include' });
+        const data = await res.json();
+        if (data.rates) {
+            document.getElementById('rate_followers').value = data.rates.followers || 0.20;
+            document.getElementById('rate_members').value = data.rates.members || 0.15;
+            document.getElementById('rate_views').value = data.rates.views || 0.05;
+            document.getElementById('rate_likes').value = data.rates.likes || 0.10;
+            document.getElementById('rate_comments').value = data.rates.comments || 0.50;
+        }
+    } catch (e) { console.log(e); }
+}
 
 
     async function updateAdminInfo() {
