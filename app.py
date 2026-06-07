@@ -2171,9 +2171,6 @@ def admin_clear_field():
 @app.route("/api/admin/order_rates", methods=["GET", "POST"])
 @login_required
 def order_rates():
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    
     if request.method == "POST":
         rates = request.json
         admin_config_col.update_one(
@@ -2186,11 +2183,11 @@ def order_rates():
     else:
         admin = get_admin_config()
         rates = admin.get("task_order_rates", {
-            "followers": 0.20,
-            "members": 0.15,
-            "views": 0.05,
-            "likes": 0.10,
-            "comments": 0.50
+            "followers": 2.00,
+            "members": 1.50,
+            "views": 0.50,
+            "likes": 0.50,
+            "comments": 1.00
         })
         return jsonify({"rates": rates})
 
