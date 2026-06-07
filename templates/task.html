@@ -42,6 +42,17 @@
             100% { transform: scale(1); }
         }
 
+        /* ড্রপডাউন মেনুর আইটেম হোভার ইফেক্ট */
+        #dropdownMenu a:hover {
+            background: rgba(0, 242, 254, 0.15);
+            transform: translateX(5px);
+        }
+
+        /* ড্রপডাউন খোলা থাকলে তীরের অ্যানিমেশন */
+        #dropdownArrow.rotated {
+            transform: rotate(180deg);
+        }
+
         /* টগল বাটন ট্রানজিশন */
         #taskToggleBtn {
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -108,13 +119,28 @@
 <body>
 
 <header class="header">
-    <div style="display: flex; align-items: center; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px; position: relative;">
         <h2 style="margin:0; background: linear-gradient(135deg, #00f2fe, #7000ff); -webkit-background-clip: text; background-clip: text; color: transparent;">AAF TASK</h2>
-        <button id="taskToggleBtn" onclick="toggleTaskMode()" style="display: flex; align-items: center; gap: 8px; border: none; padding: 6px 18px; border-radius: 40px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.3s; background: linear-gradient(135deg, #00f2fe, #00c8ff); color: #000; box-shadow: 0 2px 10px rgba(0,242,254,0.5);">
-            <span id="toggleIcon">📋</span>
-            <span id="toggleText">Task</span>
-            <span style="font-size: 10px; opacity: 0.8;">▼</span>
-        </button>
+        
+        <!-- ড্রপডাউন বাটন -->
+        <div style="position: relative;">
+            <button id="taskDropdownBtn" onclick="toggleDropdown()" style="display: flex; align-items: center; gap: 8px; border: none; padding: 6px 18px; border-radius: 40px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.3s; background: linear-gradient(135deg, #00f2fe, #00c8ff); color: #000; box-shadow: 0 2px 10px rgba(0,242,254,0.5);">
+                <span id="dropdownIcon">📋</span>
+                <span id="dropdownText">Task</span>
+                <span style="font-size: 10px; opacity: 0.8; transition: transform 0.3s;" id="dropdownArrow">▼</span>
+            </button>
+            
+            <!-- ড্রপডাউন মেনু (লুকানো) -->
+            <div id="dropdownMenu" style="position: absolute; top: 45px; left: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(0,242,254,0.2); border-radius: 20px; padding: 8px 0; min-width: 160px; z-index: 1000; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <a href="/task" onclick="selectOption('task')" style="display: flex; align-items: center; gap: 10px; padding: 10px 20px; text-decoration: none; color: #fff; font-size: 12px; font-weight: bold; transition: 0.2s; border-radius: 12px; margin: 2px 8px;">
+                    <span>📋</span> Task
+                </a>
+                <a href="/task_order" onclick="selectOption('order')" style="display: flex; align-items: center; gap: 10px; padding: 10px 20px; text-decoration: none; color: #fff; font-size: 12px; font-weight: bold; transition: 0.2s; border-radius: 12px; margin: 2px 8px;">
+                    <span>📦</span> Task Order
+                </a>
+            </div>
+        </div>
+        
     </div>
     <div class="header-bal-box">
         <span style="color: var(--active-green);">৳ <span id="u-bal">0.00</span></span>
@@ -475,6 +501,70 @@ async function claimMilestone(milestoneId) {
         showAnimatedNotification('সার্ভার ত্রুটি', 'error');
     }
 }
+
+
+    // ড্রপডাউন টগল
+function toggleDropdown() {
+    const menu = document.getElementById('dropdownMenu');
+    const arrow = document.getElementById('dropdownArrow');
+    if (!menu) return;
+    
+    if (menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'block';
+        if (arrow) arrow.classList.add('rotated');
+    } else {
+        menu.style.display = 'none';
+        if (arrow) arrow.classList.remove('rotated');
+    }
+}
+
+// বাইরে ক্লিক করলে ড্রপডাউন বন্ধ
+document.addEventListener('click', function(event) {
+    const btn = document.getElementById('taskDropdownBtn');
+    const menu = document.getElementById('dropdownMenu');
+    if (btn && menu && !btn.contains(event.target) && !menu.contains(event.target)) {
+        menu.style.display = 'none';
+        const arrow = document.getElementById('dropdownArrow');
+        if (arrow) arrow.classList.remove('rotated');
+    }
+});
+
+// অপশন সিলেক্ট করলে বাটনের টেক্সট আপডেট
+function selectOption(option) {
+    const icon = document.getElementById('dropdownIcon');
+    const text = document.getElementById('dropdownText');
+    
+    if (option === 'task') {
+        if (icon) icon.innerHTML = '📋';
+        if (text) text.innerHTML = 'Task';
+    } else if (option === 'order') {
+        if (icon) icon.innerHTML = '📦';
+        if (text) text.innerHTML = 'Task Order';
+    }
+}
+
+// বর্তমান পেজ অনুযায়ী বাটন সেট করা
+function setButtonByCurrentPage() {
+    const currentPath = window.location.pathname;
+    const icon = document.getElementById('dropdownIcon');
+    const text = document.getElementById('dropdownText');
+    
+    if (!icon || !text) return;
+    
+    if (currentPath === '/task' || currentPath === '/') {
+        icon.innerHTML = '📋';
+        text.innerHTML = 'Task';
+    } else if (currentPath === '/task_order') {
+        icon.innerHTML = '📦';
+        text.innerHTML = 'Task Order';
+    } else {
+        icon.innerHTML = '📋';
+        text.innerHTML = 'Task';
+    }
+}
+
+// পেজ লোড হলে বাটন সেট করো
+document.addEventListener('DOMContentLoaded', setButtonByCurrentPage);
 </script>
 </body>
 </html>
