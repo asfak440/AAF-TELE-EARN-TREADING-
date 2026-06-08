@@ -157,6 +157,8 @@
     </div>
     <div class="join-warn" id="join-warning">
         <i class="fas fa-exclamation-triangle"></i> বোনাস আনলক করতে অফিশিয়াল চ্যানেলে জয়েন করুন!
+        <!-- ডিউ স্ট্যাটাস দেখানোর জায়গা -->
+     <div id="due-warning" style="display: none;"></div>
     </div>
     <div id="milestones-container"></div>
     <div id="main-task-list">
@@ -262,6 +264,7 @@ window.addEventListener('load', async () => {
     const result = await fp.get();
     DEVICE_ID = result.visitorId;
     await initTaskPage();
+    await loadDueStatus();        // 👈 এই লাইনটি যোগ করুন
     setInterval(initTaskPage, 15000);
 });
 
@@ -560,6 +563,38 @@ function selectOption(option) {
         if (icon) icon.innerHTML = '📦';
         if (text) text.innerHTML = 'Task Order';
     }
+}
+
+    // ========== ডিউ স্ট্যাটাস লোড ==========
+async function loadDueStatus() {
+    try {
+        const res = await fetch('/api/user/due_status', { credentials: 'include' });
+        const data = await res.json();
+        
+        if (data.success && data.due > 0) {
+            // ওয়ার্নিং দেখান
+            const warnDiv = document.getElementById('due-warning');
+            if (warnDiv) {
+                warnDiv.style.display = 'block';
+                warnDiv.innerHTML = `
+                    <div style="background: rgba(255,100,0,0.2); border: 1px solid #ffaa00; border-radius: 10px; padding: 10px; margin: 10px 0;">
+                        <i class="fas fa-exclamation-triangle" style="color: #ffaa00;"></i>
+                        <strong style="font-size: 12px;">${data.message}</strong>
+                        <details style="margin-top: 5px; font-size: 11px;">
+                            <summary style="cursor: pointer; color: #ffaa00;">বিস্তারিত দেখুন</summary>
+                            <ul style="margin-top: 5px; padding-left: 20px;">
+                                ${data.details.map(d => `<li>📌 ${escapeHtml(d.task_title)}: ৳${d.due_amount} ডিউ</li>`).join('')}
+                            </ul>
+                        </details>
+                    </div>
+                `;
+            }
+        } else {
+            // ডিউ না থাকলে লুকান
+            const warnDiv = document.getElementById('due-warning');
+            if (warnDiv) warnDiv.style.display = 'none';
+        }
+    } catch(e) { console.log("Due status error", e); }
 }
 
 // বর্তমান পেজ অনুযায়ী বাটন সেট করা
