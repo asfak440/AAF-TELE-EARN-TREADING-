@@ -318,11 +318,30 @@ function renderTaskUI(user, admin, tasks, milestones) {
     if (admin && admin.banner_ad_code) injectSafeAdHTML(admin.banner_ad_code);
 }
 
-function renderTasks(tasks) {
+// ========== renderTasks ==========
+async function renderTasks(tasks) {
+    const TG_ID = getTG();
     const list = document.getElementById('main-task-list');
     if (!list) return;
+    
+    // ১. ইউজারের আগে ক্লেইম করা টাস্কগুলোর আইডি নিয়ে আসুন
+    let claimedIds = [];
+    try {
+        const claimedRes = await fetch(`${API}/api/user/claimed_tasks`, { credentials: 'include' });
+        const claimedData = await claimedRes.json();
+        claimedIds = claimedData.claimed_ids || [];
+    } catch(e) { console.log("Error fetching claimed tasks", e); }
+
+    // ২. টাস্ক ফিল্টার করুন: আগে ক্লেইম করা নেই, শুধু সেগুলো দেখাবে
+    const availableTasks = tasks.filter(t => !claimedIds.includes(t.id));
+    
     list.innerHTML = "";
-    tasks.forEach(t => {
+    if (availableTasks.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:40px; color: var(--active-green);"><i class="fas fa-check-circle"></i> অভিনন্দন! আপনি সব টাস্ক সম্পন্ন করেছেন। নতুন টাস্ক আসছে শীঘ্রই।</div>';
+        return;
+    }
+    
+    availableTasks.forEach(t => {
         const reward = t.currency === 'aaf' ? `AAF ${t.reward}` : `৳${t.reward}`;
         list.innerHTML += `
             <div class="task-card" style="animation: fadeInUp 0.3s ease;">
@@ -330,7 +349,7 @@ function renderTasks(tasks) {
                     <div class="task-icon"><i class="fas fa-tasks"></i></div>
                     <div class="task-info">
                         <h4>${escapeHtml(t.title)}</h4>
-                        <p>${t.description || 'কাজ শেষ করে VERIFY করুন'}</p>
+                        <p>${t.description || 'লিংকে ক্লিক করে কাজ শেষ করুন'}</p>
                     </div>
                     <div class="reward-tag">${reward}</div>
                 </div>
