@@ -64,6 +64,7 @@ milestones_col = db_mongo["milestones"]
 user_milestone_claims_col = db_mongo["user_milestone_claims"]
 deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
+channel_status_col = db_mongo["channel_status"]  # 🆕 এই লাইনটি যোগ করুন
 
 # 🎯 ৬টি টেবিল তৈরি এবং সেগুলোতে ২ মাসের অটো-ডিলিট ও স্পিড বুস্টার ইনডেক্স চালু করা
 try:
@@ -701,18 +702,30 @@ def verify_join():
     try:
         bot = telebot.TeleBot(bot_token)
         chat_member = bot.get_chat_member(channel_username, user_tg_id)
-        if chat_member.status in ["member", "creator", "administrator"]:
+        is_member = chat_member.status in ["member", "creator", "administrator"]
+        
+        # ✅ চ্যানেল স্ট্যাটাস আপডেট (channel_status_col আগে থেকে ডিফাইন থাকতে হবে)
+        if 'channel_status_col' not in dir():
+            channel_status_col = db_mongo["channel_status"]
+        
+        channel_status_col.update_one(
+            {"user_id": uid},
+            {"$set": {"is_member": is_member, "last_checked": datetime.utcnow()}},
+            upsert=True
+        )
+        
+        if is_member:
             users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": True}})
             return jsonify({"success": True})
         else:
+            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"is_joined": False}})
             return jsonify({"success": False, "channel": channel_url})
+            
     except ApiTelegramException as e:
-        # বট অ্যাডমিন না হলে এখানে আসবে
         return jsonify({"success": False, "channel": channel_url, "message": "Bot not admin in channel"})
     except Exception as e:
         print(f"Verification error: {e}")
         return jsonify({"success": False, "channel": channel_url, "message": "Server error"})
-
 
 # ================= API: TASKS (Firebase) =================
 @app.route("/api/task_order/active")
@@ -805,6 +818,19 @@ def get_tasks():
             task_list.append(t)
     return jsonify({"tasks": task_list})
 
+@app.route("/api/user/claimed_tasks")
+@login_required
+def get_claimed_tasks():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"claimed_ids": []})
+    
+    claims = task_claims_col.find({"telegram_id": user["telegram_id"]})
+    claimed_ids = [claim["task_id"] for claim in claims]
+    
+    return jsonify({"claimed_ids": claimed_ids})
+
 @app.route("/api/user/tasks/claim", methods=["POST"])
 @login_required
 def claim_task():
@@ -825,6 +851,20 @@ def claim_task():
     user = users_col.find_one({"telegram_id": telegram_id})
     if not user:
         return jsonify({"blocked": False, "message": "User not found"})
+
+    # ========== ✅ ডিউ চেক (চ্যানেল লিভ করলে) ==========
+    if 'channel_status_col' not in dir():
+        channel_status_col = db_mongo["channel_status"]
+    
+    channel_status = channel_status_col.find_one({"user_id": str(user["_id"])})
+    if channel_status and channel_status.get("is_member") == False:
+        admin = get_admin_config()
+        due_amount = admin.get("channel_leave_penalty", 50)
+        return jsonify({
+            "blocked": True, 
+            "message": f"⚠️ আপনি অফিসিয়াল চ্যানেল লিভ করেছেন! পরবর্তী টাস্ক কমপ্লিট করলে {due_amount} টাকা কাটা হবে। চ্যানেলে পুনরায় জয়েন করুন এবং আবার VERIFY চাপুন।",
+            "due": due_amount
+        })
 
     # ========== টাস্কের নিজস্ব রুলস নিন, না থাকলে গ্লোবাল সেটিংস ==========
     admin = get_admin_config()
@@ -872,10 +912,18 @@ def claim_task():
     if existing:
         return jsonify({"blocked": True, "message": "আপনি ইতিমধ্যে এই টাস্ক সম্পন্ন করেছেন।"})
 
-    # টাকা/কয়েন প্রদান
+    # ========== টাকা/কয়েন প্রদান (ডিউ কাটাসহ) ==========
     requires_approval = task.get("requires_approval", False)
     reward = task.get("reward", 0)
     currency = task.get("currency", "cash")
+    
+    # ডিউ কাটার লজিক (যদি আগের স্টেপে ব্লক না করে থাকে)
+    final_reward = reward
+    if channel_status and channel_status.get("is_member") == False:
+        due_amount = admin.get("channel_leave_penalty", 50)
+        final_reward = max(0, reward - due_amount)
+        # একবার ডিউ কাটা হয়ে গেলে স্ট্যাটাস রিসেট
+        channel_status_col.update_one({"user_id": str(user["_id"])}, {"$set": {"due_cleared": True}})
 
     if requires_approval:
         task_claims_col.insert_one({
@@ -892,11 +940,16 @@ def claim_task():
         return jsonify({"blocked": False, "message": "টাস্ক ক্লেইম করা হয়েছে। এডমিন অনুমোদন দিলে ব্যালেন্স যোগ হবে।"})
     else:
         if currency == "aaf":
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
-            msg = f"Received {reward} AAF"
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": final_reward}})
+            msg = f"Received {final_reward} AAF"
         else:
-            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
-            msg = f"Received ৳{reward}"
+            users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": final_reward}})
+            msg = f"Received ৳{final_reward}"
+        
+        # ডিউ কাটা হলে ম্যাসেজে জানিয়ে দাও
+        if final_reward != reward:
+            msg += f" (ডিউ কাটা হয়েছে: -৳{reward - final_reward})"
+        
         users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
         task_claims_col.insert_one({
             "telegram_id": telegram_id,
@@ -910,7 +963,7 @@ def claim_task():
             "created_at": datetime.utcnow()
         })
         return jsonify({"blocked": False, "message": msg})
-
+        
 # ========== হেল্পার ফাংশন ==========
 def check_task_restrictions(user, task, device_id, ip_address):
     """ডিভাইস, আইপি, অ্যাকাউন্ট চেক করে। ব্লক হলে (True, message) রিটার্ন করে"""
