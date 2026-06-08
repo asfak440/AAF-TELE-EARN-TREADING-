@@ -853,20 +853,19 @@ def claim_task():
     if not user:
         return jsonify({"blocked": False, "message": "User not found"})
 
-    # ========== ✅ ডিউ চেক (চ্যানেল লিভ করলে) ==========
+    # ========== ✅ ডিউ চেক (টাস্ক চ্যানেল লিভ করলে) ==========
     if 'task_channel_status_col' not in dir():
-        channel_status_col = db_mongo["channel_status"]
-    
-    channel_status = channel_status_col.find_one({"user_id": str(user["_id"])})
-    if channel_status and channel_status.get("is_member") == False:
+        task_channel_status_col = db_mongo["task_channel_status"]
+
+    task_channel_status = task_channel_status_col.find_one({"user_id": str(user["_id"]), "task_id": task_id})
+    if task_channel_status and task_channel_status.get("is_member") == False:
         admin = get_admin_config()
         due_amount = admin.get("task_channel_leave_penalty", 50)
         return jsonify({
             "blocked": True, 
-            "message": f"⚠️ আপনি অফিসিয়াল চ্যানেল লিভ করেছেন! পরবর্তী টাস্ক কমপ্লিট করলে {due_amount} টাকা কাটা হবে। চ্যানেলে পুনরায় জয়েন করুন এবং আবার VERIFY চাপুন।",
+            "message": f"⚠️ আপনি এই টাস্কের চ্যানেল লিভ করেছেন! পরবর্তী টাস্ক কমপ্লিট করলে {due_amount} টাকা কাটা হবে।",
             "due": due_amount
-        })
-
+    })
     # ========== টাস্কের নিজস্ব রুলস নিন, না থাকলে গ্লোবাল সেটিংস ==========
     admin = get_admin_config()
     global_rules = admin.get("task_rules", {})
@@ -917,15 +916,17 @@ def claim_task():
     requires_approval = task.get("requires_approval", False)
     reward = task.get("reward", 0)
     currency = task.get("currency", "cash")
-    
+  
+
     # ডিউ কাটার লজিক (যদি আগের স্টেপে ব্লক না করে থাকে)
     final_reward = reward
-    if task_channel_status and task_channel_status.get("is_member") == False:
+    if 'task_channel_status' in locals() and task_channel_status and task_channel_status.get("is_member") == False:
         due_amount = admin.get("task_channel_leave_penalty", 50)
         final_reward = max(0, reward - due_amount)
-        # একবার ডিউ কাটা হয়ে গেলে স্ট্যাটাস রিসেট
-        task_channel_status_col.update_one({"user_id": str(user["_id"])}, {"$set": {"due_cleared": True}})
-
+        task_channel_status_col.update_one(
+            {"user_id": str(user["_id"]), "task_id": task_id}, 
+            {"$set": {"due_cleared": True}}
+    )  
     if requires_approval:
         task_claims_col.insert_one({
             "telegram_id": telegram_id,
@@ -1073,6 +1074,7 @@ def verify_channel_task():
     user = users_col.find_one({"_id": ObjectId(uid)})
     if not user:
         return jsonify({"success": False, "message": "User not found"})
+    
     data = request.json
     task_id = data.get("task_id")
     device_id = data.get("device_id")
@@ -1104,31 +1106,37 @@ def verify_channel_task():
         if not resp.get("ok") or resp["result"]["status"] not in ("member","administrator","creator"):
             return jsonify({"success": False, "message": "আপনি এখনো চ্যানেলে জয়েন করেননি।"})
     except:
-        return jsonify({"success": False, "message": "সার্ভার ত্রুটি, আবার চেষ্টা করুন।"})
+        return jsonify({"success": False, "message": "সার্ভার ত্রুটি, আবার চেষ্টা করুন。"})
     
-# ========== টাস্ক চ্যানেলের স্ট্যাটাস সেভ করা ==========
-task_channel_status_col.update_one(
-    {"user_id": str(user["_id"]), "task_id": task_id},
-    {"$set": {"is_member": True, "last_joined": datetime.utcnow()}},
-    upsert=True
-)
+    # ========== টাস্ক চ্যানেলের স্ট্যাটাস সেভ করা (ইন্ডেন্ট ঠিক করা হয়েছে) ==========
+    if 'task_channel_status_col' not in dir():
+        task_channel_status_col = db_mongo["task_channel_status"]
+    
+    task_channel_status_col.update_one(
+        {"user_id": str(user["_id"]), "task_id": task_id},
+        {"$set": {"is_member": True, "last_joined": datetime.utcnow()}},
+        upsert=True
+    )
+    
+    # টাকা প্রদান
+    reward = task.get("reward", 0)
+    currency = task.get("currency", "cash")
+    if currency == "aaf":
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
+        msg = f"Received {reward} AAF"
+    else:
+        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
+        msg = f"Received ৳{reward}"
+    
+    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+    task_claims_col.insert_one({
+        "telegram_id": user["telegram_id"],
+        "task_id": task_id,
+        "status": "approved"
+    })
+    
+    return jsonify({"success": True, "message": msg})
 
-# টাকা প্রদান
-reward = task.get("reward", 0)
-currency = task.get("currency", "cash")
-if currency == "aaf":
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": reward}})
-    msg = f"Received {reward} AAF"
-else:
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
-    msg = f"Received ৳{reward}"
-users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-task_claims_col.insert_one({
-    "telegram_id": user["telegram_id"],
-    "task_id": task_id,
-    "status": "approved"
-})
-return jsonify({"success": True, "message": msg})
 # ========== ডিপ লিংক টাস্ক ভেরিফিকেশন ==========
 @app.route("/api/user/tasks/verify_deeplink", methods=["POST"])
 @login_required
