@@ -920,7 +920,7 @@ def claim_task():
     
     # ডিউ কাটার লজিক (যদি আগের স্টেপে ব্লক না করে থাকে)
     final_reward = reward
-    if task_channel_status and channel_status.get("is_member") == False:
+    if task_channel_status and task_channel_status.get("is_member") == False:
         due_amount = admin.get("task_channel_leave_penalty", 50)
         final_reward = max(0, reward - due_amount)
         # একবার ডিউ কাটা হয়ে গেলে স্ট্যাটাস রিসেট
@@ -964,6 +964,66 @@ def claim_task():
             "created_at": datetime.utcnow()
         })
         return jsonify({"blocked": False, "message": msg})
+
+
+@app.route("/api/user/due_status")
+@login_required
+def get_due_status():
+    """
+    ইউজারের টাস্ক চ্যানেল সংক্রান্ত ডিউ স্ট্যাটাস দেখায়
+    - due: মোট ডিউ (প্রতি টাস্ক চ্যানেলে ১ টাকা)
+    - is_member: সব চ্যানেল সঠিকভাবে জয়েন করেছে কিনা
+    - details: কোন কোন টাস্কে ডিউ আছে তার তালিকা
+    """
+    uid = session.get("uid")
+    if not uid:
+        return jsonify({"due": 0, "is_member": True, "details": []})
+    
+    # টাস্ক চ্যানেল স্ট্যাটাস কালেকশন
+    if 'task_channel_status_col' not in dir():
+        task_channel_status_col = db_mongo["task_channel_status"]
+    
+    # ইউজারের সব টাস্ক চ্যানেল যেখানে:
+    # 1. is_member = False (চ্যানেল লিভ করেছে)
+    # 2. due_cleared নেই (এখনো ডিউ মেটায়নি)
+    task_statuses = list(task_channel_status_col.find(
+        {"user_id": uid, "is_member": False, "due_cleared": {"$ne": True}}
+    ))
+    
+    # ডিটেইলড তথ্য তৈরী
+    details = []
+    for status in task_statuses:
+        task_id = status.get("task_id")
+        # টাস্কের তথ্য Firebase থেকে আনুন (যদি পাওয়া যায়)
+        task_title = "অজানা টাস্ক"
+        if fb_ref and task_id:
+            task_data = fb_ref.child(f"tasks/{task_id}").get()
+            if task_data:
+                task_title = task_data.get("title", "অজানা টাস্ক")
+        
+        details.append({
+            "task_id": task_id,
+            "task_title": task_title,
+            "due_amount": 1,  # প্রতি টাস্ক চ্যানেলে ১ টাকা ডিউ
+            "last_joined": status.get("last_joined").isoformat() if status.get("last_joined") else None
+        })
+    
+    # মোট ডিউ = অ্যাক্টিভ টাস্ক চ্যানেলের সংখ্যা (প্রতি চ্যানেলে ১ টাকা)
+    total_due = len(task_statuses)
+    
+    # ইউজার মেসেজ তৈরি
+    if total_due == 0:
+        message = "কোনো ডিউ নেই। সব টাস্কের চ্যানেল জয়েন করে রাখুন।"
+    else:
+        message = f"⚠️ আপনার {total_due}টি টাস্কের চ্যানেলে ডিউ আছে। প্রতিটি টাস্ক কমপ্লিট করলে ১ টাকা করে কাটা হবে। চ্যানেলে পুনরায় জয়েন করুন এবং VERIFY চাপুন।"
+    
+    return jsonify({
+        "success": True,
+        "due": total_due,
+        "is_member": total_due == 0,
+        "message": message,
+        "details": details
+    })
         
 # ========== হেল্পার ফাংশন ==========
 def check_task_restrictions(user, task, device_id, ip_address):
@@ -1046,7 +1106,7 @@ def verify_channel_task():
     except:
         return jsonify({"success": False, "message": "সার্ভার ত্রুটি, আবার চেষ্টা করুন।"})
     
-    # ========== টাস্ক চ্যানেলের স্ট্যাটাস সেভ করা ==========
+# ========== টাস্ক চ্যানেলের স্ট্যাটাস সেভ করা ==========
 task_channel_status_col.update_one(
     {"user_id": str(user["_id"]), "task_id": task_id},
     {"$set": {"is_member": True, "last_joined": datetime.utcnow()}},
@@ -1062,14 +1122,13 @@ if currency == "aaf":
 else:
     users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": reward}})
     msg = f"Received ৳{reward}"
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    task_claims_col.insert_one({
-        "telegram_id": user["telegram_id"],
-        "task_id": task_id,
-        "status": "approved"
-    })
-    return jsonify({"success": True, "message": msg})
-
+users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
+task_claims_col.insert_one({
+    "telegram_id": user["telegram_id"],
+    "task_id": task_id,
+    "status": "approved"
+})
+return jsonify({"success": True, "message": msg})
 # ========== ডিপ লিংক টাস্ক ভেরিফিকেশন ==========
 @app.route("/api/user/tasks/verify_deeplink", methods=["POST"])
 @login_required
