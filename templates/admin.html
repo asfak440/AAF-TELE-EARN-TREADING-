@@ -123,7 +123,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 
 <div class="main-content">  
   <!-- Dashboard Section -->
-<div id="dashboard" class="page-section active">
+<div id="dashboard" class="page-section active">...</div>
     
     <!-- 🆕 পপআপ ডিসপ্লে এলিমেন্ট (কার্ডের বাইরে, সবার উপরে) -->
     <div id="popup-display" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0d111c; border: 2px solid #00f2fe; border-radius: 20px; padding: 20px; z-index: 10000; max-width: 90%; width: 350px; box-shadow: 0 0 30px rgba(0,242,254,0.3);">
@@ -211,7 +211,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 </div> 
 
     <!-- ১. নতুন টাস্ক যোগ করার ফর্ম -->
-    <div id="task" class="page-section">
+    <div id="task" class="page-section">...</div>
 
     <!-- নতুন টেলিগ্রাম টাস্ক যোগ -->
     <div class="premium-card">
@@ -363,7 +363,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 </div>
 
     <!-- Trading Section -->  
-<div id="trading" class="page-section">  
+<div id="trading" class="page-section">...</div>
     <div class="premium-card">  
         <div class="card-title"><i class="fas fa-coins"></i> মার্কেট প্রাইস কন্ট্রোল</div>  
         <h1 id="live-price-display" style="text-align:center; color:var(--cyan); font-size:45px; margin:10px 0;">৳ ০.০০</h1>  
@@ -394,7 +394,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 </div>
     
     <!-- Wallet Section -->
-<div id="wallet" class="page-section">
+<div id="wallet" class="page-section">...</div>
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-university"></i> পেমেন্ট মেথড (Admin Numbers)</div>
         <label>নগদ নম্বর</label>
@@ -417,7 +417,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
     </div>
 </div>
     
-   <div id="account" class="page-section">
+   <div id="account" class="page-section">...</div>
     
     <!-- পেন্ডিং টাস্ক ক্লেইম -->
     <div class="premium-card">
@@ -1221,7 +1221,7 @@ async function updateServerSettings() {
 function initAdmin(){
     loadUsers();
     loadTasks();
-    loadAds();
+   // loadAds();//
     loadWithdraws();
     loadLivePrice();
     loadAdminStats();
@@ -1345,26 +1345,7 @@ async function processClaim(claimId, action) {
     else alert('❌ ব্যর্থ');
     }
 
-    async function forceMarketPrice() {
-    const price = parseFloat(document.getElementById('inp-price').value);
-    if (isNaN(price)) return alert('সঠিক মূল্য দিন');
     
-    const res = await fetch('/api/admin/set_price', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ price })
-    });
-    if (res.ok) {
-        alert('✅ প্রাইস আপডেট হয়েছে');
-        loadLivePrice();
-    } else alert('❌ ব্যর্থ');
- }
-
-    function clearCheckbox(elementId) {
-    const el = document.getElementById(elementId);
-    if (el) el.checked = false;
-    }
 
     async function loadPendingDeposits() {
     const container = document.getElementById('pending-list-view');
@@ -1623,7 +1604,7 @@ async function saveVolatilitySettings() {
 }
 
 
-    // টাস্ক অর্ডার সার্ভিস রেট সেভ
+  // ========== টাস্ক অর্ডার সার্ভিস রেট সেভ (আসল ফাংশন) ==========
 async function saveOrderRates() {
     const rates = {
         followers: parseFloat(document.getElementById('rate_followers').value) || 0.20,
@@ -1650,6 +1631,13 @@ async function saveOrderRates() {
         alert('সার্ভার ত্রুটি');
     }
 }
+
+// অন্যান্য ফাংশন (যেগুলো ডামি ছিল না, সেগুলো রেখে দিতে পারেন)
+async function updateTaskRules() { 
+    alert('টাস্ক রুলস আপডেট (ব্যাকএন্ডে যোগ করতে হবে)');
+}
+function togglePopupAd() { console.log('toggle popup'); }
+function sendPushNotification() { alert('নোটিফিকেশন ফিচার আপডেট হবে'); }  
 
 // পেজ লোডে রেট লোড করা
 async function loadOrderRates() {
@@ -1684,15 +1672,7 @@ document.querySelectorAll('.bottom-nav i').forEach(icon => {
     });
 });
 
-// ডামি ফাংশন (যেগুলো আসলে নেই কিন্তু কল করা হয়েছে)
-async function saveOrderRates() { 
-    alert('এই ফিচারটি শীঘ্রই আসছে।');
-}
-async function updateTaskRules() { 
-    alert('টাস্ক রুলস আপডেট (ব্যাকএন্ডে যোগ করতে হবে)');
-}
-function togglePopupAd() { console.log('toggle popup'); }
-function sendPushNotification() { alert('নোটিফিকেশন ফিচার আপডেট হবে'); }
+
 
 // টাস্ক প্রুফ বক্স টগল (ঠিক করা)
 window.addEventListener('DOMContentLoaded', () => {
