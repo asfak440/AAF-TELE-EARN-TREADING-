@@ -211,7 +211,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 </div> 
 
     <!-- ১. নতুন টাস্ক যোগ করার ফর্ম -->
-    <div id="task" class="page-section">
+<div id="task" class="page-section">
 
     <!-- নতুন টেলিগ্রাম টাস্ক যোগ -->
     <div class="premium-card">
@@ -221,11 +221,10 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 
         <!-- টেলিগ্রাম টাইপ -->
         <select id="task_type">
-            <option value="telegram_channel">টেলিগ্রাম চ্যানেল জয়েন</option>
-            <option value="telegram_deeplink">টেলিগ্রাম ডিপ লিংক (বট ক্লিক ট্র্যাক)</option>
+            <option value="telegram_channel">📢 টেলিগ্রাম চ্যানেল জয়েন</option>
+            <option value="telegram_deeplink">🔗 টেলিগ্রাম ডিপ লিংক (বট ক্লিক ট্র্যাক)</option>
         </select>
 
-        <!-- চ্যানেলের জন্য ইউজারনেম, ডিপলিংকের জন্য বট লিংক -->
         <input type="text" id="task_link" placeholder="চ্যানেল ইউজারনেম বা বট ডিপ লিংক">
 
         <div class="row">
@@ -236,10 +235,8 @@ th,td{padding:6px 4px!important;white-space:nowrap}
             </select>
         </div>
 
-        <!-- মেয়াদ -->
         <input type="number" id="task_expiry_hours" placeholder="মেয়াদ (ঘণ্টা), খালি রাখলে ডিফল্ট">
 
-        <!-- ভেরিফিকেশন -->
         <div class="card-title" style="font-size:14px; margin-top:15px;">
             <i class="fas fa-shield-alt"></i> ভেরিফিকেশন
         </div>
@@ -325,9 +322,8 @@ th,td{padding:6px 4px!important;white-space:nowrap}
         <button class="btn-main" onclick="saveMilestone()">📌 মাইলস্টোন সেভ</button>
         <div id="milestone-list">লোড হচ্ছে...</div>
     </div>
-    </div>
 
-    <!-- ৫. টাস্ক অর্ডার সার্ভিস রেট সেটিংস -->
+    <!-- ৫. টাস্ক অর্ডার সার্ভিস রেট সেটিংস (এখন টাস্ক সেকশনের ভিতরে) -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-chart-line"></i> টাস্ক অর্ডার সার্ভিস রেট</div>
 
@@ -360,7 +356,8 @@ th,td{padding:6px 4px!important;white-space:nowrap}
 
         <button class="btn-main" onclick="saveOrderRates()">💾 সার্ভিস রেট সেভ করুন</button>
     </div>
-</div>
+
+</div>  <!-- task সেকশন এখানে শেষ হচ্ছে -->
 
     <!-- Trading Section -->  
 <div id="trading" class="page-section">
@@ -391,6 +388,7 @@ th,td{padding:6px 4px!important;white-space:nowrap}
             <button class="btn-main" onclick="saveVolatilitySettings()">💾 ভোলাটিলিটি সেভ করুন</button>
         </div>
     </div>
+</div>
     
     <!-- Wallet Section -->
 <div id="wallet" class="page-section">
