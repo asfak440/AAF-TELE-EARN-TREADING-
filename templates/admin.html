@@ -208,67 +208,58 @@ th,td{padding:6px 4px!important;white-space:nowrap}
         <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>  
         <button class="btn-main" style="background:var(--purple)" onclick="publishGlobalAd()">পাবলিশ নোটিশ</button>  
     </div>
-</div>  
-    
-    <div id="task" class="page-section">
+</div> 
 
     <!-- ১. নতুন টাস্ক যোগ করার ফর্ম -->
-    <div class="premium-card">
-        <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টাস্ক যোগ করুন</div>
+    <div id="task" class="page-section">
 
-        <input type="text" id="task_title" placeholder="টাস্কের শিরোনাম (যেমন: ফেসবুক পোস্ট লাইক)">
-        <input type="url" id="task_link" placeholder="টাস্ক লিংক (URL)">
+    <!-- নতুন টেলিগ্রাম টাস্ক যোগ -->
+    <div class="premium-card">
+        <div class="card-title"><i class="fas fa-plus-circle"></i> নতুন টেলিগ্রাম টাস্ক</div>
+
+        <input type="text" id="task_title" placeholder="টাস্কের শিরোনাম">
+
+        <!-- টেলিগ্রাম টাইপ -->
+        <select id="task_type">
+            <option value="telegram_channel">টেলিগ্রাম চ্যানেল জয়েন</option>
+            <option value="telegram_deeplink">টেলিগ্রাম ডিপ লিংক (বট ক্লিক ট্র্যাক)</option>
+        </select>
+
+        <!-- চ্যানেলের জন্য ইউজারনেম, ডিপলিংকের জন্য বট লিংক -->
+        <input type="text" id="task_link" placeholder="চ্যানেল ইউজারনেম বা বট ডিপ লিংক">
 
         <div class="row">
-            <input type="number" id="task_reward" placeholder="পুরস্কার (Amount)">
+            <input type="number" id="task_reward" placeholder="পুরস্কার">
             <select id="task_currency">
                 <option value="bdt">BDT (টাকা)</option>
                 <option value="aaf">AAF (কয়েন)</option>
             </select>
         </div>
 
-        <div class="row">
-            <input type="number" id="task_timer" placeholder="টাইমার (সেকেন্ড)" value="30">
-            <select id="task_type">
-                <option value="link">সাধারণ লিংক (টাইমার + ক্লেইম)</option>
-                <option value="video">ভিডিও দেখুন (টাইমার + ক্লেইম)</option>
-                <option value="telegram_channel">টেলিগ্রাম চ্যানেল জয়েন (বট ভেরিফাই)</option>
-                <option value="telegram_deeplink">টেলিগ্রাম ডিপ লিংক (বটের ক্লিক ট্র্যাক)</option>
-                <option value="admin_approval">এডমিন এপ্রুভাল (প্রমাণ আপলোড)</option>
-            </select>
-        </div>
+        <!-- মেয়াদ -->
+        <input type="number" id="task_expiry_hours" placeholder="মেয়াদ (ঘণ্টা), খালি রাখলে ডিফল্ট">
 
-        <div class="row">
-            <div>
-                <label>মেয়াদ (ঘণ্টা) – খালি থাকলে ডিফল্ট ব্যবহার হবে</label>
-                <input type="number" id="task_expiry_hours" placeholder="যেমন 72" min="1" max="8760">
-            </div>
-            <div>
-                <label>অ্যাডমিন অ্যাপ্রুভাল প্রয়োজন?</label>
-                <input type="checkbox" id="task_requires_approval">
-                <small>চেক করলে ইউজার ক্লেইম করার পর অনুমোদন দিতে হবে</small>
-            </div>
+        <!-- ভেরিফিকেশন -->
+        <div class="card-title" style="font-size:14px; margin-top:15px;">
+            <i class="fas fa-shield-alt"></i> ভেরিফিকেশন
         </div>
-
-        <!-- ভেরিফিকেশন রুলস -->
-        <div class="card-title" style="font-size:14px; margin-top:15px;"><i class="fas fa-shield-alt"></i> ভেরিফিকেশন (প্রতি টাস্কের জন্য আলাদা)</div>
         <div class="row">
             <div>
-                <label>ডিভাইস চেক (একই ডিভাইস একবার)</label>
+                <label>ডিভাইস চেক</label>
                 <select id="task_device_check">
-                    <option value="true">✅ চালু (একই ডিভাইস থেকে একবার)</option>
+                    <option value="true">✅ চালু</option>
                     <option value="false">❌ বন্ধ</option>
                 </select>
             </div>
             <div>
-                <label>আইপি চেক (একই আইপি একবার)</label>
+                <label>আইপি চেক</label>
                 <select id="task_ip_check">
-                    <option value="true">✅ চালু (একই আইপি থেকে একবার)</option>
+                    <option value="true">✅ চালু</option>
                     <option value="false">❌ বন্ধ</option>
                 </select>
             </div>
             <div>
-                <label>অ্যাকাউন্ট চেক (একই অ্যাকাউন্ট একবার)</label>
+                <label>অ্যাকাউন্ট চেক</label>
                 <select id="task_account_check">
                     <option value="true">✅ চালু</option>
                     <option value="false">❌ বন্ধ</option>
@@ -276,56 +267,64 @@ th,td{padding:6px 4px!important;white-space:nowrap}
             </div>
         </div>
 
-        <!-- এডমিন এপ্রুভাল হলে প্রমাণ নির্দেশনা -->
-        <div id="proof_instruction_box" style="display: none; margin-top: 10px;">
-            <label>প্রমাণ জমা দেওয়ার নির্দেশনা (ইউজারকে কী দেখাতে হবে?)</label>
-            <textarea id="task_proof_instruction" rows="3" placeholder="যেমন: স্ক্রিনশট আপলোড করুন, লিংক দিন ইত্যাদি"></textarea>
-            <small>ইউজার টাস্ক ক্লেইম করলে এই নির্দেশনা দেখাবে</small>
-        </div>
-
-        <button class="btn-main" onclick="createNewTask()" style="margin-top: 20px;">📌 টাস্ক তৈরি করুন</button>
+        <button class="btn-main" onclick="createNewTask()">📌 টাস্ক তৈরি</button>
     </div>
 
-    <!-- ২. টাস্ক লিস্ট -->
+    <!-- টাস্ক লিস্ট -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-list-ul"></i> টাস্ক লিস্ট</div>
+        <div class="card-title"><i class="fas fa-list-ul"></i> টেলিগ্রাম টাস্ক লিস্ট</div>
         <div id="admin-task-list">লোড হচ্ছে...</div>
     </div>
 
-    <!-- ৩. গ্লোবাল ডিফল্ট সেটিংস -->
+    <!-- গ্লোবাল সেটিংস -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-cog"></i> গ্লোবাল ডিফল্ট সেটিংস</div>
+        <div class="card-title"><i class="fas fa-cog"></i> গ্লোবাল সেটিংস</div>
         <div class="row">
             <div>
-                <label>ডিফল্ট টাস্ক মেয়াদ (ঘণ্টা)</label>
+                <label>ডিফল্ট মেয়াদ (ঘণ্টা)</label>
                 <input type="number" id="global_default_expiry" value="168">
             </div>
             <div>
-                <label>আইপি লিমিট (প্রতি ঘণ্টায় সর্বোচ্চ ক্লেইম)</label>
+                <label>আইপি লিমিট (ঘণ্টা প্রতি)</label>
                 <input type="number" id="global_ip_limit" value="5">
             </div>
         </div>
-        <button class="btn-main" onclick="saveGlobalDefaults()">ডিফল্ট সংরক্ষণ</button>
+        <button class="btn-main" onclick="saveGlobalDefaults()">সংরক্ষণ</button>
     </div>
 
-    <!-- ৪. মাইলস্টোন / বোনাস কন্ট্রোল -->
+    <!-- মাইলস্টোন (টেলিগ্রাম টাস্কের জন্য) -->
     <div class="premium-card">
-        <div class="card-title"><i class="fas fa-flag-checkered"></i> মাইলস্টোন / বোনাস কন্ট্রোল</div>
-
+        <div class="card-title"><i class="fas fa-flag-checkered"></i> টেলিগ্রাম টাস্ক মাইলস্টোন</div>
         <div class="row">
-            <div><label>টার্গেট (যেমন ১০ টাস্ক)</label><input type="number" id="ms_target" placeholder="সংখ্যা"></div>
-            <div><label>রিওয়ার্ড টাইপ</label><select id="ms_reward_type"><option value="bdt">BDT</option><option value="aaf">AAF</option></select></div>
-            <div><label>রিওয়ার্ড পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
+            <div><label>টার্গেট</label><input type="number" id="ms_target" placeholder="টাস্ক সংখ্যা"></div>
+            <div>
+                <label>রিওয়ার্ড টাইপ</label>
+                <select id="ms_reward_type">
+                    <option value="bdt">BDT</option>
+                    <option value="aaf">AAF</option>
+                </select>
+            </div>
+            <div><label>পরিমাণ</label><input type="number" id="ms_reward_amount" step="0.01"></div>
         </div>
         <div class="row">
-            <div><label>মেয়াদ (দিন, খালি থাকলে লাইফটাইম)</label><input type="number" id="ms_days"></div>
-            <div><label>মাইলস্টোন টাইপ</label><select id="ms_type"><option value="task">টাস্ক</option><option value="referral">রেফারেল</option><option value="deposit">ডিপোজিট</option></select></div>
-            <div><label>সক্রিয়</label><select id="ms_active"><option value="true">হ্যাঁ</option><option value="false">না</option></select></div>
+            <div><label>মেয়াদ (দিন)</label><input type="number" id="ms_days"></div>
+            <div>
+                <label>টাইপ</label>
+                <select id="ms_type">
+                    <option value="task">টাস্ক</option>
+                </select>
+            </div>
+            <div>
+                <label>সক্রিয়</label>
+                <select id="ms_active">
+                    <option value="true">হ্যাঁ</option>
+                    <option value="false">না</option>
+                </select>
+            </div>
         </div>
-        <button class="btn-main" onclick="saveMilestone()">📌 মাইলস্টোন সেভ করুন</button>
-        <hr>
-        <div class="card-title" style="font-size:14px;">📋 সংরক্ষিত মাইলস্টোন লিস্ট</div>
+        <button class="btn-main" onclick="saveMilestone()">📌 মাইলস্টোন সেভ</button>
         <div id="milestone-list">লোড হচ্ছে...</div>
+    </div>
     </div>
 
     <!-- ৫. টাস্ক অর্ডার সার্ভিস রেট সেটিংস -->
@@ -667,99 +666,222 @@ function escapeHtml(str) {
     });
 }
 /* ================= TASKS ================= */
-// নতুন টাস্ক তৈরি
-async function createNewTask() {
-    const payload = {
-        title: document.getElementById('task_title').value,
-        link: document.getElementById('task_link').value,
-        reward: parseFloat(document.getElementById('task_reward').value),
-        currency: document.getElementById('task_currency').value,
-        timer: parseInt(document.getElementById('task_timer').value),
-        type: document.getElementById('task_type').value,
-        expiry_hours: parseInt(document.getElementById('task_expiry_hours').value) || null,
-        requires_approval: document.getElementById('task_requires_approval').checked,
-        device_check: document.getElementById('task_device_check').value === 'true',
-        ip_check: document.getElementById('task_ip_check').value === 'true',
-        account_check: document.getElementById('task_account_check').value === 'true',
-        proof_instruction: document.getElementById('task_proof_instruction').value
-    };
-    try {
-        const res = await fetch('/api/admin/task/save', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            credentials: 'include',
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert('✅ টাস্ক তৈরি হয়েছে');
-            clearTaskForm();
-            loadTasks(); // লিস্ট রিফ্রেশ
-        } else {
-            alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
-        }
-    } catch(err) {
-        console.error(err);
-        alert('❌ সার্ভার এরর');
-    }
+function saveGlobalDefaults() {
+    const default_expiry = document.getElementById('global_default_expiry').value;
+    const ip_limit = document.getElementById('global_ip_limit').value;
+
+    fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            default_task_expiry_hours: parseInt(default_expiry) || 168,
+            ip_claim_limit_per_hour: parseInt(ip_limit) || 5
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ গ্লোবাল সেটিংস সংরক্ষিত!');
+    })
+    .catch(e => {
+        alert('❌ সেটিংস সেভ করতে সমস্যা হয়েছে');
+        console.error(e);
+    });
 }
 
-// টাস্ক লিস্ট লোড করা (আপডেটেড)
-async function loadTasks() {
-    try {
-        const res = await fetch(`${API}/api/admin/tasks`, { credentials: 'include' });
-        const d = await res.json();
-        const box = document.getElementById('admin-task-list');
-        if (!box) return;
+// ========== নতুন টাস্ক তৈরি ==========
+function createNewTask() {
+    const title = document.getElementById('task_title').value.trim();
+    const link = document.getElementById('task_link').value.trim();
+    const type = document.getElementById('task_type').value;
+    const reward = document.getElementById('task_reward').value;
+    const currency = document.getElementById('task_currency').value;
+    const expiry = document.getElementById('task_expiry_hours').value;
+    const device_check = document.getElementById('task_device_check').value === 'true';
+    const ip_check = document.getElementById('task_ip_check').value === 'true';
+    const account_check = document.getElementById('task_account_check').value === 'true';
+
+    if (!title) return alert('টাস্কের শিরোনাম দিন');
+    if (!link) return alert(type === 'telegram_channel' ? 'চ্যানেল ইউজারনেম দিন (যেমন: @channelname)' : 'বট ডিপ লিংক দিন (যেমন: https://t.me/bot?start=ref)');
+    if (!reward || reward <= 0) return alert('সঠিক পুরস্কার পরিমাণ দিন');
+
+    const taskData = {
+        title: title,
+        type: type,
+        link: link,
+        reward: parseFloat(reward),
+        currency: currency,
+        expiry_hours: expiry ? parseInt(expiry) : null,
+        verification: {
+            device_check: device_check,
+            ip_check: ip_check,
+            account_check: account_check
+        }
+    };
+
+    fetch('/api/admin/tasks/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(taskData)
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('✅ টাস্ক তৈরি হয়েছে!');
+            loadAdminTasks();
+            document.getElementById('task_title').value = '';
+            document.getElementById('task_link').value = '';
+            document.getElementById('task_reward').value = '';
+        } else {
+            alert('❌ ' + (d.message || 'টাস্ক তৈরি ব্যর্থ'));
+        }
+    })
+    .catch(e => {
+        alert('❌ সার্ভার এরর');
+        console.error(e);
+    });
+}
+
+// ========== টাস্ক লিস্ট লোড ==========
+function loadAdminTasks() {
+    const container = document.getElementById('admin-task-list');
+    container.innerHTML = 'লোড হচ্ছে...';
+
+    fetch('/api/admin/tasks/list', { credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
         if (!d.tasks || d.tasks.length === 0) {
-            box.innerHTML = '<div>কোনো টাস্ক নেই। "নতুন টাস্ক যোগ করুন" ফর্ম ব্যবহার করুন।</div>';
+            container.innerHTML = '<p style="text-align:center; color:#888;">কোনো টাস্ক নেই</p>';
             return;
         }
-        let html = '<table style="width:100%; border-collapse:collapse;">';
-        html += '<thead><tr><th>টাইটেল</th><th>রিওয়ার্ড</th><th>টাইমার</th><th>মেয়াদ</th><th>এপ্রুভাল</th><th>ডিভাইস</th><th>আইপি</th><th>অ্যাকাউন্ট</th><th>অ্যাকশন</th></tr></thead><tbody>';
-        d.tasks.forEach(t => {
-            html += `<tr>
-                <td>${escapeHtml(t.title)}</td>
-                <td>${t.reward} ${t.currency === 'bdt' ? '৳' : 'AAF'}</td>
-                <td>${t.timer} সেকেন্ড</td>
-                <td>${t.expiry_hours ? t.expiry_hours+' ঘণ্টা' : 'ডিফল্ট'}</td>
-                <td>${t.requires_approval ? '✅ হ্যাঁ' : '❌ না'}</td>
-                <td>${t.device_check ? '✅ চালু' : '❌ বন্ধ'}</td>
-                <td>${t.ip_check ? '✅ চালু' : '❌ বন্ধ'}</td>
-                <td>${t.account_check ? '✅ চালু' : '❌ বন্ধ'}</td>
-                <td><button onclick="deleteTask('${t.id}')">🗑️ ডিলিট</button></td>
-            </tr>`;
+
+        let html = '';
+        d.tasks.forEach(task => {
+            const typeLabel = task.type === 'telegram_channel' ? '📢 চ্যানেল জয়েন' : '🤖 ডিপ লিংক';
+            const statusBadge = task.active ? '<span style="color:lime;">✅ সক্রিয়</span>' : '<span style="color:red;">❌ নিষ্ক্রিয়</span>';
+
+            html += `
+            <div style="background:var(--card-bg); padding:12px; margin-bottom:10px; border-radius:8px;">
+                <strong>${task.title}</strong> (${typeLabel})<br>
+                <small>পুরস্কার: ${task.reward} ${task.currency.toUpperCase()} | ${statusBadge}</small><br>
+                <small>লিংক: ${task.link}</small>
+                <div style="margin-top:8px;">
+                    <button onclick="toggleTask('${task._id}')">🔄 টগল</button>
+                    <button onclick="deleteTask('${task._id}')" style="background:red;">🗑️ ডিলিট</button>
+                </div>
+            </div>`;
         });
-        html += '</tbody></table>';
-        box.innerHTML = html;
-    } catch(e) {
+        container.innerHTML = html;
+    })
+    .catch(e => {
+        container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
         console.error(e);
-        document.getElementById('admin-task-list').innerHTML = '<div>লোড করতে ব্যর্থ</div>';
-    }
+    });
 }
 
-// টাস্ক ডিলিট
-async function deleteTask(taskId) {
-    if (!confirm("টাস্ক ডিলিট করতে চান?")) return;
-    try {
-        const res = await fetch(`${API}/api/admin/task/delete`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            credentials: 'include',
-            body: JSON.stringify({ task_id: taskId })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("✅ টাস্ক ডিলিট করা হয়েছে");
-            loadTasks();
-        } else {
-            alert("❌ ডিলিট করতে ব্যর্থ: " + (data.error || "Unknown error"));
-        }
-    } catch (err) {
-        console.error(err);
-        alert("সার্ভার এরর");
-    }
+// ========== টাস্ক টগল ==========
+function toggleTask(taskId) {
+    fetch(`/api/admin/tasks/toggle/${taskId}`, { method: 'POST', credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ স্ট্যাটাস আপডেট হয়েছে');
+        loadAdminTasks();
+    })
+    .catch(e => console.error(e));
 }
+
+// ========== টাস্ক ডিলিট ==========
+function deleteTask(taskId) {
+    if (!confirm('সত্যিই ডিলিট করবেন?')) return;
+
+    fetch(`/api/admin/tasks/delete/${taskId}`, { method: 'DELETE', credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ টাস্ক ডিলিট হয়েছে');
+        loadAdminTasks();
+    })
+    .catch(e => console.error(e));
+}
+
+// ========== মাইলস্টোন সেভ ==========
+function saveMilestone() {
+    const target = document.getElementById('ms_target').value;
+    const reward_type = document.getElementById('ms_reward_type').value;
+    const reward_amount = document.getElementById('ms_reward_amount').value;
+    const days = document.getElementById('ms_days').value;
+    const type = document.getElementById('ms_type').value;
+    const active = document.getElementById('ms_active').value === 'true';
+
+    if (!target || target <= 0) return alert('টার্গেট সংখ্যা দিন');
+    if (!reward_amount || reward_amount <= 0) return alert('রিওয়ার্ড পরিমাণ দিন');
+
+    fetch('/api/admin/milestones/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            target: parseInt(target),
+            reward_type: reward_type,
+            reward_amount: parseFloat(reward_amount),
+            days: days ? parseInt(days) : null,
+            type: type,
+            active: active
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ মাইলস্টোন সংরক্ষিত');
+        loadMilestones();
+        document.getElementById('ms_target').value = '';
+        document.getElementById('ms_reward_amount').value = '';
+        document.getElementById('ms_days').value = '';
+    })
+    .catch(e => console.error(e));
+}
+
+// ========== মাইলস্টোন লিস্ট ==========
+function loadMilestones() {
+    const container = document.getElementById('milestone-list');
+    fetch('/api/admin/milestones/list', { credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+        if (!d.milestones || d.milestones.length === 0) {
+            container.innerHTML = '<p style="color:#888;">কোনো মাইলস্টোন নেই</p>';
+            return;
+        }
+        let html = '';
+        d.milestones.forEach(ms => {
+            html += `<div style="padding:8px; border-bottom:1px solid #333;">
+                🎯 ${ms.target} টাস্ক → ${ms.reward_amount} ${ms.reward_type.toUpperCase()} 
+                (${ms.active ? '✅ চালু' : '❌ বন্ধ'})
+                <button onclick="deleteMilestone('${ms._id}')" style="float:right; background:red; font-size:12px;">❌</button>
+            </div>`;
+        });
+        container.innerHTML = html;
+    })
+    .catch(e => {
+        container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
+        console.error(e);
+    });
+}
+
+function deleteMilestone(id) {
+    if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
+    fetch(`/api/admin/milestones/delete/${id}`, { method: 'DELETE', credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ ডিলিট হয়েছে');
+        loadMilestones();
+    })
+    .catch(e => console.error(e));
+}
+
+// ========== পেজ লোড ==========
+document.addEventListener('DOMContentLoaded', () => {
+    loadAdminTasks();
+    loadMilestones();
+});
 
 // ফর্ম ক্লিয়ার
 function clearTaskForm() {
@@ -786,36 +908,7 @@ function toggleProofBox() {
 }
 
 // গ্লোবাল ডিফল্ট সেভ
-async function saveGlobalDefaults() {
-    const defaults = {
-        default_task_expiry_hours: parseInt(document.getElementById('global_default_expiry').value),
-        ip_limit_per_hour: parseInt(document.getElementById('global_ip_limit').value)
-    };
-    try {
-        const res = await fetch('/api/admin/update_settings', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            credentials: 'include',
-            body: JSON.stringify(defaults)
-        });
-        const data = await res.json();
-        if (data.success) alert('✅ ডিফল্ট সেভ হয়েছে');
-        else alert('❌ ব্যর্থ');
-    } catch(e) { alert('এরর'); }
-}
 
-// ইভেন্ট লিসেনার: চেকবক্স টগল করলে প্রমান বক্স দেখাবে/লুকাবে
-document.getElementById('task_requires_approval')?.addEventListener('change', toggleProofBox);
-
-// পেজ লোডে টাস্ক লিস্ট লোড এবং ফর্ম রিসেট
-window.addEventListener('DOMContentLoaded', () => {
-    loadTasks();
-    clearTaskForm();
-});
-
-
-
-    
 /* ================= ADS ============ধোন===== */
 async function loadAds(){
   const r = await fetch(`${API}/api/admin/ads`, {credentials:'include'});
@@ -1445,73 +1538,6 @@ async function updatePopupSettings() {
     }
 }
 
-// ================= মাইলেসটোন (এডমিন) =================
-async function saveMilestone() {
-    const data = {
-        target: parseInt(document.getElementById('ms_target').value),
-        reward_type: document.getElementById('ms_reward_type').value,
-        reward_amount: parseFloat(document.getElementById('ms_reward_amount').value),
-        days: parseInt(document.getElementById('ms_days').value) || null,
-        type: document.getElementById('ms_type').value,
-        active: document.getElementById('ms_active').value === 'true'
-    };
-    if (!data.target || !data.reward_amount) return alert('টার্গেট ও রিওয়ার্ড দিন');
-    const res = await fetch('/api/admin/milestone/save', {
-        method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include',
-        body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (result.success) {
-        alert('✅ সেভ হয়েছে');
-        loadMilestones();   // লিস্ট রিফ্রেশ
-        // ফর্ম খালি করুন
-        document.getElementById('ms_target').value = '';
-        document.getElementById('ms_reward_amount').value = '';
-        document.getElementById('ms_days').value = '';
-    } else alert('❌ ব্যর্থ');
-}
-
-async function loadMilestones() {
-    try {
-        const res = await fetch('/api/admin/milestones', { credentials: 'include' });
-        const data = await res.json();
-        const container = document.getElementById('milestone-list');
-        if (!container) return;
-        if (!data.milestones || data.milestones.length === 0) {
-            container.innerHTML = '<div>কোনো মাইলস্টোন নেই</div>';
-            return;
-        }
-        let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr><th>টাইপ</th><th>টার্গেট</th><th>রিওয়ার্ড</th><th>মেয়াদ</th><th>স্ট্যাটাস</th><th></th></tr></thead><tbody>';
-        data.milestones.forEach(m => {
-            html += `<tr>
-                <td>${m.type === 'task' ? 'টাস্ক' : m.type === 'referral' ? 'রেফারেল' : 'ডিপোজিট'}</td>
-                <td>${m.target}</td>
-                <td>${m.reward_amount} ${m.reward_type === 'bdt' ? '৳' : 'AAF'}</td>
-                <td>${m.days ? m.days + ' দিন' : '∞'}</td>
-                <td>${m.active ? '✅ সক্রিয়' : '❌ নিষ্ক্রিয়'}</td>
-                <td><button onclick="deleteMilestone('${m._id}')" style="background:#da3633; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;">🗑️</button></td>
-            </tr>`;
-        });
-        html += '</tbody></tr>';
-        container.innerHTML = html;
-    } catch(e) {
-        console.error(e);
-        document.getElementById('milestone-list').innerHTML = '<div>লোড করতে ব্যর্থ</div>';
-    }
-}
-
-async function deleteMilestone(id) {
-    if (!confirm('ডিলিট করবেন?')) return;
-    const res = await fetch('/api/admin/milestone/delete', {
-        method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include',
-        body: JSON.stringify({ id })
-    });
-    const data = await res.json();
-    if (data.success) {
-        alert('✅ ডিলিট হয়েছে');
-        loadMilestones();
-    } else alert('❌ ব্যর্থ');
-    }
 
 
 // প্রাইস ফিক্সড করার সঠিক ফাংশন
