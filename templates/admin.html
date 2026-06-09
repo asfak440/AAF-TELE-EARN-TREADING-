@@ -391,7 +391,6 @@ th,td{padding:6px 4px!important;white-space:nowrap}
             <button class="btn-main" onclick="saveVolatilitySettings()">💾 ভোলাটিলিটি সেভ করুন</button>
         </div>
     </div>
-</div>
     
     <!-- Wallet Section -->
 <div id="wallet" class="page-section">
@@ -883,31 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMilestones();
 });
 
-// ফর্ম ক্লিয়ার
-function clearTaskForm() {
-    document.getElementById('task_title').value = '';
-    document.getElementById('task_link').value = '';
-    document.getElementById('task_reward').value = '';
-    document.getElementById('task_currency').value = 'bdt';
-    document.getElementById('task_timer').value = '30';
-    document.getElementById('task_type').value = 'video';
-    document.getElementById('task_expiry_hours').value = '';
-    document.getElementById('task_requires_approval').checked = false;
-    document.getElementById('task_device_check').value = 'true';
-    document.getElementById('task_ip_check').value = 'true';
-    document.getElementById('task_account_check').value = 'true';
-    document.getElementById('task_proof_instruction').value = '';
-    toggleProofBox();
-}
 
-// এডমিন এপ্রুভাল চেকবক্সের উপর নির্ভর করে প্রমান বক্স দেখানো/লুকানো
-function toggleProofBox() {
-    const isApproval = document.getElementById('task_requires_approval').checked;
-    const box = document.getElementById('proof_instruction_box');
-    if (box) box.style.display = isApproval ? 'block' : 'none';
-}
-
-// গ্লোবাল ডিফল্ট সেভ
 
 /* ================= ADS ============ধোন===== */
 async function loadAds(){
@@ -1220,17 +1195,16 @@ async function updateServerSettings() {
 // ========== MODIFIED: initAdmin() ==========
 function initAdmin(){
     loadUsers();
-    loadTasks();
-   // loadAds();//
+    loadAdminTasks();  // ✅ সঠিক ফাংশন নাম
     loadWithdraws();
     loadLivePrice();
     loadAdminStats();
     loadPendingClaims();
     loadPendingDeposits();
     loadPopupData();
-    loadMilestones();   // ← এই লাইনটি যোগ করুন
+    loadMilestones();
+    loadOrderRates();
 }
-
 
 
 async function updateUserBalance() {
