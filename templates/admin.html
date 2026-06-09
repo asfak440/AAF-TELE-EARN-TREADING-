@@ -1060,15 +1060,6 @@ async function loadAdminStats() {
             if (referralBonus) referralBonus.value = data.referral_bonus;
         }
         
-        if (data.task_banner_ad !== undefined) {
-            const taskBanner = document.getElementById('task_banner_ad');
-            if (taskBanner) taskBanner.value = data.task_banner_ad;
-        }
-        
-        if (data.task_popup_ad !== undefined) {
-            const taskPopup = document.getElementById('task_popup_ad');
-            if (taskPopup) taskPopup.value = data.task_popup_ad;
-        }
         
         if (data.wallet) {
             const nagad = document.getElementById('admin_nagad');
@@ -1660,9 +1651,13 @@ window.addEventListener('DOMContentLoaded', () => {
     // loadUsers() কল করা হবে toggleUserList() এর মাধ্যমে
 });
 
-    async function updateAdminInfo() {
-    const method = document.getElementById('dep-method').value;
+async function updateAdminInfo() {
+    const methodInput = document.getElementById('dep-method');
     const infoBox = document.getElementById('admin-payment-info');
+    
+    if (!methodInput || !infoBox) return;  // এলিমেন্ট না থাকলে ফাংশন বন্ধ
+    
+    const method = methodInput.value;
     
     try {
         const res = await fetch('/api/user/me', { credentials: 'include' });
@@ -1686,6 +1681,12 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error("Error loading wallet numbers:", err);
         infoBox.innerHTML = "⚠️ নম্বর লোড করতে ব্যর্থ";
     }
+}
+
+// ইভেন্ট লিসেনার নিরাপদভাবে যোগ করুন
+const depMethod = document.getElementById('dep-method');
+if (depMethod) {
+    depMethod.addEventListener('change', updateAdminInfo);
 }
 
 // পেজ লোডে এবং মেথড চেঞ্জে কল করুন
