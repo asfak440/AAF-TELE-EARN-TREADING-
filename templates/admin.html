@@ -6,6 +6,31 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>  
 
 <style>
+    /* ===== মোবাইল ফিক্স (আগের স্টাইলের ওভাররাইড) ===== */
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; width: 100%; padding: 12px; padding-bottom: 70px; }
+    .bottom-nav { display: flex; }
+    
+    .premium-card { padding: 12px !important; margin-bottom: 12px; }
+    .card-title { font-size: 13px !important; }
+    input, textarea, select { font-size: 14px !important; padding: 8px 10px !important; }
+    .btn-main { padding: 10px !important; font-size: 13px !important; }
+    
+    .request-table, .user-table { min-width: 100%; font-size: 12px; }
+    .request-table th, .user-table th { padding: 6px 4px; }
+    .request-table td, .user-table td { padding: 6px 4px; }
+    
+    .row { grid-template-columns: 1fr; gap: 6px; }
+    
+    /* ইউজার টেবিলে সেশন কলাম মোবাইলে লুকানো */
+    .user-table th:nth-child(6), .user-table td:nth-child(6) { display: none; }
+    
+    #member-list-body table { font-size: 10px; min-width: 600px; }
+    #member-list-body th, #member-list-body td { padding: 4px 2px; white-space: nowrap; }
+    
+    .approve-btn, .reject-btn { padding: 4px 8px; font-size: 10px; }
+}
 @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 :root{--bg:#020617;--card:#0d111c;--border:rgba(0,242,254,0.15);--cyan:#00f2fe;--purple:#7000ff;--accent:#00ff88;--danger:#ff0055;--gold:#ffaa00;--sidebar-width:260px}
 body{background:var(--bg);color:#fff;font-family:'Hind Siliguri',sans-serif;margin:0;overflow-x:hidden}
@@ -1615,6 +1640,47 @@ async function loadOrderRates() {
     } catch (e) { console.log(e); }
 }
 
+    // ========== মোবাইল টাচ ফিক্স এবং অনুপস্থিত ফাংশন ==========
+document.querySelectorAll('.bottom-nav i').forEach(icon => {
+    icon.addEventListener('click', function() {
+        let tab = this.getAttribute('data-tab');
+        if (!tab) return;
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(tab)?.classList.add('active');
+        document.querySelectorAll('.bottom-nav i').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        
+        // সাইডবারের সক্রিয়তাও আপডেট
+        document.querySelectorAll('.nav-links li').forEach(li => {
+            li.classList.remove('active');
+            if(li.getAttribute('data-tab') === tab) li.classList.add('active');
+        });
+    });
+});
+
+// ডামি ফাংশন (যেগুলো আসলে নেই কিন্তু কল করা হয়েছে)
+async function saveOrderRates() { 
+    alert('এই ফিচারটি শীঘ্রই আসছে।');
+}
+async function updateTaskRules() { 
+    alert('টাস্ক রুলস আপডেট (ব্যাকএন্ডে যোগ করতে হবে)');
+}
+function togglePopupAd() { console.log('toggle popup'); }
+function sendPushNotification() { alert('নোটিফিকেশন ফিচার আপডেট হবে'); }
+
+// টাস্ক প্রুফ বক্স টগল (ঠিক করা)
+window.addEventListener('DOMContentLoaded', () => {
+    const approvalCheck = document.getElementById('task_requires_approval');
+    if(approvalCheck) {
+        approvalCheck.addEventListener('change', function() {
+            const box = document.getElementById('proof_instruction_box');
+            if(box) box.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // মোবাইলে প্রথমবার ইউজার লিস্ট লোড করবেন না (হাতে ক্লিক করলেই হবে)
+    // loadUsers() কল করা হবে toggleUserList() এর মাধ্যমে
+});
 
     async function updateAdminInfo() {
     const method = document.getElementById('dep-method').value;
@@ -1646,7 +1712,6 @@ async function loadOrderRates() {
 
 // পেজ লোডে এবং মেথড চেঞ্জে কল করুন
 document.getElementById('dep-method')?.addEventListener('change', updateAdminInfo);
-</script>
-    
+</script>    
 </body>
 </html>
