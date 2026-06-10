@@ -10,14 +10,13 @@ from datetime import datetime, timedelta
 from functools import wraps
 from bson import ObjectId
 from flask import Flask, request, jsonify, session, render_template, redirect, url_for, send_from_directory
-from flask_cors import CORS
+from flask_cors import CORS 
 from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
+from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
 import firebase_admin  
-from firebase_admin import credentials, firestore
-
+from firebase_admin import credentials,
 
 # ================= APP =================
 app = Flask(__name__)
