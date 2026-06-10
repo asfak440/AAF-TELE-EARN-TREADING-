@@ -419,6 +419,7 @@ function handleAction(type) {
 
 // ================= JOIN =================
 async function handleAutoJoin() {
+    checkTimedInterstitial();
     const btn = document.getElementById('join-btn');
     if (!btn) return;
     btn.innerText = "JOINING...";
@@ -522,9 +523,7 @@ function closePopup() {
     document.getElementById('popup-display').style.display = 'none';
     localStorage.setItem('popup_shown_today', new Date().toDateString());
 }
-// পেজ লোড হলে
-window.addEventListener('DOMContentLoaded', loadPopupData);
-    
+
     
 function copyReferLink() {
     const tg = localStorage.getItem(TG_KEY);
@@ -567,8 +566,12 @@ function createPopupContainer() {
     
 // ================= INIT =================
 window.addEventListener('load', () => {
+    createPopupContainer(); 
     initDashboard();
     smartInterval(initDashboard, 15000);
+    smartInterval(checkChannelMembership, 15000);
+    smartInterval(updateServerStats, 10000);  // 🆕 প্রতি 10 সেকেন্ডে সার্ভার স্ট্যাটাস আপডেট
+    loadPopupData(); 
 });
 
 // ================= UI RENDER =================
@@ -610,10 +613,10 @@ function renderUI(user, admin) {
     if (joinCard) joinCard.classList.toggle('connected', joined);
     }
     
-// ব্যানার অ্যাড রেন্ডার
-const bannerBox = document.getElementById('banner-ad');
-if (bannerBox) {
-    const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
+    // ব্যানার অ্যাড রেন্ডার
+    const bannerBox = document.getElementById('banner-ad');
+    if (bannerBox) {
+        const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
     if (adCode !== "") {
         executeScriptHTML(adCode, bannerBox);
     } else {
@@ -621,9 +624,9 @@ if (bannerBox) {
     }
 }
 
-// 🆕 রেফার বোনাস দেখানো
-const bonusSpan = document.getElementById('refer-bonus-amount');
-if (bonusSpan) {
+    // 🆕 রেফার বোনাস দেখানো
+    const bonusSpan = document.getElementById('refer-bonus-amount');
+    if (bonusSpan) {
     const bonusAmount = admin.referral_bonus || 0;
     bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
 }
@@ -651,6 +654,16 @@ function executeScriptHTML(html, targetElement) {
         targetElement.appendChild(node.cloneNode(true));
     }
     }
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+    }
     
 // চ্যানেলের সদস্যপদ চেক করার ফাংশন
 async function checkChannelMembership() {
@@ -673,14 +686,7 @@ async function checkChannelMembership() {
     }
 }
 
-window.addEventListener('load', () => {
-    createPopupContainer(); 
-    initDashboard();
-    smartInterval(initDashboard, 15000);
-    smartInterval(checkChannelMembership, 15000);
-    smartInterval(updateServerStats, 10000);  // 🆕 প্রতি 10 সেকেন্ডে সার্ভার স্ট্যাটাস আপডেট
-    loadPopupData(); 
-});
+
 // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
 function triggerPopup(message) {
     const bar = document.getElementById('active-user-bar');
