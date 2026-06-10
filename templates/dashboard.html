@@ -373,25 +373,33 @@ function smartInterval(fn, time){
   start();
 }
 
-// ================= INIT DASHBOARD =================
+// ================= INIT DASHBOARD (আপডেটেড) =================
 async function initDashboard() {
-  try {
-    const response = await fetch(`/api/user/me`, { credentials: "include" });
-    if (!response.ok) throw new Error("Network Error");
-    const data = await response.json();
-    if (data.status === "success") {
-      renderUI(data.user, data.admin);
-      const linkInput = document.getElementById('referLinkInput');
-      if (linkInput && data.user.telegram_id) {
-        linkInput.value = `${window.location.origin}/login?ref=${data.user.telegram_id}`;
-      }
-    } else if (data.message === "session_expired") {
-      localStorage.removeItem("telegram_id");
-      location.href = "/login";
+    try {
+        const response = await fetch(`/api/user/me`, { credentials: "include" });
+        if (!response.ok) throw new Error("Network Error");
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            renderUI(data.user, data.admin);
+            
+            // রেফার লিংক দেখানো
+            const linkInput = document.getElementById('referLinkInput');
+            if (linkInput && data.user.telegram_id) {
+                linkInput.value = `${window.location.origin}/login?ref=${data.user.telegram_id}`;
+            }
+            
+            // 🆕 সার্ভার স্ট্যাটাস আপডেট (admin থেকে নয়, রিয়েল টাইম)
+            await updateServerStats();
+            
+        } else if (data.message === "session_expired") {
+            localStorage.removeItem("telegram_id");
+            location.href = "/login";
+        }
+    } catch (err) {
+        triggerPopup("Server Connection Error");
+        console.error(err);
     }
-  } catch (err) {
-    triggerPopup("Server Connection Error");
-  }
 }
 
 // ================= ACTION HANDLER =================
@@ -583,9 +591,9 @@ function renderUI(user, admin) {
     setText('u-id', ": " + user.telegram_id);
     setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
     setText('h-aaf', user.aaf || 0);
-    setText('srv-income', '৳ ' + (admin.server_income || 0));
-    setText('srv-trade', '৳ ' + (admin.server_trading || 0));
-    setText('srv-users', admin.total_users || 0);
+    // setText('srv-income', '৳ ' + (admin.server_income || 0));
+    // setText('srv-trade', '৳ ' + (admin.server_trading || 0));
+    // setText('srv-users', admin.total_users || 0);
     setText('my-refs', (user.refer_count || 0) + " REFERRED");
 
     const joined = user.is_joined;
@@ -670,9 +678,9 @@ window.addEventListener('load', () => {
     initDashboard();
     smartInterval(initDashboard, 15000);
     smartInterval(checkChannelMembership, 15000);
+    smartInterval(updateServerStats, 10000);  // 🆕 প্রতি 10 সেকেন্ডে সার্ভার স্ট্যাটাস আপডেট
     loadPopupData(); 
 });
-
 // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
 function triggerPopup(message) {
     const bar = document.getElementById('active-user-bar');
