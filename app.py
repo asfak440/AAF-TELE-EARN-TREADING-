@@ -2426,17 +2426,52 @@ def claim_milestone():
 @login_required
 def dashboard_stats():
     admin = get_admin_config()
-    real_users = users_col.count_documents({})  # অটো ইউজার
-    extra_users = admin.get("extra_users", 0)    # ম্যানুয়াল এক্সট্রা
+    
+    # ========== অটো মান ==========
+    real_users = users_col.count_documents({})
+    
+    deposits = list(deposits_col.aggregate([
+        {"$match": {"status": "approved"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    total_deposit = deposits[0]["total"] if deposits else 0
+    
+    withdraws = list(withdraws_col.aggregate([
+        {"$match": {"status": "approved"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    total_withdraw = withdraws[0]["total"] if withdraws else 0
+    
+    auto_income = total_deposit - total_withdraw
+    
+    trades = list(trades_col.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    auto_trading = trades[0]["total"] if trades else 0
+    
+    # ========== ম্যানুয়াল মান ==========
+    manual_income = admin.get("server_income", 0)
+    manual_trading = admin.get("server_trading", 0)
+    manual_users = admin.get("extra_users", 0)
+    
+    # ========== ফাইনাল (যোগফল) ==========
+    final_income = auto_income + manual_income
+    final_trading = auto_trading + manual_trading
+    final_users = real_users + manual_users
     
     return jsonify({
         "success": True,
-        "server_income": admin.get("server_income", 0),
-        "trading_volume": admin.get("server_trading", 0),
-        "total_users": real_users,               # শুধু অটো
-        "extra_users": extra_users,              # ম্যানুয়াল (যোগ করার জন্য)
-        "manual_server_income": admin.get("server_income", 0),
-        "manual_trading_volume": admin.get("server_trading", 0)
+        # যোগফল (ইউজারদের দেখানোর জন্য)
+        "server_income": final_income,      # 25,329
+        "trading_volume": final_trading,    # 15,952
+        "total_users": final_users,         # 8,023 (1,234 + 6,789)
+        # আলাদা মান (এডমিন প্যানেলের জন্য)
+        "auto_income": auto_income,
+        "auto_trading": auto_trading,
+        "auto_users": real_users,
+        "manual_income": manual_income,
+        "manual_trading": manual_trading,
+        "manual_users": manual_users
     })
 
 @app.route("/api/admin/reload_config", methods=["POST"])
