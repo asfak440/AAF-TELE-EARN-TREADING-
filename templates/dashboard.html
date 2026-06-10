@@ -694,6 +694,46 @@ function triggerPopup(message) {
     }, 3000);
     }
 
-    </script>
+    // ম্যানুয়াল এবং অটো উভয় মান দেখানোর ফাংশন (আনকমেন্টেড)
+async function updateServerStats() {
+    try {
+        const response = await fetch('/api/admin/server_stats', { 
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        
+        if (!response.ok) throw new Error('Network error');
+        const data = await response.json();
+        
+        if (data.success) {
+            const autoIncome = data.server_income;
+            const autoTrading = data.trading_volume;
+            const autoUsers = data.total_users;
+            
+            const manualIncome = data.manual_server_income || 0;
+            const manualTrading = data.manual_trading_volume || 0;
+            
+            // ✅ অটো + ম্যানুয়াল একসাথে দেখান (আনকমেন্ট করলাম)
+            const incomeElem = document.getElementById('srv-income');
+            if (incomeElem) {
+                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()} <small style="font-size:8px; color:#888;">(ম্যানুয়াল: ${manualIncome})</small>`;
+            }
+            
+            const tradeElem = document.getElementById('srv-trade');
+            if (tradeElem) {
+                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()} <small style="font-size:8px; color:#888;">(ম্যানুয়াল: ${manualTrading})</small>`;
+            }
+            
+            const usersElem = document.getElementById('srv-users');
+            if (usersElem) {
+                usersElem.innerText = autoUsers.toLocaleString();
+            }
+        }
+    } catch(e) {
+        console.error('❌ সার্ভার স্ট্যাটাস লোড ব্যর্থ:', e);
+    }
+}
+
+</script>
 </body>
 </html>
