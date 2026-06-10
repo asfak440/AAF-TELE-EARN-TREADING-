@@ -621,11 +621,65 @@ def user_me():
         session.clear()
         return jsonify({"status": "error", "message": "user_not_found"})
     
+    # 🔥 টেলিগ্রাম থেকে লাইভ তথ্য আপডেট করুন
+    try:
+        bot_token = get_admin_config().get("bot_token", "")
+        if bot_token:
+            import requests
+            url = f"https://api.telegram.org/bot{bot_token}/getChat"
+            params = {"chat_id": user.get("telegram_id")}
+            response = requests.get(url, params=params, timeout=5)
+            if response.status_code == 200:
+                tg_data = response.json()
+                if tg_data.get("ok"):
+                    tg_user = tg_data.get("result", {})
+                    users_col.update_one(
+                        {"_id": ObjectId(uid)},
+                        {"$set": {
+                            "first_name": tg_user.get("first_name", user.get("first_name", "")),
+                            "last_name": tg_user.get("last_name", user.get("last_name", "")),
+                            "username": tg_user.get("username", user.get("username", ""))
+                        }}
+                    )
+                    user = users_col.find_one({"_id": ObjectId(uid)})
+    except Exception as e:
+        print(f"Telegram sync error: {e}")
+    
     admin = get_admin_config()
     wallet_data = admin.get("wallet", {"nagad": "", "bkash": ""})
     
-    # মোট ইউজার কাউন্ট
-    total_users = admin.get("total_users", users_col.count_documents({}))
+    # 🔥 গুরুত্বপূর্ণ: এখানে `/api/dashboard/stats` এর লজিক ব্যবহার করুন
+    # অটো মান ক্যালকুলেট করুন
+    real_users = users_col.count_documents({})
+    
+    deposits = list(deposits_col.aggregate([
+        {"$match": {"status": "approved"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    total_deposit = deposits[0]["total"] if deposits else 0
+    
+    withdraws = list(withdraws_col.aggregate([
+        {"$match": {"status": "approved"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    total_withdraw = withdraws[0]["total"] if withdraws else 0
+    
+    auto_income = total_deposit - total_withdraw
+    
+    trades = list(trades_col.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]))
+    auto_trading = trades[0]["total"] if trades else 0
+    
+    # ম্যানুয়াল মান
+    manual_income = admin.get("server_income", 0)
+    manual_trading = admin.get("server_trading", 0)
+    manual_users = admin.get("extra_users", 0)
+    
+    # ফাইনাল মান (যোগফল)
+    final_income = auto_income + manual_income
+    final_trading = auto_trading + manual_trading
+    final_users = real_users + manual_users
     
     safe_user = {
         "_id": str(user["_id"]),
@@ -637,7 +691,8 @@ def user_me():
         "aaf": user.get("aaf", 0),
         "refer_count": user.get("refer_count", 0),
         "tasks_done": user.get("tasks_done", 0),
-        "is_joined": user.get("is_joined", False)
+        "is_joined": user.get("is_joined", False),
+        "phone": user.get("phone", "")
     }
     
     safe_admin = {
@@ -645,10 +700,11 @@ def user_me():
         "trading_fee": admin.get("trading_fee", 0.5),
         "banner_ad_code": admin.get("banner_ad_code", ""),
         "trading_ad_text": admin.get("trading_ad_text", ""),
-        # 🆕 নিচের ৩টি লাইন যোগ করুন
-        "server_income": admin.get("server_income", 0),
-        "server_trading": admin.get("server_trading", 0),
-        "total_users": total_users,
+        # ✅ সঠিক মান (অটো + ম্যানুয়াল যোগফল)
+        "server_income": final_income,      # ← যোগফল
+        "server_trading": final_trading,    # ← যোগফল
+        "total_users": final_users,         # ← যোগফল
+        # অতিরিক্ত তথ্য (যদি দরকার হয়)
         "referral_bonus": admin.get("referral_bonus", 0),
         "wallet": {
             "nagad": wallet_data.get("nagad", ""),
