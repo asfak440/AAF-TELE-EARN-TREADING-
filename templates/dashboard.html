@@ -404,7 +404,6 @@ async function initDashboard() {
 
 // ================= ACTION HANDLER =================
 function handleAction(type) {
-  checkTimedInterstitial();
 
   let target = "";
   if (type.includes('=')) {
@@ -419,7 +418,6 @@ function handleAction(type) {
 
 // ================= JOIN =================
 async function handleAutoJoin() {
-    checkTimedInterstitial();
     const btn = document.getElementById('join-btn');
     if (!btn) return;
     btn.innerText = "JOINING...";
@@ -611,25 +609,25 @@ function renderUI(user, admin) {
     if (joinStatus) joinStatus.innerText = joined ? 'ONLINE' : 'OFFLINE';
     if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
     if (joinCard) joinCard.classList.toggle('connected', joined);
+    
+    // ✅ ব্যানার অ্যাড রেন্ডার (renderUI এর ভিতরে, admin চেক সহ)
+    const bannerBox = document.getElementById('banner-ad');
+    if (bannerBox && admin) {
+        const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
+        if (adCode !== "") {
+            executeScriptHTML(adCode, bannerBox);
+        } else {
+            bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
+        }
     }
     
-    // ব্যানার অ্যাড রেন্ডার
-    const bannerBox = document.getElementById('banner-ad');
-    if (bannerBox) {
-        const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
-    if (adCode !== "") {
-        executeScriptHTML(adCode, bannerBox);
-    } else {
-        bannerBox.innerHTML = '<div style="width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:gray;">ADVERTISEMENT SPACE</div>';
-    }
-}
-
-    // 🆕 রেফার বোনাস দেখানো
+    // ✅ রেফার বোনাস দেখানো (renderUI এর ভিতরে, admin চেক সহ)
     const bonusSpan = document.getElementById('refer-bonus-amount');
-    if (bonusSpan) {
-    const bonusAmount = admin.referral_bonus || 0;
-    bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
-}
+    if (bonusSpan && admin) {
+        const bonusAmount = admin.referral_bonus || 0;
+        bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
+    }
+}  // ← renderUI এখানে শেষ হবে
 
 function executeScriptHTML(html, targetElement) {
     targetElement.innerHTML = "";
