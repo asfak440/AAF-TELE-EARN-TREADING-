@@ -724,12 +724,12 @@ function renderUI(user, admin) {
             // ডিসপ্লে আপডেট
             const incomeElem = document.getElementById('srv-income');
             if (incomeElem) {
-                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()} <small>(ম্যানুয়াল: ${manualIncome})</small>`;
+                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()}`;
             }
             
             const tradeElem = document.getElementById('srv-trade');
             if (tradeElem) {
-                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()} <small>(ম্যানুয়াল: ${manualTrading})</small>`;
+                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()}`;
             }
             
             const usersElem = document.getElementById('srv-users');
