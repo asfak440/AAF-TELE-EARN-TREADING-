@@ -2426,14 +2426,18 @@ def claim_milestone():
 @login_required
 def dashboard_stats():
     admin = get_admin_config()
+    real_users = users_col.count_documents({})  # অটো ইউজার
+    extra_users = admin.get("extra_users", 0)    # ম্যানুয়াল এক্সট্রা
+    
     return jsonify({
+        "success": True,
         "server_income": admin.get("server_income", 0),
-        "server_trading": admin.get("server_trading", 0),
-        "total_users": admin.get("total_users", users_col.count_documents({})),
-        "referral_bonus": admin.get("referral_bonus", 0),
-        "banner_ad_code": admin.get("banner_ad_code", "")
+        "trading_volume": admin.get("server_trading", 0),
+        "total_users": real_users,               # শুধু অটো
+        "extra_users": extra_users,              # ম্যানুয়াল (যোগ করার জন্য)
+        "manual_server_income": admin.get("server_income", 0),
+        "manual_trading_volume": admin.get("server_trading", 0)
     })
-
 
 @app.route("/api/admin/reload_config", methods=["POST"])
 def admin_reload_config():
