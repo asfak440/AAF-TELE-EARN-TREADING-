@@ -629,7 +629,7 @@ function renderUI(user, admin) {
     }
 }  // ← renderUI এখানে শেষ হবে
 
-function executeScriptHTML(html, targetElement) {
+    function executeScriptHTML(html, targetElement) {
     targetElement.innerHTML = "";
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
@@ -653,7 +653,7 @@ function executeScriptHTML(html, targetElement) {
     }
     }
 
-function escapeHtml(str) {
+    function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
         if (m === '&') return '&amp;';
@@ -663,8 +663,8 @@ function escapeHtml(str) {
     });
     }
     
-// চ্যানেলের সদস্যপদ চেক করার ফাংশন
-async function checkChannelMembership() {
+    // চ্যানেলের সদস্যপদ চেক করার ফাংশন
+    async function checkChannelMembership() {
     try {
         const res = await fetch('/api/check_membership', {
             credentials: "include",
@@ -682,11 +682,9 @@ async function checkChannelMembership() {
     } catch(e) {
         console.error("Membership check failed", e);
     }
-}
-
-
-// ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
-function triggerPopup(message) {
+    }
+    // ================= ট্রিগার পপআপ (বার্তা দেখানোর জন্য) =================
+    function triggerPopup(message) {
     const bar = document.getElementById('active-user-bar');
     const text = document.getElementById('popup-text');
     if (!bar || !text) return;
@@ -699,9 +697,9 @@ function triggerPopup(message) {
     }
 
     // ম্যানুয়াল এবং অটো উভয় মান দেখানোর ফাংশন (আনকমেন্টেড)
-async function updateServerStats() {
+    async function updateServerStats() {
     try {
-        const response = await fetch('/api/admin/server_stats', { 
+        const response = await fetch('/api/dashboard/stats', {
             credentials: 'include',
             cache: 'no-store'
         });
@@ -710,34 +708,39 @@ async function updateServerStats() {
         const data = await response.json();
         
         if (data.success) {
-            const autoIncome = data.server_income;
-            const autoTrading = data.trading_volume;
-            const autoUsers = data.total_users;
-            
+            // ইনকাম
+            const autoIncome = data.server_income || 0;
             const manualIncome = data.manual_server_income || 0;
-            const manualTrading = data.manual_trading_volume || 0;
             
-            // ✅ অটো + ম্যানুয়াল একসাথে দেখান (আনকমেন্ট করলাম)
+            // ট্রেডিং
+            const autoTrading = data.trading_volume || data.server_trading || 0;
+            const manualTrading = data.manual_trading_volume || 0;  // ← এটা ঠিক আছে
+            
+            // ইউজার (অটো + ম্যানুয়াল একসাথে)
+            const autoUsers = data.total_users || 0;
+            const extraUsers = data.extra_users || 0;  // ← এটা ইউজারের জন্য
+            const totalUsers = autoUsers + extraUsers;
+            
+            // ডিসপ্লে আপডেট
             const incomeElem = document.getElementById('srv-income');
             if (incomeElem) {
-                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()} <small style="font-size:8px; color:#888;">(ম্যানুয়াল: ${manualIncome})</small>`;
+                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()} <small>(ম্যানুয়াল: ${manualIncome})</small>`;
             }
             
             const tradeElem = document.getElementById('srv-trade');
             if (tradeElem) {
-                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()} <small style="font-size:8px; color:#888;">(ম্যানুয়াল: ${manualTrading})</small>`;
+                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()} <small>(ম্যানুয়াল: ${manualTrading})</small>`;
             }
             
             const usersElem = document.getElementById('srv-users');
             if (usersElem) {
-                usersElem.innerText = autoUsers.toLocaleString();
+                usersElem.innerText = totalUsers.toLocaleString();  // অটো + ম্যানুয়াল
             }
         }
     } catch(e) {
         console.error('❌ সার্ভার স্ট্যাটাস লোড ব্যর্থ:', e);
     }
-}
-
+    }
 </script>
 </body>
 </html>
