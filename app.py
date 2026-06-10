@@ -2482,6 +2482,30 @@ def admin_reload_config():
     return jsonify({"success": True, "message": "Configuration reloaded"})
 
 
+@app.route("/api/public/popup_config", methods=["GET"])
+def get_public_popup_config():
+    try:
+        config = admin_config_col.find_one({"_id": "global"})
+        if not config:
+            config = {}
+        
+        popup_ad = config.get("popup_ad", {})
+        
+        return jsonify({
+            "popup_ad_enabled": popup_ad.get("enabled", False),
+            "popup_ad_title": popup_ad.get("title", "📢 নতুন অফার!"),
+            "popup_ad_desc": popup_ad.get("desc", ""),
+            "popup_ad_image": popup_ad.get("image", "")
+        })
+    except Exception as e:
+        return jsonify({
+            "popup_ad_enabled": False,
+            "popup_ad_title": "📢 নতুন অফার!",
+            "popup_ad_desc": "",
+            "popup_ad_image": ""
+        })
+
+
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
