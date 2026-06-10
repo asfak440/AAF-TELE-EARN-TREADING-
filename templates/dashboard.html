@@ -489,9 +489,8 @@ async function verifyJoin() {
     }
 }
     
-// ================= POPUP =================
-
-async function loadPopupData() {
+    // ================= POPUP =================
+    async function loadPopupData() {
     try {
         const res = await fetch('/api/admin/config');
         const data = await res.json();
@@ -516,14 +515,13 @@ async function loadPopupData() {
         }
     } catch(e) { console.error(e); }
     }
-    
-function closePopup() {
+
+    function closePopup() {
     document.getElementById('popup-display').style.display = 'none';
     localStorage.setItem('popup_shown_today', new Date().toDateString());
-}
+    }
 
-    
-function copyReferLink() {
+    function copyReferLink() {
     const tg = localStorage.getItem(TG_KEY);
     if (!tg) {
         triggerPopup("আপনি লগইন নাই!");
@@ -542,9 +540,8 @@ function copyReferLink() {
         triggerPopup("❌ কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
     });
     }
-    
 
-function createPopupContainer() {
+    function createPopupContainer() {
     if (document.getElementById('popup-display')) return;
     const popupDiv = document.createElement('div');
     popupDiv.id = 'popup-display';
@@ -561,9 +558,9 @@ function createPopupContainer() {
     `;
     document.body.appendChild(popupDiv);
     }
-    
-// ================= INIT =================
-window.addEventListener('load', () => {
+
+    // ================= INIT =================
+    window.addEventListener('load', () => {
     createPopupContainer(); 
     initDashboard();
     smartInterval(initDashboard, 15000);
@@ -572,8 +569,8 @@ window.addEventListener('load', () => {
     loadPopupData(); 
 });
 
-// ================= UI RENDER =================
-function renderUI(user, admin) {
+    // ================= UI RENDER =================
+    function renderUI(user, admin) {
     const setText = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.innerText = val;
@@ -590,11 +587,22 @@ function renderUI(user, admin) {
     }
 
     setText('u-id', ": " + user.telegram_id);
-    setText('h-cash', parseFloat(user.cash || 0).toFixed(2));
-    setText('h-aaf', user.aaf || 0);
-    // setText('srv-income', '৳ ' + (admin.server_income || 0));
-    // setText('srv-trade', '৳ ' + (admin.server_trading || 0));
-    // setText('srv-users', admin.total_users || 0);
+    
+    // ✅ CASH ইংরেজি সংখ্যায় দেখান
+    const cashElem = document.getElementById('h-cash');
+    if (cashElem) {
+        cashElem.innerText = parseFloat(user.cash || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // ✅ AAF ইংরেজি সংখ্যায় দেখান
+    const aafElem = document.getElementById('h-aaf');
+    if (aafElem) {
+        aafElem.innerText = (user.aaf || 0).toLocaleString('en-US');
+    }
+    
     setText('my-refs', (user.refer_count || 0) + " REFERRED");
 
     const joined = user.is_joined;
@@ -610,7 +618,7 @@ function renderUI(user, admin) {
     if (joinInfo) joinInfo.innerText = joined ? 'আপনি চ্যানেলে যুক্ত আছেন।' : 'চ্যানেলে জয়েন না হলে বোনাস ও ট্রেড বন্ধ থাকবে!';
     if (joinCard) joinCard.classList.toggle('connected', joined);
     
-    // ✅ ব্যানার অ্যাড রেন্ডার (renderUI এর ভিতরে, admin চেক সহ)
+    // ✅ ব্যানার অ্যাড রেন্ডার
     const bannerBox = document.getElementById('banner-ad');
     if (bannerBox && admin) {
         const adCode = admin.banner_ad_code ? admin.banner_ad_code.trim() : "";
@@ -621,13 +629,16 @@ function renderUI(user, admin) {
         }
     }
     
-    // ✅ রেফার বোনাস দেখানো (renderUI এর ভিতরে, admin চেক সহ)
+    // ✅ রেফার বোনাস দেখানো (ইংরেজি সংখ্যায়)
     const bonusSpan = document.getElementById('refer-bonus-amount');
     if (bonusSpan && admin) {
         const bonusAmount = admin.referral_bonus || 0;
-        bonusSpan.innerText = `৳ ${parseFloat(bonusAmount).toFixed(2)}`;
+        bonusSpan.innerText = `৳ ${bonusAmount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
     }
-}  // ← renderUI এখানে শেষ হবে
+    }
 
     function executeScriptHTML(html, targetElement) {
     targetElement.innerHTML = "";
@@ -714,27 +725,27 @@ function renderUI(user, admin) {
             
             // ট্রেডিং
             const autoTrading = data.trading_volume || data.server_trading || 0;
-            const manualTrading = data.manual_trading_volume || 0;  // ← এটা ঠিক আছে
+            const manualTrading = data.manual_trading_volume || 0;
             
             // ইউজার (অটো + ম্যানুয়াল একসাথে)
             const autoUsers = data.total_users || 0;
-            const extraUsers = data.extra_users || 0;  // ← এটা ইউজারের জন্য
+            const extraUsers = data.extra_users || 0;
             const totalUsers = autoUsers + extraUsers;
             
-            // ডিসপ্লে আপডেট
+            // ✅ সব জায়গায় toLocaleString('en-US') ব্যবহার করুন
             const incomeElem = document.getElementById('srv-income');
             if (incomeElem) {
-                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString()}`;
+                incomeElem.innerHTML = `৳ ${autoIncome.toLocaleString('en-US')}`;
             }
             
             const tradeElem = document.getElementById('srv-trade');
             if (tradeElem) {
-                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString()}`;
+                tradeElem.innerHTML = `৳ ${autoTrading.toLocaleString('en-US')}`;
             }
             
             const usersElem = document.getElementById('srv-users');
             if (usersElem) {
-                usersElem.innerText = totalUsers.toLocaleString();  // অটো + ম্যানুয়াল
+                usersElem.innerText = totalUsers.toLocaleString('en-US');
             }
         }
     } catch(e) {
