@@ -9,14 +9,15 @@ from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
 from functools import wraps
 from bson import ObjectId
-from flask import Flask, request, jsonify, session, render_template, redirect, url_for
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for, send_from_directory
 from flask_cors import CORS
 from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
 import firebase_admin  
-from firebase_admin import credentials, db
+from firebase_admin import credentials, firestore
+
 
 # ================= APP =================
 app = Flask(__name__)
@@ -430,8 +431,10 @@ def add_header(response):
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
-
-
+# স্ট্যাটিক ফাইলের জন্য রুট
+@app.route('/style.css')
+def serve_css():
+    return send_from_directory('templates', 'style.css')
 # ================= API: AUTH (Per-request Telegram client) =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
