@@ -14,9 +14,10 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.errors import SessionPasswordNeededError,PhoneCodeInvalidError, PhoneCodeExpiredError
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
 import firebase_admin  
-from firebase_admin import credentials,
+from firebase_admin import credentials, db
+
 
 # ================= APP =================
 app = Flask(__name__)
