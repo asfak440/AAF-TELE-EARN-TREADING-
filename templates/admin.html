@@ -3,89 +3,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
     <title>AAF মাস্টার কন্ট্রোল প্যানেল v9.0</title>  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>  
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>  
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>  
 
-<style>
-    /* ===== মোবাইল ফিক্স (আগের স্টাইলের ওভাররাইড) ===== */
-@media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; width: 100%; padding: 12px; padding-bottom: 70px; }
-    .bottom-nav { display: flex; }
-    
-    .premium-card { padding: 12px !important; margin-bottom: 12px; }
-    .card-title { font-size: 13px !important; }
-    input, textarea, select { font-size: 14px !important; padding: 8px 10px !important; }
-    .btn-main { padding: 10px !important; font-size: 13px !important; }
-    
-    .request-table, .user-table { min-width: 100%; font-size: 12px; }
-    .request-table th, .user-table th { padding: 6px 4px; }
-    .request-table td, .user-table td { padding: 6px 4px; }
-    
-    .row { grid-template-columns: 1fr; gap: 6px; }
-    
-    /* ইউজার টেবিলে সেশন কলাম মোবাইলে লুকানো */
-    .user-table th:nth-child(6), .user-table td:nth-child(6) { display: none; }
-    
-    #member-list-body table { font-size: 10px; min-width: 600px; }
-    #member-list-body th, #member-list-body td { padding: 4px 2px; white-space: nowrap; }
-    
-    .approve-btn, .reject-btn { padding: 4px 8px; font-size: 10px; }
-}
-@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
-:root{--bg:#020617;--card:#0d111c;--border:rgba(0,242,254,0.15);--cyan:#00f2fe;--purple:#7000ff;--accent:#00ff88;--danger:#ff0055;--gold:#ffaa00;--sidebar-width:260px}
-body{background:var(--bg);color:#fff;font-family:'Hind Siliguri',sans-serif;margin:0;overflow-x:hidden}
-.sidebar{width:var(--sidebar-width);background:var(--card);height:100vh;position:fixed;border-right:1px solid var(--border);z-index:100;transition:0.3s}
-.nav-links li.active,.bottom-nav i.active{color:var(--cyan);background:rgba(0,242,254,0.08);border-radius:10px}
-.main-content{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width));min-height:100vh;padding:30px;position:relative;z-index:0}
-.page-section{position:absolute;inset:0;display:none;overflow-y:auto;padding-bottom:100px;background:var(--bg)}
-.page-section.active{display:block}
-.premium-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:15px;margin-bottom:15px;overflow-x:auto}
-.card-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--cyan);display:flex;align-items:center;gap:6px}
-input,textarea,select{width:100%;background:#000;border:1px solid var(--border);border-radius:14px;padding:8px 12px;margin-bottom:8px;color:#fff;font-size:13px}
-label{font-size:12px;margin-bottom:2px;display:inline-block}
-.btn-main{width:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border:none;border-radius:14px;padding:10px;margin-top:5px;color:#fff;font-weight:700;cursor:pointer;font-size:12px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:5px}
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;width:100%;background:var(--card);border-top:1px solid var(--border);z-index:1000;justify-content:space-around;padding:6px 0}
-.bottom-nav i{font-size:16px;color:#94a3b8;cursor:pointer}
-.request-table,.user-table{width:100%;border-collapse:collapse}
-.request-table th,.user-table th{background:#1e293b;color:#00f2fe;padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--cyan)}
-.request-table td,.user-table td{padding:8px;border-bottom:1px solid #2d3a5e}
-.deposit-row .amount{color:#00ff88;font-weight:700}
-.withdraw-row .amount{color:#ffaa00;font-weight:700}
-.approve-btn{background:#00ff88;color:#000;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:5px}
-.reject-btn{background:#ff5555;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
-.empty-state,.error-state{text-align:center;padding:20px;color:#94a3b8}
-.error-state{color:#ff5555}
-code{background:#000;padding:4px 6px;border-radius:4px;font-size:11px}
-#admin-login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;justify-content:center;align-items:center}
-table{min-width:500px}
-.user-table td:nth-child(1){font-weight:600;color:#ffaa00}
-.user-table td:nth-child(2){font-family:monospace}
-.user-table td:nth-child(3){color:#a0c4ff}
-.user-table td:nth-child(4){color:#00ff88;font-weight:700}
-.user-table td:nth-child(5){font-size:10px;font-family:monospace;background:rgba(0,242,254,0.05)}
-.user-table td:nth-child(6){text-align:center}
-#member-list-body{overflow-x:auto}
-#member-list-body table{white-space:nowrap}
-button[onclick*="clearField"]{padding:4px 8px!important;font-size:12px!important;margin-top:0!important}
-#admin-task-list div{padding:6px 0!important}
-
-@media (max-width:768px){
-.sidebar{display:none}
-.main-content{margin-left:0;width:100%;padding:15px;padding-bottom:80px}
-.bottom-nav{display:flex}
-.row{grid-template-columns:1fr}
-.user-table td:nth-child(5),.user-table th:nth-child(5){display:none}
-.premium-card{padding:10px!important}
-input,textarea,select{padding:6px 8px!important;font-size:12px!important}
-.btn-main{padding:8px!important}
-.card-title{font-size:12px!important}
-#member-list-body table{font-size:10px}
-#member-list-body th,#member-list-body td{padding:5px 4px}
-table:not(.user-table){font-size:11px;min-width:100%}
-th,td{padding:6px 4px!important;white-space:nowrap}
-}
-</style>
 
 </head>  <body>  <div id="admin-login-overlay">  
     <div style="background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid var(--cyan); text-align: center; width: 320px;">  
