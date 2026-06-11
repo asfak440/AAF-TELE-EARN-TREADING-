@@ -268,8 +268,8 @@ body {
     width: 85% !important;
     max-width: 340px !important;
     height: 52px;
-    background: rgba(15, 23, 42, 0.95) !important; /* গ্লাস ইফেক্ট */
-    backdrop-filter: blur(10px) !important; /* ব্লার ইফেক্ট */
+    background: var(--card-solid) !important;
+    backdrop-filter: none !important;
     border-radius: 35px !important; /* রাউন্ড শেপ */
     border: 1px solid rgba(255, 255, 255, 0.1) !important; /* বর্ডার */
     display: flex;
