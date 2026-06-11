@@ -264,7 +264,7 @@ body {
     bottom: 20px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 85% !important;
+    width: 90% !important;
     max-width: 360px !important;
     height: 55px;
     background: rgba(15, 23, 42, 0.95);
@@ -274,19 +274,19 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 2000;
 }
 
 
 /* ৩. নেভিগেশন বাটনের আইকন */
 .dock-nav i, .bottom-nav i {
-    font-size: 18px !important;
-    color: #94a3b8;
+    font-size: 20px !important;
+    color: #aaa
     cursor: pointer;
-    padding: 8px 12px;
-    transition: 0.3s;
-    border-radius: 25px;
+    padding: 8px 16px;
+    transition: 0.2s;
+    border-radius: 30px;
 }
 
 /* ৪. হোভার করলে ইফেক্ট */
@@ -297,7 +297,7 @@ body {
 
 /* ৫. একটিভ বাটনের কালার (স্ক্রিনশটের মতো) */
 .dock-nav i.active, .bottom-nav i.active {
-    color: var(--primary) !important;
+    color: #00f2fe !important;
     background: rgba(0, 242, 254, 0.15) !important;
     text-shadow: var(--neon-shadow);
 }
