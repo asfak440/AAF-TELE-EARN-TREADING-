@@ -252,7 +252,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== বটম নেভিগেশন (গ্লাসমরফিজম) ========== */
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
 .dock-container, .bottom-nav-container {
     position: fixed;
     bottom: 20px;
@@ -264,8 +264,12 @@ body {
 }
 
 .dock-nav, .bottom-nav {
-    width: 90%;
-    max-width: 400px;
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    max-width: 400px !important;
     height: 70px;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
@@ -275,6 +279,7 @@ body {
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 2000;
 }
 
 .nav-item {
@@ -471,7 +476,59 @@ label {
     min-height: 100vh;
 }
 
-/* ========== মোবাইল ভিউ (৭৬৮px এর নিচে) ========== */
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
+.dock-container, .bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.dock-nav, .bottom-nav {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    max-width: 400px !important;
+    height: 70px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 35px;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.nav-item {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 10px;
+    text-align: center;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-item i {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.nav-item.active {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+}
+
+/* ========== মোবাইল ভিউ ========== */
 @media (max-width: 768px) {
     .sidebar {
         display: none;
@@ -521,4 +578,4 @@ label {
     .card-title {
         font-size: 12px !important;
     }
-}
+    }
