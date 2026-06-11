@@ -5,60 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Payment History - AAF Master</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Rajdhani:wght@400;600;700&display=swap');
-        
-        :root {
-            --bg: #020617;
-            --glass: rgba(15, 23, 42, 0.85);
-            --border: rgba(255, 255, 255, 0.1);
-            --success: #00ff88;
-            --warning: #ffaa00;
-            --danger: #ff0055;
-            --text-muted: #94a3b8;
-        }
-
-        body {
-            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif;
-            margin: 0; padding: 20px;
-            background-image: radial-gradient(circle at top, rgba(112, 0, 255, 0.1), transparent);
-        }
-
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-        .back-link { color: #fff; text-decoration: none; font-size: 20px; padding: 5px; }
-        .title { font-family: 'Syncopate'; font-size: 16px; color: var(--warning); letter-spacing: 1px; }
-        
-        .section-title {
-            font-family: 'Syncopate'; font-size: 14px; color: var(--success);
-            margin: 20px 0 10px 5px; border-left: 3px solid var(--success); padding-left: 10px;
-        }
-        
-        .history-card {
-            background: var(--glass); border: 1px solid var(--border);
-            border-radius: 18px; padding: 15px; margin-bottom: 12px;
-            display: flex; justify-content: space-between; align-items: center;
-            backdrop-filter: blur(10px);
-        }
-
-        .pay-info b { font-size: 18px; color: var(--success); display: block; font-family: 'Syncopate'; }
-        .pay-info small { color: var(--text-muted); font-size: 12px; }
-
-        .pay-status { text-align: right; }
-        .st-badge { 
-            font-size: 10px; padding: 4px 10px; border-radius: 20px; 
-            font-weight: bold; text-transform: uppercase; display: inline-block;
-            margin-bottom: 5px;
-        }
-        
-        .status-success { background: rgba(0, 255, 136, 0.15); color: var(--success); border: 1px solid var(--success); }
-        .status-pending { background: rgba(255, 170, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
-        .status-rejected { background: rgba(255, 0, 85, 0.15); color: var(--danger); border: 1px solid var(--danger); }
-        
-        .trx-id { font-size: 10px; color: var(--text-muted); display: block; }
-        
-        #loader { text-align: center; padding: 40px; color: var(--text-muted); }
-        .empty-message { text-align: center; padding: 30px; color: var(--text-muted); background: var(--glass); border-radius: 18px; }
-    </style>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
