@@ -264,13 +264,13 @@ body {
     bottom: 20px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 90% !important;
-    max-width: 400px !important;
-    height: 70px;
-    background: var(--card-solid) !important;
-    backdrop-filter: none !important;
-    border-radius: 35px !important;
-    border: 1px solid var(--border);
+    width: 85% !important;
+    max-width: 360px !important;
+    height: 55px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 30px !important;
+    border: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -278,26 +278,78 @@ body {
     z-index: 2000;
 }
 
+
+/* ৩. নেভিগেশন বাটনের আইকন */
+.dock-nav i, .bottom-nav i {
+    font-size: 18px !important;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 8px 12px;
+    transition: 0.3s;
+    border-radius: 25px;
+}
+
+/* ৪. হোভার করলে ইফেক্ট */
+.dock-nav i:hover, .bottom-nav i:hover {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+}
+
+/* ৫. একটিভ বাটনের কালার (স্ক্রিনশটের মতো) */
+.dock-nav i.active, .bottom-nav i.active {
+    color: var(--primary) !important;
+    background: rgba(0, 242, 254, 0.15) !important;
+    text-shadow: var(--neon-shadow);
+}
+
+/* ৬. নেভিগেশন টেক্সট (যেমন: Home, Task ইত্যাদি) */
 .nav-item {
-    color: var(--text-muted);
+    color: #94a3b8;
     text-decoration: none;
-    font-size: 10px;
+    font-size: 9px;
     text-align: center;
     transition: 0.3s;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .nav-item i {
-    font-size: 20px;
+    font-size: 18px;
     display: block;
+}
+
+.nav-item span {
+    font-size: 8px;
 }
 
 .nav-item.active {
     color: var(--primary);
     text-shadow: var(--neon-shadow);
+}
+
+/* ৭. মোবাইলের জন্য */
+@media (max-width: 768px) {
+    .dock-nav, .bottom-nav {
+        width: 92% !important;
+        max-width: 320px !important;
+        height: 50px !important;
+        border-radius: 25px !important;
+    }
+    
+    .dock-nav i, .bottom-nav i {
+        font-size: 16px !important;
+        padding: 5px 10px;
+    }
+    
+    .nav-item {
+        font-size: 7px;
+    }
+    
+    .nav-item i {
+        font-size: 16px;
+    }
 }
 
 /* ========== ইনপুট ফিল্ড ========== */
