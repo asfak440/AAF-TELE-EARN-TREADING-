@@ -1,8 +1,8 @@
 /* ============================================
-   AAF MASTER - কাস্টম মিক্সড স্টাইল
+   AAF MASTER - ফাইনাল স্টাইল v3.0
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
 
 /* ========== রুট ভেরিয়েবল ========== */
 :root {
@@ -31,13 +31,13 @@ body {
     background: var(--bg);
     background-image: var(--bg-gradient);
     color: var(--text-main);
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Hind Siliguri', 'Rajdhani', sans-serif;
     margin: 0;
     padding-bottom: 110px;
     overflow-x: hidden;
 }
 
-/* ========== হেডার (স্ক্রিনশট ১: Task পেজ - স্বচ্ছ + ব্লার) ========== */
+/* ========== হেডার - স্বচ্ছ + ব্লার ========== */
 .nav-header, .header {
     background: rgba(15, 23, 42, 0.9) !important;
     backdrop-filter: blur(25px) !important;
@@ -51,15 +51,13 @@ body {
     border-bottom: 1px solid var(--glass-border);
 }
 
-/* হেডারের লেখা */
-.nav-header h2, .header h2,
-.u-info h2, .u-name-box h2 {
+.nav-header h2, .header h2, .u-info h2, .u-name-box h2 {
     color: var(--primary) !important;
     font-family: 'Syncopate';
     font-size: 14px;
 }
 
-/* ========== কার্ড (স্ক্রিনশট ২: Dashboard - গাঢ় কালো) ========== */
+/* ========== কার্ড - গাঢ় কালো ========== */
 .premium-card, .card, .history-card, .refer-card, 
 .order-form-card, .info-card, .account-item, .stat-card,
 .trade-box, .input-box, .wallet-card {
@@ -104,7 +102,7 @@ body {
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 5px; }
 
-/* ========== বাটন (স্ক্রিনশট ২: Dashboard - নিয়ন) ========== */
+/* ========== বাটন - নিয়ন ========== */
 .action-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -142,7 +140,6 @@ body {
     border-color: rgba(0, 242, 254, 0.3) !important; 
 }
 
-/* সাধারণ বাটন */
 .btn-main, .btn-action, .btn-claim, .submit-btn, .btn-join {
     width: 100%;
     background: linear-gradient(135deg, var(--primary), #0088cc);
@@ -179,7 +176,79 @@ body {
     cursor: pointer;
 }
 
-/* ========== ডক নেভিগেশন (স্ক্রিনশট ২: Dashboard - গাঢ়) ========== */
+/* ========== সাইডবার (এডমিন) - ফিক্সড ========== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: var(--card-solid);
+    border-right: 1px solid var(--border);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar .logo-area {
+    padding: 20px;
+    font-family: 'Syncopate';
+    font-size: 18px;
+    color: var(--primary);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-links {
+    list-style: none;
+    padding: 20px 0;
+}
+
+.nav-links li {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    color: var(--text-muted);
+}
+
+.nav-links li:hover, .nav-links li.active {
+    color: var(--primary);
+    background: rgba(0, 242, 254, 0.08);
+    border-radius: 10px;
+}
+
+/* ========== মেইন কন্টেন্ট ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* ========== পেজ সেকশন কন্ট্রোল ========== */
+.page-section {
+    display: none;
+    width: 100%;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+.main-content .page-section.active {
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
 .dock-container, .bottom-nav-container {
     position: fixed;
     bottom: 20px;
@@ -191,17 +260,22 @@ body {
 }
 
 .dock-nav, .bottom-nav {
-    width: 90%;
-    max-width: 400px;
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    max-width: 400px !important;
     height: 70px;
     background: var(--card-solid) !important;
     backdrop-filter: none !important;
-    border-radius: 35px;
-    border: 1px solid var(--glass-border);
+    border-radius: 35px !important;
+    border: 1px solid var(--border);
     display: flex;
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 2000;
 }
 
 .nav-item {
@@ -336,60 +410,6 @@ label {
     margin: 0 auto;
 }
 
-/* ========== মোবাইল রেস্পন্সিভ ========== */
-@media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; width: 100%; padding: 12px; padding-bottom: 70px; }
-    .action-btn { height: 65px !important; font-size: 8px !important; }
-    .action-btn i { font-size: 16px !important; }
-    .dock-nav, .bottom-nav { height: 55px; }
-    .nav-item i { font-size: 16px; }
-    .nav-item span { font-size: 8px; }
-    .grid-2, .grid-3 { gap: 6px; }
-    .row { grid-template-columns: 1fr; }
-}
-
-/* ========== সাইডবার (এডমিন) ========== */
-.sidebar {
-    width: 260px;
-    background: var(--card-solid);
-    height: 100vh;
-    position: fixed;
-    border-right: 1px solid var(--border);
-    z-index: 100;
-    transition: 0.3s;
-}
-
-.sidebar .logo-area {
-    padding: 20px;
-    font-family: 'Syncopate';
-    font-size: 18px;
-    color: var(--primary);
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-}
-
-.nav-links {
-    list-style: none;
-    padding: 20px 0;
-}
-
-.nav-links li {
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-    color: var(--text-muted);
-}
-
-.nav-links li:hover, .nav-links li.active {
-    color: var(--primary);
-    background: rgba(0, 242, 254, 0.08);
-    border-radius: 10px;
-}
-
 /* ========== হেল্পার ========== */
 .text-center { text-align: center; }
 .text-success { color: var(--active-green); }
@@ -400,58 +420,46 @@ label {
 .mb-2 { margin-bottom: 10px; }
 .hidden { display: none; }
 
-
-
-
-
-/* ========== বাংলা টেক্সট ফিক্স ========== */
-body, .premium-card, .card-title, label, p, span, div, input, textarea, button, li {
-    font-family: 'Segoe UI', 'Hind Siliguri', Tahoma, Geneva, Verdana, sans-serif !important;
-    text-transform: none !important;
-    letter-spacing: normal !important;
-}
-
-/* ইংরেজি হেডারের জন্য আলাদা */
-.nav-header h2, .header h2, .card-title, .btn-main, .action-btn, .nav-item {
-    font-family: 'Syncopate', monospace !important;
-}
-
-/* মোবাইলের জন্য */
+/* ========== মোবাইল রেস্পন্সিভ ========== */
 @media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+    
     .main-content {
         margin-left: 0;
         width: 100%;
         padding: 15px;
+        padding-bottom: 80px;
     }
-}
-
-
-/* ========== পেজ সেকশন কন্ট্রোল ========== */
-.page-section {
-    display: none;
-    width: 100%;
-}
-
-.page-section.active {
-    display: block !important;
-}
-
-/* ========== মেইন কন্টেন্ট ========== */
-.main-content {
-    margin-left: 260px;
-    width: calc(100% - 260px);
-    min-height: 100vh;
-    padding: 20px;
-    position: relative;
-}
-
-/* এনিমেশন */
-.main-content .page-section.active {
-    position: relative;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+    
+    .action-btn {
+        height: 65px !important;
+        font-size: 8px !important;
+    }
+    
+    .action-btn i {
+        font-size: 16px !important;
+    }
+    
+    .dock-nav, .bottom-nav {
+        height: 55px !important;
+        width: 95% !important;
+    }
+    
+    .nav-item i {
+        font-size: 16px;
+    }
+    
+    .nav-item span {
+        font-size: 8px;
+    }
+    
+    .grid-2, .grid-3 {
+        gap: 6px;
+    }
+    
+    .row {
+        grid-template-columns: 1fr;
+    }
+   }
