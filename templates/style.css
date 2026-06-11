@@ -461,17 +461,27 @@ label {
 .mb-2 { margin-bottom: 10px; }
 .hidden { display: none; }
 
-/* ========== মোবাইল রেস্পন্সিভ ========== */
+/* ========== ডেস্কটপ/ট্যাব ভিউ ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 20px;
+    padding-bottom: 80px;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* ========== মোবাইল ভিউ (৭৬৮px এর নিচে) ========== */
 @media (max-width: 768px) {
     .sidebar {
         display: none;
     }
     
     .main-content {
-        margin-left: 0;
-        width: 100%;
-        padding: 15px;
-        padding-bottom: 80px;
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 15px !important;
+        padding-bottom: 80px !important;
     }
     
     .action-btn {
@@ -484,15 +494,16 @@ label {
     }
     
     .dock-nav, .bottom-nav {
+        width: 95% !important;
         height: 55px !important;
     }
     
     .nav-item i {
-        font-size: 16px;
+        font-size: 16px !important;
     }
     
     .nav-item span {
-        font-size: 8px;
+        font-size: 8px !important;
     }
     
     .grid-2, .grid-3 {
@@ -510,4 +521,4 @@ label {
     .card-title {
         font-size: 12px !important;
     }
-   }
+}
