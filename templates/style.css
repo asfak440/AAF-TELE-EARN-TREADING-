@@ -264,17 +264,17 @@ body {
     bottom: 20px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 90% !important;
-    max-width: 360px !important;
-    height: 55px;
+    width: 85% !important;
+    max-width: 340px !important;
+    height: 52px;
     background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 30px !important;
+    backdrop-filter: blur(12px);
+    border-radius: 40px !important;
     border: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     z-index: 2000;
 }
 
@@ -282,7 +282,7 @@ body {
 /* ৩. নেভিগেশন বাটনের আইকন */
 .dock-nav i, .bottom-nav i {
     font-size: 20px !important;
-    color: #aaa
+    color: #aaa;
     cursor: pointer;
     padding: 8px 16px;
     transition: 0.2s;
@@ -306,13 +306,13 @@ body {
 .nav-item {
     color: #94a3b8;
     text-decoration: none;
-    font-size: 9px;
+    font-size: 10px;
     text-align: center;
     transition: 0.3s;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
 }
 
 .nav-item i {
@@ -321,7 +321,7 @@ body {
 }
 
 .nav-item span {
-    font-size: 8px;
+    font-size: 9px;
 }
 
 .nav-item.active {
@@ -329,8 +329,6 @@ body {
     text-shadow: var(--neon-shadow);
 }
 
-/* ৭. মোবাইলের জন্য */
-@media (max-width: 768px) {
     .dock-nav, .bottom-nav {
         width: 92% !important;
         max-width: 320px !important;
@@ -338,19 +336,12 @@ body {
         border-radius: 25px !important;
     }
     
-    .dock-nav i, .bottom-nav i {
-        font-size: 16px !important;
-        padding: 5px 10px;
-    }
-    
-    .nav-item {
-        font-size: 7px;
-    }
+
     
     .nav-item i {
         font-size: 16px;
     }
-}
+
 
 /* ========== ইনপুট ফিল্ড ========== */
 input, textarea, select {
