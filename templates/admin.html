@@ -56,74 +56,71 @@
     </div>
 
     <!-- প্রথম premium-card (সার্ভার কনফিগারেশন) -->
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>
+<div class="premium-card">  
+    <div class="card-title"><i class="fas fa-server"></i> সার্ভার কনফিগারেশন</div>
 
-        <div class="row">
-            <div style="flex:1;">
-                <label>সার্ভার ইনকাম</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="admin_income" style="flex:1;">
-                    <button onclick="clearField('server_income', 'admin_income')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-                </div>
-            </div>
-            <div style="flex:1;">
-                <label>ট্রেডিং ভলিউম</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="admin_trading" style="flex:1;">
-                    <button onclick="clearField('server_trading', 'admin_trading')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <label>এক্সট্রা ইউজার (ফেক ইউজার)</label>
+    <div class="row">
+        <div style="flex:1;">
+            <label>সার্ভার ইনকাম</label>
             <div style="display: flex; gap: 10px;">
-                <input type="number" id="admin_extra_users" value="0">
-                <button onclick="clearField('extra_users', 'admin_extra_users')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+                <input type="text" id="admin_income" style="flex:1;">
+                <button onclick="clearField('server_income', 'admin_income')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
             </div>
         </div>
-
-        <label>বট টোকেন</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="admin_bot_token" style="flex:1;">
-            <button onclick="clearField('bot_token', 'admin_bot_token')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-        </div>
-
-        <label>টেলিগ্রাম চ্যানেল লিংক</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="admin_channel_url" style="flex:1;">
-            <button onclick="clearField('channel_url', 'admin_channel_url')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-        </div>
-
-        <label>চ্যানেল ইউজারনেম (ID)</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="admin_channel_id" style="flex:1;">
-            <button onclick="clearField('channel_id', 'admin_channel_id')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-        </div>
-
-        <label>ড্যাশবোর্ড ব্যানার অ্যাড (HTML/ইমেজ লিংক)</label>
-        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
-            <textarea id="admin_banner_ad_code" rows="3" style="flex:1;"></textarea>
-            <button onclick="clearField('banner_ad_code', 'admin_banner_ad_code')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
-        </div>
-
-        <div class="row">
-            <div>
-                <label>রেফার বোনাস (৳)</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" id="admin_referral_bonus" step="0.5" value="0" placeholder="প্রতি রেফারে কত টাকা দেবেন">
-                    <button onclick="clearField('referral_bonus', 'admin_referral_bonus')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
-                </div>
-                <small>শূন্য (0) দিলে বোনাস বন্ধ থাকবে</small>
+        <div style="flex:1;">
+            <label>ট্রেডিং ভলিউম</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="admin_trading" style="flex:1;">
+                <button onclick="clearField('server_trading', 'admin_trading')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
             </div>
-        
-           <div class="premium-card">  
-           <div class="card-title"><i class="fas fa-bullhorn"></i> গ্লোবাল নোটিশ (Popup Ad)</div>  
-           <textarea id="admin_ad_msg" rows="3" placeholder="নোটিশ এখানে লিখুন..."></textarea>
-        <button class="btn-main" onclick="updateServerSettings()">সার্ভার আপডেট করুন</button>
+        </div>
     </div>
-</div> 
+
+    <div>
+        <label>এক্সট্রা ইউজার (ফেক ইউজার)</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="admin_extra_users" value="0">
+            <button onclick="clearField('extra_users', 'admin_extra_users')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+    </div>
+
+    <label>বট টোকেন</label>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="admin_bot_token" style="flex:1;">
+        <button onclick="clearField('bot_token', 'admin_bot_token')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+    </div>
+
+    <label>টেলিগ্রাম চ্যানেল লিংক</label>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="admin_channel_url" style="flex:1;">
+        <button onclick="clearField('channel_url', 'admin_channel_url')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+    </div>
+
+    <label>চ্যানেল ইউজারনেম (ID)</label>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="admin_channel_id" style="flex:1;">
+        <button onclick="clearField('channel_id', 'admin_channel_id')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+    </div>
+
+    <label>ড্যাশবোর্ড ব্যানার অ্যাড (HTML/ইমেজ লিংক)</label>
+    <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 15px;">
+        <textarea id="admin_banner_ad_code" rows="3" style="flex:1;"></textarea>
+        <button onclick="clearField('banner_ad_code', 'admin_banner_ad_code')" style="background:#da3633; color:white; border:none; padding:8px 12px; border-radius:6px; margin-top: 5px;">🗑️</button>
+    </div>
+
+    <!-- রেফার বোনাস -->
+    <div>
+        <label>রেফার বোনাস (৳)</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="admin_referral_bonus" step="0.5" value="0" placeholder="প্রতি রেফারে কত টাকা দেবেন">
+            <button onclick="clearField('referral_bonus', 'admin_referral_bonus')" style="background:#da3633; color:white; border:none; padding:5px 10px; border-radius:6px;">🗑️</button>
+        </div>
+        <small>শূন্য (0) দিলে বোনাস বন্ধ থাকবে</small>
+    </div>
+
+    <!-- সার্ভার আপডেট বাটন -->
+    <button class="btn-main" onclick="updateServerSettings()" style="margin-top: 15px;">সার্ভার আপডেট করুন</button>
+    </div>
 
     <!-- ১. নতুন টাস্ক যোগ করার ফর্ম -->
 <div id="task" class="page-section">
