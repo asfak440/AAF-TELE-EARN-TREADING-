@@ -1,100 +1,104 @@
 /* ============================================
-   AAF MASTER - ফাইনাল স্টাইল v3.0
+   AAF MASTER - গ্লাসমরফিজম স্টাইল (Dashboard Like)
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
-/* ========== রুট ভেরিয়েবল ========== */
 :root {
     --bg: #020617;
-    --bg-gradient: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
-    --card-solid: #0d111c;
+    --glass-card: rgba(15, 23, 42, 0.75);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --border: rgba(0, 242, 254, 0.15);
-    --primary: #00f2fe;
+    --primary: #00f2fe; 
     --active-green: #00ff88;
     --danger: #ff0055;
     --gold: #ffaa00;
     --text-muted: #94a3b8;
-    --text-main: #f1f5f9;
     --neon-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
 }
 
-/* ========== গ্লোবাল ========== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg);
-    background-image: var(--bg-gradient);
-    color: var(--text-main);
-    font-family: 'Hind Siliguri', 'Rajdhani', sans-serif;
-    margin: 0;
+body { 
+    background: var(--bg); 
+    color: #f1f5f9; 
+    font-family: 'Rajdhani', sans-serif; 
+    margin: 0; 
     padding-bottom: 110px;
+    background-image: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15) 0%, transparent 75%);
     overflow-x: hidden;
 }
 
-/* ========== হেডার - স্বচ্ছ + ব্লার ========== */
-.nav-header, .header {
-    background: rgba(15, 23, 42, 0.9) !important;
-    backdrop-filter: blur(25px) !important;
-    padding: 12px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+/* ========== হেডার ========== */
+.nav-header, .header { 
+    background: rgba(15, 23, 42, 0.9); 
+    backdrop-filter: blur(25px);
+    padding: 5px 15px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; 
     border-bottom: 1px solid var(--glass-border);
 }
 
-.nav-header h2, .header h2, .u-info h2, .u-name-box h2 {
-    color: var(--primary) !important;
-    font-family: 'Syncopate';
-    font-size: 14px;
+.u-info h2 { 
+    font-size: 14px; 
+    margin: 0; 
+    color: var(--primary); 
+    font-family: 'Syncopate'; 
+    text-transform: uppercase; 
 }
 
-/* ========== কার্ড - গাঢ় কালো ========== */
+.u-info span { 
+    font-size: 10px; 
+    color: var(--active-green); 
+    font-weight: bold; 
+}
+
+/* ========== কার্ড (গ্লাসমরফিজম) ========== */
 .premium-card, .card, .history-card, .refer-card, 
 .order-form-card, .info-card, .account-item, .stat-card,
 .trade-box, .input-box, .wallet-card {
-    background: var(--card-solid) !important;
-    backdrop-filter: none !important;
-    border: 1px solid var(--border) !important;
+    background: var(--glass-card) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid var(--glass-border) !important;
     border-radius: 20px !important;
     padding: 15px;
     margin-bottom: 15px;
 }
 
-/* ========== স্ট্যাটাস বক্স ========== */
-.stat-box {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    padding: 12px 5px;
-    text-align: center;
-}
-
-.stat-box i {
-    font-size: 18px;
-    margin-bottom: 5px;
+.card-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
     color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.stat-box h4 {
-    font-size: 8px;
-    color: var(--text-muted);
-    margin: 0;
-    text-transform: uppercase;
+/* ========== স্ট্যাটাস বক্স ========== */
+.stat-box { 
+    text-align: center; 
+    padding: 12px 5px; 
 }
 
-.stat-box p {
-    font-size: 10px;
-    font-family: 'Syncopate';
-    margin: 5px 0 0;
-    color: var(--text-main);
+.stat-box i { 
+    font-size: 18px; 
+    margin-bottom: 5px; 
+    color: var(--primary); 
+}
+
+.stat-box h4 { 
+    font-size: 8px; 
+    color: #94a3b8; 
+    margin: 0; 
+    text-transform: uppercase; 
+}
+
+.stat-box p { 
+    font-size: 10px; 
+    font-family: 'Syncopate'; 
+    margin: 5px 0 0; 
 }
 
 /* ========== গ্রিড ========== */
@@ -102,12 +106,12 @@ body {
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 5px; }
 
-/* ========== বাটন - নিয়ন ========== */
-.action-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 15px 0;
+/* ========== অ্যাকশন গ্রিড ========== */
+.action-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 12px; 
+    margin: 15px 0; 
 }
 
 .action-btn {
@@ -116,9 +120,9 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid var(--glass-border) !important;
-    border-radius: 18px !important;
+    border-radius: 18px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
     cursor: pointer;
     transition: 0.3s;
     font-family: 'Syncopate';
@@ -132,14 +136,15 @@ body {
 
 .btn-dep { 
     color: var(--active-green); 
-    border-color: rgba(0, 255, 136, 0.3) !important; 
+    border-color: rgba(0, 255, 136, 0.3); 
 }
 
 .btn-wit { 
     color: var(--primary); 
-    border-color: rgba(0, 242, 254, 0.3) !important; 
+    border-color: rgba(0, 242, 254, 0.3); 
 }
 
+/* সাধারণ বাটন */
 .btn-main, .btn-action, .btn-claim, .submit-btn, .btn-join {
     width: 100%;
     background: linear-gradient(135deg, var(--primary), #0088cc);
@@ -176,17 +181,16 @@ body {
     cursor: pointer;
 }
 
-/* ========== সাইডবার (এডমিন) - ফিক্সড ========== */
+/* ========== সাইডবার (এডমিন) ========== */
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
     width: 260px;
+    background: var(--glass-card);
+    backdrop-filter: blur(20px);
     height: 100vh;
-    background: var(--card-solid);
-    border-right: 1px solid var(--border);
-    z-index: 1000;
-    overflow-y: auto;
+    position: fixed;
+    border-right: 1px solid var(--glass-border);
+    z-index: 100;
+    transition: 0.3s;
 }
 
 .sidebar .logo-area {
@@ -195,7 +199,7 @@ body {
     font-size: 18px;
     color: var(--primary);
     text-align: center;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .nav-links {
@@ -248,7 +252,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== বটম নেভিগেশন - ফিক্সড ========== */
+/* ========== বটম নেভিগেশন (গ্লাসমরফিজম) ========== */
 .dock-container, .bottom-nav-container {
     position: fixed;
     bottom: 20px;
@@ -260,26 +264,21 @@ body {
 }
 
 .dock-nav, .bottom-nav {
-    position: fixed !important;
-    bottom: 20px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 90% !important;
-    max-width: 400px !important;
+    width: 90%;
+    max-width: 400px;
     height: 70px;
-    background: var(--card-solid) !important;
-    backdrop-filter: none !important;
-    border-radius: 35px !important;
-    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 35px;
+    border: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    z-index: 2000;
 }
 
 .nav-item {
-    color: var(--text-muted);
+    color: #94a3b8;
     text-decoration: none;
     font-size: 10px;
     text-align: center;
@@ -293,6 +292,7 @@ body {
 .nav-item i {
     font-size: 20px;
     display: block;
+    margin-bottom: 4px;
 }
 
 .nav-item.active {
@@ -303,8 +303,8 @@ body {
 /* ========== ইনপুট ফিল্ড ========== */
 input, textarea, select {
     width: 100%;
-    background: #000;
-    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -354,6 +354,12 @@ label {
     text-align: center;
 }
 
+.header-bal-box div { 
+    font-family: 'Syncopate'; 
+    font-size: 12px; 
+    font-weight: bold; 
+}
+
 /* ========== স্ট্যাটাস ডট ========== */
 #status-dot {
     width: 12px;
@@ -363,15 +369,15 @@ label {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.dot-online {
-    background: var(--active-green) !important;
-    box-shadow: 0 0 15px var(--active-green) !important;
-    animation: pulse 2s infinite;
+.dot-online { 
+    background: var(--active-green) !important; 
+    box-shadow: 0 0 15px var(--active-green) !important; 
+    animation: pulse 2s infinite; 
 }
 
-.dot-offline {
-    background: var(--danger) !important;
-    box-shadow: 0 0 15px var(--danger) !important;
+.dot-offline { 
+    background: var(--danger) !important; 
+    box-shadow: 0 0 15px var(--danger) !important; 
 }
 
 @keyframes pulse {
@@ -401,6 +407,41 @@ label {
 
 .join-card.connected {
     border-left-color: var(--active-green);
+}
+
+.btn-join {
+    background: var(--danger);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Rajdhani';
+}
+
+/* ========== একটিভ ইউজার বার ========== */
+#active-user-bar {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid var(--active-green);
+    padding: 10px;
+    border-radius: 12px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 999;
+    backdrop-filter: blur(10px);
+    animation: slideDown 0.5s forwards;
+}
+
+@keyframes slideDown {
+    from { top: -50px; }
+    to { top: 80px; }
 }
 
 /* ========== কন্টেইনার ========== */
@@ -444,7 +485,6 @@ label {
     
     .dock-nav, .bottom-nav {
         height: 55px !important;
-        width: 95% !important;
     }
     
     .nav-item i {
@@ -461,5 +501,13 @@ label {
     
     .row {
         grid-template-columns: 1fr;
+    }
+    
+    .premium-card {
+        padding: 10px !important;
+    }
+    
+    .card-title {
+        font-size: 12px !important;
     }
    }
