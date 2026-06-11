@@ -6,40 +6,203 @@
     <title>Payment History - AAF Master</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: #020617;
+            padding: 20px;
+        }
+        .history-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: transparent;
+        }
+        /* হেডার */
+        .history-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 28px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .back-btn {
+            color: white;
+            font-size: 22px;
+            text-decoration: none;
+            background: rgba(255,255,255,0.05);
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: rgba(0,242,254,0.2);
+        }
+        .history-title {
+            font-family: 'Syncopate';
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #ffaa00;
+            text-shadow: 0 0 6px rgba(255,170,0,0.4);
+        }
+
+        /* টু কলাম লেআউট – পাশাপাশি */
+        .split-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .col {
+            flex: 1;
+            min-width: 260px;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            padding: 18px 16px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+        }
+        .col-title {
+            font-family: 'Syncopate';
+            font-size: 15px;
+            font-weight: 700;
+            color: #00f2fe;
+            margin-bottom: 20px;
+            border-left: 4px solid #00f2fe;
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .col-title i {
+            font-size: 14px;
+        }
+
+        /* কার্ড – স্ক্রিনশটের মতো বক্স */
+        .tx-card {
+            background: #0d111c;
+            border-radius: 20px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            transition: 0.2s;
+        }
+        .tx-card:hover {
+            border-color: #00f2fe;
+            box-shadow: 0 0 12px rgba(0,242,254,0.2);
+        }
+        .left-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .amount {
+            font-size: 22px;
+            font-weight: 800;
+            font-family: 'Syncopate';
+            color: #00ff88;
+            letter-spacing: 0.5px;
+        }
+        .method {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .right-status {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .badge {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 5px 14px;
+            border-radius: 40px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-approved {
+            background: rgba(0, 255, 136, 0.12);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.5);
+        }
+        .badge-pending {
+            background: rgba(255, 170, 0, 0.12);
+            color: #ffaa00;
+            border: 1px solid rgba(255, 170, 0, 0.5);
+        }
+        .badge-rejected {
+            background: rgba(255, 80, 120, 0.12);
+            color: #ff5577;
+            border: 1px solid rgba(255, 80, 120, 0.5);
+        }
+        .date {
+            font-size: 10px;
+            color: #7e8c9f;
+            font-family: monospace;
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 36px 16px;
+            color: #7f8ea3;
+            background: #0a0f1a;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .split-layout { flex-direction: column; }
+            .col { width: 100%; }
+            .amount { font-size: 18px; }
+            .tx-card { padding: 12px; }
+        }
+    </style>
 </head>
 <body>
 
-<div style="max-width: 1000px; margin: 0 auto; padding: 15px;">
-    
-    <!-- হেডার -->
-    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-        <a href="/dashboard" style="color: #fff; text-decoration: none; font-size: 20px;"><i class="fas fa-arrow-left"></i></a>
-        <div style="font-family: 'Syncopate'; font-size: 16px; color: #ffaa00; letter-spacing: 1px;">PAYMENT HISTORY</div>
+<div class="history-wrapper">
+    <!-- হেডার (ব্যাক বাটন সহ) -->
+    <div class="history-header">
+        <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <div class="history-title">PAYMENT HISTORY</div>
     </div>
 
-    <!-- দুই কলাম (পাশাপাশি) - ফোর্সড গ্রিড -->
-    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        
-        <!-- বাম পাশে: DEPOSIT -->
-        <div style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); border-radius: 20px; padding: 15px;">
-            <div style="font-family: 'Syncopate'; font-size: 14px; color: #00f2fe; margin-bottom: 15px; border-left: 3px solid #00f2fe; padding-left: 10px;">
+    <!-- দুই কলাম: বামে ডিপোজিট, ডানে উইথড্র -->
+    <div class="split-layout">
+        <!-- বাম কলাম (ডিপোজিট) -->
+        <div class="col">
+            <div class="col-title">
                 <i class="fas fa-download"></i> DEPOSIT REQUESTS
             </div>
-            <div id="deposits-list">
-                <div style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+            <div id="depositContainer">
+                <div class="empty-msg"><i class="fas fa-spinner fa-spin"></i> Loading deposits...</div>
             </div>
         </div>
 
-        <!-- ডান পাশে: WITHDRAW -->
-        <div style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); border-radius: 20px; padding: 15px;">
-            <div style="font-family: 'Syncopate'; font-size: 14px; color: #00f2fe; margin-bottom: 15px; border-left: 3px solid #00f2fe; padding-left: 10px;">
+        <!-- ডান কলাম (উইথড্র) -->
+        <div class="col">
+            <div class="col-title">
                 <i class="fas fa-upload"></i> WITHDRAWAL REQUESTS
             </div>
-            <div id="withdraws-list">
-                <div style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+            <div id="withdrawContainer">
+                <div class="empty-msg"><i class="fas fa-spinner fa-spin"></i> Loading withdraws...</div>
             </div>
         </div>
-        
     </div>
 </div>
 
@@ -49,90 +212,87 @@ const TG_KEY = "telegram_id";
 
 function getTG(){
     const id = localStorage.getItem(TG_KEY);
-    if(!id) location.href = "/login";
+    if(!id) location.href="/login";
     return id;
 }
 
-function formatDate(dateStr) {
-    if(!dateStr) return 'N/A';
-    let date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function formatDatePretty(dateStr){
+    if(!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 }
 
-function getStatusBadge(status) {
-    if(status === 'approved') {
-        return '<span style="background:rgba(0,255,136,0.15); color:#00ff88; border:1px solid rgba(0,255,136,0.3); padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold;">✅ APPROVED</span>';
-    } else if(status === 'pending') {
-        return '<span style="background:rgba(255,170,0,0.15); color:#ffaa00; border:1px solid rgba(255,170,0,0.3); padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold;">⏳ PENDING</span>';
-    } else if(status === 'rejected') {
-        return '<span style="background:rgba(255,0,85,0.15); color:#ff5555; border:1px solid rgba(255,0,85,0.3); padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold;">❌ REJECTED</span>';
-    }
-    return '<span style="background:rgba(255,170,0,0.15); color:#ffaa00; padding:4px 10px; border-radius:20px; font-size:10px;">⏳ PENDING</span>';
+function getBadgeClass(status){
+    if(status === 'approved') return 'badge-approved';
+    if(status === 'rejected') return 'badge-rejected';
+    return 'badge-pending';
+}
+function getStatusText(status){
+    if(status === 'approved') return '✅ APPROVED';
+    if(status === 'rejected') return '❌ REJECTED';
+    return '⏳ PENDING';
 }
 
-async function loadPaymentHistory(){
+async function loadHistory(){
     const tg = getTG();
-    
     try{
         const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
         const data = await res.json();
-        
-        // ========== DEPOSITS (বাম পাশে) ==========
-        let depositsHtml = '';
+
+        // ----- ডিপোজিট রেন্ডার (বাম কলাম) -----
+        let depositHtml = '';
         if(data.deposits && data.deposits.length > 0){
             data.deposits.forEach(d => {
-                depositsHtml += `
-                    <div style="background:#0d111c; border:1px solid rgba(0,242,254,0.15); border-radius:16px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <b style="font-size:18px; color:#00ff88; display:block;">৳ ${parseFloat(d.amount).toFixed(2)}</b>
-                            <small style="color:#94a3b8; font-size:11px;">${d.method || 'Nagad'}</small>
+                depositHtml += `
+                    <div class="tx-card">
+                        <div class="left-detail">
+                            <div class="amount">৳ ${parseFloat(d.amount).toFixed(2)}</div>
+                            <div class="method">${d.method || 'Nagad'}</div>
                         </div>
-                        <div style="text-align:right;">
-                            <div>${getStatusBadge(d.status)}</div>
-                            <small style="color:#94a3b8; font-size:10px;">${formatDate(d.created_at)}</small>
+                        <div class="right-status">
+                            <span class="badge ${getBadgeClass(d.status)}">${getStatusText(d.status)}</span>
+                            <span class="date">${formatDatePretty(d.created_at)}</span>
                         </div>
                     </div>
                 `;
             });
         } else {
-            depositsHtml = `<div style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-inbox"></i> No deposit requests found.</div>`;
+            depositHtml = `<div class="empty-msg"><i class="fas fa-coins"></i> No deposit requests found.</div>`;
         }
-        
-        // ========== WITHDRAWS (ডান পাশে) ==========
-        let withdrawsHtml = '';
+
+        // ----- উইথড্র রেন্ডার (ডান কলাম) -----
+        let withdrawHtml = '';
         if(data.withdraws && data.withdraws.length > 0){
             data.withdraws.forEach(w => {
-                let number = w.number || w.account_number || 'Unknown';
-                if(number === 'N/A') number = 'Unknown';
-                
-                withdrawsHtml += `
-                    <div style="background:#0d111c; border:1px solid rgba(0,242,254,0.15); border-radius:16px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <b style="font-size:18px; color:#00ff88; display:block;">৳ ${parseFloat(w.amount).toFixed(2)}</b>
-                            <small style="color:#94a3b8; font-size:11px;">To: ${number}</small>
+                let receiver = w.number || w.account_number || 'Unknown';
+                if(receiver === 'N/A') receiver = 'Unknown';
+                withdrawHtml += `
+                    <div class="tx-card">
+                        <div class="left-detail">
+                            <div class="amount">৳ ${parseFloat(w.amount).toFixed(2)}</div>
+                            <div class="method">To: ${receiver}</div>
                         </div>
-                        <div style="text-align:right;">
-                            <div>${getStatusBadge(w.status)}</div>
-                            <small style="color:#94a3b8; font-size:10px;">${formatDate(w.created_at)}</small>
+                        <div class="right-status">
+                            <span class="badge ${getBadgeClass(w.status)}">${getStatusText(w.status)}</span>
+                            <span class="date">${formatDatePretty(w.created_at)}</span>
                         </div>
                     </div>
                 `;
             });
         } else {
-            withdrawsHtml = `<div style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-inbox"></i> No withdrawal requests found.</div>`;
+            withdrawHtml = `<div class="empty-msg"><i class="fas fa-coins"></i> No withdrawal requests found.</div>`;
         }
-        
-        document.getElementById('deposits-list').innerHTML = depositsHtml;
-        document.getElementById('withdraws-list').innerHTML = withdrawsHtml;
-        
-    } catch(e){ 
-        console.error("Payment history error:", e);
-        document.getElementById('deposits-list').innerHTML = '<div style="text-align:center; padding:30px; color:#ff5555;">⚠️ Failed to load</div>';
-        document.getElementById('withdraws-list').innerHTML = '<div style="text-align:center; padding:30px; color:#ff5555;">⚠️ Failed to load</div>';
+
+        document.getElementById('depositContainer').innerHTML = depositHtml;
+        document.getElementById('withdrawContainer').innerHTML = withdrawHtml;
+    } catch(e){
+        console.error(e);
+        document.getElementById('depositContainer').innerHTML = `<div class="empty-msg">⚠️ Failed to load deposits</div>`;
+        document.getElementById('withdrawContainer').innerHTML = `<div class="empty-msg">⚠️ Failed to load withdrawals</div>`;
     }
 }
 
-window.addEventListener('load', loadPaymentHistory);
+window.addEventListener('load', loadHistory);
 </script>
 </body>
 </html>
