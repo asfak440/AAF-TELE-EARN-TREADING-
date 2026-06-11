@@ -252,7 +252,17 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== বটম নেভিগেশন - ফিক্সড (প্রথম স্ক্রিনশটের মতো) ========== */
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
+.dock-container, .bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2000;
+}
+
 .dock-nav, .bottom-nav {
     position: fixed !important;
     bottom: 20px !important;
@@ -260,7 +270,7 @@ body {
     transform: translateX(-50%) !important;
     width: 90% !important;
     max-width: 400px !important;
-    height: 55px;
+    height: 70px;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 35px;
@@ -268,6 +278,7 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     z-index: 2000;
 }
 
@@ -440,18 +451,9 @@ label {
 
 /* ========== কন্টেইনার ========== */
 .container {
-    width: 92%;           /* স্ক্রিনের দুই পাশে ৮% খালি রাখবে */
-    max-width: 500px;     /* ৫শ পিক্সেলের বেশি বড় হবে না */
-    margin: 0 auto;       /* অটোমেটিক মাঝখানে নিয়ে আসবে */
-    padding: 0;
-}
-
-/* এডমিন প্যানেলের কার্ড সেন্টার */
-.premium-card {
-    max-width: 700px;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    width: 100% !important
+    padding: 15px;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 /* ========== হেল্পার ========== */
@@ -464,14 +466,76 @@ label {
 .mb-2 { margin-bottom: 10px; }
 .hidden { display: none; }
 
+/* ========== ডেস্কটপ/ট্যাব ভিউ ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 20px;
+    padding-bottom: 80px;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* ========== বটম নেভিগেশন - ফিক্সড ========== */
+.dock-container, .bottom-nav-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.dock-nav, .bottom-nav {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    max-width: 400px !important;
+    height: 70px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 35px;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.nav-item {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 10px;
+    text-align: center;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-item i {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.nav-item.active {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+}
+
 /* ========== মোবাইল ভিউ ========== */
 @media (max-width: 768px) {
     .sidebar {
-        display: none !important;
+        display: none;
     }
     
     .main-content {
-        margin-left: 0 !important; /* এটি ০ করা জরুরি, নতুবা মোবাইলে কন্টেন্ট ডানে সরে থাকে */
+        margin-left: 0 !important;
         width: 100% !important;
         padding: 15px !important;
         padding-bottom: 80px !important;
@@ -480,62 +544,38 @@ label {
     .action-btn {
         height: 65px !important;
         font-size: 8px !important;
-        background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    .action-btn i { font-size: 16px !important; }
-
+    .action-btn i {
+        font-size: 16px !important;
+    }
+    
     .dock-nav, .bottom-nav {
         width: 95% !important;
         height: 55px !important;
     }
     
-    .nav-item i { font-size: 16px !important; }
-    .nav-item span { font-size: 8px !important; }
+    .nav-item i {
+        font-size: 16px !important;
+    }
     
-    .grid-2, .grid-3 { gap: 6px; }
-    .row { grid-template-columns: 1fr; }
+    .nav-item span {
+        font-size: 8px !important;
+    }
+    
+    .grid-2, .grid-3 {
+        gap: 6px;
+    }
+    
+    .row {
+        grid-template-columns: 1fr;
+    }
     
     .premium-card {
-        padding: 20px !important;
-        margin: 0 10px 15px 10px !important;
-        width: auto !important;
+        padding: 10px !important;
     }
     
-    .card-title { font-size: 12px !important; }
-
-    .action-grid {
-        grid-template-columns: 1fr 1fr !important; /* মোবাইলে ২ কলাম */
+    .card-title {
+        font-size: 12px !important;
     }
-    
-    .container {
-        width: 95% !important;
-        margin: 0 auto !important;
-    }
-}
-
-/* ========== ডেস্কটপ ভিউ (৭৬৯ পিক্সেলের উপরে) ========== */
-@media (min-width: 769px) {
-    .container {
-        max-width: 900px !important;
-        margin: 20px auto !important;
-    }
-
-    .action-grid {
-        grid-template-columns: repeat(4, 1fr) !important; /* ডেস্কটপে ৪টি বাটন */
-    }
-
-    .main-content {
-        margin-left: 260px !important; /* ডেস্কটপে সাইডবারের জায়গা */
-        width: calc(100% - 260px) !important;
-        padding: 40px !important;
-    }
-}
-
-/* একশন বাটন ক্লিক ইফেক্ট (সব স্ক্রিনের জন্য) */
-.action-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: var(--primary) !important;
-}
+   }
