@@ -431,3 +431,44 @@ label {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ========== পেজ সেকশন কন্ট্রোল (যোগ করতে হবে) ========== */
+.page-section {
+    display: none;
+    width: 100%;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+/* ========== মেইন কন্টেন্ট পজিশনিং ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* ========== বাংলা টেক্সট ফিক্স ========== */
+body, .premium-card, .card-title, label, p, span, div, input, textarea, button, li {
+    font-family: 'Segoe UI', 'Hind Siliguri', Tahoma, Geneva, Verdana, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+/* ইংরেজি হেডারের জন্য আলাদা */
+.nav-header h2, .header h2, .card-title, .btn-main, .action-btn, .nav-item {
+    font-family: 'Syncopate', monospace !important;
+}
+
+/* মোবাইলের জন্য */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+    }
+}
