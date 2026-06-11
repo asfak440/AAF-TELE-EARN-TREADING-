@@ -325,6 +325,17 @@ body {
     font-size: 9px;
 }
 
+/* ইনপুট ফিল্ডের ব্যাকগ্রাউন্ড ও টেক্সট */
+input, textarea, select {
+    background: #0a0f1a !important;
+    color: #e0e0e0 !important;
+    border: 1px solid rgba(0, 242, 254, 0.2) !important;
+    border-radius: 14px;
+    padding: 12px;
+    outline: none;
+}
+
+/* ফোকাস করার সময় ইফেক্ট (এটা রাখুন, রিমুভ করবেন না) */
 input:focus, textarea:focus, select:focus {
     border-color: var(--primary);
     box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
@@ -334,7 +345,7 @@ label {
     font-size: 12px;
     margin-bottom: 5px;
     display: inline-block;
-    color: var(--text-muted);
+    color: #9ca3af !important;
 }
 
 /* ========== টেবিল ========== */
