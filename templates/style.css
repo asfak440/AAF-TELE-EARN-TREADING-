@@ -326,7 +326,7 @@ body {
 }
 
 .nav-item.active {
-    color: #00f2fe !important; /* আপনার primary কালার */
+    color: #aaa !important; /* আপনার primary কালার */
     text-shadow: 0 0 15px rgba(0, 242, 254, 0.4); /* গ্লো ইফেক্ট */
 }
 
