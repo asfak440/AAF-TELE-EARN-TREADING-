@@ -325,10 +325,7 @@ body {
     font-size: 9px;
 }
 
-.nav-item.active {
-    color: #aaa !important; /* আপনার primary কালার */
-    text-shadow: 0 0 15px rgba(0, 242, 254, 0.4); /* গ্লো ইফেক্ট */
-}
+
 
     .dock-nav, .bottom-nav {
         width: 92% !important;
@@ -336,7 +333,10 @@ body {
         height: 50px !important;
         border-radius: 25px !important;
     }
-    
+    .nav-item.active {
+    color: var(--primary);
+    text-shadow: var(--neon-shadow);
+    }
 
     
     .nav-item i {
