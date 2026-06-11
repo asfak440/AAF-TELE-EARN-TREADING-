@@ -325,20 +325,9 @@ body {
     font-size: 9px;
 }
 
-
-
-    .
-
-/* এটি সব ইনপুট বক্সের চারপাশে উজ্জ্বল বর্ডার এবং গ্লো দেবে */
-input, textarea, select {
-    width: 100%;
-    background: #000 !important;
-    border: 1px solid var(--primary) !important; /* উজ্জ্বল সাইন বর্ডার */
-    box-shadow: 0 0 8px rgba(0, 242, 254, 0.3) !important; /* উজ্জ্বল আভা */
-    border-radius: 14px;
-    padding: 12px;
-    color: #fff;
-    outline: none;
+input:focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
 }
 
 label {
