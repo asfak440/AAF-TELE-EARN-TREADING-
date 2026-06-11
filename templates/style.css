@@ -440,9 +440,10 @@ label {
     background: var(--card-solid) !important;
     border: 1px solid var(--border) !important;
     border-radius: 20px !important;
-    padding: 20px !important; /* ভেতরের বক্সের গ্যাপ ঠিক রাখতে */
+    padding: 20px !important;
     margin-bottom: 20px !important;
     width: 100% !important;
+    color: #d1d5db !important;  /* ← এই লাইনটি যোগ করুন */
 }
 
 /* ========== হেল্পার ========== */
@@ -543,6 +544,7 @@ label {
     border-radius: 16px !important;
     padding: 15px !important;
     margin-bottom: 12px !important;
+    color: #d1d5db !important;
 }
 
 /* পরিমাণের কালার */
@@ -573,4 +575,22 @@ label {
 .payment-table td {
     padding: 10px;
     border-bottom: 1px solid #2d3a5e;
+}
+
+/* ========== টেক্সট কন্ট্রাস্ট ফিক্স ========== */
+
+/* প্লেসহোল্ডারের রং */
+::placeholder {
+    color: #5a6e7c !important;
+    opacity: 1;
+}
+
+/* ছোট টেক্সট (small) */
+small {
+    color: #7e8c9e !important;
+}
+
+/* হেল্পার টেক্সট */
+.text-muted, .card-title {
+    color: #9ca3af !important;
 }
