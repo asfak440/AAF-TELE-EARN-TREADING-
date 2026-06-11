@@ -399,3 +399,35 @@ label {
 .mt-2 { margin-top: 10px; }
 .mb-2 { margin-bottom: 10px; }
 .hidden { display: none; }
+
+
+
+/* ========== পেজ সেকশন কন্ট্রোল (যোগ করতে হবে) ========== */
+.page-section {
+    display: none;
+    width: 100%;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+/* ========== মেইন কন্টেন্ট (যোগ করতে হবে) ========== */
+.main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* মেইন কন্টেন্টের ভিতরে একটিভ সেকশন ঠিক রাখা */
+.main-content .page-section.active {
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
