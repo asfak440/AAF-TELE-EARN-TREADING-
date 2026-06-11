@@ -28,6 +28,12 @@ function getTG(){
     return id;
 }
 
+function formatDate(dateStr) {
+    if(!dateStr) return 'N/A';
+    let date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 async function loadPaymentHistory(){
     const tg = getTG();
     const container = document.getElementById('payment-history-container');
@@ -37,66 +43,94 @@ async function loadPaymentHistory(){
         const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
         const data = await res.json();
         
-        let html = '';
+        let depositsHtml = '';
+        let withdrawsHtml = '';
         
-        // Deposit Section
-        html += `<div class="section-title"><i class="fas fa-download"></i> DEPOSIT REQUESTS</div>`;
+        // Deposit Section Content
         if(data.deposits && data.deposits.length > 0){
             data.deposits.forEach(d => {
                 let statusClass = '';
-                if(d.status === 'approved') statusClass = 'status-success';
-                else if(d.status === 'pending') statusClass = 'status-pending';
-                else if(d.status === 'rejected') statusClass = 'status-rejected';
-                else statusClass = 'status-pending';
+                let statusText = '';
+                if(d.status === 'approved') {
+                    statusClass = 'status-success';
+                    statusText = '✅ APPROVED';
+                } else if(d.status === 'pending') {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                } else if(d.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = '❌ REJECTED';
+                }
                 
-                html += `
+                depositsHtml += `
                     <div class="history-card">
                         <div class="pay-info">
                             <b>৳ ${parseFloat(d.amount).toFixed(2)}</b>
                             <small>${d.method || 'Nagad'}</small>
                         </div>
                         <div class="pay-status">
-                            <div class="st-badge ${statusClass}">${d.status.toUpperCase()}</div>
-                            <small class="trx-id">${d.trx || d.created_at?.slice(0,10) || ''}</small>
+                            <div class="st-badge ${statusClass}">${statusText}</div>
+                            <small class="trx-id">${d.trx || formatDate(d.created_at)}</small>
                         </div>
                     </div>
                 `;
             });
         } else {
-            html += `<div class="empty-message"><i class="fas fa-history"></i> No deposit requests found.</div>`;
+            depositsHtml = `<div class="empty-message"><i class="fas fa-history"></i> No deposit requests found.</div>`;
         }
         
-        // Withdraw Section
-        html += `<div class="section-title"><i class="fas fa-upload"></i> WITHDRAWAL REQUESTS</div>`;
+        // Withdraw Section Content
         if(data.withdraws && data.withdraws.length > 0){
             data.withdraws.forEach(w => {
                 let statusClass = '';
-                if(w.status === 'approved') statusClass = 'status-success';
-                else if(w.status === 'pending') statusClass = 'status-pending';
-                else if(w.status === 'rejected') statusClass = 'status-rejected';
-                else statusClass = 'status-pending';
+                let statusText = '';
+                if(w.status === 'approved') {
+                    statusClass = 'status-success';
+                    statusText = '✅ APPROVED';
+                } else if(w.status === 'pending') {
+                    statusClass = 'status-pending';
+                    statusText = '⏳ PENDING';
+                } else if(w.status === 'rejected') {
+                    statusClass = 'status-rejected';
+                    statusText = '❌ REJECTED';
+                }
                 
-                html += `
+                withdrawsHtml += `
                     <div class="history-card">
                         <div class="pay-info">
                             <b>৳ ${parseFloat(w.amount).toFixed(2)}</b>
-                            <small>To: ${w.number}</small>
+                            <small>To: ${w.number || w.account_number || 'N/A'}</small>
                         </div>
                         <div class="pay-status">
-                            <div class="st-badge ${statusClass}">${w.status.toUpperCase()}</div>
-                            <small class="trx-id">${w.created_at?.slice(0,10) || ''}</small>
+                            <div class="st-badge ${statusClass}">${statusText}</div>
+                            <small class="trx-id">${formatDate(w.created_at)}</small>
                         </div>
                     </div>
                 `;
             });
         } else {
-            html += `<div class="empty-message"><i class="fas fa-history"></i> No withdrawal requests found.</div>`;
+            withdrawsHtml = `<div class="empty-message"><i class="fas fa-history"></i> No withdrawal requests found.</div>`;
         }
         
-        container.innerHTML = html;
+        // Two Column Layout
+        const finalHtml = `
+            <div class="two-columns">
+                <div class="column">
+                    <div class="section-title"><i class="fas fa-download"></i> DEPOSIT REQUESTS</div>
+                    ${depositsHtml}
+                </div>
+                <div class="column">
+                    <div class="section-title"><i class="fas fa-upload"></i> WITHDRAWAL REQUESTS</div>
+                    ${withdrawsHtml}
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = finalHtml;
+        
     } catch(e){ 
         console.error("Payment history error:", e);
-        container.innerHTML = '<div class="empty-message">Failed to load data. Try again later.</div>';
+        container.innerHTML = '<div class="empty-message">⚠️ Failed to load data. Try again later.</div>';
     }
 }
 
