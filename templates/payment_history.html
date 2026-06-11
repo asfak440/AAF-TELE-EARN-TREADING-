@@ -6,9 +6,11 @@
     <title>Payment History - AAF Master</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
+    
 </head>
 <body>
 
+<div class="payment-page">
     <div class="header">
         <a href="/dashboard" class="back-link"><i class="fas fa-arrow-left"></i></a>
         <div class="title">PAYMENT HISTORY</div>
@@ -17,6 +19,7 @@
     <div id="payment-history-container">
         <div id="loader"><i class="fas fa-circle-notch fa-spin"></i> Loading Data...</div>
     </div>
+</div>
 
 <script>
 const API = window.location.origin;
@@ -31,7 +34,7 @@ function getTG(){
 function formatDate(dateStr) {
     if(!dateStr) return 'N/A';
     let date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 async function loadPaymentHistory(){
@@ -43,98 +46,5 @@ async function loadPaymentHistory(){
         const res = await fetch(`${API}/api/user/payments/${tg}`, { credentials:"include" });
         const data = await res.json();
         
-        let depositsHtml = '';
-        let withdrawsHtml = '';
-        
-        // Deposit Section Content
-        if(data.deposits && data.deposits.length > 0){
-            data.deposits.forEach(d => {
-                let statusClass = '';
-                let statusText = '';
-                if(d.status === 'approved') {
-                    statusClass = 'status-success';
-                    statusText = '✅ APPROVED';
-                } else if(d.status === 'pending') {
-                    statusClass = 'status-pending';
-                    statusText = '⏳ PENDING';
-                } else if(d.status === 'rejected') {
-                    statusClass = 'status-rejected';
-                    statusText = '❌ REJECTED';
-                }
-                
-                depositsHtml += `
-                    <div class="history-card">
-                        <div class="pay-info">
-                            <b>৳ ${parseFloat(d.amount).toFixed(2)}</b>
-                            <small>${d.method || 'Nagad'}</small>
-                        </div>
-                        <div class="pay-status">
-                            <div class="st-badge ${statusClass}">${statusText}</div>
-                            <small class="trx-id">${d.trx || formatDate(d.created_at)}</small>
-                        </div>
-                    </div>
-                `;
-            });
-        } else {
-            depositsHtml = `<div class="empty-message"><i class="fas fa-history"></i> No deposit requests found.</div>`;
-        }
-        
-        // Withdraw Section Content
-        if(data.withdraws && data.withdraws.length > 0){
-            data.withdraws.forEach(w => {
-                let statusClass = '';
-                let statusText = '';
-                if(w.status === 'approved') {
-                    statusClass = 'status-success';
-                    statusText = '✅ APPROVED';
-                } else if(w.status === 'pending') {
-                    statusClass = 'status-pending';
-                    statusText = '⏳ PENDING';
-                } else if(w.status === 'rejected') {
-                    statusClass = 'status-rejected';
-                    statusText = '❌ REJECTED';
-                }
-                
-                withdrawsHtml += `
-                    <div class="history-card">
-                        <div class="pay-info">
-                            <b>৳ ${parseFloat(w.amount).toFixed(2)}</b>
-                            <small>To: ${w.number || w.account_number || 'N/A'}</small>
-                        </div>
-                        <div class="pay-status">
-                            <div class="st-badge ${statusClass}">${statusText}</div>
-                            <small class="trx-id">${formatDate(w.created_at)}</small>
-                        </div>
-                    </div>
-                `;
-            });
-        } else {
-            withdrawsHtml = `<div class="empty-message"><i class="fas fa-history"></i> No withdrawal requests found.</div>`;
-        }
-        
-        // Two Column Layout
-        const finalHtml = `
-            <div class="two-columns">
-                <div class="column">
-                    <div class="section-title"><i class="fas fa-download"></i> DEPOSIT REQUESTS</div>
-                    ${depositsHtml}
-                </div>
-                <div class="column">
-                    <div class="section-title"><i class="fas fa-upload"></i> WITHDRAWAL REQUESTS</div>
-                    ${withdrawsHtml}
-                </div>
-            </div>
-        `;
-        
-        container.innerHTML = finalHtml;
-        
-    } catch(e){ 
-        console.error("Payment history error:", e);
-        container.innerHTML = '<div class="empty-message">⚠️ Failed to load data. Try again later.</div>';
-    }
-}
-
-window.addEventListener('load', loadPaymentHistory);
-</script>
 </body>
 </html>
