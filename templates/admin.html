@@ -915,21 +915,54 @@ async function loadLivePrice(){
 setInterval(loadLivePrice, 2000);
     
 /* ================= TAB ================= */
-function openTab(el){
-  const tab = el.getAttribute("data-tab");
-
-  document.querySelectorAll('.page-section')
-    .forEach(s=>s.classList.remove('active'));
-
-  document.querySelectorAll('[data-tab]')
-    .forEach(b=>b.classList.remove('active'));
-
-  document.getElementById(tab)?.classList.add('active');
-  document.querySelectorAll(`[data-tab="${tab}"]`)
-    .forEach(b=>b.classList.add('active'));
-}
-
+function openTab(element) {
+    // এলিমেন্ট থেকে data-tab অ্যাট্রিবিউট নেওয়া
+    let tab = element.getAttribute("data-tab");
     
+    // যদি element টি li হয় এবং data-tab না থাকে, তাহলে তার child থেকে নেওয়া
+    if (!tab && element.tagName === 'LI') {
+        tab = element.getAttribute("data-tab");
+    }
+    
+    // যদি element টি i হয়, তাহলে তার parent থেকে নেওয়া
+    if (!tab && element.tagName === 'I') {
+        const parent = element.parentElement;
+        if (parent) {
+            tab = parent.getAttribute("data-tab");
+            if (!tab) tab = parent.getAttribute("data-tab");
+        }
+    }
+    
+    if (!tab) {
+        console.error("No data-tab found", element);
+        return;
+    }
+    
+    console.log("Switching to tab:", tab);  // ডিবাগ লাইন
+    
+    // সব সেকশন লুকান
+    document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // সব নেভিগেশন আইটেম থেকে active ক্লাস সরান
+    document.querySelectorAll('[data-tab]').forEach(nav => {
+        nav.classList.remove('active');
+    });
+    
+    // সিলেক্টেড সেকশন দেখান
+    const selectedSection = document.getElementById(tab);
+    if (selectedSection) {
+        selectedSection.classList.add('active');
+    } else {
+        console.error("Section not found:", tab);
+    }
+    
+    // সব নেভিগেশন এলিমেন্টে active ক্লাস যোগ করুন যাদের data-tab মিলে
+    document.querySelectorAll(`[data-tab="${tab}"]`).forEach(nav => {
+        nav.classList.add('active');
+    });
+}
 
     // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
 // ========== FIXED: loadAdminStats (removed missing fields) ==========
