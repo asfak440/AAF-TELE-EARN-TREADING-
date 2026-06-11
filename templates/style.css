@@ -260,7 +260,7 @@ body {
     transform: translateX(-50%) !important;
     width: 90% !important;
     max-width: 400px !important;
-    height: 70px;
+    height: 55px;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 35px;
@@ -447,9 +447,10 @@ label {
 
 /* এডমিন প্যানেলের কার্ড সেন্টার */
 .premium-card {
-    max-width: 800px;
+    max-width: 700px;
     margin-left: auto !important;
     margin-right: auto !important;
+    width: 100% !important
 }
 
 /* ========== হেল্পার ========== */
@@ -469,8 +470,8 @@ label {
     }
     
     .main-content {
-        margin-left: 0 !important;
-        width: 100% !important;
+        margin-left: 260px !important;
+        width: calc(100% - 260px) !important;
         padding: 15px !important;
         padding-bottom: 80px !important;
     }
