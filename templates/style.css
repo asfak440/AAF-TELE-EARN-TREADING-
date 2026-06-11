@@ -57,7 +57,7 @@ body {
     font-size: 14px;
 }
 
-//* ========== গ্লাসমরফিজম ইফেক্ট (ওভাররাইড) ========== */
+/* ========== গ্লাসমরফিজম ইফেক্ট (ওভাররাইড) ========== */
 .premium-card, .card, .history-card, .refer-card, 
 .order-form-card, .info-card, .account-item, .stat-card,
 .trade-box, .input-box, .wallet-card {
@@ -327,39 +327,18 @@ body {
 
 
 
-    .dock-nav, .bottom-nav {
-        width: 92% !important;
-        max-width: 320px !important;
-        height: 50px !important;
-        border-radius: 25px !important;
-    }
-    .nav-item.active {
-    color: var(--primary);
-    text-shadow: var(--neon-shadow);
-    }
+    .
 
-    
-    .nav-item i {
-        font-size: 16px;
-    }
-
-
-/* ========== ইনপুট ফিল্ড ========== */
+/* এটি সব ইনপুট বক্সের চারপাশে উজ্জ্বল বর্ডার এবং গ্লো দেবে */
 input, textarea, select {
     width: 100%;
-    background: #000;
-    border: 1px solid var(--border);
+    background: #000 !important;
+    border: 1px solid var(--primary) !important; /* উজ্জ্বল সাইন বর্ডার */
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.3) !important; /* উজ্জ্বল আভা */
     border-radius: 14px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
+    padding: 12px;
     color: #fff;
-    font-size: 13px;
     outline: none;
-}
-
-input, textarea, select {
-    border: 1px solid var(--primary); /* সরাসরি সাইন বর্ডার */
-    box-shadow: 0 0 5px rgba(0, 242, 254, 0.3); /* স্থায়ী গ্লো */
 }
 
 label {
@@ -447,11 +426,23 @@ label {
     border-left-color: var(--active-green);
 }
 
-/* ========== কন্টেইনার ========== */
+
+/* কন্টেইনার সব পেজে এক সাইজ রাখতে */
 .container {
     padding: 15px;
-    max-width: 500px;
-    margin: 0 auto;
+    max-width: 600px !important; /* স্ক্রিনশটের মতো চওড়া করার জন্য */
+    margin: 0 auto !important;
+    width: 100% !important;
+}
+
+/* প্রিমিয়াম কার্ডের স্টাইল যা বক্সগুলোকে ধারণ করে */
+.premium-card {
+    background: var(--card-solid) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 20px !important;
+    padding: 20px !important; /* ভেতরের বক্সের গ্যাপ ঠিক রাখতে */
+    margin-bottom: 20px !important;
+    width: 100% !important;
 }
 
 /* ========== হেল্পার ========== */
@@ -508,7 +499,6 @@ label {
     }
    }
 
-/* ========== পেমেন্ট হিস্টরি পেজের জন্য কালার ========== */
 
 /* স্ট্যাটাস ব্যাজ - সফল/অনুমোদিত */
 .status-success, .status-approved, .approved {
