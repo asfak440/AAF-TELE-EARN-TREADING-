@@ -267,10 +267,10 @@ body {
     width: 85% !important;
     max-width: 340px !important;
     height: 52px;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(12px);
-    border-radius: 40px !important;
-    border: 1px solid var(--glass-border);
+    background: rgba(15, 23, 42, 0.95) !important; /* গ্লাস ইফেক্ট */
+    backdrop-filter: blur(10px) !important; /* ব্লার ইফেক্ট */
+    border-radius: 35px !important; /* রাউন্ড শেপ */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* বর্ডার */
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -325,8 +325,8 @@ body {
 }
 
 .nav-item.active {
-    color: var(--primary);
-    text-shadow: var(--neon-shadow);
+    color: #00f2fe !important; /* আপনার primary কালার */
+    text-shadow: 0 0 15px rgba(0, 242, 254, 0.4); /* গ্লো ইফেক্ট */
 }
 
     .dock-nav, .bottom-nav {
