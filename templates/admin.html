@@ -817,13 +817,6 @@ function escapeHtml(str) {
     .catch(e => console.error(e));
     }
 
-// ========== পেজ লোড ==========
-document.addEventListener('DOMContentLoaded', () => {
-    loadAdminTasks();
-    loadMilestones();
-});
-
-
 
 /* ================= ADS ============ধোন===== */
 async function loadAds(){
@@ -1471,9 +1464,42 @@ async function updatePopupSettings() {
         alert('❌ সার্ভার এরর: ' + err.message);
     }
 }
+
+
+    // ========== একটি মাত্র DOMContentLoaded ইভেন্ট (সবকিছু একসাথে) ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 DOM fully loaded");
     
-/* ================= TAB ================= */
-function openTab(element) {
+    // 1. টাস্ক সেকশন visible কিনা চেক করুন
+    const taskSection = document.getElementById('task');
+    if (taskSection && !taskSection.classList.contains('active')) {
+        console.log("⚠️ Task section not active, activating now...");
+        taskSection.classList.add('active');
+    }
+    
+    // 2. টাস্ক প্রুফ বক্স টগল (যদি এলিমেন্ট থাকে)
+    const approvalCheck = document.getElementById('task_requires_approval');
+    if(approvalCheck) {
+        approvalCheck.addEventListener('change', function() {
+            const box = document.getElementById('proof_instruction_box');
+            if(box) box.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // 3. টাস্ক লিস্ট লোড করুন (যদি window.load ইতিমধ্যে না করে)
+    // নোট: window.addEventListener('load') এ initAdmin() কল করলে, এখানে আর দরকার নেই
+    if (typeof loadAdminTasks === 'function') {
+        // ছোট ডেলেতে কল করুন, কারণ window.load পরে রান করে
+        setTimeout(() => {
+            loadAdminTasks();
+        }, 100);
+    } else {
+        console.error("❌ loadAdminTasks function not found!");
+    }
+});
+    
+    /* ================= TAB ================= */
+    function openTab(element) {
     // এলিমেন্ট থেকে data-tab অ্যাট্রিবিউট নেওয়া
     let tab = element.getAttribute("data-tab");
     
@@ -1520,8 +1546,7 @@ function openTab(element) {
     document.querySelectorAll(`[data-tab="${tab}"]`).forEach(nav => {
         nav.classList.add('active');
     });
-}
-
+    }
     
 
     async function clearField(fieldName, elementId) {
@@ -1538,18 +1563,18 @@ function openTab(element) {
         alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
     } catch(e) { alert('সার্ভার এরর'); }
     }
-
-// অন্যান্য ফাংশন (যেগুলো ডামি ছিল না, সেগুলো রেখে দিতে পারেন)
-async function updateTaskRules() { 
+    
+    // অন্যান্য ফাংশন (যেগুলো ডামি ছিল না, সেগুলো রেখে দিতে পারেন)
+    async function updateTaskRules() { 
     alert('টাস্ক রুলস আপডেট (ব্যাকএন্ডে যোগ করতে হবে)');
 }
 function togglePopupAd() { console.log('toggle popup'); }
 function sendPushNotification() { alert('নোটিফিকেশন ফিচার আপডেট হবে'); }  
-
+    
 
 
     // ========== মোবাইল টাচ ফিক্স এবং অনুপস্থিত ফাংশন ==========
-document.querySelectorAll('.bottom-nav i').forEach(icon => {
+    document.querySelectorAll('.bottom-nav i').forEach(icon => {
     icon.addEventListener('click', function() {
         let tab = this.getAttribute('data-tab');
         if (!tab) return;
@@ -1566,23 +1591,7 @@ document.querySelectorAll('.bottom-nav i').forEach(icon => {
     });
 });
 
-
-
-// টাস্ক প্রুফ বক্স টগল (ঠিক করা)
-window.addEventListener('DOMContentLoaded', () => {
-    const approvalCheck = document.getElementById('task_requires_approval');
-    if(approvalCheck) {
-        approvalCheck.addEventListener('change', function() {
-            const box = document.getElementById('proof_instruction_box');
-            if(box) box.style.display = this.checked ? 'block' : 'none';
-        });
-    }
-    
-    // মোবাইলে প্রথমবার ইউজার লিস্ট লোড করবেন না (হাতে ক্লিক করলেই হবে)
-    // loadUsers() কল করা হবে toggleUserList() এর মাধ্যমে
-});
-
-async function updateAdminInfo() {
+    async function updateAdminInfo() {
     const methodInput = document.getElementById('dep-method');
     const infoBox = document.getElementById('admin-payment-info');
     
@@ -1619,9 +1628,43 @@ const depMethod = document.getElementById('dep-method');
 if (depMethod) {
     depMethod.addEventListener('change', updateAdminInfo);
 }
-
-// পেজ লোডে এবং মেথড চেঞ্জে কল করুন
-document.getElementById('dep-method')?.addEventListener('change', updateAdminInfo);
+    
+    // ফাংশনগুলোকে গ্লোবাল স্কোপে নিশ্চিত করুন
+    window.loadAdminTasks = loadAdminTasks;
+    window.toggleTask = toggleTask;
+    window.deleteTask = deleteTask;
+    window.createNewTask = createNewTask;
+    window.saveGlobalDefaults = saveGlobalDefaults;
+    window.saveMilestone = saveMilestone;
+    window.loadMilestones = loadMilestones;
+    window.deleteMilestone = deleteMilestone;
+    window.loadUsers = loadUsers;
+    window.copyToClipboard = copyToClipboard;
+    window.toggleUserList = toggleUserList;
+    window.updateUserBalance = updateUserBalance;
+    window.loadWithdraws = loadWithdraws;
+    window.approveWithdraw = approveWithdraw;
+    window.rejectWithdraw = rejectWithdraw;
+    window.loadPendingDeposits = loadPendingDeposits;
+    window.approveDeposit = approveDeposit;
+    window.rejectDeposit = rejectDeposit;
+    window.loadPendingClaims = loadPendingClaims;
+    window.processClaim = processClaim;
+    window.loadAdminStats = loadAdminStats;
+    window.updateServerSettings = updateServerSettings;
+    window.updateWallets = updateWallets;
+    window.publishGlobalAd = publishGlobalAd;
+    window.loadLivePrice = loadLivePrice;
+    window.forceMarketPrice = forceMarketPrice;
+    window.setGlobalFee = setGlobalFee;
+    window.saveVolatilitySettings = saveVolatilitySettings;
+    window.loadOrderRates = loadOrderRates;
+    window.saveOrderRates = saveOrderRates;
+    window.loadPopupData = loadPopupData;
+    window.closePopup = closePopup;
+    window.updatePopupSettings = updatePopupSettings;
+    window.openTab = openTab;
+    window.clearField = clearField;
 </script>    
 </body>
 </html>
