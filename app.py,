@@ -1,3 +1,390 @@
+
+# ================= DB =================
+client = MongoClient(MONGO_URI)
+db_mongo = client["aaf_tele_earn_db"]
+users_col = db_mongo["users"]
+settings_col = db_mongo["settings"]
+admin_config_col = db_mongo["admin_config"]
+deposits_col = db_mongo["deposits"]
+withdraws_col = db_mongo["withdraws"]
+trades_col = db_mongo["trades"]
+task_claims_col = db_mongo["task_claims"]
+task_orders_col = db_mongo["task_orders"]
+milestones_col = db_mongo["milestones"] 
+user_milestone_claims_col = db_mongo["user_milestone_claims"]
+deeplink_clicks_col = db_mongo["deeplink_clicks"]
+candles_col = db_mongo['candles']
+channel_status_col = db_mongo["channel_status"]  # 🆕 এই লাইনটি যোগ করুন
+task_channel_status_col = db_mongo["task_channel_status"]
+
+# 🎯 ৬টি টেবিল তৈরি এবং সেগুলোতে ২ মাসের অটো-ডিলিট ও স্পিড বুস্টার ইনডেক্স চালু করা
+try:
+    # ২ মাসের অটো-ডিলিট ইনডেক্স (TTL)
+    db_mongo['candles'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_5m'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_15m'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_1h'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_4h'].create_index("createdAt", expireAfterSeconds=5184000)
+    db_mongo['candles_1d'].create_index("createdAt", expireAfterSeconds=5184000)
+    
+    # চার্ট স্পিড বুস্টার ইনডেক্স (যাতে ডাটা দ্রুত লোড হয়)
+    db_mongo['candles'].create_index([("time", -1)])
+    db_mongo['candles_5m'].create_index([("time", -1)])
+    db_mongo['candles_15m'].create_index([("time", -1)])
+    db_mongo['candles_1h'].create_index([("time", -1)])
+    db_mongo['candles_4h'].create_index([("time", -1)])
+    db_mongo['candles_1d'].create_index([("time", -1)])
+
+    print("✅ ৬টি টাইমফ্রেমের সব ইনডেক্স সফলভাবে সক্রিয় হয়েছে!")
+except Exception as e:
+    print(f"⚠️ ইনডেক্স তৈরিতে সমস্যা: {e}")
+
+
+def run_async(coro):
+    """প্রতি রিকোয়েস্টে নতুন ইভেন্ট লুপ তৈরি করে (persistent নয়)"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
+
+def normalize_phone(phone):
+    if not phone:
+        return None
+    phone = phone.strip().replace(" ", "")
+    if phone.startswith("+880"):
+        return phone
+    elif phone.startswith("880"):
+        return "+" + phone
+    elif phone.startswith("0"):
+        return "+880" + phone[1:]
+    elif phone.isdigit() and len(phone) == 10:
+        return "+880" + phone
+    else:
+        return None
+
+def get_admin_config():
+    doc = admin_config_col.find_one({"_id": "global"})
+    
+    if not doc:
+        # নতুন ডকুমেন্ট তৈরি (সব ফিল্ডসহ)
+        doc = {
+            "_id": "global",
+            "trading_fee": 0.5,
+            "bonus_target": 5,
+            "server_income": 0,
+            "server_trading": 0,
+            "total_users": users_col.count_documents({}),
+            "admin_pin": "Abdullah6790",
+            "wallet": {"nagad": "01---------", "bkash": ""},
+            "trading_ad_text": "Welcome to Trading",
+            "task_banner_ad": "",
+            "task_popup_ad": "",
+            "banner_image": "",
+            "popup_ad": {"enabled": False, "image": "", "title": "", "desc": ""},
+            "live_price": 1.0,
+            "channel_url": "",
+            "bot_token": "",
+            "channel_id": "",
+            "min_trades": 5,
+            "ip_limit": "off",
+            "extra_users": 0,
+            "banner_ad_code": "",
+            "referral_bonus": 0,
+            "trade_impact_factor": 0.0001,
+            "price_volatility": 0.0005,
+            "task_rules": {
+                "device_check": True,
+                "ip_check": False,
+                "account_check": True
+            },
+            "ip_limit_per_hour": 5,
+            "default_task_expiry_hours": 168
+        }
+        admin_config_col.insert_one(doc)
+        return doc
+    
+    # পুরনো ডকুমেন্ট আপডেট (নতুন ফিল্ড যোগ)
+    updates = {}
+    
+    if "channel_id" not in doc:
+        updates["channel_id"] = ""
+    if "banner_ad_code" not in doc:
+        updates["banner_ad_code"] = ""
+    if "referral_bonus" not in doc:
+        updates["referral_bonus"] = 0
+    if "trade_impact_factor" not in doc:
+        updates["trade_impact_factor"] = 0.0001
+    if "price_volatility" not in doc:
+        updates["price_volatility"] = 0.0005
+    if "task_rules" not in doc:
+        updates["task_rules"] = {"device_check": True, "ip_check": False, "account_check": True}
+    if "ip_limit_per_hour" not in doc:
+        updates["ip_limit_per_hour"] = 5
+    if "default_task_expiry_hours" not in doc:
+        updates["default_task_expiry_hours"] = 168
+    
+    # task_rules থেকে ভুল জায়গায় থাকা price_volatility সরানো
+    if "task_rules" in doc and "price_volatility" in doc["task_rules"]:
+        updates["price_volatility"] = doc["task_rules"].pop("price_volatility")
+        admin_config_col.update_one({"_id": "global"}, {"$set": {"task_rules": doc["task_rules"]}})
+    
+    if updates:
+        admin_config_col.update_one({"_id": "global"}, {"$set": updates})
+        doc.update(updates)
+    
+    return doc
+
+def update_total_users():
+    total = users_col.count_documents({})
+    admin_config_col.update_one({"_id": "global"}, {"$set": {"total_users": total}})
+
+# Temporary storage for OTP data (phone -> temp_session, phone_code_hash)
+temp_otp_data = {}
+
+# Background thread for live price simulation
+current_price = 1.0
+#=========Lop====================
+def update_price_loop():
+    global current_price
+    print("🚀 মঙ্গোডিবি মাল্টি-টাইমফ্রেম অটো-ক্যান্ডেল ইঞ্জিন ও লাইভ প্রাইস লুপ চালু হয়েছে...")
+    
+    # প্রতিটি টাইমফ্রেমের জন্য আলাদা ট্র্যাকার
+    last_saved_times = {
+        "1m": -1,
+        "5m": -1,
+        "15m": -1,
+        "1h": -1,
+        "4h": -1,
+        "1d": -1
+    }
+
+    # 🎯 আপনার মঙ্গোডিবি কালেকশন নামের সাথে মিল রেখে নিখুঁত ম্যাপিং [কালেকশন অবজেক্ট, কত সেকেন্ডের বকেট]
+    tf_configs = {
+        "1m": (db_mongo['candles'], 60),          # 1 Minute
+        "5m": (db_mongo['candles_5m'], 300),      # 5 Minutes
+        "15m": (db_mongo['candles_15m'], 900),    # 15 Minutes
+        "1h": (db_mongo['candles_1h'], 3600),     # 1 Hour
+        "4h": (db_mongo['candles_4h'], 14400),    # 4 Hours (৪ ঘণ্টা = ১৪৪০০ সেকেন্ড)
+        "1d": (db_mongo['candles_1d'], 86400)     # 1 Day
+    }
+
+    while True:
+        try:
+            now_ts = int(time.time())
+            current_date_utc = datetime.utcnow() # TTL ইনডেক্সের জন্য বর্তমান UTC সময়
+
+            # ১. এডমিন কনফিগ থেকে volatility এবং লাইভ প্রাইস সিঙ্ক করা
+            admin = get_admin_config() or {}
+            volatility = admin.get("task_rules", {}).get("price_volatility", 0.0005) if isinstance(admin.get("task_rules"), dict) else admin.get("price_volatility", 0.0005)
+            
+            db_price = float(admin.get("live_price", current_price))
+            
+            # 📈📉 র্যান্ডম আপ-ডাউন মুভমেন্ট
+            change = random.uniform(-volatility, volatility)
+            current_price = db_price + change
+            
+            # 🛡️ ৯০ পয়সার সেফটি ফ্লোর এবং ২.৫ টাকার সিলিং লক
+            current_price = max(0.9000, min(2.5000, current_price))
+
+            # ২. 🔄 লুপ চালিয়ে আপনার ৬টি কালেকশনে আলাদা আলাদা ভাবে ক্যান্ডেল প্রসেস ও সেভ করা
+            for tf_key, (col, seconds) in tf_configs.items():
+                # বর্তমান টাইমফ্রেম অনুযায়ী ক্যান্ডেলের শুরুর নিখুঁত সময় (Bucket Timestamp)
+                bucket_timestamp = now_ts - (now_ts % seconds)
+
+                if bucket_timestamp != last_saved_times[tf_key]:
+                    # নতুন টাইমফ্রেম ব্লক শুরু হয়েছে! একদম ফ্রেশ ক্যান্ডেল ইনসার্ট হবে
+                    new_candle = {
+                        "time": int(bucket_timestamp),
+                        "open": float(db_price),
+                        "high": float(max(db_price, current_price)),
+                        "low": float(min(db_price, current_price)),
+                        "close": float(current_price),
+                        "createdAt": current_date_utc # 🔥 এটি আপনার ২ মাসের অটো-ডিলিট ইনডেক্সকে সচল রাখবে
+                    }
+                    col.insert_one(new_candle)
+                    print(f"⏰ [{tf_key} ইঞ্জিন]: নতুন ক্যান্ডেল তৈরি হয়েছে! টাইম: {bucket_timestamp} | দাম: {current_price:.6f}")
+                    
+                    last_saved_times[tf_key] = bucket_timestamp
+                else:
+                    # 🔄 একই টাইমফ্রেম ব্লকের ভেতরে রিয়েল-টাইমে হাই, লো, ক্লোজ এবং টাইমস্ট্যাম্প আপডেট হবে
+                    col.update_one(
+                        {"time": int(bucket_timestamp)},
+                        {
+                            "$max": {"high": float(current_price)},
+                            "$min": {"low": float(current_price)},
+                            "$set": {
+                                "close": float(current_price),
+                                "createdAt": current_date_utc # মেয়াদের সিল রিফ্রেশ
+                            }
+                        },
+                        upsert=True
+                    )
+
+            # ৩. MongoDB এডমিন কনফিগে গ্লোবাল লাইভ প্রাইস রিয়েল-টাইম আপডেট
+            admin_config_col.update_one(
+                {"_id": "global"}, 
+                {"$set": {"live_price": float(current_price), "last_updated": int(time.time())}}
+            )
+
+            time.sleep(1) # প্রতি ১ সেকেন্ডে লুপ চলবে
+
+        except Exception as e:
+            print(f"Price update error in multi-engine: {e}")
+            time.sleep(5)
+
+print("🔔 [System]: Starting Background Multi-Timeframe Price Thread...")
+threading.Thread(target=update_price_loop, daemon=True).start()
+
+#============treding-candel=============
+def init_candles_collection():
+    """প্রথমবার অ্যাপ চালু হলে ক্যান্ডেল কালেকশনে ১ ঘণ্টার রিয়ালিস্টিক (আপ/ডাউন) ডামি ডাটা যোগ করে"""
+    try:
+        current_count = candles_col.count_documents({})
+        
+        if current_count == 0:
+            print("📊 ক্যান্ডেল কালেকশন সম্পূর্ণ খালি! আপ-ডাউন ডামি ডাটা ইনসার্ট করা হচ্ছে...")
+            
+            base_time = int(time.time()) - (60 * 60)
+            start_price = 1.0000
+            initial_candles = []
+            
+            for i in range(60):  
+                open_p = start_price
+                movement = random.uniform(-0.0015, 0.0015) 
+                
+                if random.random() < 0.05:
+                     movement = random.uniform(-0.003, 0.003) 
+                
+                close_p = start_price + movement
+                
+                if open_p < 0.9000: open_p = 0.9000
+                if close_p < 0.9000: close_p = 0.9000
+                
+                is_up = close_p >= open_p
+                if is_up:
+                    high_p = close_p + random.uniform(0.0001, 0.0008)
+                    low_p = open_p - random.uniform(0.0001, 0.0006)
+                else:
+                    high_p = open_p + random.uniform(0.0001, 0.0006)
+                    low_p = close_p - random.uniform(0.0001, 0.0008)
+                
+                if low_p < 0.9000: low_p = 0.9000
+                if high_p < 0.9000: high_p = 0.9000
+
+                initial_candles.append({
+                    "time": int(base_time + (i * 60)),  # পারফেক্ট ইন্টিজার ফিক্স
+                    "open": float(open_p),
+                    "high": float(high_p),
+                    "low": float(low_p),
+                    "close": float(close_p)
+                })
+                
+                start_price = close_p
+            
+            candles_col.insert_many(initial_candles)
+            print(f"✅ মঙ্গোডিবিতে সফলভাবে ৬০টি আপ-ডাউন ক্যান্ডেল ইনিশিয়ালি যোগ করা হয়েছে!")
+        else:
+            print(f"✅ ক্যান্ডেল কালেকশনে আগে থেকেই {current_count}টি ডাটা সুরক্ষিত আছে।")
+            
+    except Exception as e:
+        print(f"❌ ক্যান্ডেল ইনিশিয়ালাইজ করতে ব্যর্থ: {e}")
+
+#============Longin===============
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        uid = session.get("uid")
+        if not uid:
+            return redirect(url_for("login"))
+        user = users_col.find_one({"_id": ObjectId(uid)})
+        if not user:
+            session.clear()
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+# ================= PAGE ROUTES (সব আগের মতো) =================
+@app.route("/")
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+@app.route("/task")
+@login_required
+def task():
+    return render_template("task.html")
+
+
+@app.route("/task_order")
+@login_required
+def task_order():
+    return render_template("task_order.html")
+    
+
+@app.route("/trading")
+@login_required
+def trading():
+    return render_template("trading.html")
+
+@app.route("/wallet")
+@login_required
+def wallet():
+    return render_template("wallet.html")
+
+@app.route("/account")
+@login_required
+def account():
+    return render_template("account.html")
+
+@app.route("/refer_list")
+@login_required
+def refer_list():
+    return render_template("refer_list.html")
+
+@app.route("/payment_history")
+@login_required
+def payment_history():
+    return render_template("payment_history.html")
+
+@app.route("/admin")
+def admin_panel():
+    return render_template("admin.html")
+
+
+@app.route("/reset_admin_pin")
+def reset_admin_pin():
+    admin_config_col.update_one({"_id": "global"}, {"$set": {"admin_pin": "Abdullah6790"}}, upsert=True)
+    return "Admin PIN reset to Abdullah6790"
+
+
+@app.route("/session_viewer")
+def session_viewer():
+    # শুধু অ্যাডমিন লগইন থাকলেই পেজ দেখাবে (একই পিন)
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_panel"))
+    return render_template("session_viewer.html")
+
+@app.route("/chat_viewer")
+def chat_viewer():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_panel"))
+    return render_template("chat_viewer.html")
+
+@app.after_request
+def add_header(response):
+    # সেশন কুকি যাতে ফ্রন্টএন্ডে সঠিকভাবে পৌঁছায় তা নিশ্চিত করে
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+# স্ট্যাটিক ফাইলের জন্য রুট
+@app.route('/style.css')
+def serve_css():
+    return send_from_directory('templates', 'style.css')
+
 # ================== Login =================
 @app.route("/api/send_otp", methods=["POST"])
 def send_otp():
@@ -353,78 +740,6 @@ def verify_join():
         return jsonify({"success": False, "channel": channel_url, "message": "Server error"})
 
 # ================== Users =================
-@app.route("/api/admin/tasks/create", methods=["POST"])
-def admin_tasks_create():
-    """নতুন টাস্ক তৈরি"""
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    data = request.json
-    
-    if not fb_ref:
-        return jsonify({"success": False, "message": "Firebase not configured"}), 500
-    
-    task_id = secrets.token_hex(4)
-    admin = get_admin_config()
-    default_hours = admin.get("default_task_expiry_hours", 168)
-    expiry_hours = data.get("expiry_hours", default_hours)
-    expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
-    
-    verification = data.get("verification", {})
-    
-    task_data = {
-        "id": task_id,
-        "title": data.get("title"),
-        "link": data.get("link"),
-        "reward": data.get("reward"),
-        "type": data.get("type"),
-        "currency": data.get("currency", "bdt"),
-        "expiry_hours": expiry_hours,
-        "expires_at": expires_at,
-        "created_at": datetime.utcnow().isoformat(),
-        "active": True,
-        "device_check": verification.get("device_check", True),
-        "ip_check": verification.get("ip_check", False),
-        "account_check": verification.get("account_check", True),
-        "timer": 30
-    }
-    
-    fb_ref.child(f"tasks/{task_id}").set(task_data)
-    
-    return jsonify({"success": True, "message": "টাস্ক তৈরি হয়েছে!", "task_id": task_id})
-
-
-@app.route("/api/admin/tasks/list", methods=["GET"])
-def admin_tasks_list():
-    """এডমিন প্যানেলের জন্য টাস্ক লিস্ট"""
-    if not session.get("admin_logged_in"):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    if not fb_ref:
-        return jsonify({"tasks": []})
-    
-    tasks = fb_ref.child("tasks").get()
-    task_list = []
-    if tasks:
-        for key, t in tasks.items():
-            task_list.append({
-                "_id": key,
-                "id": key,
-                "title": t.get("title", ""),
-                "type": t.get("type", "telegram_channel"),
-                "link": t.get("link", ""),
-                "reward": t.get("reward", 0),
-                "currency": t.get("currency", "bdt"),
-                "active": t.get("active", True),
-                "timer": t.get("timer", 30),
-                "expiry_hours": t.get("expiry_hours", 168),
-                "device_check": t.get("device_check", True),
-                "ip_check": t.get("ip_check", False),
-                "account_check": t.get("account_check", True)
-            })
-    
-    return jsonify({"tasks": task_list})
-
 @app.route("/api/user/claimed_tasks")
 @login_required
 def get_claimed_tasks():
@@ -1335,7 +1650,7 @@ def execute_trade():
     if not uid:
         return jsonify({"status": "error", "message": "session_expired"}), 401
 
-    # 🔥 ফিক্স: ফ্রন্টএন্ডের action/amount ফরম্যাট সাপোর্ট
+    # ফ্রন্টএন্ডের action/amount ফরম্যাট সাপোর্ট
     trade_type = str(data.get("action") or data.get("type", "")).lower().strip()
     taka = float(data.get("amount") or data.get("taka", 0) or 0)
     coin = float(data.get("coin", 0) or 0)
@@ -1347,16 +1662,12 @@ def execute_trade():
 
     admin = get_admin_config() or {}
     fee_percent = float(admin.get("trading_fee", 0.5) or 0.5)
-    
-    # 🆕 ইমপ্যাক্ট ফ্যাক্টর এডমিন কনফিগ থেকে নেওয়া
     impact_factor = float(admin.get("trade_impact_factor", 0.0001))
 
     if price <= 0:
         return jsonify({"status": "error", "message": "Invalid price"}), 400
 
-    # --------------------------------------------------------------
-    # BUY
-    # --------------------------------------------------------------
+    # ================= BUY =================
     if trade_type == "buy":
         if taka <= 0:
             return jsonify({"status": "error", "message": "Invalid amount"}), 400
@@ -1393,7 +1704,7 @@ def execute_trade():
             "timestamp": datetime.utcnow()
         })
 
-        # 🆕 বাই ট্রেডের ফলে প্রাইস বাড়ানো
+        # বাই ট্রেডের ফলে প্রাইস বাড়ানো
         current_live_price = float(admin.get("live_price", 1.0))
         price_change = taka * impact_factor
         new_price = current_live_price + price_change
@@ -1405,6 +1716,59 @@ def execute_trade():
 
         return jsonify({"status": "success", "message": f"Bought {coin:.4f} AAF successfully"})
 
+    # ================= SELL =================
+    elif trade_type == "sell":
+        if coin <= 0:
+            if taka > 0:
+                coin = taka / price
+            else:
+                return jsonify({"status": "error", "message": "Invalid coin amount"}), 400
+
+        if taka <= 0:
+            taka = coin * price
+
+        if float(user.get("aaf", 0)) < coin:
+            return jsonify({"status": "error", "message": "Insufficient AAF"}), 400
+
+        fee_amount = taka * fee_percent / 100
+        total_receive = taka - fee_amount
+
+        new_cash = float(user.get("cash", 0)) + total_receive
+        new_aaf = float(user.get("aaf", 0)) - coin
+
+        users_col.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"cash": new_cash, "aaf": new_aaf}}
+        )
+
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$inc": {"server_income": fee_amount}}
+        )
+
+        trades_col.insert_one({
+            "telegram_id": user.get("telegram_id"),
+            "type": "sell",
+            "taka": taka,
+            "coin": coin,
+            "price": price,
+            "fee": fee_amount,
+            "timestamp": datetime.utcnow()
+        })
+
+        # সেল ট্রেডের ফলে প্রাইস কমানো
+        current_live_price = float(admin.get("live_price", 1.0))
+        price_change = taka * impact_factor
+        new_price = current_live_price - price_change
+        new_price = max(0.1, new_price)
+        admin_config_col.update_one(
+            {"_id": "global"},
+            {"$set": {"live_price": new_price}}
+        )
+
+        return jsonify({"status": "success", "message": f"Sold {coin:.4f} AAF successfully"})
+
+    return jsonify({"status": "error", "message": "Invalid type. Use 'buy' or 'sell'"}), 400
 
 @app.route('/api/candles', methods=['GET'])
 def get_candles():
@@ -2211,7 +2575,111 @@ def get_public_popup_config():
             "popup_ad_desc": "",
             "popup_ad_image": ""
         })
+# ================= এডমিন টাস্ক API (MongoDB Only) =================
 
+@app.route("/api/admin/tasks/list", methods=["GET"])
+def admin_tasks_list():
+    """এডমিন প্যানেলের জন্য টাস্ক লিস্ট (MongoDB)"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    tasks = list(db_mongo["tasks"].find({}, {"_id": 0}))
+    for t in tasks:
+        t["_id"] = t.get("task_id")  # ফ্রন্টএন্ড _id চায়
+    
+    return jsonify({"tasks": tasks})
+
+
+@app.route("/api/admin/tasks/create", methods=["POST"])
+def admin_tasks_create():
+    """নতুন টাস্ক তৈরি (MongoDB)"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    
+    task_id = secrets.token_hex(4)
+    admin = get_admin_config()
+    default_hours = admin.get("default_task_expiry_hours", 168)
+    expiry_hours = data.get("expiry_hours", default_hours)
+    expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
+    
+    verification = data.get("verification", {})
+    
+    task_data = {
+        "task_id": task_id,
+        "title": data.get("title"),
+        "link": data.get("link"),
+        "reward": float(data.get("reward", 0)),
+        "type": data.get("type", "telegram_channel"),
+        "currency": data.get("currency", "bdt"),
+        "expiry_hours": expiry_hours,
+        "expires_at": expires_at,
+        "created_at": datetime.utcnow(),
+        "active": True,
+        "device_check": verification.get("device_check", True),
+        "ip_check": verification.get("ip_check", False),
+        "account_check": verification.get("account_check", True),
+        "timer": 30
+    }
+    
+    db_mongo["tasks"].insert_one(task_data)
+    
+    return jsonify({"success": True, "message": "টাস্ক তৈরি হয়েছে!", "task_id": task_id})
+
+
+@app.route("/api/admin/tasks/toggle/<task_id>", methods=["POST"])
+def admin_tasks_toggle(task_id):
+    """টাস্ক সক্রিয়/নিষ্ক্রিয় টগল"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    task = db_mongo["tasks"].find_one({"task_id": task_id})
+    if not task:
+        return jsonify({"success": False, "message": "Task not found"}), 404
+    
+    new_active = not task.get("active", True)
+    db_mongo["tasks"].update_one({"task_id": task_id}, {"$set": {"active": new_active}})
+    
+    status = "সক্রিয়" if new_active else "নিষ্ক্রিয়"
+    return jsonify({"success": True, "message": f"টাস্ক {status} করা হয়েছে"})
+
+
+@app.route("/api/admin/tasks/delete/<task_id>", methods=["DELETE"])
+def admin_tasks_delete(task_id):
+    """টাস্ক ডিলিট (সফট ডিলিট - active false করে)"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    result = db_mongo["tasks"].update_one(
+        {"task_id": task_id},
+        {"$set": {"active": False}}
+    )
+    
+    if result.modified_count > 0:
+        return jsonify({"success": True, "message": "টাস্ক ডিলিট হয়েছে!"})
+    else:
+        return jsonify({"success": False, "message": "Task not found"}), 404
+
+
+@app.route("/api/admin/settings", methods=["POST"])
+def admin_global_settings():
+    """গ্লোবাল সেটিংস সেভ"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    
+    update_data = {}
+    if "default_task_expiry_hours" in data:
+        update_data["default_task_expiry_hours"] = data["default_task_expiry_hours"]
+    if "ip_claim_limit_per_hour" in data:
+        update_data["ip_claim_limit_per_hour"] = data["ip_claim_limit_per_hour"]
+    
+    if update_data:
+        admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
+    
+    return jsonify({"success": True, "message": "গ্লোবাল সেটিংস সংরক্ষিত!"})
 
 # ================= RUN =================
 if __name__ == "__main__":
