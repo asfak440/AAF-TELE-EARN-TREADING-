@@ -665,12 +665,18 @@ function escapeHtml(str) {
     }
     
     function loadAdminTasks() {
+    console.log("🔄 loadAdminTasks called"); // ডিবাগ লাইন
     const container = document.getElementById('admin-task-list');
+    if (!container) {
+        console.error("❌ admin-task-list element not found!");
+        return;
+    }
     container.innerHTML = 'লোড হচ্ছে...';
 
     fetch('/api/admin/tasks/list', { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
+        console.log("📦 Tasks received:", d); // ডিবাগ লাইন
         if (!d.tasks || d.tasks.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#888;">কোনো টাস্ক নেই</p>';
             return;
@@ -683,20 +689,20 @@ function escapeHtml(str) {
 
             html += `
             <div style="background:var(--card-bg); padding:12px; margin-bottom:10px; border-radius:8px;">
-                <strong>${task.title}</strong> (${typeLabel})<br>
+                <strong>${escapeHtml(task.title)}</strong> (${typeLabel})<br>
                 <small>পুরস্কার: ${task.reward} ${task.currency.toUpperCase()} | ${statusBadge}</small><br>
                 <small>লিংক: ${task.link}</small>
                 <div style="margin-top:8px;">
-                    <button onclick="toggleTask('${task._id}')">🔄 টগল</button>
-                    <button onclick="deleteTask('${task._id}')" style="background:red;">🗑️ ডিলিট</button>
+                    <button onclick="toggleTask('${task._id}')" style="background:#ffaa00; cursor:pointer;">🔄 টগল</button>
+                    <button onclick="deleteTask('${task._id}')" style="background:red; cursor:pointer;">🗑️ ডিলিট</button>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
     })
     .catch(e => {
+        console.error("❌ Fetch error:", e);
         container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
-        console.error(e);
     });
     }
 
