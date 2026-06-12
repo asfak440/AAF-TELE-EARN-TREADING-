@@ -1,4 +1,37 @@
+import os
+import asyncio
+import random 
+import secrets
+import threading
+import telebot
+import time
+from telebot.apihelper import ApiTelegramException
+from datetime import datetime, timedelta
+from functools import wraps
+from bson import ObjectId
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for, send_from_directory
+from flask_cors import CORS 
+from pymongo import MongoClient
+from telethon import TelegramClient
+from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
+# ================= APP =================
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "AAF_TELE_EARN_V18_CORE_SECRET")
 
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=False,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=3)
+)
+
+CORS(app, supports_credentials=True)
+# ================= CONFIG =================
+API_ID = int(os.environ.get("API_ID", 36466824))
+API_HASH = os.environ.get("API_HASH", "535ddcb85f2c3c74cc0ff532dd2c3406")
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable not set")
 # ================= DB =================
 client = MongoClient(MONGO_URI)
 db_mongo = client["aaf_tele_earn_db"]
@@ -2680,6 +2713,17 @@ def admin_global_settings():
         admin_config_col.update_one({"_id": "global"}, {"$set": update_data}, upsert=True)
     
     return jsonify({"success": True, "message": "গ্লোবাল সেটিংস সংরক্ষিত!"})
+
+@app.route("/api/admin/milestones/list", methods=["GET"])
+def admin_milestones_list():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    milestones = list(milestones_col.find({}))
+    for m in milestones:
+        m["_id"] = str(m["_id"])
+    
+    return jsonify({"milestones": milestones})
 
 # ================= RUN =================
 if __name__ == "__main__":
