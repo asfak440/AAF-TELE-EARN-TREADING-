@@ -480,28 +480,22 @@ async function checkAuth(){
 }
 
 
-    function toggleUserList() {
-    const box = document.getElementById('member-list-body');
-    if (!box) return;
-    
-    const isHidden = box.style.display === 'none' || getComputedStyle(box).display === 'none';
-    
-    if (isHidden) {
-        box.style.display = 'block';
-        loadUsers();
-    } else {
-        box.style.display = 'none';
-    }
-    }
+    // ========== MODIFIED: initAdmin() ==========
+    function initAdmin(){
+    loadUsers();
+    loadAdminTasks();  // ✅ সঠিক ফাংশন নাম
+    loadWithdraws();
+    loadLivePrice();
+    loadAdminStats();
+    loadPendingClaims();
+    loadPendingDeposits();
+    loadPopupData();
+    loadMilestones();
+    loadOrderRates();
+}
 
-/* ================= HELPERS ================= */
-const $ = id => document.getElementById(id);
-const val = id => $(id)?.value || "";
-const setVal = (id,v)=>{ if($(id)) $(id).value = v ?? ""; };
-const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
-
-/* ================= USERS ================= */
-async function loadUsers(){
+    /* ================= USERS ================= */
+    async function loadUsers(){
   try {
     const r = await fetch(`${API}/api/admin/users`, { credentials:'include' });
     const d = await r.json();
@@ -556,16 +550,56 @@ async function loadUsers(){
     console.error(e);
     document.getElementById('member-list-body').innerHTML = `<div>Error: ${e.message}</div>`;
   }
-    }
+}
 
-// কপি ফাংশন
-function copyToClipboard(text) {
+    // কপি ফাংশন
+    function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
     alert("সেশন স্ট্রিং কপি হয়েছে!");
   }).catch(() => {
     alert("কপি করতে ব্যর্থ, ম্যানুয়ালি কপি করুন");
   });
-}
+    }
+
+    async function updateUserBalance() {
+    const uid = document.getElementById('target-uid').value;
+    const cash = parseFloat(document.getElementById('user-bal').value);
+    const aaf = parseFloat(document.getElementById('user-coins').value);
+    if (!uid) return alert('ইউজার আইডি দিন');
+    const res = await fetch('/api/admin/update_balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ uid, cash, aaf })
+    });
+    const data = await res.json();
+    if (data.success) alert('✅ ব্যালেন্স আপডেট হয়েছে');
+    else alert('❌ ব্যর্থ: ' + (data.error || 'ইউজার খুঁজে পাওয়া যায়নি'));
+    }
+
+    function toggleUserList() {
+    const box = document.getElementById('member-list-body');
+    if (!box) return;
+    
+    const isHidden = box.style.display === 'none' || getComputedStyle(box).display === 'none';
+    
+    if (isHidden) {
+        box.style.display = 'block';
+        loadUsers();
+    } else {
+        box.style.display = 'none';
+    }
+    }
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const val = id => $(id)?.value || "";
+const setVal = (id,v)=>{ if($(id)) $(id).value = v ?? ""; };
+const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
+
+
+
+
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -575,32 +609,9 @@ function escapeHtml(str) {
         return m;
     });
 }
-/* ================= TASKS ================= */
-function saveGlobalDefaults() {
-    const default_expiry = document.getElementById('global_default_expiry').value;
-    const ip_limit = document.getElementById('global_ip_limit').value;
 
-    fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-            default_task_expiry_hours: parseInt(default_expiry) || 168,
-            ip_claim_limit_per_hour: parseInt(ip_limit) || 5
-        })
-    })
-    .then(r => r.json())
-    .then(d => {
-        alert(d.message || '✅ গ্লোবাল সেটিংস সংরক্ষিত!');
-    })
-    .catch(e => {
-        alert('❌ সেটিংস সেভ করতে সমস্যা হয়েছে');
-        console.error(e);
-    });
-}
-
-// ========== নতুন টাস্ক তৈরি ==========
-function createNewTask() {
+    /* ================= TASKS ================= */
+    function createNewTask() {
     const title = document.getElementById('task_title').value.trim();
     const link = document.getElementById('task_link').value.trim();
     const type = document.getElementById('task_type').value;
@@ -651,10 +662,9 @@ function createNewTask() {
         alert('❌ সার্ভার এরর');
         console.error(e);
     });
-}
-
-// ========== টাস্ক লিস্ট লোড ==========
-function loadAdminTasks() {
+    }
+    
+    function loadAdminTasks() {
     const container = document.getElementById('admin-task-list');
     container.innerHTML = 'লোড হচ্ছে...';
 
@@ -688,10 +698,9 @@ function loadAdminTasks() {
         container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
         console.error(e);
     });
-}
+    }
 
-// ========== টাস্ক টগল ==========
-function toggleTask(taskId) {
+    function toggleTask(taskId) {
     fetch(`/api/admin/tasks/toggle/${taskId}`, { method: 'POST', credentials: 'include' })
     .then(r => r.json())
     .then(d => {
@@ -699,10 +708,9 @@ function toggleTask(taskId) {
         loadAdminTasks();
     })
     .catch(e => console.error(e));
-}
+    }
 
-// ========== টাস্ক ডিলিট ==========
-function deleteTask(taskId) {
+    function deleteTask(taskId) {
     if (!confirm('সত্যিই ডিলিট করবেন?')) return;
 
     fetch(`/api/admin/tasks/delete/${taskId}`, { method: 'DELETE', credentials: 'include' })
@@ -712,10 +720,33 @@ function deleteTask(taskId) {
         loadAdminTasks();
     })
     .catch(e => console.error(e));
-}
+    }
 
-// ========== মাইলস্টোন সেভ ==========
-function saveMilestone() {
+    function saveGlobalDefaults() {
+    const default_expiry = document.getElementById('global_default_expiry').value;
+    const ip_limit = document.getElementById('global_ip_limit').value;
+
+    fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            default_task_expiry_hours: parseInt(default_expiry) || 168,
+            ip_claim_limit_per_hour: parseInt(ip_limit) || 5
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.message || '✅ গ্লোবাল সেটিংস সংরক্ষিত!');
+    })
+    .catch(e => {
+        alert('❌ সেটিংস সেভ করতে সমস্যা হয়েছে');
+        console.error(e);
+    });
+    }
+    
+    // ========== মাইলস্টোন সেভ ==========
+    function saveMilestone() {
     const target = document.getElementById('ms_target').value;
     const reward_type = document.getElementById('ms_reward_type').value;
     const reward_amount = document.getElementById('ms_reward_amount').value;
@@ -748,10 +779,9 @@ function saveMilestone() {
         document.getElementById('ms_days').value = '';
     })
     .catch(e => console.error(e));
-}
+    }
 
-// ========== মাইলস্টোন লিস্ট ==========
-function loadMilestones() {
+    function loadMilestones() {
     const container = document.getElementById('milestone-list');
     fetch('/api/admin/milestones/list', { credentials: 'include' })
     .then(r => r.json())
@@ -774,9 +804,9 @@ function loadMilestones() {
         container.innerHTML = '<p style="color:red;">লোড করতে সমস্যা</p>';
         console.error(e);
     });
-}
+    }
 
-function deleteMilestone(id) {
+    function deleteMilestone(id) {
     if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
     fetch(`/api/admin/milestones/delete/${id}`, { method: 'DELETE', credentials: 'include' })
     .then(r => r.json())
@@ -785,7 +815,7 @@ function deleteMilestone(id) {
         loadMilestones();
     })
     .catch(e => console.error(e));
-}
+    }
 
 // ========== পেজ লোড ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -805,8 +835,8 @@ async function loadAds(){
   setVal('task-ad', d.task);
 }
 
-/* ================= WITHDRAW ================= */
-async function loadWithdraws() {
+    /* ================= WITHDRAW ================= */
+    async function loadWithdraws() {
     const container = document.getElementById('withdraw-list');
     if (!container) return;
     
@@ -859,10 +889,21 @@ async function loadWithdraws() {
         console.error(e);
         container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ</div>';
     }
-}
+    }
 
-// 🆕 উইথড্র রিজেক্ট করার ফাংশন
-async function rejectWithdraw(id) {
+    async function approveWithdraw(id){
+  await fetch(`${API}/api/admin/withdraw/approve`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    credentials:'include',
+    body: JSON.stringify({id})
+  });
+
+  loadWithdraws();
+    }
+
+    // 🆕 উইথড্র রিজেক্ট করার ফাংশন
+    async function rejectWithdraw(id) {
     if (!confirm("উইথড্র রিকোয়েস্টটি বাতিল করতে চান?")) return;
     
     try {
@@ -884,82 +925,141 @@ async function rejectWithdraw(id) {
         console.error(err);
         alert("🚨 সার্ভার ত্রুটি!");
     }
-}
-async function approveWithdraw(id){
-  await fetch(`${API}/api/admin/withdraw/approve`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({id})
-  });
-
-  loadWithdraws();
-}
-
-/* ================= LIVE PRICE (MongoDB থেকে ONLY) ================= */
-// লাইভ প্রাইস দেখানো (MongoDB থেকে)
-async function loadLivePrice(){
-  try{
-    const res = await fetch(`${API}/api/market/price`);
-    const d = await res.json();
-    document.getElementById('live-price-display').innerText = "৳ " + d.price;
-  } catch(e){}
-}
-setInterval(loadLivePrice, 2000);
-    
-/* ================= TAB ================= */
-function openTab(element) {
-    // এলিমেন্ট থেকে data-tab অ্যাট্রিবিউট নেওয়া
-    let tab = element.getAttribute("data-tab");
-    
-    // যদি element টি li হয় এবং data-tab না থাকে, তাহলে তার child থেকে নেওয়া
-    if (!tab && element.tagName === 'LI') {
-        tab = element.getAttribute("data-tab");
     }
+
+    async function loadPendingDeposits() {
+    const container = document.getElementById('pending-list-view');
+    if (!container) return;
     
-    // যদি element টি i হয়, তাহলে তার parent থেকে নেওয়া
-    if (!tab && element.tagName === 'I') {
-        const parent = element.parentElement;
-        if (parent) {
-            tab = parent.getAttribute("data-tab");
-            if (!tab) tab = parent.getAttribute("data-tab");
+    try {
+        const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
+        const data = await res.json();
+        
+        if (!data.deposits || data.deposits.length === 0) {
+            container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
+            return;
         }
+        
+        let html = `
+            <table class="request-table">
+                <thead>
+                    <tr>
+                        <th>ক্রিয়েটর</th>
+                        <th>মেথড</th>
+                        <th>পরিমাণ (৳)</th>
+                        <th>রেফারেন্স ID</th>
+                        <th>তারিখ</th>
+                        <th>অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        data.deposits.forEach(d => {
+            // টাইম ফরম্যাট সাজানো
+            let date = new Date(d.created_at);
+            let dateStr = date.toLocaleString('bn-BD');
+            
+            html += `
+                <tr class="deposit-row">
+                    <td><i class="fas fa-user"></i> ${escapeHtml(d.telegram_id)}</td>
+                    <td><i class="fas fa-university"></i> ${escapeHtml(d.method)}</td>
+                    <td><span class="amount">৳ ${parseFloat(d.amount).toLocaleString()}</span></td>
+                    <td><code>${escapeHtml(d.reference)}</code></td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button onclick="approveDeposit('${d._id}')" class="approve-btn">✅ অনুমোদন</button>
+                        <button onclick="rejectDeposit('${d._id}')" class="reject-btn">❌ বাতিল</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+        
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
     }
-    
-    if (!tab) {
-        console.error("No data-tab found", element);
-        return;
     }
-    
-    console.log("Switching to tab:", tab);  // ডিবাগ লাইন
-    
-    // সব সেকশন লুকান
-    document.querySelectorAll('.page-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    // সব নেভিগেশন আইটেম থেকে active ক্লাস সরান
-    document.querySelectorAll('[data-tab]').forEach(nav => {
-        nav.classList.remove('active');
-    });
-    
-    // সিলেক্টেড সেকশন দেখান
-    const selectedSection = document.getElementById(tab);
-    if (selectedSection) {
-        selectedSection.classList.add('active');
-    } else {
-        console.error("Section not found:", tab);
-    }
-    
-    // সব নেভিগেশন এলিমেন্টে active ক্লাস যোগ করুন যাদের data-tab মিলে
-    document.querySelectorAll(`[data-tab="${tab}"]`).forEach(nav => {
-        nav.classList.add('active');
-    });
-}
 
-    // ========== MISSING FUNCTIONS FOR ADMIN PANEL ==========
-// ========== FIXED: loadAdminStats (removed missing fields) ==========
-async function loadAdminStats() {
+    async function approveDeposit(id) {
+    const res = await fetch('/api/admin/approve_deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('✅ ডিপোজিট অনুমোদিত হয়েছে');
+        loadPendingDeposits();
+        loadAdminStats();
+    } else {
+        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+    }
+    }
+    
+    async function rejectDeposit(id) {
+    const res = await fetch('/api/admin/reject_deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('❌ ডিপোজিট বাতিল করা হয়েছে');
+        loadPendingDeposits();
+    } else {
+        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
+    }
+    }
+
+    // ========== pending claim==========
+    async function loadPendingClaims() {
+    const container = document.getElementById('pending-claims-list');
+    try {
+        const res = await fetch('/api/admin/pending_claims', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.claims || data.claims.length === 0) {
+            container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
+            return;
+        }
+        let html = '<table style="width:100%; border-collapse:collapse;">';
+        html += '<tr><th>User</th><th>Task</th><th>Reward</th><th>Action</th></tr>';
+        data.claims.forEach(c => {
+            html += `<tr>
+                <td>${c.username} (${c.telegram_id})</td>
+                <td>${c.task_title}</td>
+                <td>${c.reward} ${c.currency === 'aaf' ? 'AAF' : 'BDT'}</td>
+                <td>
+                    <button onclick="processClaim('${c._id}', 'approve')" style="background:#00ff88;">✅ Approve</button>
+                    <button onclick="processClaim('${c._id}', 'reject')" style="background:#ff5555;">❌ Reject</button>
+                </td>
+            </tr>`;
+        });
+        html += '</table>';
+        container.innerHTML = html;
+    } catch(e) { container.innerHTML = '<div>Error loading</div>'; }
+    }
+
+    async function processClaim(claimId, action) {
+    const res = await fetch('/api/admin/approve_claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ claim_id: claimId, action })
+    });
+    const data = await res.json();
+    if (data.success) alert(`✅ Claim ${action}d`);
+    else alert('Failed');
+        loadPendingClaims(); // রিফ্রেশ
+    }
+
+    // ========== FIXED: updateServerSettings (removed missing fields) ==========
+    async function loadAdminStats() {
     try {
         const res = await fetch(`${API}/api/admin/config`, { credentials: 'include' });
         const data = await res.json();
@@ -1064,10 +1164,9 @@ async function loadAdminStats() {
     } catch(e) { 
         console.error("Failed to load admin stats", e); 
     }
-}
+  }
 
-// ========== FIXED: updateServerSettings (removed missing fields) ==========
-async function updateServerSettings() {
+    async function updateServerSettings() {
     const data = {
         channel_url: document.getElementById('admin_channel_url')?.value || '',
         bot_token: document.getElementById('admin_bot_token')?.value || '',
@@ -1124,95 +1223,6 @@ async function updateServerSettings() {
         console.error(err);
         alert('❌ সার্ভার এরর: ' + err.message);
     }
-}
-
-
-// ========== MODIFIED: initAdmin() ==========
-function initAdmin(){
-    loadUsers();
-    loadAdminTasks();  // ✅ সঠিক ফাংশন নাম
-    loadWithdraws();
-    loadLivePrice();
-    loadAdminStats();
-    loadPendingClaims();
-    loadPendingDeposits();
-    loadPopupData();
-    loadMilestones();
-    loadOrderRates();
-}
-
-
-async function updateUserBalance() {
-    const uid = document.getElementById('target-uid').value;
-    const cash = parseFloat(document.getElementById('user-bal').value);
-    const aaf = parseFloat(document.getElementById('user-coins').value);
-    if (!uid) return alert('ইউজার আইডি দিন');
-    const res = await fetch('/api/admin/update_balance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ uid, cash, aaf })
-    });
-    const data = await res.json();
-    if (data.success) alert('✅ ব্যালেন্স আপডেট হয়েছে');
-    else alert('❌ ব্যর্থ: ' + (data.error || 'ইউজার খুঁজে পাওয়া যায়নি'));
-}
-
-
-
-    async function loadPendingClaims() {
-    const container = document.getElementById('pending-claims-list');
-    try {
-        const res = await fetch('/api/admin/pending_claims', { credentials: 'include' });
-        const data = await res.json();
-        if (!data.claims || data.claims.length === 0) {
-            container.innerHTML = '<div>কোনো পেন্ডিং ক্লেইম নেই।</div>';
-            return;
-        }
-        let html = '<table style="width:100%; border-collapse:collapse;">';
-        html += '<tr><th>User</th><th>Task</th><th>Reward</th><th>Action</th></tr>';
-        data.claims.forEach(c => {
-            html += `<tr>
-                <td>${c.username} (${c.telegram_id})</td>
-                <td>${c.task_title}</td>
-                <td>${c.reward} ${c.currency === 'aaf' ? 'AAF' : 'BDT'}</td>
-                <td>
-                    <button onclick="processClaim('${c._id}', 'approve')" style="background:#00ff88;">✅ Approve</button>
-                    <button onclick="processClaim('${c._id}', 'reject')" style="background:#ff5555;">❌ Reject</button>
-                </td>
-            </tr>`;
-        });
-        html += '</table>';
-        container.innerHTML = html;
-    } catch(e) { container.innerHTML = '<div>Error loading</div>'; }
-}
-
-async function processClaim(claimId, action) {
-    const res = await fetch('/api/admin/approve_claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ claim_id: claimId, action })
-    });
-    const data = await res.json();
-    if (data.success) alert(`✅ Claim ${action}d`);
-    else alert('Failed');
-    loadPendingClaims(); // রিফ্রেশ
-}
-
-    async function clearField(fieldName, elementId) {
-    if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
-    document.getElementById(elementId).value = '';
-    try {
-        const res = await fetch('/api/admin/clear_field', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ field: fieldName })
-        });
-        const data = await res.json();
-        alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
-    } catch(e) { alert('সার্ভার এরর'); }
     }
 
     async function updateWallets() {
@@ -1253,104 +1263,140 @@ async function processClaim(claimId, action) {
     if (res.ok) alert('✅ নোটিশ পাবলিশ হয়েছে');
     else alert('❌ ব্যর্থ');
     }
-
     
+    /* ================= LIVE PRICE (MongoDB থেকে ONLY) ================= */
+    async function loadLivePrice(){
+  try{
+    const res = await fetch(`${API}/api/market/price`);
+    const d = await res.json();
+    document.getElementById('live-price-display').innerText = "৳ " + d.price;
+  } catch(e){}
+}
+setInterval(loadLivePrice, 2000);
 
-    async function loadPendingDeposits() {
-    const container = document.getElementById('pending-list-view');
-    if (!container) return;
+    async function forceMarketPrice() {
+    const priceInput = document.getElementById('inp-price');
+    if (!priceInput || parseFloat(priceInput.value) <= 0) {
+        alert("দয়া করে সঠিক প্রাইস লিখুন!");
+        return;
+    }
+    const newPrice = parseFloat(priceInput.value);
+    try {
+        const response = await fetch('/api/admin/set_price', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ price: newPrice })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("✅ মার্কেট প্রাইস সফলভাবে আপডেট হয়েছে!");
+            priceInput.value = "";
+        } else {
+            alert("❌ এরর: " + (result.error || "Unknown error"));
+        }
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! প্রাইস আপডেট হয়নি।");
+    }
+    }
+
+    async function setGlobalFee() {
+    const feeInput = document.getElementById('c-fee');
+    if (!feeInput || feeInput.value === "") {
+        alert("দয়া করে ফি-র পারসেন্টেজ লিখুন!");
+        return;
+    }
+    const newFee = parseFloat(feeInput.value);
+    try {
+        const response = await fetch('/api/admin/set_fee', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ fee: newFee })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("✅ ট্রেডিং ফি সফলভাবে আপডেট হয়েছে!");
+            feeInput.value = "";
+        } else {
+            alert("❌ এরর: " + (result.error || "Unknown error"));
+        }
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! ফি আপডেট হয়নি।");
+    }
+    }
+
+    async function saveVolatilitySettings() {
+    const impactInput = document.getElementById('trade_impact_factor');
+    const volatilityInput = document.getElementById('price_volatility');
+    if (!impactInput || !volatilityInput) return;
+    const impact = parseFloat(impactInput.value);
+    const volatility = parseFloat(volatilityInput.value);
+    try {
+        const response = await fetch('/api/admin/update_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+                trade_impact_factor: impact, 
+                price_volatility: volatility 
+            })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("💾 ভোলাটিলিটি সেটিংস সফলভাবে সেভ হয়েছে!");
+        } else {
+            alert("❌ এরর: " + (result.error || "Unknown error"));
+        }
+    } catch (error) {
+        alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
+    }
+  }
+
+    // ======পেজ লোডে রেট লোড করা=====
+    async function loadOrderRates() {
+    try {
+        const res = await fetch('/api/admin/order_rates', { credentials: 'include' });
+        const data = await res.json();
+        if (data.rates) {
+            document.getElementById('rate_followers').value = data.rates.followers || 0.20;
+            document.getElementById('rate_members').value = data.rates.members || 0.15;
+            document.getElementById('rate_views').value = data.rates.views || 0.05;
+            document.getElementById('rate_likes').value = data.rates.likes || 0.10;
+            document.getElementById('rate_comments').value = data.rates.comments || 0.50;
+        }
+    } catch (e) { console.log(e); }
+    }
+
+    async function saveOrderRates() {
+    const rates = {
+        followers: parseFloat(document.getElementById('rate_followers').value) || 0.20,
+        members: parseFloat(document.getElementById('rate_members').value) || 0.15,
+        views: parseFloat(document.getElementById('rate_views').value) || 0.05,
+        likes: parseFloat(document.getElementById('rate_likes').value) || 0.10,
+        comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
+    };
     
     try {
-        const res = await fetch('/api/admin/pending_deposits', { credentials: 'include' });
-        const data = await res.json();
-        
-        if (!data.deposits || data.deposits.length === 0) {
-            container.innerHTML = '<div class="empty-state">✅ কোনো পেন্ডিং ডিপোজিট নেই।</div>';
-            return;
-        }
-        
-        let html = `
-            <table class="request-table">
-                <thead>
-                    <tr>
-                        <th>ক্রিয়েটর</th>
-                        <th>মেথড</th>
-                        <th>পরিমাণ (৳)</th>
-                        <th>রেফারেন্স ID</th>
-                        <th>তারিখ</th>
-                        <th>অ্যাকশন</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        data.deposits.forEach(d => {
-            // টাইম ফরম্যাট সাজানো
-            let date = new Date(d.created_at);
-            let dateStr = date.toLocaleString('bn-BD');
-            
-            html += `
-                <tr class="deposit-row">
-                    <td><i class="fas fa-user"></i> ${escapeHtml(d.telegram_id)}</td>
-                    <td><i class="fas fa-university"></i> ${escapeHtml(d.method)}</td>
-                    <td><span class="amount">৳ ${parseFloat(d.amount).toLocaleString()}</span></td>
-                    <td><code>${escapeHtml(d.reference)}</code></td>
-                    <td>${dateStr}</td>
-                    <td>
-                        <button onclick="approveDeposit('${d._id}')" class="approve-btn">✅ অনুমোদন</button>
-                        <button onclick="rejectDeposit('${d._id}')" class="reject-btn">❌ বাতিল</button>
-                    </td>
-                </tr>
-            `;
+        const res = await fetch('/api/admin/order_rates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(rates)
         });
-        
-        html += `</tbody></table>`;
-        container.innerHTML = html;
-        
-    } catch(e) {
-        console.error(e);
-        container.innerHTML = '<div class="error-state">❌ লোড করতে ব্যর্থ: ' + e.message + '</div>';
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ সার্ভিস রেট সেভ হয়েছে!');
+        } else {
+            alert('❌ সেভ করতে ব্যর্থ');
+        }
+    } catch (e) {
+        alert('সার্ভার ত্রুটি');
     }
-}
-// 필요한 헬퍼 함수들
-async function approveDeposit(id) {
-    const res = await fetch('/api/admin/approve_deposit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id })
-    });
-    const data = await res.json();
-    if (data.success) {
-        alert('✅ ডিপোজিট অনুমোদিত হয়েছে');
-        loadPendingDeposits();
-        loadAdminStats();
-    } else {
-        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
     }
-}
 
-async function rejectDeposit(id) {
-    const res = await fetch('/api/admin/reject_deposit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id })
-    });
-    const data = await res.json();
-    if (data.success) {
-        alert('❌ ডিপোজিট বাতিল করা হয়েছে');
-        loadPendingDeposits();
-    } else {
-        alert('❌ ব্যর্থ: ' + (data.error || 'Unknown error'));
-    }
-}
-
-
-    // ========== পপআপ ফাংশন ==========
-
-// পপআপ ডাটা লোড করা
-async function loadPopupData() {
+    //=============পপআপ ডাটা লোড করা==========
+    async function loadPopupData() {
     try {
         const res = await fetch('/api/admin/config', { credentials: 'include' });
         const data = await res.json();
@@ -1388,16 +1434,14 @@ async function loadPopupData() {
     } catch(e) {
         console.error('Popup load error:', e);
     }
-}
-
-// পপআপ বন্ধ করা
-function closePopup() {
+    }
+    
+    function closePopup() {
     const popupDiv = document.getElementById('popup-display');
     if (popupDiv) popupDiv.style.display = 'none';
     localStorage.setItem('popup_shown_today', new Date().toDateString());
 }
 
-// পপআপ সেটিংস আপডেট করা
 async function updatePopupSettings() {
     const popupData = {
         popup_ad_title: document.getElementById('popup_ad_title')?.value || '',
@@ -1427,119 +1471,73 @@ async function updatePopupSettings() {
         alert('❌ সার্ভার এরর: ' + err.message);
     }
 }
-
-
-
-// প্রাইস ফিক্সড করার সঠিক ফাংশন
-async function forceMarketPrice() {
-    const priceInput = document.getElementById('inp-price');
-    if (!priceInput || parseFloat(priceInput.value) <= 0) {
-        alert("দয়া করে সঠিক প্রাইস লিখুন!");
-        return;
-    }
-    const newPrice = parseFloat(priceInput.value);
-    try {
-        const response = await fetch('/api/admin/set_price', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ price: newPrice })
-        });
-        const result = await response.json();
-        if (result.success) {
-            alert("✅ মার্কেট প্রাইস সফলভাবে আপডেট হয়েছে!");
-            priceInput.value = "";
-        } else {
-            alert("❌ এরর: " + (result.error || "Unknown error"));
-        }
-    } catch (error) {
-        alert("🚨 সার্ভার এরর! প্রাইস আপডেট হয়নি।");
-    }
-}
-
-// ট্রেডিং ফি আপডেট করার সঠিক ফাংশন
-async function setGlobalFee() {
-    const feeInput = document.getElementById('c-fee');
-    if (!feeInput || feeInput.value === "") {
-        alert("দয়া করে ফি-র পারসেন্টেজ লিখুন!");
-        return;
-    }
-    const newFee = parseFloat(feeInput.value);
-    try {
-        const response = await fetch('/api/admin/set_fee', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ fee: newFee })
-        });
-        const result = await response.json();
-        if (result.success) {
-            alert("✅ ট্রেডিং ফি সফলভাবে আপডেট হয়েছে!");
-            feeInput.value = "";
-        } else {
-            alert("❌ এরর: " + (result.error || "Unknown error"));
-        }
-    } catch (error) {
-        alert("🚨 সার্ভার এরর! ফি আপডেট হয়নি।");
-    }
-}
-
-// ভোলাটিলিটি সেটিংস সেভ করার সঠিক ফাংশন
-async function saveVolatilitySettings() {
-    const impactInput = document.getElementById('trade_impact_factor');
-    const volatilityInput = document.getElementById('price_volatility');
-    if (!impactInput || !volatilityInput) return;
-    const impact = parseFloat(impactInput.value);
-    const volatility = parseFloat(volatilityInput.value);
-    try {
-        const response = await fetch('/api/admin/update_settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                trade_impact_factor: impact, 
-                price_volatility: volatility 
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            alert("💾 ভোলাটিলিটি সেটিংস সফলভাবে সেভ হয়েছে!");
-        } else {
-            alert("❌ এরর: " + (result.error || "Unknown error"));
-        }
-    } catch (error) {
-        alert("🚨 সার্ভার এরর! সেটিংস সেভ হয়নি।");
-    }
-}
-
-
-  // ========== টাস্ক অর্ডার সার্ভিস রেট সেভ (আসল ফাংশন) ==========
-async function saveOrderRates() {
-    const rates = {
-        followers: parseFloat(document.getElementById('rate_followers').value) || 0.20,
-        members: parseFloat(document.getElementById('rate_members').value) || 0.15,
-        views: parseFloat(document.getElementById('rate_views').value) || 0.05,
-        likes: parseFloat(document.getElementById('rate_likes').value) || 0.10,
-        comments: parseFloat(document.getElementById('rate_comments').value) || 0.50
-    };
     
+/* ================= TAB ================= */
+function openTab(element) {
+    // এলিমেন্ট থেকে data-tab অ্যাট্রিবিউট নেওয়া
+    let tab = element.getAttribute("data-tab");
+    
+    // যদি element টি li হয় এবং data-tab না থাকে, তাহলে তার child থেকে নেওয়া
+    if (!tab && element.tagName === 'LI') {
+        tab = element.getAttribute("data-tab");
+    }
+    
+    // যদি element টি i হয়, তাহলে তার parent থেকে নেওয়া
+    if (!tab && element.tagName === 'I') {
+        const parent = element.parentElement;
+        if (parent) {
+            tab = parent.getAttribute("data-tab");
+            if (!tab) tab = parent.getAttribute("data-tab");
+        }
+    }
+    
+    if (!tab) {
+        console.error("No data-tab found", element);
+        return;
+    }
+    
+    console.log("Switching to tab:", tab);  // ডিবাগ লাইন
+    
+    // সব সেকশন লুকান
+    document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // সব নেভিগেশন আইটেম থেকে active ক্লাস সরান
+    document.querySelectorAll('[data-tab]').forEach(nav => {
+        nav.classList.remove('active');
+    });
+    
+    // সিলেক্টেড সেকশন দেখান
+    const selectedSection = document.getElementById(tab);
+    if (selectedSection) {
+        selectedSection.classList.add('active');
+    } else {
+        console.error("Section not found:", tab);
+    }
+    
+    // সব নেভিগেশন এলিমেন্টে active ক্লাস যোগ করুন যাদের data-tab মিলে
+    document.querySelectorAll(`[data-tab="${tab}"]`).forEach(nav => {
+        nav.classList.add('active');
+    });
+}
+
+    
+
+    async function clearField(fieldName, elementId) {
+    if (!confirm(`"${fieldName}" ফিল্ডটি খালি করতে চান?`)) return;
+    document.getElementById(elementId).value = '';
     try {
-        const res = await fetch('/api/admin/order_rates', {
+        const res = await fetch('/api/admin/clear_field', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(rates)
+            body: JSON.stringify({ field: fieldName })
         });
         const data = await res.json();
-        if (data.success) {
-            alert('✅ সার্ভিস রেট সেভ হয়েছে!');
-        } else {
-            alert('❌ সেভ করতে ব্যর্থ');
-        }
-    } catch (e) {
-        alert('সার্ভার ত্রুটি');
+        alert(data.success ? '✅ সফল হয়েছে' : '❌ ব্যর্থ');
+    } catch(e) { alert('সার্ভার এরর'); }
     }
-}
 
 // অন্যান্য ফাংশন (যেগুলো ডামি ছিল না, সেগুলো রেখে দিতে পারেন)
 async function updateTaskRules() { 
@@ -1548,20 +1546,7 @@ async function updateTaskRules() {
 function togglePopupAd() { console.log('toggle popup'); }
 function sendPushNotification() { alert('নোটিফিকেশন ফিচার আপডেট হবে'); }  
 
-// পেজ লোডে রেট লোড করা
-async function loadOrderRates() {
-    try {
-        const res = await fetch('/api/admin/order_rates', { credentials: 'include' });
-        const data = await res.json();
-        if (data.rates) {
-            document.getElementById('rate_followers').value = data.rates.followers || 0.20;
-            document.getElementById('rate_members').value = data.rates.members || 0.15;
-            document.getElementById('rate_views').value = data.rates.views || 0.05;
-            document.getElementById('rate_likes').value = data.rates.likes || 0.10;
-            document.getElementById('rate_comments').value = data.rates.comments || 0.50;
-        }
-    } catch (e) { console.log(e); }
-}
+
 
     // ========== মোবাইল টাচ ফিক্স এবং অনুপস্থিত ফাংশন ==========
 document.querySelectorAll('.bottom-nav i').forEach(icon => {
