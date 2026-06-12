@@ -353,6 +353,78 @@ def verify_join():
         return jsonify({"success": False, "channel": channel_url, "message": "Server error"})
 
 # ================== Users =================
+@app.route("/api/admin/tasks/create", methods=["POST"])
+def admin_tasks_create():
+    """নতুন টাস্ক তৈরি"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    
+    if not fb_ref:
+        return jsonify({"success": False, "message": "Firebase not configured"}), 500
+    
+    task_id = secrets.token_hex(4)
+    admin = get_admin_config()
+    default_hours = admin.get("default_task_expiry_hours", 168)
+    expiry_hours = data.get("expiry_hours", default_hours)
+    expires_at = (datetime.utcnow() + timedelta(hours=expiry_hours)).isoformat()
+    
+    verification = data.get("verification", {})
+    
+    task_data = {
+        "id": task_id,
+        "title": data.get("title"),
+        "link": data.get("link"),
+        "reward": data.get("reward"),
+        "type": data.get("type"),
+        "currency": data.get("currency", "bdt"),
+        "expiry_hours": expiry_hours,
+        "expires_at": expires_at,
+        "created_at": datetime.utcnow().isoformat(),
+        "active": True,
+        "device_check": verification.get("device_check", True),
+        "ip_check": verification.get("ip_check", False),
+        "account_check": verification.get("account_check", True),
+        "timer": 30
+    }
+    
+    fb_ref.child(f"tasks/{task_id}").set(task_data)
+    
+    return jsonify({"success": True, "message": "টাস্ক তৈরি হয়েছে!", "task_id": task_id})
+
+
+@app.route("/api/admin/tasks/list", methods=["GET"])
+def admin_tasks_list():
+    """এডমিন প্যানেলের জন্য টাস্ক লিস্ট"""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if not fb_ref:
+        return jsonify({"tasks": []})
+    
+    tasks = fb_ref.child("tasks").get()
+    task_list = []
+    if tasks:
+        for key, t in tasks.items():
+            task_list.append({
+                "_id": key,
+                "id": key,
+                "title": t.get("title", ""),
+                "type": t.get("type", "telegram_channel"),
+                "link": t.get("link", ""),
+                "reward": t.get("reward", 0),
+                "currency": t.get("currency", "bdt"),
+                "active": t.get("active", True),
+                "timer": t.get("timer", 30),
+                "expiry_hours": t.get("expiry_hours", 168),
+                "device_check": t.get("device_check", True),
+                "ip_check": t.get("ip_check", False),
+                "account_check": t.get("account_check", True)
+            })
+    
+    return jsonify({"tasks": task_list})
+
 @app.route("/api/user/claimed_tasks")
 @login_required
 def get_claimed_tasks():
