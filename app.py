@@ -2777,66 +2777,88 @@ def user_check_stat():
                 return result
             
             # ========== চ্যানেল/গ্রুপ চেক (যদি শুধু চ্যানেল লিংক দেওয়া থাকে) ==========
-            else:
-                result = {
-                    "success": True, 
-                    "type": "channel",
-                    "title": entity.title,
-                    "username": channel_username,
-                    "is_public": hasattr(entity, 'username') and bool(entity.username),
-                    "description": "", 
-                    "members": "N/A",
-                    "user_is_member": user_is_member,
-                    "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
-                }
-                
-                # 🆕 চেককারীর নাম
-                if checked_by: 
-                    result["checked_by"] = checked_by
-                
-                # 🆕 চ্যানেল/গ্রুপের বিস্তারিত তথ্য
-                try:
-                    if hasattr(entity, 'broadcast'):
-                        full = await client.get_full_channel(entity)
-                    else:
-                        full = await client.get_full_chat(entity)
-                    
-                    result["description"] = getattr(full.full_chat, 'about', '') or ''
-                    result["members"] = getattr(full.full_chat, 'participants_count', 'N/A')
-                    
-                    # 🆕 গ্রুপের সদস্য তালিকা (শুধু গ্রুপের জন্য)
-                    if hasattr(entity, 'broadcast') == False:
-                        try:
-                            participants = await client.get_participants(entity, limit=50)
-                            result["recent_members"] = [
-                                {"id": p.id, "name": p.first_name or "", "username": p.username or ""}
-                                for p in participants[:20] if p
-                            ]
-                        except: pass
-                        
-                except Exception as e:
-                    print(f"Full info error: {e}")
-                
-                return result
-                
-        except Exception as e:
-            return {"success": False, "message": str(e)}
-        finally:
-            await client.disconnect()
+else:
+    result = {
+        "success": True, 
+        "type": "channel",
+        "title": entity.title,
+        "username": channel_username,
+        "is_public": hasattr(entity, 'username') and bool(entity.username),
+        "description": "", 
+        "members": "লোড হচ্ছে...",
+        "user_is_member": user_is_member,
+        "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
+    }
     
+    if checked_by: 
+        result["checked_by"] = checked_by
+    
+    # 🚀 পদ্ধতি ১: Telethon দিয়ে চেষ্টা
+    telethon_success = False
     try:
-        data = run_async(check())
-        
-        # ✅ ক্যাশে সেভ
-        cache_col.update_one(
-            {"cache_key": cache_key},
-            {"$set": {"data": data, "created_at": now}},
-            upsert=True
-        )
-        
-        return jsonify(data)
+        if hasattr(entity, 'broadcast'):  # চ্যানেল
+            full = await client.get_full_channel(entity)
+            result["description"] = full.full_chat.about or ''
+            if hasattr(full, 'participants_count') and full.participants_count:
+                result["members"] = full.participants_count
+                telethon_success = True
+            elif hasattr(full.full_chat, 'participants_count'):
+                result["members"] = full.full_chat.participants_count
+                telethon_success = True
+        else:  # গ্রুপ
+            full = await client.get_full_chat(entity)
+            result["description"] = full.full_chat.about or ''
+            if hasattr(full.full_chat, 'participants_count'):
+                result["members"] = full.full_chat.participants_count
+                telethon_success = True
+            
+            # গ্রুপের সদস্য তালিকা
+            try:
+                participants = await client.get_participants(entity, limit=20)
+                result["recent_members"] = [
+                    {"id": p.id, "name": p.first_name or "", "username": p.username or ""}
+                    for p in participants[:20] if p
+                ]
+            except:
+                pass
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        print(f"Telethon full info error: {e}")
+        result["members"] = "বট দিয়ে চেষ্টা..."
+    
+    # 🚀 পদ্ধতি ২: বট API দিয়ে চেষ্টা (যদি Telethon কাজ না করে)
+    if not telethon_success:
+        admin_config = get_admin_config()
+        bot_token = admin_config.get("bot_token")
+        
+        if bot_token:
+            try:
+                import requests
+                chat_id = f"@{channel_username}" if not channel_username.startswith("@") else channel_username
+                url = f"https://api.telegram.org/bot{bot_token}/getChat?chat_id={chat_id}"
+                resp = requests.get(url, timeout=10).json()
+                
+                if resp.get("ok"):
+                    chat_data = resp["result"]
+                    if chat_data.get("description"):
+                        result["description"] = chat_data["description"]
+                    if chat_data.get("members_count"):
+                        result["members"] = chat_data["members_count"]
+                    elif chat_data.get("participants_count"):
+                        result["members"] = chat_data["participants_count"]
+                    elif chat_data.get("type"):
+                        result["members"] = chat_data.get("type", "চ্যানেল")
+                    else:
+                        result["members"] = "পাবলিক চ্যানেল"
+            except Exception as e:
+                print(f"Bot API error: {e}")
+                if result["members"] in ["লোড হচ্ছে...", "বট দিয়ে চেষ্টা..."]:
+                    result["members"] = "N/A (বট টোকেন নেই বা ভুল)"
+    
+    # যদি দুইটাই কাজ না করে
+    if result["members"] in ["লোড হচ্ছে...", "বট দিয়ে চেষ্টা..."]:
+        result["members"] = "N/A (সীমাবদ্ধ)"
+    
+    return result
         
 # ================= RUN =================
 if __name__ == "__main__":
