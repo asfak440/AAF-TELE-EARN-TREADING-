@@ -2700,53 +2700,125 @@ def user_check_stat():
             except:
                 user_is_member = False
             
+            # ========== পোস্ট চেক (যদি পোস্ট আইডি থাকে) ==========
             if post_id:
                 message = await client.get_messages(entity, ids=post_id)
                 if not message:
                     return {"success": False, "message": "পোস্ট পাওয়া যায়নি"}
                 
+                # 🆕 মিডিয়া টাইপ ডিটেক্ট
+                if message.photo:
+                    media_type = "📷 ফটো"
+                elif message.video:
+                    media_type = "🎥 ভিডিও"
+                elif message.document:
+                    media_type = "📄 ডকুমেন্ট"
+                else:
+                    media_type = "📝 টেক্সট"
+                
                 result = {
-                    "success": True, "type": "post",
+                    "success": True, 
+                    "type": "post",
                     "channel_title": entity.title,
+                    "channel_username": channel_username,
                     "views": getattr(message, 'views', 0),
                     "forwards": getattr(message, 'forwards', 0),
                     "date": str(message.date),
-                    "text": message.text[:300] if message.text else "[মিডিয়া/ভিডিও]",
+                    "text": message.text[:500] if message.text else "[মিডিয়া মেসেজ]",
+                    "media_type": media_type,
                     "user_is_member": user_is_member,
                     "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
                 }
-                if checked_by: result["checked_by"] = checked_by
+                
+                # 🆕 চেককারীর নাম
+                if checked_by: 
+                    result["checked_by"] = checked_by
+                
+                # 🆕 পোস্টের সরাসরি লিংক
+                if channel_username and post_id:
+                    result["post_link"] = f"https://t.me/{channel_username}/{post_id}"
+                
+                # 🆕 রিঅ্যাকশন (লাইক/রিঅ্যাক্ট)
                 try:
                     if hasattr(message, 'reactions') and message.reactions:
                         reactions = {}
                         for r in message.reactions.results:
-                            reactions[getattr(r.reaction, 'emoticon', '👍')] = r.count
+                            emoticon = getattr(r.reaction, 'emoticon', '👍')
+                            reactions[emoticon] = r.count
                         result["reactions"] = reactions
                 except: pass
+                
+                # 🆕 রিপ্লাই কাউন্ট
                 try:
                     if hasattr(message, 'replies') and message.replies:
                         result["replies_count"] = message.replies.replies
                 except: pass
+                
+                # 🆕 গ্রুপ সদস্য তালিকা (শুধু গ্রুপের জন্য, চ্যানেল নয়)
+                if hasattr(entity, 'broadcast') == False:  # False মানে গ্রুপ
+                    try:
+                        participants = await client.get_participants(entity, limit=50)
+                        result["recent_members"] = [
+                            {
+                                "id": p.id, 
+                                "name": p.first_name or "", 
+                                "username": p.username or ""
+                            }
+                            for p in participants[:20] if p
+                        ]
+                        result["total_members"] = len(participants) if participants else "N/A"
+                    except Exception as e:
+                        result["recent_members"] = []
+                        result["total_members"] = "N/A"
+                
+                # 🆕 পোস্ট আইডি
+                result["post_id"] = post_id
+                
                 return result
+            
+            # ========== চ্যানেল/গ্রুপ চেক (যদি শুধু চ্যানেল লিংক দেওয়া থাকে) ==========
             else:
                 result = {
-                    "success": True, "type": "channel",
+                    "success": True, 
+                    "type": "channel",
                     "title": entity.title,
-                    "is_public": hasattr(entity, 'username') and entity.username,
-                    "description": "", "members": "N/A",
+                    "username": channel_username,
+                    "is_public": hasattr(entity, 'username') and bool(entity.username),
+                    "description": "", 
+                    "members": "N/A",
                     "user_is_member": user_is_member,
                     "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
                 }
-                if checked_by: result["checked_by"] = checked_by
+                
+                # 🆕 চেককারীর নাম
+                if checked_by: 
+                    result["checked_by"] = checked_by
+                
+                # 🆕 চ্যানেল/গ্রুপের বিস্তারিত তথ্য
                 try:
                     if hasattr(entity, 'broadcast'):
                         full = await client.get_full_channel(entity)
                     else:
                         full = await client.get_full_chat(entity)
+                    
                     result["description"] = getattr(full.full_chat, 'about', '') or ''
                     result["members"] = getattr(full.full_chat, 'participants_count', 'N/A')
-                except: pass
+                    
+                    # 🆕 গ্রুপের সদস্য তালিকা (শুধু গ্রুপের জন্য)
+                    if hasattr(entity, 'broadcast') == False:
+                        try:
+                            participants = await client.get_participants(entity, limit=50)
+                            result["recent_members"] = [
+                                {"id": p.id, "name": p.first_name or "", "username": p.username or ""}
+                                for p in participants[:20] if p
+                            ]
+                        except: pass
+                        
+                except Exception as e:
+                    print(f"Full info error: {e}")
+                
                 return result
+                
         except Exception as e:
             return {"success": False, "message": str(e)}
         finally:
