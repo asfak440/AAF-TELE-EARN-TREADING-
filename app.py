@@ -49,6 +49,9 @@ deeplink_clicks_col = db_mongo["deeplink_clicks"]
 candles_col = db_mongo['candles']
 channel_status_col = db_mongo["channel_status"]  # 🆕 এই লাইনটি যোগ করুন
 task_channel_status_col = db_mongo["task_channel_status"]
+device_tasks_col = db_mongo["device_tasks"]
+ip_tasks_col = db_mongo["ip_tasks"]
+user_tasks_col = db_mongo["user_tasks"]
 
 # 🎯 ৬টি টেবিল তৈরি এবং সেগুলোতে ২ মাসের অটো-ডিলিট ও স্পিড বুস্টার ইনডেক্স চালু করা
 try:
@@ -1062,46 +1065,6 @@ def verify_channel_task():
         {"$set": {"is_member": True, "last_joined": datetime.utcnow()}},
         upsert=True
     )
-    
-    # ✅ ডিউ চেক ও টাকা প্রদান
-    task_channel_status = task_channel_status_col.find_one({"user_id": str(user["_id"]), "task_id": task_id})
-    
-    reward = task.get("reward", 0)
-    currency = task.get("currency", "cash")
-    final_reward = reward
-    
-    if task_channel_status and task_channel_status.get("is_member") == False:
-        due_amount = admin.get("task_channel_leave_penalty", 50)
-        final_reward = max(0, reward - due_amount)
-        task_channel_status_col.update_one(
-            {"user_id": str(user["_id"]), "task_id": task_id},
-            {"$set": {"due_cleared": True}}
-        )
-    
-    if currency == "aaf":
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"aaf": final_reward}})
-        msg = f"Received {final_reward} AAF"
-    else:
-        users_col.update_one({"_id": user["_id"]}, {"$inc": {"cash": final_reward}})
-        msg = f"Received ৳{final_reward}"
-    
-    if final_reward != reward:
-        msg += f" (ডিউ কাটা হয়েছে: -৳{reward - final_reward})"
-    
-    users_col.update_one({"_id": user["_id"]}, {"$inc": {"tasks_done": 1}})
-    task_claims_col.insert_one({
-        "telegram_id": user["telegram_id"],
-        "task_id": task_id,
-        "device_id": device_id,
-        "ip": user_ip,
-        "reward": reward,
-        "currency": currency,
-        "status": "approved",
-        "created_at": datetime.utcnow()
-    })
-    
-    return jsonify({"success": True, "message": msg})
-
 
 @app.route("/api/user/tasks/verify_deeplink", methods=["POST"])
 @login_required
