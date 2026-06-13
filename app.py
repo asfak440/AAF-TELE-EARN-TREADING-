@@ -794,9 +794,6 @@ def get_claimed_tasks():
 def get_due_status():
     """
     ইউজারের টাস্ক চ্যানেল সংক্রান্ত ডিউ স্ট্যাটাস দেখায়
-    - due: মোট ডিউ (প্রতি টাস্ক চ্যানেলে ১ টাকা)
-    - is_member: সব চ্যানেল সঠিকভাবে জয়েন করেছে কিনা
-    - details: কোন কোন টাস্কে ডিউ আছে তার তালিকা
     """
     uid = session.get("uid")
     if not uid:
@@ -807,34 +804,31 @@ def get_due_status():
         task_channel_status_col = db_mongo["task_channel_status"]
     
     # ইউজারের সব টাস্ক চ্যানেল যেখানে:
-    # 1. is_member = False (চ্যানেল লিভ করেছে)
-    # 2. due_cleared নেই (এখনো ডিউ মেটায়নি)
     task_statuses = list(task_channel_status_col.find(
         {"user_id": uid, "is_member": False, "due_cleared": {"$ne": True}}
     ))
     
-    # ডিটেইলড তথ্য তৈরী
+    # ✅ সঠিক ইন্ডেন্টেশন (সব লাইন একই লেভেলে)
     details = []
     for status in task_statuses:
         task_id = status.get("task_id")
-        # টাস্কের তথ্য Firebase থেকে আনুন (যদি পাওয়া যায়)
         task_title = "অজানা টাস্ক"
         if task_id:
             task_data = db_mongo["tasks"].find_one({"task_id": task_id})
-             if task_data:
-                 task_title = task_data.get("title", "অজানা টাস্ক")
+            if task_data:
+                task_title = task_data.get("title", "অজানা টাস্ক")
         
         details.append({
             "task_id": task_id,
             "task_title": task_title,
-            "due_amount": 1,  # প্রতি টাস্ক চ্যানেলে ১ টাকা ডিউ
+            "due_amount": 1,
             "last_joined": status.get("last_joined").isoformat() if status.get("last_joined") else None
         })
     
-    # মোট ডিউ = অ্যাক্টিভ টাস্ক চ্যানেলের সংখ্যা (প্রতি চ্যানেলে ১ টাকা)
+    # মোট ডিউ
     total_due = len(task_statuses)
     
-    # ইউজার মেসেজ তৈরি
+    # ইউজার মেসেজ
     if total_due == 0:
         message = "কোনো ডিউ নেই। সব টাস্কের চ্যানেল জয়েন করে রাখুন।"
     else:
