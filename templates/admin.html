@@ -358,6 +358,7 @@
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <input type="text" id="user_search" placeholder="Telegram ID, username বা phone দিয়ে খুঁজুন" 
                style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1a1a2e; color: #fff;">
+        <button onclick="directBotTest()" style="background: #ff5555; margin-top: 15px;">🔴 ডাইরেক্ট বট টেস্ট</button>
         <button onclick="searchUser()" style="background: #00f2fe; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
             🔍 সার্চ
         </button>
@@ -1741,6 +1742,39 @@ const depMethod = document.getElementById('dep-method');
 if (depMethod) {
     depMethod.addEventListener('change', updateAdminInfo);
 }
+
+    async function directBotTest() {
+    const link = document.getElementById('stat_link').value;
+    if (!link) {
+        alert('লিংক দিন');
+        return;
+    }
+    
+    // ইউজারনেম বের করা
+    let username = link.replace('https://t.me/', '').split('/')[0];
+    
+    // বট টোকেন - এখানে আপনার আসল টোকেন বসান
+    const BOT_TOKEN = '7212807777:AAF-rwLSAydbSkdQY7pImSUGhKsUHawBieQ';
+    
+    try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=@${username}`;
+        console.log('Calling:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log('Full Response:', data);
+        
+        if (data.ok) {
+            const chat = data.result;
+            alert(`✅ সাকসেস!\n\nনাম: ${chat.title}\nটাইপ: ${chat.type}\nমেম্বার: ${chat.members_count || chat.participants_count || 'N/A'}\nবিবরণ: ${chat.description || 'N/A'}`);
+        } else {
+            alert(`❌ ব্যর্থ!\n\nএরর: ${data.description}\n\nএর মানে:\n- বট চ্যানেলের এডমিন নয়\n- অথবা ইউজারনেম ভুল`);
+        }
+    } catch(e) {
+        alert('নেটওয়ার্ক এরর: ' + e.message);
+    }
+    }
     
     // ফাংশনগুলোকে গ্লোবাল স্কোপে নিশ্চিত করুন
     window.loadAdminTasks = loadAdminTasks;
