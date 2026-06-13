@@ -345,7 +345,7 @@
     </div>  
 
        <!-- ইউজার সেশন লিস্ট -->
-<div class="premium-card">  
+       <div class="premium-card">  
     <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
     
     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
@@ -358,7 +358,6 @@
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <input type="text" id="user_search" placeholder="Telegram ID, username বা phone দিয়ে খুঁজুন" 
                style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1a1a2e; color: #fff;">
-        <button onclick="directBotTest()" style="background: #ff5555; margin-top: 15px;">🔴 ডাইরেক্ট বট টেস্ট</button>
         <button onclick="searchUser()" style="background: #00f2fe; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
             🔍 সার্চ
         </button>
@@ -386,6 +385,11 @@
     <input type="text" id="stat_link" placeholder="https://t.me/channel বা https://t.me/channel/123">
     
     <button class="btn-main" onclick="checkStat()" style="margin-top: 10px;">🔍 স্ট্যাট চেক করুন</button>
+    
+    <!-- ✅ ডাইরেক্ট বট টেস্ট বাটন এখানে থাকা উচিত -->
+    <button onclick="directBotTest()" style="background: #ff5555; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 10px; width: 100%; cursor: pointer;">
+        🔴 ডাইরেক্ট বট টেস্ট
+    </button>
     
     <div id="stat-result" style="display: none; margin-top: 15px; background: #1a1a2e; padding: 15px; border-radius: 10px;">
         <div id="stat-content"></div>
