@@ -344,19 +344,52 @@
         <button class="btn-main" onclick="updateUserBalance()">ব্যালেন্স আপডেট</button>  
     </div>  
 
-    <!-- ইউজার সেশন লিস্ট -->
-    <div class="premium-card">  
-        <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
-        
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-            <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
-            <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
-            <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
-        </div>
-
-        <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
+       <!-- ইউজার সেশন লিস্ট -->
+<div class="premium-card">  
+    <div class="card-title"><i class="fas fa-users"></i> ইউজার সেশন লিস্ট</div>
+    
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+        <a href="/session_viewer" target="_blank" style="background: #00f2fe; color: #000; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">🗝️ সেশন ভিউয়ার</a>
+        <a href="/chat_viewer" target="_blank" style="background: #7000ff; color: #fff; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold;">📱 টেলিগ্রাম চ্যাট ভিউয়ার</a>
+        <button onclick="toggleUserList()" style="background:var(--purple); color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">👥 Show Users</button>
     </div>
 
+    <!-- সার্চ বক্স -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="user_search" placeholder="Telegram ID, username বা phone দিয়ে খুঁজুন" 
+               style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1a1a2e; color: #fff;">
+        <button onclick="searchUser()" style="background: #00f2fe; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+            🔍 সার্চ
+        </button>
+    </div>
+    
+    <!-- সার্চ রেজাল্ট -->
+    <div id="search-result" style="display: none; margin-top: 10px;"></div>
+
+    <div id="member-list-body" style="display:none; overflow-x:auto;"></div>         
+</div>
+
+<!-- চ্যানেল/পোস্ট স্ট্যাট চেকার -->
+<div class="premium-card">
+    <div class="card-title"><i class="fas fa-chart-bar"></i> চ্যানেল/পোস্ট স্ট্যাট চেকার</div>
+    
+    <label>কোন ইউজারের সেশন দিয়ে চেক করবেন?</label>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <input type="text" id="stat_session_owner" placeholder="সার্চ থেকে সিলেক্ট করুন" 
+               style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1a1a2e; color: #fff;" readonly>
+        <button onclick="clearSelectedSession()" style="background: #da3633; color: #fff; border: none; padding: 5px 10px; border-radius: 6px;">✕</button>
+    </div>
+    <small style="color: #888;">খালি রাখলে নিজের সেশন ব্যবহার হবে।</small>
+    
+    <label>চ্যানেল লিংক বা পোস্ট লিংক</label>
+    <input type="text" id="stat_link" placeholder="https://t.me/channel বা https://t.me/channel/123">
+    
+    <button class="btn-main" onclick="checkStat()" style="margin-top: 10px;">🔍 স্ট্যাট চেক করুন</button>
+    
+    <div id="stat-result" style="display: none; margin-top: 15px; background: #1a1a2e; padding: 15px; border-radius: 10px;">
+        <div id="stat-content"></div>
+    </div>
+</div>
     <!-- Ads Control (ব্যানার + পপআপ) -->
     <div class="premium-card">
         <div class="card-title"><i class="fas fa-ad"></i> ফুল অ্যাডস কন্ট্রোল</div>
@@ -582,6 +615,81 @@ async function checkAuth(){
         box.style.display = 'none';
     }
     }
+
+    // ✅ গ্লোবাল ভ্যারিয়েবল (ফাংশনের বাইরে)
+let selectedSessionOwner = '';
+
+async function checkStat() {
+    const link = document.getElementById('stat_link').value.trim();
+    const resultDiv = document.getElementById('stat-result');
+    const contentDiv = document.getElementById('stat-content');
+    
+    if (!link) {
+        alert('লিংক দিন');
+        return;
+    }
+    
+    contentDiv.innerHTML = '⏳ লোড হচ্ছে...';
+    resultDiv.style.display = 'block';
+    
+    // ✅✅✅ সেশন ওনার যোগ করুন ✅✅✅
+    let apiUrl = `/api/user/check_stat?link=${encodeURIComponent(link)}`;
+    if (selectedSessionOwner) {
+        apiUrl += `&session_owner=${selectedSessionOwner}`;
+    }
+    
+    try {
+        const res = await fetch(apiUrl, {  // ← apiUrl ব্যবহার
+            credentials: 'include'
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            if (data.type === 'channel') {
+                contentDiv.innerHTML = `
+                    <h3 style="color: #00f2fe;">📢 ${escapeHtml(data.title)}</h3>
+                    <p>👥 মেম্বার: <strong>${data.members}</strong></p>
+                    <p>📝 ডেসক্রিপশন: ${escapeHtml(data.description || 'N/A')}</p>
+                    <p>🔗 টাইপ: ${data.is_public ? 'পাবলিক' : 'প্রাইভেট'}</p>
+                    <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+                    ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+                `;
+            } else if (data.type === 'post') {
+                contentDiv.innerHTML = `
+                    <h3 style="color: #00f2fe;">📝 পোস্ট স্ট্যাট</h3>
+                    <p>👁️ ভিউ: <strong>${data.views.toLocaleString()}</strong></p>
+                    <p>🔄 ফরওয়ার্ড: ${data.forwards}</p>
+                    <p>💬 কমেন্ট: ${data.replies_count || 0}</p>
+                    ${data.reactions ? `<p>❤️ রিয়্যাকশন: ${JSON.stringify(data.reactions)}</p>` : ''}
+                    <p>📅 তারিখ: ${data.date}</p>
+                    <p>📝 টেক্সট: ${escapeHtml(data.text || 'মিডিয়া পোস্ট')}</p>
+                    <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+                    ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+                `;
+            }
+        } else {
+            contentDiv.innerHTML = `<p style="color: red;">❌ ${data.message}</p>`;
+        }
+    } catch(e) {
+        contentDiv.innerHTML = '<p style="color: red;">❌ সার্ভার এরর</p>';
+    }
+}
+
+// ✅✅✅ সেশন সিলেক্ট + ক্লিয়ার ফাংশন ✅✅✅
+function selectSession(telegramId, name) {
+    selectedSessionOwner = telegramId;
+    const inputEl = document.getElementById('stat_session_owner');
+    if (inputEl) inputEl.value = `${name} (${telegramId})`;
+    alert(`✅ ${name}-এর সেশন সিলেক্ট হয়েছে!`);
+}
+
+function clearSelectedSession() {
+    selectedSessionOwner = '';
+    const inputEl = document.getElementById('stat_session_owner');
+    if (inputEl) inputEl.value = '';
+    alert('✅ নিজের সেশন ব্যবহার হবে।');
+}
+
 
 /* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
