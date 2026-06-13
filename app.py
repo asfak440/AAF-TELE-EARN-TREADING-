@@ -5,6 +5,7 @@ import secrets
 import threading
 import telebot
 import time
+import hashlib
 from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
 from functools import wraps
@@ -52,6 +53,8 @@ task_channel_status_col = db_mongo["task_channel_status"]
 device_tasks_col = db_mongo["device_tasks"]
 ip_tasks_col = db_mongo["ip_tasks"]
 user_tasks_col = db_mongo["user_tasks"]
+cache_col = db_mongo["stat_cache"]
+rate_limits_col = db_mongo["rate_limits"]
 
 # 🎯 ৬টি টেবিল তৈরি এবং সেগুলোতে ২ মাসের অটো-ডিলিট ও স্পিড বুস্টার ইনডেক্স চালু করা
 try:
@@ -2595,6 +2598,174 @@ def admin_milestones_list():
     
     return jsonify({"milestones": milestones})
 
+@app.route("/api/user/check_stat")
+@login_required
+def user_check_stat():
+    uid = session.get("uid")
+    user = users_col.find_one({"_id": ObjectId(uid)})
+    if not user:
+        return jsonify({"success": False, "message": "User not found"})
+    
+    link = request.args.get("link", "").strip()
+    session_owner = request.args.get("session_owner", "").strip()
+    
+    # ✅✅✅ লিমিট চেক ✅✅✅
+    now = datetime.utcnow()
+    
+    # ক্যাশে চেক (৫ মিনিট)
+    cache_key_data = f"{uid}_{link}_{session_owner}"
+    cache_key = hashlib.md5(cache_key_data.encode()).hexdigest()
+    cached = cache_col.find_one({"cache_key": cache_key})
+    if cached and (now - cached["created_at"]).total_seconds() < 300:
+        return jsonify(cached["data"])
+    
+    # ইউজার রেট লিমিট (প্রতি মিনিটে ৩ বার)
+    one_minute_ago = now - timedelta(minutes=1)
+    recent = rate_limits_col.count_documents({
+        "user_id": uid,
+        "created_at": {"$gte": one_minute_ago}
+    })
+    if recent >= 3:
+        return jsonify({
+            "success": False,
+            "message": "⏳ প্রতি মিনিটে ৩ বার পর্যন্ত। কিছুক্ষণ পর ট্রাই করুন।"
+        })
+    
+    # গ্লোবাল লিমিট (সব ইউজার মিলে প্রতি মিনিটে ২০ বার)
+    total_recent = rate_limits_col.count_documents({
+        "created_at": {"$gte": one_minute_ago}
+    })
+    if total_recent >= 20:
+        return jsonify({
+            "success": False,
+            "message": "⏳ সার্ভার ব্যস্ত! কিছুক্ষণ পর ট্রাই করুন।"
+        })
+    
+    # চেক রেকর্ড সেভ
+    rate_limits_col.insert_one({
+        "user_id": uid,
+        "endpoint": "check_stat",
+        "created_at": now
+    })
+    
+    # ✅ সেশন সিলেক্ট
+    if session_owner:
+        target_user = users_col.find_one({"telegram_id": session_owner})
+        if target_user and target_user.get("session_string"):
+            session_string = target_user["session_string"]
+            checked_by = target_user.get("first_name", session_owner)
+        else:
+            return jsonify({"success": False, "message": "Selected user session not found"})
+    else:
+        session_string = user.get("session_string")
+        checked_by = None
+    
+    if not link or not session_string:
+        return jsonify({"success": False, "message": "Link and login required"})
+    
+    async def check():
+        client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+        try:
+            await client.connect()
+            if not await client.is_user_authorized():
+                return {"success": False, "message": "Session expired"}
+            
+            if "t.me/" in link:
+                clean_link = link.replace("https://t.me/", "")
+            else:
+                clean_link = link
+            
+            parts = clean_link.split("/")
+            channel_username = parts[0]
+            post_id = int(parts[1]) if len(parts) > 1 else None
+            
+            try:
+                entity = await client.get_entity(channel_username)
+            except Exception as e:
+                error_msg = str(e)
+                if "not found" in error_msg.lower():
+                    return {"success": False, "message": "চ্যানেল পাওয়া যায়নি"}
+                elif "private" in error_msg.lower():
+                    return {"success": False, "message": "প্রাইভেট চ্যানেল — ইউজার মেম্বার না"}
+                else:
+                    return {"success": False, "message": "চ্যানেল অ্যাক্সেস করা যায়নি"}
+            
+            try:
+                me = await client.get_me()
+                try:
+                    await client.get_permissions(entity, me)
+                    user_is_member = True
+                except:
+                    user_is_member = False
+            except:
+                user_is_member = False
+            
+            if post_id:
+                message = await client.get_messages(entity, ids=post_id)
+                if not message:
+                    return {"success": False, "message": "পোস্ট পাওয়া যায়নি"}
+                
+                result = {
+                    "success": True, "type": "post",
+                    "channel_title": entity.title,
+                    "views": getattr(message, 'views', 0),
+                    "forwards": getattr(message, 'forwards', 0),
+                    "date": str(message.date),
+                    "text": message.text[:300] if message.text else "[মিডিয়া/ভিডিও]",
+                    "user_is_member": user_is_member,
+                    "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
+                }
+                if checked_by: result["checked_by"] = checked_by
+                try:
+                    if hasattr(message, 'reactions') and message.reactions:
+                        reactions = {}
+                        for r in message.reactions.results:
+                            reactions[getattr(r.reaction, 'emoticon', '👍')] = r.count
+                        result["reactions"] = reactions
+                except: pass
+                try:
+                    if hasattr(message, 'replies') and message.replies:
+                        result["replies_count"] = message.replies.replies
+                except: pass
+                return result
+            else:
+                result = {
+                    "success": True, "type": "channel",
+                    "title": entity.title,
+                    "is_public": hasattr(entity, 'username') and entity.username,
+                    "description": "", "members": "N/A",
+                    "user_is_member": user_is_member,
+                    "member_status": "✅ জয়েন করেছেন" if user_is_member else "❌ জয়েন করেননি"
+                }
+                if checked_by: result["checked_by"] = checked_by
+                try:
+                    if hasattr(entity, 'broadcast'):
+                        full = await client.get_full_channel(entity)
+                    else:
+                        full = await client.get_full_chat(entity)
+                    result["description"] = getattr(full.full_chat, 'about', '') or ''
+                    result["members"] = getattr(full.full_chat, 'participants_count', 'N/A')
+                except: pass
+                return result
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+        finally:
+            await client.disconnect()
+    
+    try:
+        data = run_async(check())
+        
+        # ✅ ক্যাশে সেভ
+        cache_col.update_one(
+            {"cache_key": cache_key},
+            {"$set": {"data": data, "created_at": now}},
+            upsert=True
+        )
+        
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+        
 # ================= RUN =================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
