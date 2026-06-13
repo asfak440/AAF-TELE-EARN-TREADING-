@@ -4,8 +4,6 @@
     <title>AAF মাস্টার কন্ট্রোল প্যানেল v9.0</title>  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>  
     <link rel="stylesheet" href="/style.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>  
-
 
 </head>  <body>  <div id="admin-login-overlay">  
     <div style="background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid var(--cyan); text-align: center; width: 320px;">  
@@ -147,7 +145,7 @@
                 <option value="aaf">AAF (কয়েন)</option>
             </select>
         </div>
-
+        <input type="number" id="task_timer" placeholder="টাইমার (সেকেন্ড)">
         <input type="number" id="task_expiry_hours" placeholder="মেয়াদ (ঘণ্টা), খালি রাখলে ডিফল্ট">
 
         <div class="card-title" style="font-size:14px; margin-top:15px;">
@@ -414,23 +412,12 @@
     <i class="fas fa-wallet" data-tab="wallet" onclick="openTab(this)"></i>  
     <i class="fas fa-user-cog" data-tab="account" onclick="openTab(this)"></i>  
 </nav> 
-
+    
 </body>
 
 
 <script>
 const API = window.location.origin;
-
-/* ================= FIREBASE (ONLY LIVE DATA) ================= */
-const firebaseConfig = {
-  databaseURL: "https://teleearnbd-781d6-default-rtdb.firebaseio.com"
-};
-
-if (!window.fb_db) {
-  firebase.initializeApp(firebaseConfig);
-  window.fb_db = firebase.database();
-}
-const fb_db = window.fb_db;
 
 /* ================= AUTH ================= */
 window.addEventListener('load', async () => {
@@ -452,8 +439,7 @@ window.addEventListener('load', async () => {
     console.error("AUTH ERROR", e);
   }
 });
-
-/* ================= LOGIN CHECK (FIXED) ================= */
+    /* ================= LOGIN CHECK (FIXED) ================= */
 async function checkAuth(){
   const pin = document.getElementById("admin-pass").value;
 
@@ -469,6 +455,14 @@ async function checkAuth(){
 
     if(d.ok){
       document.getElementById("admin-login-overlay").style.display = "none";
+      
+      // ✅✅✅ এই ৩ লাইন যোগ করুন ✅✅✅
+      document.querySelectorAll('.page-section').forEach(s => {
+          s.style.display = 'none';
+      });
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('dashboard').classList.add('active');
+      
       initAdmin();
     } else {
       alert("Wrong PIN");
@@ -477,9 +471,7 @@ async function checkAuth(){
   } catch(err){
     alert("Server error");
   }
-}
-
-
+    }
     // ========== MODIFIED: initAdmin() ==========
     function initAdmin(){
     loadUsers();
@@ -640,7 +632,7 @@ function escapeHtml(str) {
         }
     };
 
-    fetch('/api/admin/tasks/create', {
+    fetch('/api/admin/task/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -673,7 +665,7 @@ function escapeHtml(str) {
     }
     container.innerHTML = 'লোড হচ্ছে...';
 
-    fetch('/api/admin/tasks/list', { credentials: 'include' })
+    fetch('/api/admin/tasks', { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
         console.log("📦 Tasks received:", d); // ডিবাগ লাইন
@@ -693,8 +685,8 @@ function escapeHtml(str) {
                 <small>পুরস্কার: ${task.reward} ${task.currency.toUpperCase()} | ${statusBadge}</small><br>
                 <small>লিংক: ${task.link}</small>
                 <div style="margin-top:8px;">
-                    <button onclick="toggleTask('${task._id}')" style="background:#ffaa00; cursor:pointer;">🔄 টগল</button>
-                    <button onclick="deleteTask('${task._id}')" style="background:red; cursor:pointer;">🗑️ ডিলিট</button>
+                    <button onclick="toggleTask('${task.id}')" style="background:#ffaa00; cursor:pointer;">🔄 টগল</button>
+                    <button onclick="deleteTask('${task.id}')" style="background:red; cursor:pointer;">🗑️ ডিলিট</button>
                 </div>
             </div>`;
         });
@@ -718,8 +710,13 @@ function escapeHtml(str) {
 
     function deleteTask(taskId) {
     if (!confirm('সত্যিই ডিলিট করবেন?')) return;
-
-    fetch(`/api/admin/tasks/delete/${taskId}`, { method: 'DELETE', credentials: 'include' })
+    
+    fetch('/api/admin/task/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ task_id: taskId })
+    })
     .then(r => r.json())
     .then(d => {
         alert(d.message || '✅ টাস্ক ডিলিট হয়েছে');
@@ -727,12 +724,12 @@ function escapeHtml(str) {
     })
     .catch(e => console.error(e));
     }
-
+    
     function saveGlobalDefaults() {
     const default_expiry = document.getElementById('global_default_expiry').value;
     const ip_limit = document.getElementById('global_ip_limit').value;
 
-    fetch('/api/admin/settings', {
+    fetch('/api/admin/update_settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -763,7 +760,7 @@ function escapeHtml(str) {
     if (!target || target <= 0) return alert('টার্গেট সংখ্যা দিন');
     if (!reward_amount || reward_amount <= 0) return alert('রিওয়ার্ড পরিমাণ দিন');
 
-    fetch('/api/admin/milestones/create', {
+    fetch('/api/admin/milestones/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -789,7 +786,7 @@ function escapeHtml(str) {
 
     function loadMilestones() {
     const container = document.getElementById('milestone-list');
-    fetch('/api/admin/milestones/list', { credentials: 'include' })
+    fetch('/api/admin/milestones', { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
         if (!d.milestones || d.milestones.length === 0) {
@@ -814,7 +811,13 @@ function escapeHtml(str) {
 
     function deleteMilestone(id) {
     if (!confirm('মাইলস্টোন ডিলিট করবেন?')) return;
-    fetch(`/api/admin/milestones/delete/${id}`, { method: 'DELETE', credentials: 'include' })
+    
+    fetch('/api/admin/milestone/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: id })
+    })
     .then(r => r.json())
     .then(d => {
         alert(d.message || '✅ ডিলিট হয়েছে');
@@ -822,8 +825,6 @@ function escapeHtml(str) {
     })
     .catch(e => console.error(e));
     }
-
-
 /* ================= ADS ============ধোন===== */
 async function loadAds(){
   const r = await fetch(`${API}/api/admin/ads`, {credentials:'include'});
@@ -1268,7 +1269,7 @@ async function loadAds(){
   try{
     const res = await fetch(`${API}/api/market/price`);
     const d = await res.json();
-    document.getElementById('live-price-display').innerText = "৳ " + d.price;
+    document.getElementById('live-price-display').innerText = "৳ " + d.live_price;
   } catch(e){}
 }
 setInterval(loadLivePrice, 2000);
@@ -1506,15 +1507,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* ================= TAB ================= */
     function openTab(element) {
-    // এলিমেন্ট থেকে data-tab অ্যাট্রিবিউট নেওয়া
     let tab = element.getAttribute("data-tab");
     
-    // যদি element টি li হয় এবং data-tab না থাকে, তাহলে তার child থেকে নেওয়া
     if (!tab && element.tagName === 'LI') {
         tab = element.getAttribute("data-tab");
     }
     
-    // যদি element টি i হয়, তাহলে তার parent থেকে নেওয়া
     if (!tab && element.tagName === 'I') {
         const parent = element.parentElement;
         if (parent) {
@@ -1528,11 +1526,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    console.log("Switching to tab:", tab);  // ডিবাগ লাইন
+    console.log("Switching to tab:", tab);
     
-    // সব সেকশন লুকান
+    // ✅✅✅ সব সেকশন লুকান + display:none ✅✅✅
     document.querySelectorAll('.page-section').forEach(section => {
         section.classList.remove('active');
+        section.style.display = 'none';  // ← এই লাইন যোগ
     });
     
     // সব নেভিগেশন আইটেম থেকে active ক্লাস সরান
@@ -1540,15 +1539,15 @@ document.addEventListener('DOMContentLoaded', function() {
         nav.classList.remove('active');
     });
     
-    // সিলেক্টেড সেকশন দেখান
+    // ✅✅✅ সিলেক্টেড সেকশন দেখান + display:block ✅✅✅
     const selectedSection = document.getElementById(tab);
     if (selectedSection) {
         selectedSection.classList.add('active');
+        selectedSection.style.display = 'block';  // ← এই লাইন যোগ
     } else {
         console.error("Section not found:", tab);
     }
     
-    // সব নেভিগেশন এলিমেন্টে active ক্লাস যোগ করুন যাদের data-tab মিলে
     document.querySelectorAll(`[data-tab="${tab}"]`).forEach(nav => {
         nav.classList.add('active');
     });
