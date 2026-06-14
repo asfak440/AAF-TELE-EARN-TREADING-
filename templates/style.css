@@ -676,3 +676,49 @@ body.logged-in #admin-login-overlay {
 .page-section.active {
     display: block !important;
 }
+
+
+/* ========== লগইন ওভারলে সেন্টার ফিক্স ========== */
+#admin-login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg, #020617);
+    background-image: var(--bg-gradient);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#admin-login-overlay > div {
+    width: 90%;
+    max-width: 350px;
+    margin: 0 auto;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+#admin-login-overlay input {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 15px 0;
+}
+
+#admin-login-overlay button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* মোবাইল ডিভাইসের জন্য স্পেশাল */
+@media (max-width: 768px) {
+    #admin-login-overlay > div {
+        width: 85%;
+        padding: 25px 20px !important;
+    }
+    
+    #admin-login-overlay input {
+        font-size: 20px !important;
+        padding: 12px !important;
+    }
+}
