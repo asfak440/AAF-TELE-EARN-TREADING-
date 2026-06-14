@@ -594,3 +594,38 @@ small {
 .text-muted, .card-title {
     color: #9ca3af !important;
 }
+
+/* এডমিন প্যানেল লগইন কন্ট্রোল */
+.page-section {
+    display: none !important;
+}
+
+.page-section.active {
+    display: block !important;
+}
+
+/* লগইন করার আগে সবকিছু লুকান */
+body:not(.logged-in) .sidebar,
+body:not(.logged-in) .main-content,
+body:not(.logged-in) .bottom-nav {
+    display: none;
+}
+
+/* লগইন করার পর দেখান */
+body.logged-in .sidebar,
+body.logged-in .main-content,
+body.logged-in .bottom-nav {
+    display: block;
+}
+
+body.logged-in .sidebar {
+    display: block;
+}
+
+body.logged-in .main-content {
+    display: block;
+}
+
+body.logged-in .bottom-nav {
+    display: flex;
+}
