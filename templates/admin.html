@@ -648,30 +648,31 @@ async function checkStat() {
             credentials: 'include'
         });
         const data = await res.json();
-        
+
         if (data.success) {
             if (data.type === 'channel') {
-                contentDiv.innerHTML = `
-                    <h3 style="color: #00f2fe;">📢 ${escapeHtml(data.title)}</h3>
-                    <p>👥 মেম্বার: <strong>${data.members}</strong></p>
-                    <p>📝 ডেসক্রিপশন: ${escapeHtml(data.description || 'N/A')}</p>
-                    <p>🔗 টাইপ: ${data.is_public ? 'পাবলিক' : 'প্রাইভেট'}</p>
-                    <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
-                    ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
-                `;
-            } else if (data.type === 'post') {
-                contentDiv.innerHTML = `
-                    <h3 style="color: #00f2fe;">📝 পোস্ট স্ট্যাট</h3>
-                    <p>👁️ ভিউ: <strong>${data.views.toLocaleString()}</strong></p>
-                    <p>🔄 ফরওয়ার্ড: ${data.forwards}</p>
-                    <p>💬 কমেন্ট: ${data.replies_count || 0}</p>
-                    ${data.reactions ? `<p>❤️ রিয়্যাকশন: ${JSON.stringify(data.reactions)}</p>` : ''}
-                    <p>📅 তারিখ: ${data.date}</p>
-                    <p>📝 টেক্সট: ${escapeHtml(data.text || 'মিডিয়া পোস্ট')}</p>
-                    <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
-                    ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
-                `;
-            }
+        contentDiv.innerHTML = `
+            <h3 style="color: #00f2fe;">📢 ${escapeHtml(data.title)}</h3>
+            <p>👥 মেম্বার: <strong>${data.members}</strong></p>
+            <p>📝 ডেসক্রিপশন: ${escapeHtml(data.description || 'N/A')}</p>
+            <p>🔗 টাইপ: ${data.is_public !== undefined ? (data.is_public ? 'পাবলিক' : 'প্রাইভেট') : 'N/A'}</p>
+            <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+            ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+        `;
+    } else if (data.type === 'post') {
+        contentDiv.innerHTML = `
+            <h3 style="color: #00f2fe;">📝 পোস্ট স্ট্যাট</h3>
+            <p>👁️ ভিউ: <strong>${(data.views || 0).toLocaleString()}</strong></p>
+            <p>🔄 ফরওয়ার্ড: ${data.forwards || 0}</p>
+            <p>💬 কমেন্ট: ${data.replies_count || 0}</p>
+            ${data.reactions ? `<p>❤️ রিয়্যাকশন: ${Object.entries(data.reactions).map(([e, c]) => `${e} ${c}`).join(', ')}</p>` : ''}
+            <p>📅 তারিখ: ${data.date || 'N/A'}</p>
+            <p>📝 টেক্সট: ${escapeHtml(data.text || 'মিডিয়া পোস্ট')}</p>
+            <p>👤 স্ট্যাটাস: <strong style="color: ${data.user_is_member ? 'lime' : 'red'}">${data.member_status || 'N/A'}</strong></p>
+            ${data.checked_by ? `<p style="color: #888; font-size: 12px;">চেক করা হয়েছে: ${escapeHtml(data.checked_by)}-এর সেশন দিয়ে</p>` : ''}
+        `;
+        }
+        }
         } else {
             contentDiv.innerHTML = `<p style="color: red;">❌ ${data.message}</p>`;
         }
@@ -704,16 +705,12 @@ const setText = (id,v)=>{ if($(id)) $(id).innerText = v ?? ""; };
 
 
 
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
+    function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+    }
 
     /* ================= TASKS ================= */
     function createNewTask() {
