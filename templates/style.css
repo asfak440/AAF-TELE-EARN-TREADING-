@@ -629,3 +629,50 @@ body.logged-in .main-content {
 body.logged-in .bottom-nav {
     display: flex;
 }
+
+/* ========== এডমিন লগইন ওভারলে কন্ট্রোল ========== */
+#admin-login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg, #020617);
+    background-image: var(--bg-gradient);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* লগইন করার আগে সবকিছু লুকান */
+body:not(.logged-in) .sidebar,
+body:not(.logged-in) .main-content,
+body:not(.logged-in) .bottom-nav,
+body:not(.logged-in) .bottom-nav-container,
+body:not(.logged-in) .dock-container {
+    display: none !important;
+}
+
+/* লগইন করার পর সবকিছু দেখান */
+body.logged-in .sidebar,
+body.logged-in .main-content {
+    display: block !important;
+}
+
+body.logged-in .bottom-nav,
+body.logged-in .bottom-nav-container,
+body.logged-in .dock-container {
+    display: flex !important;
+}
+
+/* লগইন করার পর ওভারলে লুকান */
+body.logged-in #admin-login-overlay {
+    display: none !important;
+}
+
+/* পেজ সেকশন কন্ট্রোল - নিশ্চিত করুন */
+.page-section {
+    display: none !important;
+}
+
+.page-section.active {
+    display: block !important;
+}
