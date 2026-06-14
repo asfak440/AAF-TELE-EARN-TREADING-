@@ -2669,36 +2669,75 @@ def user_check_stat():
             await client.connect()
             if not await client.is_user_authorized():
                 return {"success": False, "message": "Session expired"}
+
+            clean_link = link.replace("https://t.me/", "").replace("t.me/", "")
+            username = clean_link.split("/")[0]
+            post_id = int(clean_link.split("/")[1]) if "/" in clean_link else None
             
-            if "t.me/" in link:
-                clean_link = link.replace("https://t.me/", "")
-            else:
-                clean_link = link
-            
-            parts = clean_link.split("/")
-            channel_username = parts[0]
-            post_id = int(parts[1]) if len(parts) > 1 else None
-            
+            entity = await client.get_entity(username)
+            full = None
+            members_count = 'N/A'
+            description = 'N/A'
+
+            # ১. Telethon Full Entity দিয়ে চেষ্টা
             try:
-                entity = await client.get_entity(channel_username)
-            except Exception as e:
-                error_msg = str(e)
-                if "not found" in error_msg.lower():
-                    return {"success": False, "message": "চ্যানেল পাওয়া যায়নি"}
-                elif "private" in error_msg.lower():
-                    return {"success": False, "message": "প্রাইভেট চ্যানেল — ইউজার মেম্বার না"}
-                else:
-                    return {"success": False, "message": "চ্যানেল অ্যাক্সেস করা যায়নি"}
-            
-            try:
-                me = await client.get_me()
-                try:
-                    await client.get_permissions(entity, me)
-                    user_is_member = True
-                except:
-                    user_is_member = False
+                full = await client.get_full_entity(entity)
+                members_count = getattr(full, 'participants_count', 'N/A')
+                description = getattr(full, 'about', '')
             except:
-                user_is_member = False
+                pass
+
+            # ২. যদি মেম্বার সংখ্যা না পাওয়া যায়, Participant লিস্ট দিয়ে চেষ্টা (সাধারণ মেম্বার হলেও কাজ করে)
+            if members_count == 'N/A' or members_count is None:
+                try:
+                    # ছোট লিমিটে মেম্বার লিস্ট চেক করে সংখ্যা পাওয়ার চেষ্টা
+                    participants = await client.get_participants(entity, limit=1)
+                    members_count = getattr(entity, 'participants_count', 'N/A')
+                except:
+                    pass
+
+            # ৩. যদি তাও ব্যর্থ হয়, তবে বট API দিয়ে চেষ্টা
+            if members_count == 'N/A':
+                admin_config = get_admin_config()
+                bot_token = admin_config.get("bot_token")
+                if bot_token:
+                    import requests
+                    url = f"https://api.telegram.org/bot{bot_token}/getChat?chat_id=@{username}"
+                    try:
+                        resp = requests.get(url, timeout=5).json()
+                        if resp.get("ok"):
+                            members_count = resp["result"].get("members_count", resp["result"].get("participants_count", "N/A"))
+                            description = resp["result"].get("description", description)
+                    except: pass
+
+            # রেজাল্ট তৈরি
+            result = {
+                "success": True,
+                "type": "post" if post_id else "channel",
+                "title": entity.title,
+                "username": username,
+                "members": members_count,
+                "description": description or '',
+                "user_is_member": True
+            }
+            
+            # পোস্টের ডাটা যোগ করা
+            if post_id:
+                msg = await client.get_messages(entity, ids=post_id)
+                if msg:
+                    result.update({
+                        "views": getattr(msg, 'views', 0),
+                        "forwards": getattr(msg, 'forwards', 0),
+                        "text": msg.text[:500] if msg.text else "[মিডিয়া]",
+                        "date": str(msg.date)
+                    })
+            
+            return result
+
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+        finally:
+            await client.disconnect()
             
             # ========== পোস্ট চেক (যদি পোস্ট আইডি থাকে) ==========
             if post_id:
