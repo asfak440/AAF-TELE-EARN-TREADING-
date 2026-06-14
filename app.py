@@ -2675,76 +2675,49 @@ def user_check_stat():
             post_id = int(clean_link.split("/")[1]) if "/" in clean_link else None
             
             entity = await client.get_entity(username)
-            full = None
-            members_count = 'N/A'
-            description = 'N/A'
-
-            # ১. Telethon Full Entity দিয়ে চেষ্টা
-            try:
-                full = await client.get_full_entity(entity)
-                members_count = getattr(full, 'participants_count', 'N/A')
-                description = getattr(full, 'about', '')
-            except:
-                pass
-
-            # ২. যদি মেম্বার সংখ্যা না পাওয়া যায়, Participant লিস্ট দিয়ে চেষ্টা (সাধারণ মেম্বার হলেও কাজ করে)
-            if members_count == 'N/A' or members_count is None:
-                try:
-                    # ছোট লিমিটে মেম্বার লিস্ট চেক করে সংখ্যা পাওয়ার চেষ্টা
-                    participants = await client.get_participants(entity, limit=1)
-                    members_count = getattr(entity, 'participants_count', 'N/A')
-                except:
-                    pass
-
-            # ৩. যদি তাও ব্যর্থ হয়, তবে বট API দিয়ে চেষ্টা
-            if members_count == 'N/A':
-                admin_config = get_admin_config()
-                bot_token = admin_config.get("bot_token")
-                if bot_token:
-                    import requests
-                    url = f"https://api.telegram.org/bot{bot_token}/getChat?chat_id=@{username}"
-                    try:
-                        resp = requests.get(url, timeout=5).json()
-                        if resp.get("ok"):
-                            members_count = resp["result"].get("members_count", resp["result"].get("participants_count", "N/A"))
-                            description = resp["result"].get("description", description)
-                    except: pass
-
-            # রেজাল্ট তৈরি
-            result = {
-                "success": True,
-                "type": "post" if post_id else "channel",
-                "title": entity.title,
-                "username": username,
-                "members": members_count,
-                "description": description or '',
-                "user_is_member": True
-            }
+            me = await client.get_me()
             
-            # পোস্টের ডাটা যোগ করা
+            # মেম্বার স্ট্যাটাস চেক
+            is_member = True
+            try: await client.get_permissions(entity, me)
+            except: is_member = False
+            
+            # পোস্ট হলে পোস্ট ডাটা
             if post_id:
                 msg = await client.get_messages(entity, ids=post_id)
-                if msg:
-                    result.update({
-                        "views": getattr(msg, 'views', 0),
-                        "forwards": getattr(msg, 'forwards', 0),
-                        "text": msg.text[:500] if msg.text else "[মিডিয়া]",
-                        "date": str(msg.date)
-                    })
+                res = {
+                    "success": True, "type": "post", "title": entity.title,
+                    "views": getattr(msg, 'views', 0), "forwards": getattr(msg, 'forwards', 0),
+                    "text": msg.text[:500] if msg.text else "[মিডিয়া]", "date": str(msg.date),
+                    "user_is_member": is_member, "member_status": "✅ জয়েন করেছেন" if is_member else "❌ জয়েন করেননি"
+                }
+                if checked_by: res["checked_by"] = checked_by
+                if hasattr(msg, 'reactions'):
+                    res["reactions"] = {getattr(r.reaction, 'emoticon', '👍'): r.count for r in msg.reactions.results}
+                return res
             
-            return result
+            # চ্যানেল হলে চ্যানেল ডাটা
+            else:
+                full = await client.get_full_entity(entity)
+                res = {
+                    "success": True, "type": "channel", "title": entity.title,
+                    "members": getattr(full, 'participants_count', 'N/A'),
+                    "description": getattr(full, 'about', ''),
+                    "user_is_member": is_member, "member_status": "✅ জয়েন করেছেন" if is_member else "❌ জয়েন করেননি"
+                }
+                if checked_by: res["checked_by"] = checked_by
+                return res
 
         except Exception as e:
             return {"success": False, "message": str(e)}
         finally:
             await client.disconnect()
-            
-            # ========== পোস্ট চেক (যদি পোস্ট আইডি থাকে) ==========
-            if post_id:
-                message = await client.get_messages(entity, ids=post_id)
-                if not message:
-                    return {"success": False, "message": "পোস্ট পাওয়া যায়নি"}
-                
+
+    # ক্যাশে এবং রিটার্ন লজিক (এটি ফাংশনের বাইরে থাকবে)
+    data = run_async(check())
+    cache_col.update_one({"cache_key": cache_key}, {"$set": {"data": data, "created_at": now}}, upsert=True)
+    return jsonify(data)
+    
                 # মিডিয়া টাইপ ডিটেক্ট
                 if message.photo:
                     media_type = "📷 ফটো"
