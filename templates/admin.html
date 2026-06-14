@@ -5,14 +5,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>  
     <link rel="stylesheet" href="/style.css">
 
-</head>  <body>  <div id="admin-login-overlay">  
-    <div style="background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid var(--cyan); text-align: center; width: 320px;">  
+</head>  
+    <div id="admin-login-overlay">  
+    <div style="background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid var(--cyan); text-align: center;">  
         <h2 style="color:var(--cyan)">AAF MASTER CONTROL</h2>  
-        <input type="password" id="admin-pass" placeholder="Enter PIN" style="text-align: center; font-size: 24px;">  
-        <button class="btn-main" onclick="checkAuth()">UNLOCK</button>  
+        <input type="password" id="admin-pass" placeholder="Enter PIN" style="text-align: center; font-size: 24px; width: 100%; box-sizing: border-box;">  
+        <button class="btn-main" onclick="checkAuth()" style="width: 100%;">UNLOCK</button>  
     </div>  
-</div>  
-
+</div>
+    
 <div class="sidebar">  
     <div class="logo-area">AAF MASTER</div>  
 
